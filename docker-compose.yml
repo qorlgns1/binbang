@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  accommodation-monitor:
+    build: .
+    container_name: accommodation-monitor
+    restart: unless-stopped
+    volumes:
+      # 토큰 파일 영구 저장 (컨테이너 재시작해도 유지)
+      - ./src/tokens.json:/app/src/tokens.json
+    environment:
+      - TZ=Asia/Seoul
+    # 메모리 제한 (Puppeteer가 메모리 많이 씀)
+    deploy:
+      resources:
+        limits:
+          memory: 1G

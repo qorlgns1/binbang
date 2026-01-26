@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables (민감정보)
+.env
+
+# Tokens (민감정보)
+src/tokens.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build
+dist/
+build/

@@ -1,0 +1,19 @@
+{
+  "name": "accommodation-monitor",
+  "version": "1.0.0",
+  "description": "Airbnb, Agoda 숙소 예약 가능 여부 모니터링 및 카카오톡 알림",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "setup": "node src/setup-kakao.js",
+    "test-notify": "node src/test-notify.js"
+  },
+  "keywords": ["airbnb", "agoda", "monitor", "accommodation", "kakao"],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^24.0.0"
+  }
+}
