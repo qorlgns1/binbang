@@ -23,7 +23,11 @@ Airbnb, Agoda 숙소의 예약 가능 여부를 주기적으로 확인하고, �
 ### 1. 프로젝트 클론
 
 ```bash
-git clone https://github.com/your-username/accommodation-monitor.git
+git clone https://github.com/qorlgns1/accommodation-monitor.git
+
+
+
+
 cd accommodation-monitor
 npm install
 ```
@@ -164,7 +168,7 @@ docker-compose logs -f
 
 ```bash
 # EC2에서
-git clone https://github.com/your-username/accommodation-monitor.git
+git clone https://github.com/qorlgns1/accommodation-monitor.git
 cd accommodation-monitor
 
 # .env 파일 생성
