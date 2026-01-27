@@ -61,8 +61,8 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 ```bash
 # 1. 프로젝트 클론
-git clone https://github.com/your-username/accommodation-monitor-web.git
-cd accommodation-monitor-web
+git clone https://github.com/qorlgns1/accommodation-monitor.git
+cd accommodation-monitor
 
 # 2. 환경변수 설정
 cp .env.example .env
