@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const { launchBrowser } = require('../utils/browser');
 
 /**
  * Agoda 숙소 예약 가능 여부 체크
@@ -15,17 +15,7 @@ async function checkAgoda(accommodation) {
 
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--window-size=1920,1080',
-      ],
-    });
+    browser = await launchBrowser();
 
     const page = await browser.newPage();
 
@@ -107,6 +97,8 @@ async function checkAgoda(accommodation) {
       checkUrl,
       error: error.message,
     };
+  } finally {
+    if (browser) await browser.close();
   }
 }
 

@@ -25,10 +25,8 @@ Airbnb, Agoda 숙소의 예약 가능 여부를 주기적으로 확인하고, �
 ```bash
 git clone https://github.com/qorlgns1/accommodation-monitor.git
 
-
-
-
 cd accommodation-monitor
+
 npm install
 ```
 

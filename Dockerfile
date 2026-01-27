@@ -1,47 +1,59 @@
-FROM node:18-slim
+FROM node:18.19.0-slim
 
-# Puppeteer 실행에 필요한 의존성 설치
+# root 사용자로 작업
+USER root
+
+# Puppeteer에 필요한 의존성 설치
 RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
     ca-certificates \
-    fonts-liberation \
+    libgconf-2-4 \
+    libxss1 \
+    libx11-dev \
+    libxext-dev \
+    libxtst-dev \
+    libnss3 \
     libasound2 \
     libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
     libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxkbcommon0 \
-    libxrandr2 \
-    libxss1 \
-    libx11-xcb1 \
+    libxshmfence-dev \
+    libglu1-mesa \
+    libxcomposite-dev \
+    libxcursor-dev \
+    libxdamage-dev \
+    libxi-dev \
+    libxrandr-dev \
+    libxrender-dev \
+    libxt-dev \
+    libxv1 \
+    libgl1-mesa-glx \
+    fonts-liberation \
     xdg-utils \
-    wget \
-    --no-install-recommends \
+    chromium \
     && rm -rf /var/lib/apt/lists/*
 
-# 작업 디렉토리
+# 작업 디렉토리 설정
 WORKDIR /app
 
-# 패키지 파일 복사 및 설치
+# 패키지 파일 복사
 COPY package*.json ./
-RUN npm install
 
-# 소스 복사
-COPY src ./src
+# 파일 권한 조정
+RUN chmod 644 package*.json
 
-# Puppeteer 캐시 디렉토리 권한
-ENV PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
+# 의존성 설치
+RUN npm install --omit=dev
 
-# 비root 유저로 실행 (보안)
-RUN groupadd -r appuser && useradd -r -g appuser appuser \
-    && chown -R appuser:appuser /app
-USER appuser
+# 전체 소스 복사
+COPY . .
 
-CMD ["node", "src/index.js"]
+# 모든 파일의 권한 조정
+RUN chmod -R 755 /app
+
+# Puppeteer 환경 설정
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# 실행 커맨드
+CMD ["npm", "start"]
