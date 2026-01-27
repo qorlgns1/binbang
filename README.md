@@ -1,171 +1,213 @@
-# 🏨 Accommodation Monitor
+# 🏨 Accommodation Monitor Web
 
-Airbnb, Agoda 숙소의 예약 가능 여부를 주기적으로 확인하고, 예약이 가능해지면 **카카오톡**으로 알림을 보내주는 모니터링 도구입니다.
+Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고  
+예약이 가능해지면 **카카오톡으로 알림을 보내주는 웹 애플리케이션**입니다.
 
-> 인기 숙소의 취소 건을 잡기 위해 만들었습니다. 🇨🇭
+---
 
 ## ✨ 주요 기능
 
-- **Airbnb, Agoda** 숙소 모니터링 지원
-- **Puppeteer**를 이용한 실시간 웹 스크래핑
-- **카카오톡 나에게 보내기**로 즉시 알림
-- 예약 가능 시 **가격 정보 + 바로가기 URL** 포함
-- **중복 알림 방지** (상태 변화 시에만 알림)
-- **토큰 자동 갱신** (access_token 만료 시 자동 처리)
-- **Docker 지원**
+- **카카오 / 구글 소셜 로그인**
+- **멀티 유저 지원** – 각자 자신의 숙소만 관리
+- **숙소 CRUD** – UI로 쉽게 등록 / 수정 / 삭제
+- **자동 모니터링** – 기본 10분 주기 체크
+- **카카오톡 알림** – 예약 가능 시 즉시 알림
+- **체크 로그** – 모니터링 히스토리 확인
+
+---
+
+## 🛠 기술 스택
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL
+- **Auth**: NextAuth.js (카카오, 구글)
+- **Scraping**: Puppeteer
+- **Background Worker**: Node.js + cron
+- **Deployment**: Docker, Docker Compose, AWS EC2
+
+---
 
 ## 📋 요구사항
 
-- Node.js 18+
-- Chrome/Chromium (Puppeteer 필요)
-- Docker (선택사항)
-- 카카오 개발자 계정
+- Node.js 20+
+- Docker / Docker Compose
+- PostgreSQL (로컬은 Docker로 자동 생성)
+- 카카오 개발자 앱
+- 구글 OAuth 클라이언트
 
-## 🚀 설치 및 설정
+---
 
-### 1. 프로젝트 클론
+## 🚀 로컬 개발
 
-```bash
-git clone https://github.com/qorlgns1/accommodation-monitor.git
-cd accommodation-monitor
-npm install
-```
+### 권장 방식: Docker로 전체 실행
 
-> 📌 **Puppeteer 주의**:
->
-> - 프로젝트는 Puppeteer를 사용하여 웹 브라우저 자동화로 숙소 예약 상태를 확인합니다.
-> - Chrome/Chromium이 시스템에 설치되어 있어야 합니다.
+> 이 방식은 **로컬 개발 전용**이며,  
+> Web / Worker / DB를 한 번에 실행합니다.
 
-### 2. 카카오 개발자 앱 설정
+#### ✔️ 이 방식으로 얻는 것
 
-1. [카카오 개발자](https://developers.kakao.com) 접속 → 로그인
-2. **내 애플리케이션** → **애플리케이션 추가하기**
-3. 앱 생성 후 **앱 키** 메뉴에서 `REST API 키` 복사
-4. **보안** 메뉴 → Client Secret **생성** 및 **활성화**
-5. **카카오 로그인** 메뉴:
-   - 상태: **ON**
-   - Redirect URI: `http://localhost:3000/callback` 추가
-6. **동의항목** 메뉴:
-   - `카카오톡 메시지 전송` → **선택 동의** 또는 **필수 동의** 설정
+- ✅ PostgreSQL 컨테이너 자동 생성
+- ✅ DB가 없으면 빈 데이터베이스 자동 생성
+- ✅ DB가 있으면 기존 데이터 그대로 재사용
+- ✅ Hot Reload 지원 (Next.js dev 모드)
+- ✅ Web / Worker / DB 한 번에 실행
 
-### 3. 환경변수 설정
+> ⚠️ **주의**  
+> Docker 실행 시 **테이블(Prisma 스키마)은 자동으로 생성되지 않습니다.**  
+> 최초 실행 또는 스키마 변경 시 **Prisma 명령을 직접 실행해야 합니다.**
+
+#### ▶ 실행 방법
 
 ```bash
+# 1. 프로젝트 클론
+git clone https://github.com/your-username/accommodation-monitor-web.git
+cd accommodation-monitor-web
+
+# 2. 환경변수 설정
 cp .env.example .env
+# OAuth 키 및 NEXTAUTH_SECRET 입력
+
+# 3. Docker 실행
+docker compose -f docker-compose.local.yml up --build
+
+# 4. 브라우저 접속
+http://localhost:3000
 ```
 
-`.env` 파일 수정:
+### 🗄 데이터베이스 초기화 / 스키마 반영
 
-```env
-KAKAO_REST_API_KEY=your_rest_api_key_here
-KAKAO_CLIENT_SECRET=your_client_secret_here
-KAKAO_REDIRECT_URI=http://localhost:3000/callback
+#### ▶ Prisma 스키마 반영 (필수)
 
-# 스케줄 설정 (10분마다)
-SCHEDULE=*/10 * * * *
-```
-
-### 4. 모니터링할 숙소 추가
-
-`src/config.js` 파일의 `accommodations` 배열에 숙소 추가:
-
-```javascript
-accommodations: [
-  {
-    name: '그린델발트 샬레',
-    platform: 'airbnb',  // 'airbnb' 또는 'agoda'
-    url: 'https://www.airbnb.co.kr/rooms/12345678',
-    checkIn: '2026-08-01',
-    checkOut: '2026-08-05',
-    adults: 2,
-  },
-  // 더 많은 숙소 추가 가능
-],
-```
-
-### 5. 카카오톡 연동
+최초 실행 시 또는 `schema.prisma` 변경 후 반드시 실행
 
 ```bash
-npm run setup
+npm run db:push:local
 ```
 
-출력된 URL을 브라우저에서 열고 카카오 로그인 → 동의하면 자동으로 토큰이 발급됩니다.
+- 테이블 / 인덱스 / 관계 생성
+- 기존 데이터는 삭제하지 않음
 
-### 6. 로컬에서 실행
+#### ▶ DB를 완전히 새로 만들고 싶을 때
 
 ```bash
-# 카카오톡 알림 테스트
-npm run test-notify
-
-# 모니터링 시작
-npm start
+docker compose -f docker-compose.local.yml down -v
+docker compose -f docker-compose.local.yml up
 ```
 
-### 7. Docker로 실행
+> ⚠️ `-v` 옵션은 PostgreSQL 데이터 전체 삭제  
+> 로컬 테스트용에서만 사용하세요.
 
-#### 첫 실행 시 토큰 발급
+### 📌 요약 (한 눈에 보기)
+
+| 항목                 | 자동 여부               |
+| -------------------- | ----------------------- |
+| PostgreSQL 컨테이너  | ✅ 자동                 |
+| 빈 데이터베이스 생성 | ✅ 자동                 |
+| 기존 DB 재사용       | ✅ 자동                 |
+| Prisma 테이블 생성   | ❌ 수동                 |
+| Prisma 명령          | `npm run db:push:local` |
+
+### 🧠 설계 의도
+
+Prisma 스키마를 자동 적용하지 않는 이유는 안전성 때문입니다.
+
+- 실수로 스키마 변경이 DB에 즉시 반영되는 것 방지
+- 개발자가 의도를 가지고 명시적으로 실행하도록 설계
+
+### 🧑‍💻 Docker 없이 로컬 실행 (선택)
+
+Docker 없이 Next.js를 직접 실행하고 싶을 때 사용합니다.
 
 ```bash
-npm run setup
+# 의존성 설치
+npm install
+
+# DB만 Docker로 실행
+docker run -d \
+  --name postgres-local \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=accommodation_monitor_local \
+  -p 5432:5432 \
+  postgres:15
+
+# Prisma 스키마 반영
+npm run db:push
+
+# 개발 서버 실행
+npm run dev        # 웹 서버
+npm run cron       # 워커
 ```
 
-#### Docker Compose로 실행
+---
+
+## 🔐 OAuth Redirect URI 설정
+
+| Provider | Redirect URI                                     |
+| -------- | ------------------------------------------------ |
+| 카카오   | `http://localhost:3000/api/auth/callback/kakao`  |
+| 구글     | `http://localhost:3000/api/auth/callback/google` |
+
+---
+
+## 📁 프로젝트 구조
+
+```
+accommodation-monitor-web/
+├── src/
+│   ├── app/                      # Next.js App Router
+│   │   ├── api/                  # API Routes
+│   │   │   ├── auth/             # NextAuth
+│   │   │   └── accommodations/   # 숙소 CRUD API
+│   │   ├── login/                # 로그인 페이지
+│   │   ├── dashboard/            # 대시보드
+│   │   └── accommodations/       # 숙소 관리 페이지
+│   ├── lib/
+│   │   ├── auth.ts               # NextAuth 설정
+│   │   ├── prisma.ts             # Prisma 클라이언트
+│   │   ├── checkers/             # Airbnb, Agoda 체커
+│   │   ├── kakao/                # 카카오톡 메시지
+│   │   └── cron/                 # 크론 워커
+│   └── types/                    # TypeScript 타입
+├── prisma/
+│   └── schema.prisma             # DB 스키마
+├── Dockerfile
+├── Dockerfile.worker
+├── docker-compose.yml
+├── docker-compose.local.yml
+└── package.json
+```
+
+---
+
+## 📜 주요 npm 스크립트
 
 ```bash
-docker-compose up -d
+npm run dev               # Next.js 개발 서버
+npm run cron              # 워커 실행
+npm run db:push           # Prisma db push (Node 환경)
+npm run db:push:local     # Prisma db push (Docker 환경)
+npm run db:studio:local   # Prisma Studio
 ```
 
-#### 로그 확인
+---
 
-```bash
-docker-compose logs -f
-```
+## 🔧 환경변수
 
-## ⏰ 스케줄 설정
+| 변수                   | 설명                       |
+| ---------------------- | -------------------------- |
+| `DATABASE_URL`         | PostgreSQL 연결 문자열     |
+| `NEXTAUTH_URL`         | 서비스 URL                 |
+| `NEXTAUTH_SECRET`      | 세션 암호화 키             |
+| `GOOGLE_CLIENT_ID`     | 구글 OAuth                 |
+| `GOOGLE_CLIENT_SECRET` | 구글 OAuth                 |
+| `KAKAO_CLIENT_ID`      | 카카오 REST API 키         |
+| `KAKAO_CLIENT_SECRET`  | 카카오 Client Secret       |
+| `CRON_SCHEDULE`        | 워커 실행 주기 (기본 10분) |
 
-`.env`에서 cron 표현식으로 설정:
-
-```env
-# 10분마다 (권장)
-SCHEDULE=*/10 * * * *
-
-# 30분마다
-SCHEDULE=*/30 * * * *
-
-# 매시간 정각
-SCHEDULE=0 * * * *
-```
-
-> ⚠️ **주의**: 너무 자주 체크하면 (3분 이하) IP 차단될 수 있습니다. 최소 10분 이상 권장.
-
-## 📱 카카오톡 알림 예시
-
-```
-🏨 숙소 예약 가능! 🎉
-
-📍 그린델발트 샬레
-📅 2026-08-01 ~ 2026-08-05
-💰 ₩450,000
-
-🔗 https://www.airbnb.co.kr/rooms/12345678?check_in=...
-
-지금 바로 확인하세요!
-```
-
-## 📋 변경이력
-
-### v1.0.0 (2024-01-27)
-
-- 초기 릴리즈
-- Airbnb, Agoda 숙소 모니터링 지원
-- Puppeteer 기반 웹 스크래핑
-- 카카오톡 알림 기능
-- Docker 컨테이너 지원
+---
 
 ## 📄 라이센스
 
 MIT License
-
-## 🙏 기여
-
-이슈와 PR 환영합니다!

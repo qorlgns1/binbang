@@ -1,16 +1,37 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  accommodation-monitor:
+  # Next.js 웹 앱
+  web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: accommodation-monitor
-    restart: unless-stopped
-    volumes:
-      - ./src/tokens.json:/app/src/tokens.json
-      - ./.env:/app/.env
+    ports:
+      - "3000:3000"
     environment:
-      - TZ=Asia/Seoul
-      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+    restart: unless-stopped
+    depends_on:
+      - worker
+
+  # 크론 워커 (모니터링)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+      - CRON_SCHEDULE=${CRON_SCHEDULE:-*/10 * * * *}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
