@@ -93,9 +93,6 @@ services:
     # docker compose exec web npx prisma db push
     command: sh -c "npx prisma generate && npm run dev"
 
-    # 로컬 디버깅 방해 요소 제거
-    # restart: unless-stopped ❌
-
   # ---------------------------------------------------
   # Background Worker (Local Test Only)
   # ---------------------------------------------------
@@ -130,9 +127,6 @@ services:
 
     # docker-compose에서 실제로 적용되는 메모리 제한
     # mem_limit: 1g
-
-    # 로컬에선 자동 재시작 비추천
-    # restart: unless-stopped ❌
 
 # ---------------------------------------------------
 # Volumes
