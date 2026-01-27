@@ -33,7 +33,7 @@ async function checkAgoda(accommodation) {
 
     await page.goto(checkUrl, {
       waitUntil: 'networkidle2',
-      timeout: 30000,
+      timeout: 200000,
     });
 
     // 페이지 로딩 대기
