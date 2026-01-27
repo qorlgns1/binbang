@@ -70,7 +70,10 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <h3 className="text-gray-500 text-sm mb-1">예약 가능</h3>
             <p className="text-3xl font-bold text-primary-600">
-              {accommodations.filter((a) => a.lastStatus === "AVAILABLE").length}
+              {
+                accommodations.filter((a) => a.lastStatus === "AVAILABLE")
+                  .length
+              }
             </p>
           </div>
         </div>
@@ -108,7 +111,7 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-3 mb-1">
                       <h3 className="font-medium">{acc.name}</h3>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[acc.lastStatus]}`}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium break-keep text-center ${statusColors[acc.lastStatus]}`}
                       >
                         {statusText[acc.lastStatus]}
                       </span>
@@ -119,8 +122,8 @@ export default async function DashboardPage() {
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
-                      {acc.platform} · {acc.checkIn.toISOString().split("T")[0]} ~{" "}
-                      {acc.checkOut.toISOString().split("T")[0]}
+                      {acc.platform} · {acc.checkIn.toISOString().split("T")[0]}{" "}
+                      ~ {acc.checkOut.toISOString().split("T")[0]}
                       {acc.lastPrice && ` · ${acc.lastPrice}`}
                     </p>
                     {acc.lastCheck && (
@@ -168,7 +171,9 @@ export default async function DashboardPage() {
                     {formatDateTime(log.createdAt)}
                   </span>
                   {log.notificationSent && (
-                    <span className="text-xs text-green-600">📱 알림 전송됨</span>
+                    <span className="text-xs text-green-600">
+                      📱 알림 전송됨
+                    </span>
                   )}
                 </div>
               ))}
