@@ -3,29 +3,7 @@
  * 앱 시작 시 필수 환경변수가 설정되어 있는지 확인
  */
 
-interface EnvConfig {
-  // Database
-  DATABASE_URL: string;
-
-  // NextAuth
-  NEXTAUTH_URL: string;
-  NEXTAUTH_SECRET: string;
-
-  // Google OAuth
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
-
-  // Kakao OAuth
-  KAKAO_CLIENT_ID: string;
-  KAKAO_CLIENT_SECRET: string;
-
-  // Optional
-  CRON_SCHEDULE?: string;
-  WORKER_CONCURRENCY?: string;
-  BROWSER_POOL_SIZE?: string;
-}
-
-const requiredEnvVars = [
+const WEB_REQUIRED_ENV_VARS = [
   "DATABASE_URL",
   "NEXTAUTH_URL",
   "NEXTAUTH_SECRET",
@@ -35,7 +13,7 @@ const requiredEnvVars = [
   "KAKAO_CLIENT_SECRET",
 ] as const;
 
-const workerRequiredEnvVars = [
+const WORKER_REQUIRED_ENV_VARS = [
   "DATABASE_URL",
   "KAKAO_CLIENT_ID",
   "KAKAO_CLIENT_SECRET",
@@ -44,54 +22,30 @@ const workerRequiredEnvVars = [
 /**
  * 웹 앱용 환경변수 검증
  */
-export function validateWebEnv(): EnvConfig {
-  const missing: string[] = [];
-
-  for (const key of requiredEnvVars) {
-    if (!process.env[key]) {
-      missing.push(key);
-    }
-  }
-
-  if (missing.length > 0) {
-    throw new Error(
-      `❌ 필수 환경변수가 설정되지 않았습니다:\n` +
-        missing.map((key) => `   - ${key}`).join("\n") +
-        `\n\n.env 파일을 확인하세요.`,
-    );
-  }
-
-  return process.env as unknown as EnvConfig;
+export function validateWebEnv(): void {
+  validateEnvVars(WEB_REQUIRED_ENV_VARS, "웹 앱");
 }
 
 /**
  * 워커용 환경변수 검증
  */
-export function validateWorkerEnv(): Pick<
-  EnvConfig,
-  "DATABASE_URL" | "KAKAO_CLIENT_ID" | "KAKAO_CLIENT_SECRET"
-> {
-  const missing: string[] = [];
+export function validateWorkerEnv(): void {
+  validateEnvVars(WORKER_REQUIRED_ENV_VARS, "워커");
+}
 
-  for (const key of workerRequiredEnvVars) {
-    if (!process.env[key]) {
-      missing.push(key);
-    }
-  }
+/**
+ * 공통 검증 로직
+ */
+function validateEnvVars(keys: readonly string[], context: string): void {
+  const missing = keys.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
     throw new Error(
-      `❌ 워커 필수 환경변수가 설정되지 않았습니다:\n` +
+      `❌ ${context} 필수 환경변수가 설정되지 않았습니다:\n` +
         missing.map((key) => `   - ${key}`).join("\n") +
         `\n\n.env 파일을 확인하세요.`,
     );
   }
-
-  return {
-    DATABASE_URL: process.env.DATABASE_URL!,
-    KAKAO_CLIENT_ID: process.env.KAKAO_CLIENT_ID!,
-    KAKAO_CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET!,
-  };
 }
 
 /**
