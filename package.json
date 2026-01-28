@@ -2,21 +2,21 @@
   "name": "accommodation-monitor-web",
   "version": "2.0.0",
   "private": true,
+  "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "local:docker:up": "docker compose -f docker-compose.local.yml up",
-    "local:docker:up:build": "docker compose -f docker-compose.local.yml up --build",
-    "local:docker:down": "docker compose -f docker-compose.local.yml down",
-    "local:docker:restart": "docker compose -f docker-compose.local.yml restart",
-    "local:docker:db:push": "docker compose -f docker-compose.local.yml exec web npx prisma db push",
-    "local:docker:db:studio": "docker compose -f docker-compose.local.yml exec web npx prisma studio",
+    "cron": "tsx src/lib/cron/worker.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "cron": "tsx src/lib/cron/worker.ts"
+    "local:docker:up": "docker compose -f docker-compose.local.yml up",
+    "local:docker:up:build": "docker compose -f docker-compose.local.yml up --build",
+    "local:docker:down": "docker compose -f docker-compose.local.yml down",
+    "local:docker:db:push": "docker compose -f docker-compose.local.yml exec web pnpm prisma db push",
+    "local:docker:db:studio": "docker compose -f docker-compose.local.yml exec web pnpm prisma studio"
   },
   "dependencies": {
     "next": "^15.1.0",

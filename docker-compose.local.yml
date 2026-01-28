@@ -48,7 +48,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.local
 
     container_name: accommodation-monitor-web-local
 
@@ -90,8 +90,8 @@ services:
 
     # ⚠️ Prisma db push 자동 실행 금지
     # 필요할 때만 수동 실행:
-    # docker compose exec web npx prisma db push
-    command: sh -c "npx prisma generate && npm run dev"
+    # docker compose exec web pnpm prisma db push
+    command: sh -c "pnpm prisma generate && pnpm dev"
 
   # ---------------------------------------------------
   # Background Worker (Local Test Only)
@@ -124,9 +124,6 @@ services:
     volumes:
       - ./:/app
       - /app/node_modules
-
-    # docker-compose에서 실제로 적용되는 메모리 제한
-    # mem_limit: 1g
 
 # ---------------------------------------------------
 # Volumes
