@@ -1,44 +1,47 @@
-version: "3.8"
-
 services:
-  # Next.js 웹 앱
+  # ==============================
+  # Next.js Web
+  # ==============================
   web:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL}
     ports:
       - "4000:3000"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
-      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
-      - TZ=Asia/Seoul
+      DATABASE_URL: ${DATABASE_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      TZ: Asia/Seoul
     restart: unless-stopped
     depends_on:
       - worker
 
-  # 크론 워커 (모니터링) - 병렬 처리 지원
+  # ==============================
+  # Worker (Cron / Monitoring)
+  # ==============================
   worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
-      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
-      - CRON_SCHEDULE=${CRON_SCHEDULE:-*/10 * * * *}
-      # 병렬 처리 설정
-      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-10}
-      - BROWSER_POOL_SIZE=${BROWSER_POOL_SIZE:-3}
-      - TZ=Asia/Seoul
+      DATABASE_URL: ${DATABASE_URL}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      CRON_SCHEDULE: ${CRON_SCHEDULE:-*/10 * * * *}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-10}
+      BROWSER_POOL_SIZE: ${BROWSER_POOL_SIZE:-3}
+      TZ: Asia/Seoul
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 4G # 병렬 처리를 위해 4GB로 증가
+          memory: 4G
         reservations:
-          memory: 2G # 최소 2GB 보장
+          memory: 2G
