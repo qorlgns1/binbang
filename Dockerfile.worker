@@ -1,10 +1,10 @@
 FROM node:20-slim
 
-# pnpm 설치
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
-
-# Puppeteer 의존성 설치
-RUN apt-get update && apt-get install -y \
+# ============================================
+# 시스템 패키지
+# ============================================
+RUN apt-get update -y && apt-get install -y \
+    openssl \
     chromium \
     fonts-ipafont-gothic \
     fonts-wqy-zenhei \
@@ -15,21 +15,26 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
+# Puppeteer 설정
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
+# pnpm
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+
 WORKDIR /app
 
-# 의존성 먼저 (캐시 핵심)
+# 의존성
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# prisma
-COPY prisma ./prisma/
+# Prisma
+COPY prisma ./prisma
 RUN pnpm prisma generate
 
-# 필요한 소스만 복사
+# 소스
 COPY src ./src
-COPY next.config.ts tsconfig.json ./
+COPY tsconfig.json next.config.ts ./
 
+# 기본 실행
 CMD ["sh", "-c", "pnpm prisma db push && pnpm cron"]
