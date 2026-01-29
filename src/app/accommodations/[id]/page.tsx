@@ -3,8 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { formatDateTime } from "@/lib/utils";
 import { DeleteButton, ToggleActiveButton } from "./actions";
+import { LocalDateTime } from "@/components/LocalDateTime";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -110,13 +110,17 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
             {accommodation.lastPrice && (
               <div>
                 <h3 className="text-sm text-gray-500 mb-1">마지막 확인 가격</h3>
-                <p className="text-lg font-semibold">{accommodation.lastPrice}</p>
+                <p className="text-lg font-semibold">
+                  {accommodation.lastPrice}
+                </p>
               </div>
             )}
             {accommodation.lastCheck && (
               <div>
                 <h3 className="text-sm text-gray-500 mb-1">마지막 체크</h3>
-                <p>{formatDateTime(accommodation.lastCheck)}</p>
+                <p>
+                  <LocalDateTime date={accommodation.lastCheck} />
+                </p>
               </div>
             )}
           </div>
@@ -149,9 +153,10 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
                       </span>
                     )}
                   </span>
-                  <span className="text-xs text-gray-400">
-                    {formatDateTime(log.createdAt)}
-                  </span>
+                  <LocalDateTime
+                    date={log.createdAt}
+                    className="text-xs text-gray-400"
+                  />
                   {log.notificationSent && (
                     <span className="text-xs text-green-600">📱</span>
                   )}

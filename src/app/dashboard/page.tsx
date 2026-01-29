@@ -3,9 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { formatDateTime } from "@/lib/utils";
 import { LogoutButton } from "./logout-button";
 import { KakaoAlertBanner } from "./kakao-alert-banner";
+import { LocalDateTime } from "@/components/LocalDateTime";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -66,7 +66,7 @@ export default async function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* 카카오톡 알림 안내 배너 */}
+        {/* 카카오톡 알림 배너 (Google 로그인 사용자에게만 표시) */}
         {!hasKakaoToken && <KakaoAlertBanner />}
 
         {/* 요약 카드 */}
@@ -142,7 +142,7 @@ export default async function DashboardPage() {
                     </p>
                     {acc.lastCheck && (
                       <p className="text-xs text-gray-400 mt-1">
-                        마지막 체크: {formatDateTime(acc.lastCheck)}
+                        마지막 체크: <LocalDateTime date={acc.lastCheck} />
                       </p>
                     )}
                   </div>
@@ -181,9 +181,10 @@ export default async function DashboardPage() {
                     {log.accommodation.name}
                     {log.price && ` · ${log.price}`}
                   </span>
-                  <span className="text-xs text-gray-400">
-                    {formatDateTime(log.createdAt)}
-                  </span>
+                  <LocalDateTime
+                    date={log.createdAt}
+                    className="text-xs text-gray-400"
+                  />
                   {log.notificationSent && (
                     <span className="text-xs text-green-600">
                       📱 알림 전송됨
