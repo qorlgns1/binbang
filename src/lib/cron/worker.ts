@@ -4,6 +4,7 @@ import cron from "node-cron";
 import prisma from "@/lib/prisma";
 import { checkAllAccommodations, isProcessing } from "./processor";
 import { CRON_CONFIG, logConfig } from "./config";
+import { closeBrowserPool } from "@/lib/checkers/browserPool";
 
 const SHUTDOWN_TIMEOUT = 60000; // 최대 60초 대기
 
@@ -59,6 +60,9 @@ async function gracefulShutdown(): Promise<void> {
       console.log("   - 모든 작업 완료됨");
     }
   }
+
+  await closeBrowserPool();
+  console.log("   - 브라우저 풀 종료됨");
 
   await prisma.$disconnect();
   console.log("   - DB 연결 해제됨");

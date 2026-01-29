@@ -1,6 +1,9 @@
 import { RETRYABLE_ERRORS } from "./constants";
 
 export function isRetryableError(errorMessage: string): boolean {
+  if (errorMessage.includes("Navigation timeout")) {
+    return false;
+  }
   return RETRYABLE_ERRORS.some((pattern) => errorMessage.includes(pattern));
 }
 
