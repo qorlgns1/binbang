@@ -1,11 +1,13 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
-import { LogoutButton } from './logout-button';
-import { KakaoAlertBanner } from './kakao-alert-banner';
+import { redirect } from 'next/navigation';
+
 import { LocalDateTime } from '@/components/LocalDateTime';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+
+import { KakaoAlertBanner } from './kakao-alert-banner';
+import { LogoutButton } from './logout-button';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);

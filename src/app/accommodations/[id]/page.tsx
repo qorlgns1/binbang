@@ -1,10 +1,12 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
-import { DeleteButton, ToggleActiveButton } from './actions';
+import { notFound, redirect } from 'next/navigation';
+
 import { LocalDateTime } from '@/components/LocalDateTime';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+
+import { DeleteButton, ToggleActiveButton } from './actions';
 
 interface PageProps {
   params: Promise<{ id: string }>;

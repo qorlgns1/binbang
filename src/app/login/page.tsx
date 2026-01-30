@@ -1,8 +1,9 @@
 'use client';
 
+import { Suspense } from 'react';
+
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
 
 // useSearchParams를 사용하는 컴포넌트는 반드시 Suspense 안에 있어야 함
 function LoginForm() {

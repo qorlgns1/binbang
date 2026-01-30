@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import Link from 'next/link';
-import { parseAccommodationUrl, type ParsedAccommodationUrl } from '@/lib/url-parser';
+import { useRouter } from 'next/navigation';
+
+import { type ParsedAccommodationUrl, parseAccommodationUrl } from '@/lib/url-parser';
 
 export default function NewAccommodationPage() {
   const router = useRouter();

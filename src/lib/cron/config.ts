@@ -1,4 +1,4 @@
-import { validateWorkerEnv, getEnvNumber } from '@/lib/env';
+import { getEnvNumber, validateWorkerEnv } from '@/lib/env';
 
 // 워커 시작 시 환경변수 검증
 validateWorkerEnv();

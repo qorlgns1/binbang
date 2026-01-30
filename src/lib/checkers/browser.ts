@@ -1,5 +1,6 @@
 import type { Browser, Page } from 'puppeteer';
 import puppeteer from 'puppeteer';
+
 import { getEnvNumber } from '@/lib/env';
 
 const DEFAULT_BLOCKED_RESOURCE_TYPES = ['image', 'media', 'font'];

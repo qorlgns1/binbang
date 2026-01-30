@@ -1,5 +1,7 @@
 import type { Browser } from 'puppeteer';
+
 import { getEnvNumber } from '@/lib/env';
+
 import { createBrowser } from './browser';
 
 type Waiter = {

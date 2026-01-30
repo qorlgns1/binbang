@@ -1,10 +1,11 @@
 // src/lib/cron/worker.ts
-
 import cron from 'node-cron';
-import prisma from '@/lib/prisma';
-import { checkAllAccommodations, isProcessing } from './processor';
-import { CRON_CONFIG, logConfig } from './config';
+
 import { closeBrowserPool } from '@/lib/checkers/browserPool';
+import prisma from '@/lib/prisma';
+
+import { CRON_CONFIG, logConfig } from './config';
+import { checkAllAccommodations, isProcessing } from './processor';
 
 const SHUTDOWN_TIMEOUT = 60000; // 최대 60초 대기
 

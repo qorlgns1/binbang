@@ -1,12 +1,12 @@
 // eslint.config.ts
-import { defineConfig, globalIgnores } from 'eslint/config';
 import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import nextPlugin from '@next/eslint-plugin-next';
+import prettierConfig from 'eslint-config-prettier';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import prettierConfig from 'eslint-config-prettier';
+import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   // 무시할 파일/폴더
@@ -61,6 +61,19 @@ export default defineConfig(
 
       // console.log 허용
       'no-console': 'off',
+
+      // 상위 폴더 상대경로 import 금지 (같은 폴더 ./는 허용)
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../*'],
+              message: '상대경로 대신 절대경로(@/)를 사용하세요.',
+            },
+          ],
+        },
+      ],
     },
   },
 

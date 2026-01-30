@@ -1,10 +1,12 @@
 import type { Browser, Page } from 'puppeteer';
-import { setupPage } from './browser';
-import { PRICE_PATTERN } from './constants';
-import { isRetryableError, delay } from './utils';
+
 import { getEnvNumber } from '@/lib/env';
+
+import { setupPage } from './browser';
 import { acquireBrowser, releaseBrowser } from './browserPool';
-import type { CheckResult, AccommodationToCheck } from './types';
+import { PRICE_PATTERN } from './constants';
+import type { AccommodationToCheck, CheckResult } from './types';
+import { delay, isRetryableError } from './utils';
 
 interface PlatformPatterns {
   available: string[];

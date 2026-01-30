@@ -1,6 +1,6 @@
-import { checkAirbnb } from './airbnb';
 import { checkAgoda } from './agoda';
-import type { CheckResult, AccommodationToCheck } from './types';
+import { checkAirbnb } from './airbnb';
+import type { AccommodationToCheck, CheckResult } from './types';
 
 export type { CheckResult, AccommodationToCheck };
 

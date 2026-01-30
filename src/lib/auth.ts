@@ -1,8 +1,11 @@
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
+
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
+
 import prisma from '@/lib/prisma';
+
 // import { validateWebEnv } from "@/lib/env";
 
 // 웹 앱 시작 시 환경변수 검증
