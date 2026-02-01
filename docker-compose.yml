@@ -1,10 +1,11 @@
 services:
   web:
-    image: kihoonbae/accommodation-monitor:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
+    image: kihoonbae/accommodation-monitor:web-develop
     ports:
       - '4000:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -14,9 +15,10 @@ services:
     restart: unless-stopped
 
   worker:
-    image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
+    image: kihoonbae/accommodation-monitor:worker-develop
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
       CRON_SCHEDULE: ${CRON_SCHEDULE:-*/30 * * * *}
