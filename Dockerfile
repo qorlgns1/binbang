@@ -16,10 +16,15 @@ ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
 ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
 
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor
+
 COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
 RUN pnpm install --frozen-lockfile
+
 COPY . .
-RUN pnpm prisma generate
 RUN pnpm build
 
 # ============================================
@@ -69,5 +74,6 @@ COPY --from=builder /app/src ./src
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/prisma.config.ts ./
 
 CMD ["pnpm", "cron"]

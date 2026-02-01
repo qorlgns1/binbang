@@ -1,5 +1,4 @@
-import type { AvailabilityStatus, Platform } from '@prisma/client';
-
+import type { AvailabilityStatus, Platform } from '@/generated/prisma/client';
 import { checkAccommodation } from '@/lib/checkers';
 import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
