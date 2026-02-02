@@ -1,16 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  calculateNights,
-  formatDate,
-  isRetryableError,
-} from '@/lib/checkers/utils';
+import { calculateNights, formatDate, isRetryableError } from '@/lib/checkers/utils';
 
 describe('isRetryableError', () => {
   it('Navigation timeout는 재시도 불가 (명시적 제외)', () => {
-    expect(isRetryableError('Navigation timeout of 30000 ms exceeded')).toBe(
-      false,
-    );
+    expect(isRetryableError('Navigation timeout of 30000 ms exceeded')).toBe(false);
   });
 
   it('frame was detached → 재시도 가능', () => {

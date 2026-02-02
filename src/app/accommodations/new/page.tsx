@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateAccommodation } from '@/hooks/useCreateAccommodation';
-import { type ParsedAccommodationUrl, parseAccommodationUrl } from '@/lib/url-parser';
+import { parseAccommodationUrl } from '@/lib/url-parser';
+import type { ParsedAccommodationUrl } from '@/types/url';
 
 export default function NewAccommodationPage() {
   const router = useRouter();

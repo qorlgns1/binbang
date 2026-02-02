@@ -3,10 +3,7 @@ import type { AvailabilityStatus } from '@/generated/prisma/client';
 /**
  * 체크 결과로부터 가용성 상태 결정
  */
-export function determineStatus(result: {
-  error: string | null;
-  available: boolean;
-}): AvailabilityStatus {
+export function determineStatus(result: { error: string | null; available: boolean }): AvailabilityStatus {
   if (result.error) return 'ERROR';
   if (result.available) return 'AVAILABLE';
   return 'UNAVAILABLE';
@@ -21,9 +18,5 @@ export function shouldSendAvailabilityNotification(
   lastStatus: AvailabilityStatus | null,
   hasKakaoToken: boolean,
 ): boolean {
-  return (
-    status === 'AVAILABLE' &&
-    lastStatus !== 'AVAILABLE' &&
-    Boolean(hasKakaoToken)
-  );
+  return status === 'AVAILABLE' && lastStatus !== 'AVAILABLE' && Boolean(hasKakaoToken);
 }

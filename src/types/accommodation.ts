@@ -1,15 +1,18 @@
+import type { AvailabilityStatus, Platform } from '@/generated/prisma/client';
+
+/** API/클라이언트용 숙소 타입 (JSON 직렬화로 Date → string) */
 export interface Accommodation {
   id: string;
   userId: string;
   name: string;
-  platform: 'AIRBNB' | 'AGODA';
+  platform: Platform;
   url: string;
   checkIn: string;
   checkOut: string;
   adults: number;
   isActive: boolean;
   lastCheck: string | null;
-  lastStatus: 'AVAILABLE' | 'UNAVAILABLE' | 'ERROR' | 'UNKNOWN';
+  lastStatus: AvailabilityStatus;
   lastPrice: string | null;
   createdAt: string;
   updatedAt: string;
@@ -20,7 +23,7 @@ export interface CheckLog {
   id: string;
   accommodationId: string;
   userId: string;
-  status: 'AVAILABLE' | 'UNAVAILABLE' | 'ERROR' | 'UNKNOWN';
+  status: AvailabilityStatus;
   price: string | null;
   errorMessage: string | null;
   notificationSent: boolean;
@@ -52,4 +55,20 @@ export interface UpdateAccommodationInput {
   checkOut?: string;
   adults?: number;
   isActive?: boolean;
+}
+
+/** Cron processor용 - Prisma select 결과 (Date 사용) */
+export interface AccommodationWithUser {
+  id: string;
+  name: string;
+  url: string;
+  checkIn: Date;
+  checkOut: Date;
+  adults: number;
+  platform: Platform;
+  lastStatus: AvailabilityStatus | null;
+  user: {
+    id: string;
+    kakaoAccessToken: string | null;
+  };
 }

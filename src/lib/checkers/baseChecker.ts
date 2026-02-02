@@ -1,11 +1,11 @@
 import type { Browser, Page } from 'puppeteer';
 
 import { getEnvNumber } from '@/lib/env';
+import type { AccommodationToCheck, CheckResult } from '@/types/checker';
 
 import { setupPage } from './browser';
 import { acquireBrowser, releaseBrowser } from './browserPool';
 import { PRICE_PATTERN } from './constants';
-import type { AccommodationToCheck, CheckResult } from './types';
 import { delay, isRetryableError } from './utils';
 
 interface PlatformPatterns {

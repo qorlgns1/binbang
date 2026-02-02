@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { accommodationKeys } from '@/hooks/queryKeys';
-import type { Accommodation } from '@/hooks/types';
+import type { Accommodation } from '@/types/accommodation';
 
 async function toggleActive({ id, isActive }: { id: string; isActive: boolean }): Promise<Accommodation> {
   const res = await fetch(`/api/accommodations/${id}`, {

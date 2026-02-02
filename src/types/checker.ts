@@ -1,3 +1,5 @@
+import type { Platform } from '@/generated/prisma/client';
+
 export interface CheckResult {
   available: boolean;
   price: string | null;
@@ -11,5 +13,5 @@ export interface AccommodationToCheck {
   checkIn: Date;
   checkOut: Date;
   adults: number;
-  platform: 'AIRBNB' | 'AGODA';
+  platform: Platform;
 }

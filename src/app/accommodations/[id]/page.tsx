@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import type { PageParams } from '@/types/api';
 
 import { DeleteButton, ToggleActiveButton } from './actions';
 import { CheckLogList } from './checkLogList';
@@ -26,11 +27,7 @@ const statusText: Record<string, string> = {
   UNKNOWN: '확인 중',
 };
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function AccommodationDetailPage({ params }: PageProps) {
+export default async function AccommodationDetailPage({ params }: PageParams) {
   const session = await getServerSession(authOptions);
   const { id } = await params;
 

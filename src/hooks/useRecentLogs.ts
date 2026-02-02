@@ -3,7 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { logKeys } from '@/hooks/queryKeys';
-import type { RecentLog } from '@/hooks/types';
+import type { RecentLog } from '@/types/accommodation';
 
 async function fetchRecentLogs(): Promise<RecentLog[]> {
   const res = await fetch('/api/logs/recent');
