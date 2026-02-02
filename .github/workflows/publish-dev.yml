@@ -4,6 +4,7 @@ run-name: Publish Dev Images - ${{ github.ref_name }}
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 permissions: {}
 
