@@ -5,6 +5,10 @@ import prisma from '@/lib/prisma';
 
 import { CRON_CONFIG } from './config';
 import { createLimiter } from './limiter';
+import {
+  determineStatus,
+  shouldSendAvailabilityNotification,
+} from './statusUtils';
 
 // ============================================
 // 타입 정의
@@ -66,15 +70,6 @@ async function processAccommodation(accommodation: AccommodationWithUser): Promi
 }
 
 // ============================================
-// 상태 판단
-// ============================================
-function determineStatus(result: { error: string | null; available: boolean }): AvailabilityStatus {
-  if (result.error) return 'ERROR';
-  if (result.available) return 'AVAILABLE';
-  return 'UNAVAILABLE';
-}
-
-// ============================================
 // 상태 로깅
 // ============================================
 function logStatus(status: AvailabilityStatus, result: { error: string | null; price: string | null }): void {
@@ -119,8 +114,11 @@ async function sendNotificationIfNeeded(
   status: AvailabilityStatus,
   result: { price: string | null; checkUrl: string },
 ): Promise<void> {
-  const shouldNotify =
-    status === 'AVAILABLE' && accommodation.lastStatus !== 'AVAILABLE' && accommodation.user.kakaoAccessToken;
+  const shouldNotify = shouldSendAvailabilityNotification(
+    status,
+    accommodation.lastStatus,
+    Boolean(accommodation.user.kakaoAccessToken),
+  );
 
   if (!shouldNotify) return;
 
