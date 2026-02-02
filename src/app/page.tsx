@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { authOptions } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -13,36 +14,37 @@ export default async function Home() {
   }
 
   return (
-    <main className='min-h-screen flex flex-col items-center justify-center p-8'>
+    <main className='min-h-screen flex flex-col items-center justify-center p-8 bg-muted/40'>
       <div className='max-w-2xl text-center'>
         <h1 className='text-4xl font-bold mb-4'>🏨 숙소 모니터링</h1>
-        <p className='text-xl text-gray-600 mb-8'>
+        <p className='text-xl text-muted-foreground mb-8'>
           Airbnb, Agoda 숙소의 예약 가능 여부를 모니터링하고
           <br />
           카카오톡으로 알림을 받으세요
         </p>
 
         <div className='space-y-4 mb-12'>
-          <div className='flex items-center justify-center gap-2 text-gray-600'>
+          <div className='flex items-center justify-center gap-2 text-muted-foreground'>
             <span className='text-2xl'>✅</span>
             <span>인기 숙소 취소 건 알림</span>
           </div>
-          <div className='flex items-center justify-center gap-2 text-gray-600'>
+          <div className='flex items-center justify-center gap-2 text-muted-foreground'>
             <span className='text-2xl'>✅</span>
             <span>10분마다 자동 체크</span>
           </div>
-          <div className='flex items-center justify-center gap-2 text-gray-600'>
+          <div className='flex items-center justify-center gap-2 text-muted-foreground'>
             <span className='text-2xl'>✅</span>
             <span>카카오톡으로 즉시 알림</span>
           </div>
         </div>
 
-        <Link
-          href='/login'
-          className='inline-block bg-primary-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary-700 transition-colors'
+        <Button
+          asChild
+          size='lg'
+          className='px-8 py-6 text-lg'
         >
-          시작하기
-        </Link>
+          <Link href='/login'>시작하기</Link>
+        </Button>
       </div>
     </main>
   );

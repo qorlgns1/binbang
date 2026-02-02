@@ -23,8 +23,6 @@
 
 ## ⛔ 금지 사항 (운영 / 비용 / 보안)
 
-다음 제안은 **하지 않는다**.
-
 ### Docker / Infra
 
 - production 환경에서 `docker compose`에 `build:` 사용 ❌  
@@ -43,18 +41,23 @@
 - `src/generated/**` 파일 직접 수정 ❌
 - Prisma import 경로 혼용 ❌  
   (`@prisma/client` 사용 금지, `@/generated/prisma/client`만 허용)
-- DB 연결 보안 하향 (`sslmode=require` 등) 제안 ❌
+- DB 연결 보안 하향 (`sslmode=require`, `prefer` 등) 제안 ❌
 
 ### 보안
 
 - 시크릿 / 토큰 / 키를 문서나 코드 예시에 그대로 작성 ❌  
   (항상 마스킹 또는 placeholder 사용)
 
+### UI / 스타일
+
+- Tailwind legacy 클래스 하드코딩 금지 (`gray-`, `blue-500`, `primary-600` 등) ❌
+- `tailwind.config.ts` 파일 생성/사용 금지 ❌
+
 ---
 
 ## 🗺️ 기능별 코드 위치 가이드
 
-Claude는 기능 변경 시 **아래 엔트리 포인트부터 확인**한다.
+기능 변경 시 **아래 엔트리 포인트부터 확인**한다.
 
 ### 인증 / 세션 (NextAuth.js v4)
 
@@ -69,8 +72,7 @@ Claude는 기능 변경 시 **아래 엔트리 포인트부터 확인**한다.
 ### 워커 / 크론
 
 - 엔트리 포인트: `src/lib/cron/worker.ts`
-- 처리 흐름:  
-  `worker.ts` → `processor.ts` → `checkers/*`
+- 처리 흐름: `worker.ts` → `processor.ts` → `checkers/*`
 
 ### 체커 (Scraping)
 
@@ -88,6 +90,43 @@ Claude는 기능 변경 시 **아래 엔트리 포인트부터 확인**한다.
 
 - Prisma Client: `src/lib/prisma.ts`
 - Schema: `prisma/schema.prisma`
+
+### UI 컴포넌트
+
+- 모든 shadcn-ui 컴포넌트: `src/components/ui/*`
+- 공통 유틸: `@/lib/utils` (특히 `cn`)
+
+---
+
+## 🎨 UI 컴포넌트 가이드 (shadcn v3 + Tailwind v4)
+
+UI는 **shadcn v3 스타일 + Tailwind v4** 기준으로 **엄격히 통일**한다.
+
+### 기본 원칙
+
+- 컴포넌트는 `src/components/ui/*` **외부에 절대 생성하지 않는다**.
+- Tailwind v4 **semantic 토큰 기반 클래스만 사용**  
+  → `bg-card`, `text-muted-foreground`, `border-border`, `text-primary`, `ring-ring` 등  
+  → **절대** `bg-blue-500`, `text-gray-700`, `border-red-400`, `primary-600` 같은 legacy/하드코딩 색상 사용 금지
+- 공용 유틸: `cn`은 **반드시** `@/lib/utils`에서 가져온다.
+- Radix 프리미티브는 **`radix-ui`** 패키지에서 import  
+  (예: `import * as LabelPrimitive from '@radix-ui/react-label'`)
+
+### 새 컴포넌트 추가/업데이트
+
+```bash
+pnpm dlx shadcn@latest add <component> --overwrite
+```
+
+- 추가 전 components.json의 style, baseColor 등 설정 확인
+- --overwrite 사용 시 반드시 git diff로 기존 커스텀 내용 확인 후 진행
+
+### 커스텀 규칙
+
+- 새 variant/size가 필요하면 해당 컴포넌트의 `cva`에 추가한다.
+- UI 변경 시 **API 변경(variant/prop 추가/변경) 허용**.
+- Tailwind 설정 파일(`tailwind.config.ts`)은 **사용하지 않음**.  
+  스타일 토큰은 `src/app/globals.css`에서 관리한다.
 
 ---
 

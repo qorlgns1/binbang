@@ -4,6 +4,8 @@ import { useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import { Button } from '@/components/ui/button';
+
 export function DeleteButton({ id }: { id: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -27,13 +29,13 @@ export function DeleteButton({ id }: { id: string }) {
   }
 
   return (
-    <button
+    <Button
+      variant='destructive'
       onClick={handleDelete}
       disabled={loading}
-      className='px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50'
     >
       {loading ? '삭제 중...' : '삭제'}
-    </button>
+    </Button>
   );
 }
 
@@ -59,14 +61,13 @@ export function ToggleActiveButton({ id, isActive }: { id: string; isActive: boo
   }
 
   return (
-    <button
+    <Button
       onClick={handleToggle}
       disabled={loading}
-      className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-        isActive ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-green-100 text-green-700 hover:bg-green-200'
-      }`}
+      variant={isActive ? 'secondary' : 'default'}
+      className={isActive ? 'text-muted-foreground' : 'bg-emerald-600 text-white hover:bg-emerald-700'}
     >
       {loading ? '처리 중...' : isActive ? '일시정지' : '모니터링 시작'}
-    </button>
+    </Button>
   );
 }

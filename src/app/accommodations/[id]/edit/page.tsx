@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { type ParsedAccommodationUrl, parseAccommodationUrl } from '@/lib/url-parser';
 
 interface AccommodationData {
@@ -64,7 +69,6 @@ export default function EditAccommodationPage() {
   }, [id]);
 
   // URL 변경 시 자동 파싱 (URL이 변경된 경우에만)
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!url || url === originalUrl) {
       setParsedInfo(null);
@@ -128,31 +132,33 @@ export default function EditAccommodationPage() {
 
   if (fetching) {
     return (
-      <div className='min-h-screen bg-gray-50'>
-        <header className='bg-white shadow-sm'>
+      <div className='min-h-screen bg-muted/40'>
+        <header className='bg-background/80 backdrop-blur-sm border-b'>
           <div className='max-w-7xl mx-auto px-4 py-4'>
             <Link
               href={`/accommodations/${id}`}
-              className='text-gray-500 hover:text-gray-700'
+              className='text-muted-foreground hover:text-foreground'
             >
               ← 숙소 상세로 돌아가기
             </Link>
           </div>
         </header>
         <main className='max-w-2xl mx-auto px-4 py-8'>
-          <div className='bg-white rounded-xl shadow-sm p-8 text-center text-gray-500'>불러오는 중...</div>
+          <Card>
+            <CardContent className='p-8 text-center text-muted-foreground'>불러오는 중...</CardContent>
+          </Card>
         </main>
       </div>
     );
   }
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <header className='bg-white shadow-sm'>
+    <div className='min-h-screen bg-muted/40'>
+      <header className='bg-background/80 backdrop-blur-sm border-b'>
         <div className='max-w-7xl mx-auto px-4 py-4'>
           <Link
             href={`/accommodations/${id}`}
-            className='text-gray-500 hover:text-gray-700'
+            className='text-muted-foreground hover:text-foreground'
           >
             ← 숙소 상세로 돌아가기
           </Link>
@@ -160,155 +166,134 @@ export default function EditAccommodationPage() {
       </header>
 
       <main className='max-w-2xl mx-auto px-4 py-8'>
-        <div className='bg-white rounded-xl shadow-sm p-8'>
-          <h1 className='text-2xl font-bold mb-6'>숙소 정보 수정</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle className='text-2xl'>숙소 정보 수정</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant='destructive' className='mb-6'>
+                <AlertTitle>오류</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {error && <div className='bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6'>{error}</div>}
+            <form
+              onSubmit={handleSubmit}
+              className='space-y-6'
+            >
+              {/* URL 입력 */}
+              <div className='space-y-2'>
+                <Label htmlFor='url'>숙소 URL *</Label>
+                <Input
+                  type='url'
+                  id='url'
+                  name='url'
+                  required
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
+                />
+                <p className='text-xs text-muted-foreground'>URL을 변경하면 새 URL에서 정보를 자동으로 파싱합니다.</p>
 
-          <form
-            onSubmit={handleSubmit}
-            className='space-y-6'
-          >
-            {/* URL 입력 */}
-            <div>
-              <label
-                htmlFor='url'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                숙소 URL *
-              </label>
-              <input
-                type='url'
-                id='url'
-                name='url'
-                required
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
-                className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
-              />
-              <p className='text-xs text-gray-500 mt-1'>URL을 변경하면 새 URL에서 정보를 자동으로 파싱합니다.</p>
+                {/* 파싱 결과 표시 */}
+                {parsedInfo?.platform && (
+                  <Alert className='border-blue-200 bg-blue-50 text-blue-900'>
+                    <div className='flex items-center justify-between gap-4'>
+                      <AlertTitle className='text-sm font-medium text-blue-800'>URL에서 정보를 찾았습니다</AlertTitle>
+                      <Button
+                        type='button'
+                        size='sm'
+                        className='bg-blue-600 text-white hover:bg-blue-700'
+                        onClick={applyParsedInfo}
+                      >
+                        모두 적용
+                      </Button>
+                    </div>
+                    <AlertDescription className='text-xs text-blue-700 space-y-1 mt-2'>
+                      <p>• 플랫폼: {parsedInfo.platform}</p>
+                      {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
+                      {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
+                      {parsedInfo.checkOut && <p>• 체크아웃: {parsedInfo.checkOut}</p>}
+                      {parsedInfo.adults && <p>• 인원: {parsedInfo.adults}명</p>}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
 
-              {/* 파싱 결과 표시 */}
-              {parsedInfo?.platform && (
-                <div className='mt-3 p-3 bg-blue-50 rounded-lg'>
-                  <div className='flex items-center justify-between mb-2'>
-                    <span className='text-sm font-medium text-blue-800'>URL에서 정보를 찾았습니다</span>
-                    <button
-                      type='button'
-                      onClick={applyParsedInfo}
-                      className='text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors'
-                    >
-                      모두 적용
-                    </button>
-                  </div>
-                  <div className='text-xs text-blue-700 space-y-1'>
-                    <p>• 플랫폼: {parsedInfo.platform}</p>
-                    {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
-                    {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
-                    {parsedInfo.checkOut && <p>• 체크아웃: {parsedInfo.checkOut}</p>}
-                    {parsedInfo.adults && <p>• 인원: {parsedInfo.adults}명</p>}
-                  </div>
+              {/* 숙소 이름 */}
+              <div className='space-y-2'>
+                <Label htmlFor='name'>숙소 이름 *</Label>
+                <Input
+                  type='text'
+                  id='name'
+                  name='name'
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder='예: 그린델발트 샬레'
+                />
+              </div>
+
+              {/* 날짜 선택 */}
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='checkIn'>체크인 *</Label>
+                  <Input
+                    type='date'
+                    id='checkIn'
+                    name='checkIn'
+                    required
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='checkOut'>체크아웃 *</Label>
+                  <Input
+                    type='date'
+                    id='checkOut'
+                    name='checkOut'
+                    required
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                  />
+                </div>
+              </div>
 
-            {/* 숙소 이름 */}
-            <div>
-              <label
-                htmlFor='name'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                숙소 이름 *
-              </label>
-              <input
-                type='text'
-                id='name'
-                name='name'
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder='예: 그린델발트 샬레'
-                className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
-              />
-            </div>
-
-            {/* 날짜 선택 */}
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <label
-                  htmlFor='checkIn'
-                  className='block text-sm font-medium text-gray-700 mb-1'
-                >
-                  체크인 *
-                </label>
-                <input
-                  type='date'
-                  id='checkIn'
-                  name='checkIn'
-                  required
-                  value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
+              {/* 인원 */}
+              <div className='space-y-2'>
+                <Label htmlFor='adults'>인원</Label>
+                <Input
+                  type='number'
+                  id='adults'
+                  name='adults'
+                  min='1'
+                  max='20'
+                  value={adults}
+                  onChange={(e) => setAdults(parseInt(e.target.value) || 2)}
                 />
               </div>
-              <div>
-                <label
-                  htmlFor='checkOut'
-                  className='block text-sm font-medium text-gray-700 mb-1'
+
+              {/* 버튼 */}
+              <div className='flex gap-4'>
+                <Button
+                  type='submit'
+                  disabled={loading}
+                  className='flex-1'
                 >
-                  체크아웃 *
-                </label>
-                <input
-                  type='date'
-                  id='checkOut'
-                  name='checkOut'
-                  required
-                  value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
-                />
+                  {loading ? '수정 중...' : '수정 완료'}
+                </Button>
+                <Button
+                  asChild
+                  variant='outline'
+                >
+                  <Link href={`/accommodations/${id}`}>취소</Link>
+                </Button>
               </div>
-            </div>
-
-            {/* 인원 */}
-            <div>
-              <label
-                htmlFor='adults'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                인원
-              </label>
-              <input
-                type='number'
-                id='adults'
-                name='adults'
-                min='1'
-                max='20'
-                value={adults}
-                onChange={(e) => setAdults(parseInt(e.target.value) || 2)}
-                className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent'
-              />
-            </div>
-
-            {/* 버튼 */}
-            <div className='flex gap-4'>
-              <button
-                type='submit'
-                disabled={loading}
-                className='flex-1 bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50'
-              >
-                {loading ? '수정 중...' : '수정 완료'}
-              </button>
-              <Link
-                href={`/accommodations/${id}`}
-                className='px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors'
-              >
-                취소
-              </Link>
-            </div>
-          </form>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
