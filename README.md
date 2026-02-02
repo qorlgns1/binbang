@@ -1,6 +1,6 @@
 # 🏨 Accommodation Monitor Web
 
-## 🆕 v2.0.0 새로운 기능
+## 🆕 v2.4.0 새로운 기능
 
 > **v1.x에서 완전히 재작성되었습니다!**
 
@@ -10,13 +10,14 @@
 - `config.js` 파일에서 숙소 직접 편집
 - 단일 사용자 전용
 
-### 현재 버전 (v2.0.0)
+### 현재 버전 (v2.4.0)
 
 - ✨ **풀 웹 UI**: 브라우저에서 숙소 등록/관리
 - 👥 **멀티 유저**: 카카오/구글 로그인, 각자 숙소 관리
 - 🗄️ **데이터베이스**: 체크 로그 저장 및 조회
 - ⚡ **병렬 처리**: 대량 숙소도 빠르게 체크
 - 🐳 **Docker Compose**: Web + Worker 분리 배포
+- 🚀 **CI/CD**: GitHub Actions 자동 빌드/배포
 
 Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고  
 예약이 가능해지면 **카카오톡으로 알림을 보내주는 웹 애플리케이션**입니다.
@@ -28,7 +29,7 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 - **카카오 / 구글 소셜 로그인**
 - **멀티 유저 지원** – 각자 자신의 숙소만 관리
 - **숙소 CRUD** – UI로 쉽게 등록 / 수정 / 삭제
-- **자동 모니터링** – 기본 10분 주기 체크
+- **자동 모니터링** – 기본 30분 주기 체크
 - **카카오톡 알림** – 예약 가능 시 즉시 알림
 - **체크 로그** – 모니터링 히스토리 확인
 
@@ -36,23 +37,60 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 ## 🛠 기술 스택
 
+- **Runtime**: Node.js 24
+- **Package Manager**: pnpm 10.28.0
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL
+- **Backend**: Next.js API Routes, Prisma ORM 7 (pg adapter)
+- **Database**: PostgreSQL 15
 - **Auth**: NextAuth.js (카카오, 구글)
 - **Scraping**: Puppeteer
 - **Background Worker**: Node.js + cron
-- **Deployment**: Docker, Docker Compose, AWS EC2
+- **CI/CD**: GitHub Actions
+- **Deployment**: Docker, AWS EC2
 
 ---
 
 ## 📋 요구사항
 
-- Node.js 20+
+- Node.js 24+
+- pnpm 10.28.0+
 - Docker / Docker Compose
 - PostgreSQL (로컬은 Docker로 자동 생성)
 - 카카오 개발자 앱
 - 구글 OAuth 클라이언트
+
+---
+
+## 🚀 CI/CD 파이프라인
+
+### 워크플로우 구성
+
+| 워크플로우      | 트리거                    | 설명                                 |
+| --------------- | ------------------------- | ------------------------------------ |
+| **CI**          | PR, push (main/develop)   | lint, format, test, build 검증       |
+| **CodeQL**      | PR, push, 주간 스케줄     | 보안 취약점 분석                     |
+| **Publish Dev** | develop 브랜치 CI 성공 시 | Docker Hub에 dev 이미지 푸시         |
+| **Release Tag** | main 브랜치 push          | package.json 버전으로 태그 자동 생성 |
+| **Deploy Prod** | 태그 push (v\*)           | 프로덕션 빌드 및 EC2 자동 배포       |
+
+### 필요한 GitHub Secrets
+
+```
+DOCKERHUB_USERNAME    # Docker Hub 사용자명
+DOCKERHUB_TOKEN       # Docker Hub 액세스 토큰
+EC2_HOST              # EC2 퍼블릭 IP
+EC2_USER              # EC2 SSH 사용자 (예: ubuntu)
+EC2_SSH_KEY           # EC2 SSH 프라이빗 키
+EC2_PORT              # SSH 포트 (기본: 22)
+```
+
+### 필요한 GitHub Variables
+
+```
+NEXT_PUBLIC_GA_MEASUREMENT_ID         # Google Analytics 측정 ID
+NEXT_PUBLIC_NAVER_SITE_VERIFICATION   # 네이버 사이트 인증
+NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION  # 구글 사이트 인증
+```
 
 ---
 
@@ -71,7 +109,7 @@ sudo curl -L "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem"
 
 ### 2) docker-compose에 CA 번들 마운트
 
-`docker-compose.yml` 또는 `docker-compose.develop.yml`에 아래 볼륨이 필요합니다.
+`docker-compose.production.yml`에 아래 볼륨이 포함되어 있습니다:
 
 ```yml
 volumes:
@@ -80,7 +118,7 @@ volumes:
 
 ### 3) DATABASE_URL 설정 (sslrootcert 포함)
 
-`.env`에 아래처럼 설정합니다.
+`.env`에 아래처럼 설정합니다:
 
 ```bash
 DATABASE_URL=postgresql://username:password@your-rds-endpoint.amazonaws.com:5432/accommodation_monitor?sslmode=verify-full&sslrootcert=/etc/ssl/certs/rds-global-bundle.pem
@@ -89,11 +127,11 @@ DATABASE_URL=postgresql://username:password@your-rds-endpoint.amazonaws.com:5432
 > 비밀번호에 특수문자가 있으면 URL 인코딩이 필요합니다.  
 > 예: `@` → `%40`, `:` → `%3A`, `!` → `%21`
 
-### 4) 컨테이너 재시작
+### 4) 수동 배포 (CI/CD 미사용 시)
 
 ```bash
-docker compose pull
-docker compose up -d --force-recreate --pull always
+docker compose -f docker-compose.production.yml pull
+docker compose -f docker-compose.production.yml up -d
 ```
 
 ---
@@ -110,7 +148,6 @@ docker compose up -d --force-recreate --pull always
 - ✅ PostgreSQL 컨테이너 자동 생성
 - ✅ DB가 없으면 빈 데이터베이스 자동 생성
 - ✅ DB가 있으면 기존 데이터 그대로 재사용
-- ✅ Hot Reload 지원 (Next.js dev 모드)
 - ✅ Web / Worker / DB 한 번에 실행
 
 > ⚠️ **주의**  
@@ -139,10 +176,10 @@ http://localhost:3000
 
 #### ▶ Prisma 스키마 반영 (필수)
 
-최초 실행 시 또는 `schema.prisma` 변경 후 반드시 실행
+최초 실행 시 또는 `schema.prisma` 변경 후 반드시 실행:
 
 ```bash
-npm run local:docker:db:push
+pnpm local:docker:db:push
 ```
 
 - 테이블 / 인덱스 / 관계 생성
@@ -160,22 +197,15 @@ docker compose -f docker-compose.local.yml up
 
 ### 📌 요약 (한 눈에 보기)
 
-| 항목                 | 자동 여부                      |
-| -------------------- | ------------------------------ |
-| PostgreSQL 컨테이너  | ✅ 자동                        |
-| 빈 데이터베이스 생성 | ✅ 자동                        |
-| 기존 DB 재사용       | ✅ 자동                        |
-| Prisma 테이블 생성   | ❌ 수동                        |
-| Prisma 명령          | `npm run local:docker:db:push` |
+| 항목                 | 자동 여부                   |
+| -------------------- | --------------------------- |
+| PostgreSQL 컨테이너  | ✅ 자동                     |
+| 빈 데이터베이스 생성 | ✅ 자동                     |
+| 기존 DB 재사용       | ✅ 자동                     |
+| Prisma 테이블 생성   | ❌ 수동                     |
+| Prisma 명령          | `pnpm local:docker:db:push` |
 
-### 🧠 설계 의도
-
-Prisma 스키마를 자동 적용하지 않는 이유는 안전성 때문입니다.
-
-- 실수로 스키마 변경이 DB에 즉시 반영되는 것 방지
-- 개발자가 의도를 가지고 명시적으로 실행하도록 설계
-
-### 🧑‍💻 Docker 없이 로컬 실행 (선택)
+### 🧑‍💻 Docker 없이 로컬 실행 (권장)
 
 Docker 전체 실행이 느릴 경우, **DB만 Docker로 실행**하고 Next.js는 네이티브로 실행할 수 있습니다.
 
@@ -189,7 +219,7 @@ Docker 전체 실행이 느릴 경우, **DB만 Docker로 실행**하고 Next.js�
 
 ```bash
 # 1. 의존성 설치
-npm install
+pnpm install
 
 # 2. 환경변수 설정
 cp .env.example .env
@@ -228,17 +258,17 @@ docker run -d \
 
 ```bash
 # 테이블 생성
-npx prisma db push
+pnpm db:push
 
 # 또는 완전히 새로 만들고 싶을 때 (기존 데이터 삭제)
-npx prisma db push --force-reset
+pnpm db:push --force-reset
 ```
 
 #### ▶ 개발 서버 실행
 
 ```bash
-npm run dev        # 웹 서버 (http://localhost:3000)
-npm run cron       # 워커 (별도 터미널에서)
+pnpm dev        # 웹 서버 (http://localhost:3000)
+pnpm cron       # 워커 (별도 터미널에서)
 ```
 
 #### ▶ DB 컨테이너 관리
@@ -268,28 +298,38 @@ docker rm -f postgres-local
 ## 📁 프로젝트 구조
 
 ```
-accommodation-monitor-web/
+accommodation-monitor/
+├── .github/
+│   └── workflows/          # CI/CD 워크플로우
+│       ├── ci.yml          # PR/push 검증
+│       ├── codeql.yml      # 보안 분석
+│       ├── publish-dev.yml # dev 이미지 빌드
+│       ├── release-tag.yml # 자동 태그 생성
+│       └── deploy-prod.yml # 프로덕션 배포
 ├── src/
-│   ├── app/                      # Next.js App Router
-│   │   ├── api/                  # API Routes
-│   │   │   ├── auth/             # NextAuth
-│   │   │   └── accommodations/   # 숙소 CRUD API
-│   │   ├── login/                # 로그인 페이지
-│   │   ├── dashboard/            # 대시보드
-│   │   └── accommodations/       # 숙소 관리 페이지
+│   ├── app/                # Next.js App Router
+│   │   ├── api/            # API Routes
+│   │   │   ├── auth/       # NextAuth
+│   │   │   └── accommodations/
+│   │   ├── login/          # 로그인 페이지
+│   │   ├── dashboard/      # 대시보드
+│   │   └── accommodations/ # 숙소 관리 페이지
+│   ├── components/         # React 컴포넌트
+│   ├── generated/          # Prisma 생성 파일
 │   ├── lib/
-│   │   ├── auth.ts               # NextAuth 설정
-│   │   ├── prisma.ts             # Prisma 클라이언트
-│   │   ├── checkers/             # Airbnb, Agoda 체커
-│   │   ├── kakao/                # 카카오톡 메시지
-│   │   └── cron/                 # 크론 워커
-│   └── types/                    # TypeScript 타입
+│   │   ├── auth.ts         # NextAuth 설정
+│   │   ├── prisma.ts       # Prisma 클라이언트
+│   │   ├── checkers/       # Airbnb, Agoda 체커
+│   │   ├── kakao/          # 카카오톡 메시지
+│   │   └── cron/           # 크론 워커
+│   └── types/              # TypeScript 타입
 ├── prisma/
-│   └── schema.prisma             # DB 스키마
-├── Dockerfile
-├── Dockerfile.worker
-├── docker-compose.yml
+│   ├── schema.prisma       # DB 스키마
+│   └── seed.ts             # 시드 데이터
+├── Dockerfile              # 멀티스테이지 빌드 (web/worker)
 ├── docker-compose.local.yml
+├── docker-compose.develop.yml
+├── docker-compose.production.yml
 └── package.json
 ```
 
@@ -298,12 +338,32 @@ accommodation-monitor-web/
 ## 📜 주요 npm 스크립트
 
 ```bash
-npm run dev               # Next.js 개발 서버
-npm run cron              # 워커 실행
-npm run db:push                # Prisma db push (Node 환경)
-npm run db:studio              # Prisma Studio (Node 환경)
-npm run local:docker:db:push   # Prisma db push (Docker 환경)
-npm run local:docker:db:studio # Prisma Studio (Docker 환경)
+# 개발
+pnpm dev                      # Next.js 개발 서버
+pnpm cron                     # 워커 실행
+pnpm build                    # 프로덕션 빌드
+
+# 코드 품질
+pnpm lint                     # ESLint 검사
+pnpm lint:fix                 # ESLint 자동 수정
+pnpm format                   # Prettier 포맷팅
+pnpm format:check             # 포맷 검사
+pnpm test                     # Vitest 테스트 실행
+
+# 데이터베이스
+pnpm db:generate              # Prisma Client 생성
+pnpm db:push                  # 스키마 적용 (개발용)
+pnpm db:migrate               # 마이그레이션 생성 (개발)
+pnpm db:migrate:deploy        # 마이그레이션 적용 (프로덕션)
+pnpm db:seed                  # 시드 데이터 적용
+pnpm db:studio                # Prisma Studio
+
+# Docker 로컬 환경
+pnpm local:docker:up          # 로컬 Docker 실행
+pnpm local:docker:up:build    # 빌드 후 실행
+pnpm local:docker:down        # 로컬 Docker 중지
+pnpm local:docker:db:push     # Docker 내 스키마 적용
+pnpm local:docker:db:studio   # Docker 내 Prisma Studio
 ```
 
 ---
@@ -320,6 +380,23 @@ npm run local:docker:db:studio # Prisma Studio (Docker 환경)
 | `KAKAO_CLIENT_ID`      | 카카오 REST API 키         |
 | `KAKAO_CLIENT_SECRET`  | 카카오 Client Secret       |
 | `CRON_SCHEDULE`        | 워커 실행 주기 (기본 30분) |
+| `WORKER_CONCURRENCY`   | 동시 처리 숙소 수          |
+| `BROWSER_POOL_SIZE`    | 브라우저 풀 크기           |
+
+---
+
+## 🧪 테스트
+
+```bash
+# 전체 테스트 실행
+pnpm test
+
+# 감시 모드
+pnpm vitest
+
+# 커버리지
+pnpm vitest --coverage
+```
 
 ---
 
