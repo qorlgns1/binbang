@@ -13,6 +13,8 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     restart: unless-stopped
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
 
   worker:
     image: kihoonbae/accommodation-monitor:worker-develop
@@ -29,6 +31,8 @@ services:
       CONTENT_WAIT_MS: ${CONTENT_WAIT_MS:-10000}
       PATTERN_RETRY_MS: ${PATTERN_RETRY_MS:-5000}
     restart: unless-stopped
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
     deploy:
       resources:
         limits:
