@@ -2,7 +2,7 @@ import type { Browser } from 'puppeteer';
 
 import { getEnvNumber } from '@/lib/env';
 
-import { createBrowser } from './browser';
+import { createBrowser, isRemoteBrowser } from './browser';
 
 type Waiter = {
   resolve: (browser: Browser) => void;
@@ -27,6 +27,14 @@ function isBrowserHealthy(browser: Browser): boolean {
 async function destroyBrowser(browser: Browser): Promise<void> {
   if (state.browsers.has(browser)) {
     state.browsers.delete(browser);
+  }
+  if (isRemoteBrowser()) {
+    try {
+      browser.disconnect();
+    } catch {
+      console.error('Failed to disconnect browser', browser);
+    }
+    return;
   }
   await browser.close().catch(() => {});
 }
@@ -121,6 +129,17 @@ export async function closeBrowserPool(): Promise<void> {
     if (waiter) {
       waiter.reject(new Error('Browser pool closed'));
     }
+  }
+
+  if (isRemoteBrowser()) {
+    for (const browser of browsers) {
+      try {
+        browser.disconnect();
+      } catch {
+        console.error('Failed to disconnect browser', browser);
+      }
+    }
+    return;
   }
 
   await Promise.all(browsers.map((browser) => browser.close().catch(() => {})));

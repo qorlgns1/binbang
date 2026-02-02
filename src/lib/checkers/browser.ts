@@ -26,8 +26,20 @@ function parseBlockedResourceTypes(): Set<string> {
 
 const BLOCKED_RESOURCE_TYPES = parseBlockedResourceTypes();
 const NAVIGATION_TIMEOUT_MS = getEnvNumber('NAVIGATION_TIMEOUT_MS', 25000);
+const REMOTE_BROWSER_WS_ENDPOINT = process.env.PUPPETEER_WS_ENDPOINT?.trim();
+const USE_REMOTE_BROWSER = Boolean(REMOTE_BROWSER_WS_ENDPOINT);
+
+export function isRemoteBrowser(): boolean {
+  return USE_REMOTE_BROWSER;
+}
 
 export async function createBrowser(): Promise<Browser> {
+  if (USE_REMOTE_BROWSER && REMOTE_BROWSER_WS_ENDPOINT) {
+    return puppeteer.connect({
+      browserWSEndpoint: REMOTE_BROWSER_WS_ENDPOINT,
+    });
+  }
+
   return puppeteer.launch({
     headless: true,
     protocolTimeout: 60000,

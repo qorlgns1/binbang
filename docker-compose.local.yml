@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  browser:
+    image: ghcr.io/browserless/chromium
+    container_name: accommodation-monitor-browser-local
+    environment:
+      TOKEN: ${BROWSERLESS_TOKEN:-local-token}
+      CONCURRENT: ${BROWSERLESS_CONCURRENT:-5}
+      TIMEOUT: ${BROWSERLESS_TIMEOUT:-300000}
+    expose:
+      - '3000'
+    shm_size: 1gb
+    logging:
+      driver: "none"
+
   db:
     image: postgres:15-alpine
     container_name: accommodation-monitor-db-local
@@ -44,6 +57,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
+      args:
+        INSTALL_CHROMIUM: "false"
     container_name: accommodation-monitor-worker-local
     environment:
       NODE_ENV: development
@@ -54,10 +69,13 @@ services:
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-3}
       BROWSER_POOL_SIZE: ${BROWSER_POOL_SIZE:-3}
       BLOCK_RESOURCE_TYPES: ${BLOCK_RESOURCE_TYPES:-image,media,font}
+      PUPPETEER_WS_ENDPOINT: ${PUPPETEER_WS_ENDPOINT:-ws://browser:3000?token=${BROWSERLESS_TOKEN:-local-token}}
       NAVIGATION_TIMEOUT_MS: ${NAVIGATION_TIMEOUT_MS:-25000}
       CONTENT_WAIT_MS: ${CONTENT_WAIT_MS:-10000}
       PATTERN_RETRY_MS: ${PATTERN_RETRY_MS:-5000}
     depends_on:
+      browser:
+        condition: service_started
       db:
         condition: service_healthy
 
