@@ -66,7 +66,11 @@ export function ToggleActiveButton({ id, isActive }: { id: string; isActive: boo
       onClick={handleToggle}
       disabled={toggleMutation.isPending}
       variant={optimisticActive ? 'secondary' : 'default'}
-      className={optimisticActive ? 'text-muted-foreground' : 'bg-status-success-foreground text-white hover:bg-status-success-foreground/80'}
+      className={
+        optimisticActive
+          ? 'text-muted-foreground'
+          : 'bg-status-success-foreground text-white hover:bg-status-success-foreground/80'
+      }
     >
       {toggleMutation.isPending ? '처리 중...' : optimisticActive ? '일시정지' : '모니터링 시작'}
     </Button>

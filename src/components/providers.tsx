@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, lazy, Suspense, useState } from 'react';
+import { type ReactNode, Suspense, lazy, useState } from 'react';
 
 import { SessionProvider } from 'next-auth/react';
 

@@ -169,7 +169,9 @@ export default function EditAccommodationPage() {
                 {parsedInfo?.platform && (
                   <Alert className='border-info-border bg-info text-info-foreground'>
                     <div className='flex items-center justify-between gap-4'>
-                      <AlertTitle className='text-sm font-medium text-info-foreground'>URL에서 정보를 찾았습니다</AlertTitle>
+                      <AlertTitle className='text-sm font-medium text-info-foreground'>
+                        URL에서 정보를 찾았습니다
+                      </AlertTitle>
                       <Button
                         type='button'
                         size='sm'
