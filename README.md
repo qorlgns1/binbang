@@ -63,6 +63,43 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 **Breaking Change**: Prisma 클라이언트 경로가 `@/generated/prisma`로 변경됨
 
+### v2.3.1 – import 누락 수정
+
+- **버그 수정**: `layout.tsx` import 정렬 시 누락된 import 복구
+  - `./globals.css`
+  - `@/components/providers`
+
+### v2.3.0 – ESLint 9 + Prettier 설정
+
+코드 품질 및 일관성 강화를 위한 린트/포맷팅 도구 설정.
+
+**새로운 기능**
+
+- **ESLint 9 flat config**
+  - TypeScript strict 규칙 적용
+  - React/React Hooks 규칙 적용
+  - Next.js core-web-vitals 규칙 적용
+  - 상위 폴더 상대경로 import 금지 (`../` → `@/` 강제)
+- **Prettier 설정**
+  - 싱글쿼트, 세미콜론, 줄 길이 120자
+  - JSX 속성 한 줄에 하나씩
+  - import 자동 정렬 (react → next → 외부 → @/ → ./)
+
+**코드 개선**
+
+- non-null assertion(`!`) 제거 → 안전한 null 체크로 변경
+- `import type` 일관 적용
+- 전체 코드 Prettier 포맷팅 적용
+
+**새로운 npm scripts**
+
+| 스크립트        | 설명              |
+| --------------- | ----------------- |
+| `lint`          | ESLint 실행       |
+| `lint:fix`      | ESLint 자동 수정  |
+| `format`        | Prettier 포맷팅   |
+| `format:check`  | Prettier 검사     |
+
 ### v2.2.0 – Google Analytics 및 SEO
 
 - Google Analytics 통합
