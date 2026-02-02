@@ -1,11 +1,4 @@
-export interface ParsedAccommodationUrl {
-  platform: 'AIRBNB' | 'AGODA' | null;
-  baseUrl: string;
-  checkIn: string | null;
-  checkOut: string | null;
-  adults: number | null;
-  name: string | null;
-}
+import type { ParsedAccommodationUrl } from '@/types/url';
 
 /**
  * 숙소 URL을 파싱하여 정보 추출

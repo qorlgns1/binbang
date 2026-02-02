@@ -47,3 +47,15 @@ jobs:
       - run: pnpm format:check
       - run: pnpm test
       - run: pnpm build
+
+  call-publish-dev:
+    name: Publish Dev Images
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/publish-dev.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

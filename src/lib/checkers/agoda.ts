@@ -1,6 +1,7 @@
+import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+
 import { baseCheck } from './baseChecker';
 import { AGODA_PATTERNS } from './constants';
-import type { AccommodationToCheck, CheckResult } from './types';
 import { calculateNights, formatDate } from './utils';
 
 export async function checkAgoda(accommodation: AccommodationToCheck): Promise<CheckResult> {

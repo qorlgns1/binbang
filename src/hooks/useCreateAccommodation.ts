@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { accommodationKeys } from '@/hooks/queryKeys';
-import type { Accommodation, CreateAccommodationInput } from '@/hooks/types';
+import type { Accommodation, CreateAccommodationInput } from '@/types/accommodation';
 
 async function createAccommodation(input: CreateAccommodationInput): Promise<Accommodation> {
   const res = await fetch('/api/accommodations', {

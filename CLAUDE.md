@@ -218,8 +218,11 @@ pnpm dlx shadcn@latest add <component> --overwrite
 권장 검증 명령:
 
 ```bash
+pnpm ci:check   # lint + format:check + test + build (CI와 동일)
+# 또는 개별 실행:
 pnpm lint
+pnpm format:check
 pnpm test
 pnpm build
-pnpm cron   # 로컬에서 워커 단독 실행 확인
+pnpm cron       # 로컬에서 워커 단독 실행 확인
 ```

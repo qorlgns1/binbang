@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { accommodationKeys } from '@/hooks/queryKeys';
-import type { Accommodation, UpdateAccommodationInput } from '@/hooks/types';
+import type { Accommodation, UpdateAccommodationInput } from '@/types/accommodation';
 
 async function updateAccommodation({
   id,

@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { accommodationKeys } from '@/hooks/queryKeys';
-import type { CheckLogsPage } from '@/hooks/types';
+import type { CheckLogsPage } from '@/types/accommodation';
 
 async function fetchCheckLogs(accommodationId: string, cursor?: string): Promise<CheckLogsPage> {
   const params = new URLSearchParams();

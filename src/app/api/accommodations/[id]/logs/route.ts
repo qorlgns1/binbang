@@ -4,12 +4,9 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import type { RouteParams } from '@/types/api';
 
 const DEFAULT_LIMIT = 20;
-
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions);

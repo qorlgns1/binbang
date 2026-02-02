@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import type { RouteParams } from '@/types/api';
 
 const updateAccommodationSchema = z.object({
   name: z.string().min(1).optional(),
@@ -21,10 +22,6 @@ const updateAccommodationSchema = z.object({
   adults: z.number().min(1).max(20).optional(),
   isActive: z.boolean().optional(),
 });
-
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
 
 // GET: 숙소 상세 조회
 export async function GET(request: NextRequest, { params }: RouteParams) {

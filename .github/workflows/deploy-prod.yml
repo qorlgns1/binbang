@@ -52,7 +52,6 @@ jobs:
         with:
           context: .
           target: web
-          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta-web.outputs.tags }}
           labels: ${{ steps.meta-web.outputs.labels }}
@@ -80,7 +79,6 @@ jobs:
         with:
           context: .
           target: worker
-          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta-worker.outputs.tags }}
           labels: ${{ steps.meta-worker.outputs.labels }}

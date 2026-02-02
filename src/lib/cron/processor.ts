@@ -1,28 +1,12 @@
-import type { AvailabilityStatus, Platform } from '@/generated/prisma/client';
+import type { AvailabilityStatus } from '@/generated/prisma/client';
 import { checkAccommodation } from '@/lib/checkers';
 import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
+import type { AccommodationWithUser } from '@/types/accommodation';
 
 import { CRON_CONFIG } from './config';
 import { createLimiter } from './limiter';
-
-// ============================================
-// 타입 정의
-// ============================================
-interface AccommodationWithUser {
-  id: string;
-  name: string;
-  url: string;
-  checkIn: Date;
-  checkOut: Date;
-  adults: number;
-  platform: Platform;
-  lastStatus: AvailabilityStatus | null;
-  user: {
-    id: string;
-    kakaoAccessToken: string | null;
-  };
-}
+import { determineStatus, shouldSendAvailabilityNotification } from './statusUtils';
 
 // ============================================
 // 상태 관리
@@ -63,15 +47,6 @@ async function processAccommodation(accommodation: AccommodationWithUser): Promi
   } catch (error) {
     console.error(`  💥 처리 실패:`, error);
   }
-}
-
-// ============================================
-// 상태 판단
-// ============================================
-function determineStatus(result: { error: string | null; available: boolean }): AvailabilityStatus {
-  if (result.error) return 'ERROR';
-  if (result.available) return 'AVAILABLE';
-  return 'UNAVAILABLE';
 }
 
 // ============================================
@@ -119,8 +94,11 @@ async function sendNotificationIfNeeded(
   status: AvailabilityStatus,
   result: { price: string | null; checkUrl: string },
 ): Promise<void> {
-  const shouldNotify =
-    status === 'AVAILABLE' && accommodation.lastStatus !== 'AVAILABLE' && accommodation.user.kakaoAccessToken;
+  const shouldNotify = shouldSendAvailabilityNotification(
+    status,
+    accommodation.lastStatus,
+    Boolean(accommodation.user.kakaoAccessToken),
+  );
 
   if (!shouldNotify) return;
 

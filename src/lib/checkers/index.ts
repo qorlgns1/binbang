@@ -1,8 +1,9 @@
+import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+
 import { checkAgoda } from './agoda';
 import { checkAirbnb } from './airbnb';
-import type { AccommodationToCheck, CheckResult } from './types';
 
-export type { CheckResult, AccommodationToCheck };
+export type { AccommodationToCheck, CheckResult };
 
 export async function checkAccommodation(accommodation: AccommodationToCheck): Promise<CheckResult> {
   switch (accommodation.platform) {

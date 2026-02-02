@@ -1,6 +1,6 @@
 {
   "name": "accommodation-monitor-web",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
@@ -14,6 +14,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "ci:check": "pnpm lint && pnpm format:check && pnpm test && pnpm build",
     "test": "vitest run",
     "cron": "tsx src/lib/cron/worker.ts",
     "db:generate": "prisma generate",
