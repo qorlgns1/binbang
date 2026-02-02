@@ -1,11 +1,10 @@
 services:
   web:
-    image: kihoonbae/accommodation-monitor:web-develop
+    image: kihoonbae/accommodation-monitor:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
     ports:
       - '4000:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -13,12 +12,13 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     restart: unless-stopped
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
 
   worker:
-    image: kihoonbae/accommodation-monitor:worker-develop
+    image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
       CRON_SCHEDULE: ${CRON_SCHEDULE:-*/30 * * * *}
@@ -29,6 +29,8 @@ services:
       CONTENT_WAIT_MS: ${CONTENT_WAIT_MS:-10000}
       PATTERN_RETRY_MS: ${PATTERN_RETRY_MS:-5000}
     restart: unless-stopped
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
     deploy:
       resources:
         limits:
