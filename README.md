@@ -137,7 +137,7 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 | ⏱️ 타임아웃    | `NAVIGATION_TIMEOUT_MS` 기본값 25초로 단축, Navigation timeout 발생 시 재시도 제외                                                                    |
 | 🚫 리소스 차단 | `BLOCK_RESOURCE_TYPES` 환경변수로 이미지/미디어/폰트 요청 차단 (옵션)                                                                                 |
 
-**신규 환경변수**: `BROWSER_POOL_SIZE`, `BLOCK_RESOURCE_TYPES`, `NAVIGATION_TIMEOUT_MS`, `CONTENT_WAIT_MS`, `PATTERN_RETRY_MS`, `PUPPETEER_WS_ENDPOINT`
+**신규 환경변수**: `BROWSER_POOL_SIZE`, `BLOCK_RESOURCE_TYPES`, `NAVIGATION_TIMEOUT_MS`, `CONTENT_WAIT_MS`, `PATTERN_RETRY_MS`
 
 ### v2.0.0 – 웹 애플리케이션 전환
 
@@ -508,27 +508,6 @@ pnpm cron       # 워커 (별도 터미널에서)
 | `CONTENT_WAIT_MS`       | 콘텐츠 로딩 대기 시간 (ms)     | `10000`            |
 | `PATTERN_RETRY_MS`      | 패턴 재확인 대기 시간 (ms)     | `5000`             |
 | `BLOCK_RESOURCE_TYPES`  | 차단할 리소스 타입 (쉼표 구분) | `image,media,font` |
-| `PUPPETEER_WS_ENDPOINT` | 원격 브라우저 WebSocket 엔드포인트 | (없음)          |
-
-### 원격 브라우저 사용 (선택)
-
-- `PUPPETEER_WS_ENDPOINT`를 설정하면 로컬 Chromium 대신 원격 브라우저에 연결합니다.
-- `docker-compose.local.yml`, `docker-compose.develop.yml`에는 `ghcr.io/browserless/chromium` 서비스가 포함되어 있습니다.
-- 브라우저 서비스는 토큰이 필요하므로 `PUPPETEER_WS_ENDPOINT`에 `?token=...`을 포함해야 합니다. (로컬은 `local-token` 기본값)
-- 브라우저 서비스는 포트를 퍼블리싱하지 않아 내부 네트워크에서만 접근 가능합니다.
-- worker 이미지에서 Chromium 설치를 생략하려면 빌드 시 아래 옵션을 사용하세요.
-
-```bash
-docker build --target worker --build-arg INSTALL_CHROMIUM=false -t accommodation-monitor-worker .
-```
-
-### Browserless 설정 (선택)
-
-| 변수                    | 설명                                 | 기본값     |
-| ----------------------- | ------------------------------------ | ---------- |
-| `BROWSERLESS_TOKEN`     | 브라우저 서비스 접근 토큰            | `local-token` |
-| `BROWSERLESS_CONCURRENT`| 동시 세션 수                          | `5`        |
-| `BROWSERLESS_TIMEOUT`   | 세션 타임아웃 (ms)                    | `300000`   |
 
 ### Analytics / SEO (v2.2.0+)
 
