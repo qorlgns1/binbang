@@ -118,6 +118,7 @@ jobs:
           script: |
             set -e
             cd ~/workspace/accommodation-monitor
+            git pull
             touch .env
             IMAGE_TAG=${{ github.ref_name }}
             WEB_DIGEST=${{ needs.docker.outputs.web_digest }}
