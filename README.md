@@ -56,6 +56,48 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 ---
 
+## 🚀 운영 배포 (EC2 + RDS, TLS)
+
+RDS가 SSL/TLS 검증을 요구하는 경우, **CA 번들을 컨테이너에 마운트하고**
+`DATABASE_URL`에 `sslrootcert`를 지정해야 정상 연결됩니다.
+
+### 1) EC2에 RDS CA 번들 다운로드
+
+```bash
+sudo mkdir -p /etc/ssl/rds
+sudo curl -L "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" \
+  -o /etc/ssl/rds/global-bundle.pem
+```
+
+### 2) docker-compose에 CA 번들 마운트
+
+`docker-compose.yml` 또는 `docker-compose.develop.yml`에 아래 볼륨이 필요합니다.
+
+```yml
+volumes:
+  - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
+```
+
+### 3) DATABASE_URL 설정 (sslrootcert 포함)
+
+`.env`에 아래처럼 설정합니다.
+
+```bash
+DATABASE_URL=postgresql://username:password@your-rds-endpoint.amazonaws.com:5432/accommodation_monitor?sslmode=verify-full&sslrootcert=/etc/ssl/certs/rds-global-bundle.pem
+```
+
+> 비밀번호에 특수문자가 있으면 URL 인코딩이 필요합니다.  
+> 예: `@` → `%40`, `:` → `%3A`, `!` → `%21`
+
+### 4) 컨테이너 재시작
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate --pull always
+```
+
+---
+
 ## 🚀 로컬 개발
 
 ### 권장 방식: Docker로 전체 실행
