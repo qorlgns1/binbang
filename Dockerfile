@@ -46,9 +46,9 @@ EXPOSE 3000
 CMD ["node", "server.js"]
 
 # ============================================
-# Stage 4: Worker Runner
+# Stage 4-a: Worker Base (Chromium dependencies only)
 # ============================================
-FROM base AS worker
+FROM base AS worker-base
 
 RUN apt-get update && apt-get install -y \
     chromium \
@@ -58,6 +58,11 @@ RUN apt-get update && apt-get install -y \
     libpangocairo-1.0-0 libstdc++6 libx11-6 libxcb1 libxcomposite1 \
     libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
     libxss1 libxtst6 && rm -rf /var/lib/apt/lists/*
+
+# ============================================
+# Stage 4-b: Worker Runner
+# ============================================
+FROM worker-base AS worker
 
 ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
