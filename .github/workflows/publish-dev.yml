@@ -1,5 +1,7 @@
 name: Publish Dev Images
 
+run-name: Publish Dev Images - ${{ github.event.workflow_run.head_branch }}
+
 on:
   workflow_run:
     workflows: ['CI']
