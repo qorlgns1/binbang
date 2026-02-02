@@ -4,6 +4,13 @@ run-name: Publish Dev Images - ${{ github.ref_name }}
 
 on:
   workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        description: 'Docker Hub username'
+        required: true
+      DOCKERHUB_TOKEN:
+        description: 'Docker Hub access token'
+        required: true
   workflow_dispatch:
 
 permissions: {}
