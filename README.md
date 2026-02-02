@@ -1,4 +1,4 @@
-# 🏨 Accommodation Monitor Web
+# 🏨 Accommodation Monitor
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-green.svg)](https://nodejs.org/)
@@ -6,9 +6,9 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
 [![CI](https://github.com/qorlgns1/accommodation-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/accommodation-monitor/actions/workflows/ci.yml)
 
-> **v1.x에서 완전히 재작성되었습니다!**
+Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내주는 웹 애플리케이션입니다.
 
-### 이전 버전 (v1.x)
+> 인기 숙소의 취소 건을 잡기 위해 만들었습니다. 🇨🇭
 
 - CLI 기반 모니터링 도구
 - `config.js` 파일에서 숙소 직접 편집
@@ -118,7 +118,7 @@
 - Docker / Docker Compose
 - PostgreSQL (로컬은 Docker로 자동 생성)
 - 카카오 개발자 앱
-- 구글 OAuth 클라이언트
+- 구글 OAuth 클라이언트 (선택)
 
 ---
 
@@ -308,17 +308,11 @@ pnpm local:docker:db:push
 - 테이블 / 인덱스 / 관계 생성
 - 기존 데이터는 삭제하지 않음
 
-#### ▶ DB를 완전히 새로 만들고 싶을 때
-
-```bash
-docker compose -f docker-compose.local.yml down -v
-docker compose -f docker-compose.local.yml up
+# 5. 브라우저 접속
+open http://localhost:3000
 ```
 
-> ⚠️ `-v` 옵션은 PostgreSQL 데이터 전체 삭제  
-> 로컬 테스트용에서만 사용하세요.
-
-### 📌 요약 (한 눈에 보기)
+### Docker 없이 로컬 실행
 
 | 항목                 | 자동 여부                   |
 | -------------------- | --------------------------- |
@@ -387,7 +381,8 @@ pnpm dev        # 웹 서버 (http://localhost:3000)
 pnpm cron       # 워커 (별도 터미널)
 ```
 
-#### ▶ Prisma 스키마 반영
+# 3. .env에서 DATABASE_URL을 localhost로 설정
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor_local
 
 ```bash
 # 테이블 생성
@@ -397,34 +392,67 @@ pnpm db:push
 pnpm db:push --force-reset
 ```
 
-#### ▶ 개발 서버 실행
+### OAuth Redirect URI 설정
 
 ```bash
 pnpm dev        # 웹 서버 (http://localhost:3000)
 pnpm cron       # 워커 (별도 터미널에서)
 ```
 
-#### ▶ DB 컨테이너 관리
-
-```bash
-# 컨테이너 중지
-docker stop postgres-local
-
-# 컨테이너 재시작
-docker start postgres-local
-
-# 컨테이너 삭제 (데이터도 삭제됨)
-docker rm -f postgres-local
-```
-
 ---
 
-## 🔐 OAuth Redirect URI 설정
+## 🔧 환경변수
 
-| Provider | Redirect URI                                     |
-| -------- | ------------------------------------------------ |
-| 카카오   | `http://localhost:3000/api/auth/callback/kakao`  |
-| 구글     | `http://localhost:3000/api/auth/callback/google` |
+### 필수
+
+| 변수                  | 설명                                       |
+| --------------------- | ------------------------------------------ |
+| `DATABASE_URL`        | PostgreSQL 연결 문자열                     |
+| `NEXTAUTH_URL`        | 서비스 URL                                 |
+| `NEXTAUTH_SECRET`     | 세션 암호화 키 (`openssl rand -base64 32`) |
+| `KAKAO_CLIENT_ID`     | 카카오 REST API 키                         |
+| `KAKAO_CLIENT_SECRET` | 카카오 Client Secret                       |
+
+### 선택 (OAuth)
+
+| 변수                   | 설명                     |
+| ---------------------- | ------------------------ |
+| `GOOGLE_CLIENT_ID`     | 구글 OAuth Client ID     |
+| `GOOGLE_CLIENT_SECRET` | 구글 OAuth Client Secret |
+
+### Worker 설정
+
+| 변수                 | 설명              | 기본값         |
+| -------------------- | ----------------- | -------------- |
+| `CRON_SCHEDULE`      | 실행 주기 (cron)  | `*/30 * * * *` |
+| `WORKER_CONCURRENCY` | 동시 처리 숙소 수 | `1`            |
+| `BROWSER_POOL_SIZE`  | 브라우저 풀 크기  | `1`            |
+
+### 브라우저/체커 설정 (v2.1.0+)
+
+| 변수                    | 설명                           | 기본값             |
+| ----------------------- | ------------------------------ | ------------------ |
+| `NAVIGATION_TIMEOUT_MS` | 네비게이션 타임아웃 (ms)       | `25000`            |
+| `CONTENT_WAIT_MS`       | 콘텐츠 로딩 대기 시간 (ms)     | `10000`            |
+| `PATTERN_RETRY_MS`      | 패턴 재확인 대기 시간 (ms)     | `5000`             |
+| `BLOCK_RESOURCE_TYPES`  | 차단할 리소스 타입 (쉼표 구분) | `image,media,font` |
+
+### Analytics / SEO (v2.2.0+)
+
+| 변수                       | 설명                            |
+| -------------------------- | ------------------------------- |
+| `NEXT_PUBLIC_GA_ID`        | Google Analytics 측정 ID        |
+| `GOOGLE_SITE_VERIFICATION` | Google Search Console 인증 코드 |
+| `NAVER_SITE_VERIFICATION`  | 네이버 서치어드바이저 인증 코드 |
+
+### 메모리 사용량 참고
+
+브라우저 1개당 약 150~300MB를 사용합니다.
+
+| RAM | 권장 `BROWSER_POOL_SIZE` |
+| --- | ------------------------ |
+| 2GB | 1~2                      |
+| 4GB | 2~3                      |
 
 ---
 
@@ -547,7 +575,7 @@ accommodation-monitor/
 
 ---
 
-## 📜 주요 npm 스크립트
+## 🤝 Contributing
 
 ```bash
 # 개발
@@ -578,9 +606,14 @@ pnpm local:docker:db:push     # Docker 내 스키마 적용
 pnpm local:docker:db:studio   # Docker 내 Prisma Studio
 ```
 
+### 이슈 & PR
+
+- 버그 리포트나 기능 제안은 [Issues](https://github.com/qorlgns1/accommodation-monitor/issues)에 등록해주세요
+- PR 전에 관련 이슈가 있는지 확인해주세요
+
 ---
 
-## 🔧 환경변수
+## 📄 라이센스
 
 | 변수                   | 설명                       |
 | ---------------------- | -------------------------- |
@@ -612,6 +645,9 @@ pnpm vitest --coverage
 
 ---
 
-## 📄 라이센스
+## 🙏 Acknowledgments
 
-MIT License
+- [Puppeteer](https://pptr.dev/) - 웹 스크래핑
+- [Next.js](https://nextjs.org/) - React 프레임워크
+- [Prisma](https://www.prisma.io/) - ORM
+- [NextAuth.js](https://next-auth.js.org/) - 인증
