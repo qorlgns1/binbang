@@ -8,6 +8,37 @@ import prisma from '@/lib/prisma';
 
 import { DeleteButton, ToggleActiveButton } from './actions';
 
+const statusColors: Record<string, string> = {
+  AVAILABLE: 'text-green-600 bg-green-100',
+  UNAVAILABLE: 'text-red-600 bg-red-100',
+  ERROR: 'text-yellow-600 bg-yellow-100',
+  UNKNOWN: 'text-gray-600 bg-gray-100',
+};
+
+const statusText: Record<string, string> = {
+  AVAILABLE: '예약 가능',
+  UNAVAILABLE: '예약 불가',
+  ERROR: '오류',
+  UNKNOWN: '확인 중',
+};
+
+function getStatusColor(status: string): string {
+  return statusColors[status] ?? statusColors.UNKNOWN;
+}
+
+function getStatusLabel(status: string): string {
+  return statusText[status] ?? statusText.UNKNOWN;
+}
+
+interface CheckLogItem {
+  id: string;
+  status: string;
+  price: string | null;
+  errorMessage: string | null;
+  notificationSent: boolean;
+  createdAt: Date;
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -37,20 +68,6 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const statusColors = {
-    AVAILABLE: 'text-green-600 bg-green-100',
-    UNAVAILABLE: 'text-red-600 bg-red-100',
-    ERROR: 'text-yellow-600 bg-yellow-100',
-    UNKNOWN: 'text-gray-600 bg-gray-100',
-  };
-
-  const statusText = {
-    AVAILABLE: '예약 가능',
-    UNAVAILABLE: '예약 불가',
-    ERROR: '오류',
-    UNKNOWN: '확인 중',
-  };
-
   return (
     <div className='min-h-screen bg-gray-50'>
       <header className='bg-white shadow-sm'>
@@ -72,14 +89,20 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
               <div className='flex items-center gap-3 mb-2'>
                 <h1 className='text-2xl font-bold'>{accommodation.name}</h1>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[accommodation.lastStatus]}`}
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(accommodation.lastStatus)}`}
                 >
-                  {statusText[accommodation.lastStatus]}
+                  {getStatusLabel(accommodation.lastStatus)}
                 </span>
               </div>
               <p className='text-gray-500'>{accommodation.platform}</p>
             </div>
             <div className='flex gap-2'>
+              <Link
+                href={`/accommodations/${accommodation.id}/edit`}
+                className='px-4 py-2 text-primary-600 border border-primary-300 rounded-lg hover:bg-primary-50 transition-colors'
+              >
+                수정
+              </Link>
               <ToggleActiveButton
                 id={accommodation.id}
                 isActive={accommodation.isActive}
@@ -139,13 +162,13 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
             <div className='p-12 text-center text-gray-500'>아직 체크 로그가 없습니다</div>
           ) : (
             <div className='divide-y max-h-96 overflow-y-auto'>
-              {accommodation.checkLogs.map((log) => (
+              {accommodation.checkLogs.map((log: CheckLogItem) => (
                 <div
                   key={log.id}
                   className='p-4 flex items-center gap-4'
                 >
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[log.status]}`}>
-                    {statusText[log.status]}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(log.status)}`}>
+                    {getStatusLabel(log.status)}
                   </span>
                   <span className='flex-1 text-sm'>
                     {log.price && `${log.price}`}
