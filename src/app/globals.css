@@ -1,14 +1,175 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/**
+ * globals.css
+ * 
+ * Tailwind v4 + shadcn-ui v3 스타일 기반
+ * OKLCH 색상 공간 사용으로 perceptual uniformity 확보
+ * semantic 토큰 중심으로 유지보수성 강화
+ */
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 250, 250, 250;
-  --background-end-rgb: 255, 255, 255;
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar 관련 커스텀 토큰 (필요 시 확장) */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius 변형 (shadcn 기본 + 확장) */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.125rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+  --radius-2xl: calc(var(--radius) + 0.5rem);
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+:root {
+  --background: oklch(99.9% 0.002 0);
+  --foreground: oklch(14% 0.03 260);
+
+  --card: oklch(99.5% 0.005 0);
+  --card-foreground: oklch(14% 0.03 260);
+
+  --popover: oklch(99.5% 0.005 0);
+  --popover-foreground: oklch(14% 0.03 260);
+
+  --primary: oklch(65% 0.18 250); /* 생기있는 청보라 계열 */
+  --primary-foreground: oklch(98% 0.01 0);
+
+  --secondary: oklch(96% 0.008 0);
+  --secondary-foreground: oklch(20% 0.02 260);
+
+  --muted: oklch(96% 0.008 250);
+  --muted-foreground: oklch(55% 0.03 260);
+
+  --accent: oklch(96% 0.02 200); /* 살짝 청록 느낌 */
+  --accent-foreground: oklch(20% 0.02 260);
+
+  --destructive: oklch(58% 0.22 25); /* 경고/삭제용 레드 */
+  --destructive-foreground: oklch(98% 0.01 0);
+
+  --border: oklch(92% 0.01 0);
+  --input: oklch(92% 0.01 0);
+  --ring: oklch(70% 0.15 250);
+
+  --chart-1: oklch(80% 0.12 220); /* 차트 색상 다양화 */
+  --chart-2: oklch(70% 0.15 180);
+  --chart-3: oklch(62% 0.18 140);
+  --chart-4: oklch(55% 0.16 60);
+  --chart-5: oklch(48% 0.14 300);
+
+  /* Sidebar (기존 유지하면서 chroma 보강) */
+  --sidebar: oklch(99% 0.003 0);
+  --sidebar-foreground: oklch(14% 0.03 260);
+  --sidebar-primary: oklch(65% 0.18 250);
+  --sidebar-primary-foreground: oklch(98% 0.01 0);
+  --sidebar-accent: oklch(96% 0.008 250);
+  --sidebar-accent-foreground: oklch(20% 0.02 260);
+  --sidebar-border: oklch(92% 0.01 0);
+  --sidebar-ring: oklch(70% 0.15 250);
+}
+
+.dark {
+  --background: oklch(12% 0.02 260);
+  --foreground: oklch(98% 0.01 0);
+
+  --card: oklch(18% 0.03 260);
+  --card-foreground: oklch(98% 0.01 0);
+
+  --popover: oklch(18% 0.03 260);
+  --popover-foreground: oklch(98% 0.01 0);
+
+  --primary: oklch(72% 0.16 250); /* dark에서도 생기 유지 */
+  --primary-foreground: oklch(12% 0.02 260);
+
+  --secondary: oklch(26% 0.03 260);
+  --secondary-foreground: oklch(98% 0.01 0);
+
+  --muted: oklch(26% 0.03 260);
+  --muted-foreground: oklch(70% 0.04 260);
+
+  --accent: oklch(37% 0.04 200);
+  --accent-foreground: oklch(98% 0.01 0);
+
+  --destructive: oklch(70% 0.19 22);
+  --destructive-foreground: oklch(98% 0.01 0);
+
+  --border: oklch(92% 0.01 0 / 0.15);
+  --input: oklch(92% 0.01 0 / 0.2);
+  --ring: oklch(55% 0.12 250);
+
+  --chart-1: oklch(80% 0.12 220);
+  --chart-2: oklch(70% 0.15 180);
+  --chart-3: oklch(62% 0.18 140);
+  --chart-4: oklch(55% 0.16 60);
+  --chart-5: oklch(48% 0.14 300);
+
+  /* Sidebar dark */
+  --sidebar: oklch(18% 0.03 260);
+  --sidebar-foreground: oklch(98% 0.01 0);
+  --sidebar-primary: oklch(72% 0.16 250);
+  --sidebar-primary-foreground: oklch(12% 0.02 260);
+  --sidebar-accent: oklch(26% 0.03 260);
+  --sidebar-accent-foreground: oklch(98% 0.01 0);
+  --sidebar-border: oklch(92% 0.01 0 / 0.15);
+  --sidebar-ring: oklch(55% 0.12 250);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+    font-feature-settings:
+      'liga' 1,
+      'calt' 1;
+  }
+}
+
+/* 추가적인 글로벌 스타일 (필요 시 확장) */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

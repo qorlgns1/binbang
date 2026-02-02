@@ -5,6 +5,9 @@ import { Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 // useSearchParams를 사용하는 컴포넌트는 반드시 Suspense 안에 있어야 함
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -12,15 +15,16 @@ function LoginForm() {
 
   return (
     <div className='w-full max-w-md'>
-      <div className='bg-white rounded-2xl shadow-xl p-8'>
-        <h1 className='text-2xl font-bold text-center mb-2'>로그인</h1>
-        <p className='text-gray-500 text-center mb-8'>소셜 계정으로 간편하게 로그인하세요</p>
-
-        <div className='space-y-4'>
+      <Card className='shadow-xl'>
+        <CardHeader className='text-center'>
+          <CardTitle className='text-2xl'>로그인</CardTitle>
+          <CardDescription>소셜 계정으로 간편하게 로그인하세요</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
           {/* 카카오 로그인 */}
-          <button
+          <Button
             onClick={() => signIn('kakao', { callbackUrl })}
-            className='w-full flex items-center justify-center gap-3 bg-[#FEE500] text-[#191919] py-3 px-4 rounded-lg font-medium hover:bg-[#FDD800] transition-colors'
+            className='w-full justify-center gap-3 bg-[#FEE500] text-[#191919] hover:bg-[#FDD800]'
           >
             <svg
               width='24'
@@ -31,12 +35,13 @@ function LoginForm() {
               <path d='M12 3C6.477 3 2 6.463 2 10.742c0 2.782 1.86 5.22 4.656 6.585-.145.525-.936 3.385-1.008 3.623 0 0-.02.168.089.233.109.065.236.031.236.031.313-.043 3.624-2.363 4.193-2.766.588.082 1.2.125 1.834.125 5.523 0 10-3.463 10-7.742S17.523 3 12 3z' />
             </svg>
             카카오로 로그인
-          </button>
+          </Button>
 
           {/* 구글 로그인 */}
-          <button
+          <Button
+            variant='outline'
             onClick={() => signIn('google', { callbackUrl })}
-            className='w-full flex items-center justify-center gap-3 bg-white text-gray-700 py-3 px-4 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-colors'
+            className='w-full justify-center gap-3'
           >
             <svg
               width='24'
@@ -61,13 +66,13 @@ function LoginForm() {
               />
             </svg>
             구글로 로그인
-          </button>
-        </div>
+          </Button>
 
-        <p className='text-xs text-gray-400 text-center mt-8'>
-          카카오 로그인 시 카카오톡 알림 기능을 사용할 수 있습니다
-        </p>
-      </div>
+          <p className='text-xs text-muted-foreground text-center pt-2'>
+            카카오 로그인 시 카카오톡 알림 기능을 사용할 수 있습니다
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -76,14 +81,16 @@ function LoginForm() {
 function LoginFormFallback() {
   return (
     <div className='w-full max-w-md'>
-      <div className='bg-white rounded-2xl shadow-xl p-8'>
-        <div className='h-8 w-24 bg-gray-200 rounded mx-auto mb-2 animate-pulse' />
-        <div className='h-4 w-48 bg-gray-200 rounded mx-auto mb-8 animate-pulse' />
-        <div className='space-y-4'>
-          <div className='w-full h-12 bg-gray-200 rounded-lg animate-pulse' />
-          <div className='w-full h-12 bg-gray-200 rounded-lg animate-pulse' />
-        </div>
-      </div>
+      <Card className='shadow-xl'>
+        <CardHeader className='text-center'>
+          <div className='h-8 w-24 bg-muted rounded mx-auto mb-2 animate-pulse' />
+          <div className='h-4 w-48 bg-muted rounded mx-auto mb-2 animate-pulse' />
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='w-full h-12 bg-muted rounded-lg animate-pulse' />
+          <div className='w-full h-12 bg-muted rounded-lg animate-pulse' />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -91,7 +98,7 @@ function LoginFormFallback() {
 // 메인 페이지 - Suspense로 LoginForm을 감싸서 export
 export default function LoginPage() {
   return (
-    <main className='min-h-screen flex items-center justify-center p-8'>
+    <main className='min-h-screen flex items-center justify-center p-8 bg-muted/40'>
       <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>

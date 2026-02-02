@@ -4,17 +4,21 @@ import { useState } from 'react';
 
 import { signIn, signOut } from 'next-auth/react';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+
 export function KakaoAlertBanner() {
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (!isExpanded) {
     return (
-      <button
+      <Button
+        variant='link'
         onClick={() => setIsExpanded(true)}
-        className='mb-4 text-sm text-yellow-600 hover:underline'
+        className='mb-4 px-0 text-sm text-yellow-700'
       >
         ⚠️ 카카오톡 알림 설정 안내 보기
-      </button>
+      </Button>
     );
   }
 
@@ -25,19 +29,19 @@ export function KakaoAlertBanner() {
   };
 
   return (
-    <div className='mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4'>
-      <div className='flex items-start justify-between'>
+    <Alert className='mb-6 border-yellow-200 bg-yellow-50 text-yellow-900'>
+      <div className='flex items-start justify-between gap-4'>
         <div className='flex gap-3'>
           <span className='text-2xl'>⚠️</span>
           <div>
-            <h3 className='font-semibold text-yellow-800 mb-1'>카카오톡 알림을 받을 수 없습니다</h3>
-            <p className='text-sm text-yellow-700 mb-3'>
+            <AlertTitle className='text-yellow-900'>카카오톡 알림을 받을 수 없습니다</AlertTitle>
+            <AlertDescription className='text-yellow-800'>
               현재 Google 계정으로 로그인되어 있습니다. 숙소 예약 가능 알림을 카카오톡으로 받으려면 카카오 계정으로
               로그인해주세요.
-            </p>
-            <button
+            </AlertDescription>
+            <Button
               onClick={handleKakaoLogin}
-              className='inline-flex items-center gap-2 bg-[#FEE500] text-[#191919] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#FDD800] transition-colors'
+              className='mt-3 inline-flex items-center gap-2 bg-[#FEE500] text-[#191919] hover:bg-[#FDD800]'
             >
               <svg
                 width='18'
@@ -48,13 +52,16 @@ export function KakaoAlertBanner() {
                 <path d='M12 3C6.477 3 2 6.463 2 10.742c0 2.782 1.86 5.22 4.656 6.585-.145.525-.936 3.385-1.008 3.623 0 0-.02.168.089.233.109.065.236.031.236.031.313-.043 3.624-2.363 4.193-2.766.588.082 1.2.125 1.834.125 5.523 0 10-3.463 10-7.742S17.523 3 12 3z' />
               </svg>
               카카오로 다시 로그인
-            </button>
+            </Button>
           </div>
         </div>
-        <button
+        <Button
+          type='button'
+          variant='ghost'
+          size='icon'
           onClick={() => setIsExpanded(false)}
-          className='text-yellow-600 hover:text-yellow-800 p-1'
           aria-label='닫기'
+          className='text-yellow-700 hover:text-yellow-900'
         >
           <svg
             width='20'
@@ -66,8 +73,8 @@ export function KakaoAlertBanner() {
           >
             <path d='M18 6L6 18M6 6l12 12' />
           </svg>
-        </button>
+        </Button>
       </div>
-    </div>
+    </Alert>
   );
 }
