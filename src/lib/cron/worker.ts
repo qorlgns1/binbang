@@ -16,6 +16,25 @@ console.log(`\n🚀 숙소 모니터링 워커 시작`);
 logConfig();
 console.log(`⏰ 다음 실행 대기 중...\n`);
 
+// Worker Heartbeat 기록
+prisma.workerHeartbeat
+  .upsert({
+    where: { id: 'singleton' },
+    update: {
+      startedAt: new Date(),
+      lastHeartbeatAt: new Date(),
+      schedule: CRON_CONFIG.schedule,
+    },
+    create: {
+      id: 'singleton',
+      startedAt: new Date(),
+      schedule: CRON_CONFIG.schedule,
+    },
+  })
+  .catch((error) => {
+    console.error('Error starting worker heartbeat:', error);
+  });
+
 // ============================================
 // 초기 실행
 // ============================================

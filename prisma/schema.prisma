@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 // NextAuth.js 필수 모델
 model Account {
   id                String  @id @default(cuid())
@@ -42,6 +47,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  role          Role      @default(USER)
   accounts      Account[]
   sessions      Session[]
 
@@ -110,6 +116,18 @@ model CheckLog {
 
   @@index([accommodationId])
   @@index([createdAt])
+}
+
+model WorkerHeartbeat {
+  id                    String   @id @default("singleton")
+  startedAt             DateTime @default(now())
+  lastHeartbeatAt       DateTime @default(now())
+  isProcessing          Boolean  @default(false)
+  schedule              String   @default("*/30 * * * *")
+  accommodationsChecked Int      @default(0)
+  lastCycleErrors       Int      @default(0)
+  lastCycleDurationMs   Int?
+  updatedAt             DateTime @updatedAt
 }
 
 enum Platform {

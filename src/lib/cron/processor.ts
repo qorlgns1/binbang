@@ -18,6 +18,11 @@ export function isProcessing(): boolean {
 }
 
 // ============================================
+// 사이클 에러 카운터
+// ============================================
+let cycleErrorCount = 0;
+
+// ============================================
 // 단일 숙소 처리
 // ============================================
 async function processAccommodation(accommodation: AccommodationWithUser): Promise<void> {
@@ -45,6 +50,7 @@ async function processAccommodation(accommodation: AccommodationWithUser): Promi
     const elapsed = Date.now() - startTime;
     console.log(`  ⏱️  완료 (${elapsed}ms)`);
   } catch (error) {
+    cycleErrorCount++;
     console.error(`  💥 처리 실패:`, error);
   }
 }
@@ -176,12 +182,26 @@ export async function checkAllAccommodations(): Promise<void> {
   }
 
   isRunning = true;
+  cycleErrorCount = 0;
   const startTime = Date.now();
 
   console.log('\n========================================');
   console.log(`🕐 모니터링 시작: ${new Date().toLocaleString('ko-KR')}`);
   console.log(`⚙️  동시 처리: ${CRON_CONFIG.concurrency}개`);
   console.log('========================================');
+
+  // Heartbeat: 사이클 시작
+  prisma.workerHeartbeat
+    .upsert({
+      where: { id: 'singleton' },
+      update: { isProcessing: true, lastHeartbeatAt: new Date() },
+      create: { id: 'singleton', isProcessing: true },
+    })
+    .catch((error) => {
+      console.error('Error starting worker heartbeat:', error);
+    });
+
+  let checkedCount = 0;
 
   try {
     const accommodations = await getActiveAccommodations();
@@ -197,11 +217,29 @@ export async function checkAllAccommodations(): Promise<void> {
 
     await Promise.all(accommodations.map((accommodation) => limit(() => processAccommodation(accommodation))));
 
+    checkedCount = accommodations.length;
+
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     console.log(`\n✅ 모니터링 완료 (총 ${elapsed}초 소요)\n`);
   } catch (error) {
     console.error('모니터링 중 오류 발생:', error);
   } finally {
     isRunning = false;
+
+    // Heartbeat: 사이클 종료
+    prisma.workerHeartbeat
+      .update({
+        where: { id: 'singleton' },
+        data: {
+          isProcessing: false,
+          lastHeartbeatAt: new Date(),
+          accommodationsChecked: checkedCount,
+          lastCycleErrors: cycleErrorCount,
+          lastCycleDurationMs: Date.now() - startTime,
+        },
+      })
+      .catch((error) => {
+        console.error('Error updating worker heartbeat:', error);
+      });
   }
 }

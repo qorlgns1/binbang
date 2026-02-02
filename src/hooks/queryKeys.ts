@@ -10,3 +10,10 @@ export const logKeys = {
   all: ['logs'] as const,
   recent: () => [...logKeys.all, 'recent'] as const,
 };
+
+export const adminKeys = {
+  all: ['admin'] as const,
+  monitoring: () => [...adminKeys.all, 'monitoring'] as const,
+  summary: () => [...adminKeys.monitoring(), 'summary'] as const,
+  logs: (filters?: Record<string, string>) => [...adminKeys.monitoring(), 'logs', filters ?? {}] as const,
+};
