@@ -11,6 +11,8 @@ export type { AccommodationToCheck, CheckResult } from './checker';
 export type { ParsedAccommodationUrl } from './url';
 export type { PageParams, RouteParams } from './api';
 export type {
+  AdminUserInfo,
+  AdminUsersResponse,
   CheckRateInfo,
   DbHealthInfo,
   MonitoringLogEntry,

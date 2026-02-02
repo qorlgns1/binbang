@@ -9,19 +9,30 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
+const mockUsers = [
+  { email: 'admin@example.com', name: '관리자', role: 'ADMIN' as const },
+  { email: 'user1@example.com', name: '김철수' },
+  { email: 'user2@example.com', name: '이영희' },
+  { email: 'user3@example.com', name: '박지민' },
+  { email: 'user4@example.com', name: '최수진' },
+  { email: 'user5@example.com', name: '정민호' },
+];
+
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // 예시: 테스트 사용자 생성 (필요 시 주석 해제)
-  // const user = await prisma.user.upsert({
-  //   where: { email: 'test@example.com' },
-  //   update: {},
-  //   create: {
-  //     email: 'test@example.com',
-  //     name: '테스트 사용자',
-  //   },
-  // });
-  // console.log('✅ Created test user:', user.email);
+  for (const userData of mockUsers) {
+    const user = await prisma.user.upsert({
+      where: { email: userData.email },
+      update: {},
+      create: {
+        email: userData.email,
+        name: userData.name,
+        role: userData.role ?? 'USER',
+      },
+    });
+    console.log(`✅ Upserted user: ${user.email} (${user.role})`);
+  }
 
   console.log('✅ Seeding completed!');
 }

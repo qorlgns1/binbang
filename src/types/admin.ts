@@ -62,3 +62,19 @@ export interface MonitoringLogsFilter {
   cursor?: string;
   limit?: number;
 }
+
+export interface AdminUserInfo {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  role: 'USER' | 'ADMIN';
+  createdAt: string;
+  _count: { accommodations: number };
+}
+
+export interface AdminUsersResponse {
+  users: AdminUserInfo[];
+  nextCursor: string | null;
+  total?: number;
+}
