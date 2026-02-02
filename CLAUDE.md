@@ -96,6 +96,20 @@
 - 모든 shadcn-ui 컴포넌트: `src/components/ui/*`
 - 공통 유틸: `@/lib/utils` (특히 `cn`)
 
+### 데이터 패칭 (TanStack Query v5)
+
+- Provider: `src/components/providers.tsx` (`QueryClientProvider`, Devtools 포함)
+- Query Key: `src/hooks/queryKeys.ts`
+
+> Client 컴포넌트의 데이터 패칭은 **반드시 React Query 훅**으로 수행한다.  
+> 페이지/컴포넌트에서 `fetch`를 직접 호출하지 않는다.
+
+**키/캐시 규칙**
+
+- query key는 `queryKeys.ts`의 팩토리 함수만 사용한다 (인라인 배열 금지)
+- 캐시 무효화는 **해당 도메인 범위로 최소화**한다 (전체 clear 금지)
+- 기본 캐시 옵션은 `providers.tsx`를 따른다 (staleTime/gcTime/retry 등)
+
 ---
 
 ## 🎨 UI 컴포넌트 가이드 (shadcn v3 + Tailwind v4)

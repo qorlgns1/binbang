@@ -10,27 +10,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAccommodation } from '@/hooks/useAccommodation';
+import { useUpdateAccommodation } from '@/hooks/useUpdateAccommodation';
 import { type ParsedAccommodationUrl, parseAccommodationUrl } from '@/lib/url-parser';
-
-interface AccommodationData {
-  id: string;
-  name: string;
-  platform: string;
-  url: string;
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  isActive: boolean;
-}
 
 export default function EditAccommodationPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
 
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  const [error, setError] = useState('');
+  const { data, isPending: fetching, error: fetchError } = useAccommodation(id);
+  const updateMutation = useUpdateAccommodation();
+
   const [parsedInfo, setParsedInfo] = useState<ParsedAccommodationUrl | null>(null);
 
   // 폼 상태
@@ -43,30 +34,19 @@ export default function EditAccommodationPage() {
   // 원본 URL (변경 감지용)
   const [originalUrl, setOriginalUrl] = useState('');
 
-  // 숙소 데이터 불러오기
+  // 데이터 도착 시 폼 초기화 (1회만)
+  const [initialized, setInitialized] = useState(false);
   useEffect(() => {
-    async function fetchAccommodation() {
-      try {
-        const res = await fetch(`/api/accommodations/${id}`);
-        if (!res.ok) {
-          throw new Error('숙소 정보를 불러올 수 없습니다');
-        }
-        const data: AccommodationData = await res.json();
-        setName(data.name);
-        setUrl(data.url);
-        setOriginalUrl(data.url);
-        setCheckIn(data.checkIn.split('T')[0]);
-        setCheckOut(data.checkOut.split('T')[0]);
-        setAdults(data.adults);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '오류가 발생했습니다');
-      } finally {
-        setFetching(false);
-      }
+    if (data && !initialized) {
+      setName(data.name);
+      setUrl(data.url);
+      setOriginalUrl(data.url);
+      setCheckIn(data.checkIn.split('T')[0]);
+      setCheckOut(data.checkOut.split('T')[0]);
+      setAdults(data.adults);
+      setInitialized(true);
     }
-
-    fetchAccommodation();
-  }, [id]);
+  }, [data, initialized]);
 
   // URL 변경 시 자동 파싱 (URL이 변경된 경우에만)
   useEffect(() => {
@@ -93,42 +73,27 @@ export default function EditAccommodationPage() {
     if (parsedInfo.name) setName(parsedInfo.name);
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
     // URL이 변경되었으면 기본 URL 사용
     const submitUrl = url !== originalUrl && parsedInfo?.baseUrl ? parsedInfo.baseUrl : url;
 
-    const data: Record<string, string | number> = {
-      name,
-      url: submitUrl,
-      checkIn,
-      checkOut,
-      adults,
-    };
-
-    try {
-      const res = await fetch(`/api/accommodations/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || '숙소 수정에 실패했습니다');
-      }
-
-      router.push(`/accommodations/${id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다');
-    } finally {
-      setLoading(false);
-    }
+    updateMutation.mutate(
+      {
+        id,
+        data: { name, url: submitUrl, checkIn, checkOut, adults },
+      },
+      {
+        onSuccess: () => {
+          router.push(`/accommodations/${id}`);
+          router.refresh();
+        },
+      },
+    );
   }
+
+  const errorMessage = fetchError?.message || updateMutation.error?.message || '';
 
   if (fetching) {
     return (
@@ -171,18 +136,19 @@ export default function EditAccommodationPage() {
             <CardTitle className='text-2xl'>숙소 정보 수정</CardTitle>
           </CardHeader>
           <CardContent>
-            {error && (
+            {errorMessage && (
               <Alert
                 variant='destructive'
                 className='mb-6'
               >
                 <AlertTitle>오류</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             )}
 
             <form
               onSubmit={handleSubmit}
+              onChange={() => updateMutation.reset()}
               className='space-y-6'
             >
               {/* URL 입력 */}
@@ -201,19 +167,20 @@ export default function EditAccommodationPage() {
 
                 {/* 파싱 결과 표시 */}
                 {parsedInfo?.platform && (
-                  <Alert className='border-blue-200 bg-blue-50 text-blue-900'>
+                  <Alert className='border-info-border bg-info text-info-foreground'>
                     <div className='flex items-center justify-between gap-4'>
-                      <AlertTitle className='text-sm font-medium text-blue-800'>URL에서 정보를 찾았습니다</AlertTitle>
+                      <AlertTitle className='text-sm font-medium text-info-foreground'>
+                        URL에서 정보를 찾았습니다
+                      </AlertTitle>
                       <Button
                         type='button'
                         size='sm'
-                        className='bg-blue-600 text-white hover:bg-blue-700'
                         onClick={applyParsedInfo}
                       >
                         모두 적용
                       </Button>
                     </div>
-                    <AlertDescription className='text-xs text-blue-700 space-y-1 mt-2'>
+                    <AlertDescription className='text-xs text-info-foreground/80 space-y-1 mt-2'>
                       <p>• 플랫폼: {parsedInfo.platform}</p>
                       {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
                       {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
@@ -282,10 +249,10 @@ export default function EditAccommodationPage() {
               <div className='flex gap-4'>
                 <Button
                   type='submit'
-                  disabled={loading}
+                  disabled={updateMutation.isPending}
                   className='flex-1'
                 >
-                  {loading ? '수정 중...' : '수정 완료'}
+                  {updateMutation.isPending ? '수정 중...' : '수정 완료'}
                 </Button>
                 <Button
                   asChild

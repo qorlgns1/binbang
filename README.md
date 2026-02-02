@@ -4,29 +4,11 @@
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![CI](https://github.com/qorlgns1/accommodation-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/accommodation-monitor/actions/workflows/ci.yml)
-
 Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내주는 웹 애플리케이션입니다.
 
 > 인기 숙소의 취소 건을 잡기 위해 만들었습니다. 🇨🇭
-
-- CLI 기반 모니터링 도구
-- `config.js` 파일에서 숙소 직접 편집
-- 단일 사용자 전용
-
-### 현재 버전 (v2.5.0)
-
-- [주요 기능](#-주요-기능)
-- [버전 히스토리](#-버전-히스토리)
-- [기술 스택](#-기술-스택)
-- [요구사항](#-요구사항)
-- [CI/CD 파이프라인](#-cicd-파이프라인)
-- [운영 배포](#-운영-배포-ec2--rds)
-- [로컬 개발](#-로컬-개발)
-- [환경변수](#-환경변수)
-- [프로젝트 구조](#-프로젝트-구조)
-- [Contributing](#-contributing)
-- [라이센스](#-라이센스)
 
 ---
 
@@ -34,15 +16,46 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 - **카카오 / 구글 소셜 로그인**
 - **멀티 유저 지원** – 각자 자신의 숙소만 관리
-- **숙소 CRUD** – UI로 등록 / 수정 / 삭제 (상세 페이지에서 수정 버튼으로 편집)
+- **숙소 CRUD** – UI로 등록 / 수정 / 삭제
 - **자동 모니터링** – 기본 30분 주기 체크
 - **카카오톡 알림** – 예약 가능 시 즉시 알림
 - **체크 로그** – 모니터링 히스토리 확인
 - **브라우저 풀** – Chromium 인스턴스 재사용으로 성능 최적화
+- **일관된 디자인 시스템** – shadcn/ui 기반의 모던한 UI
 
 ---
 
 ## 📦 버전 히스토리
+
+### v2.7.0 – TanStack Query 도입 및 데이터 관리/UX 대폭 개선 (Latest)
+
+데이터 패칭을 React Query 중심으로 재정비해 **실시간성/반응성/로딩 UX**를 전반적으로 끌어올렸습니다.
+
+- **TanStack React Query 도입**: `@tanstack/react-query` + Devtools 적용, `QueryClientProvider` 및 기본 캐시/재시도 정책 구성
+- **전 페이지 fetch → Query 전환**: `useQuery`/`useMutation` 기반으로 일원화
+- **커스텀 훅 패턴 도입**: `useAccommodations`, `useAccommodation`, `useCheckLogs`, `useRecentLogs`, `useCreate/Update/Delete/ToggleActive` 등
+- **체크 로그 무한 스크롤**: `useInfiniteQuery` + cursor 기반 페이징, “더 보기” UI
+- **Optimistic Update 적용**: 숙소 활성/일시정지 토글 즉시 반영 + 실패 시 rollback
+- **대시보드 클라이언트화 + 자동 refetch**: 숙소 목록 30초, 최근 로그 60초 주기 갱신
+- **부드러운 로딩 경험**: `placeholderData` + `keepPreviousData`로 화면 깜빡임 최소화
+- **에러/상태 처리 일관화**: mutation pending 상태 통합 처리 및 에러 메시지 단일화
+- **Query Key 체계화**: `queryKeys.ts`로 키 관리, 캐시 무효화 전략 개선
+- **컬러 토큰 확장**: status/info/caution 토큰 추가로 배지/알림 UI 일관성 강화
+- **대시보드 실시간성 강화**: 요약 카드/숙소 목록/최근 로그 최신화 속도 개선
+
+> 결과적으로 실시간 모니터링 체감 품질 ↑, 과거 로그 조회 편의성 ↑, 느린 네트워크에서도 반응성 ↑
+
+### v2.6.0 – Tailwind CSS v4 & shadcn/ui 도입
+
+프로젝트의 디자인 시스템을 현대화하고 유지보수 효율을 극대화했습니다.
+
+- **shadcn-ui(v3) 도입**: `components.json` 설정 및 `radix-vega` 스타일 적용
+- **Tailwind CSS v4 마이그레이션**:
+  - `tailwind.config.ts`를 완전 삭제하고 `globals.css`로 설정 일원화
+  - OKLCH 색상 공간 기반의 semantic 토큰 및 다크 모드 변수 체계 구축
+  - `@tailwindcss/postcss` 적용 및 `autoprefixer` 제거
+- **UI 컴포넌트 추가**: Radix UI 기반의 `Input`, `Label` 컴포넌트 신규 생성
+- **문서화 강화**: `CLAUDE.md`에 UI 컴포넌트 가이드 및 스타일 규칙(하드코딩 금지 등) 추가
 
 ### v2.5.0 – 숙소 수정 페이지 추가
 
@@ -93,12 +106,12 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 **새로운 npm scripts**
 
-| 스크립트        | 설명              |
-| --------------- | ----------------- |
-| `lint`          | ESLint 실행       |
-| `lint:fix`      | ESLint 자동 수정  |
-| `format`        | Prettier 포맷팅   |
-| `format:check`  | Prettier 검사     |
+| 스크립트       | 설명             |
+| -------------- | ---------------- |
+| `lint`         | ESLint 실행      |
+| `lint:fix`     | ESLint 자동 수정 |
+| `format`       | Prettier 포맷팅  |
+| `format:check` | Prettier 검사    |
 
 ### v2.2.0 – Google Analytics 및 SEO
 
@@ -142,17 +155,17 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 ## 🛠 기술 스택
 
-| 분류         | 기술                                           |
-| ------------ | ---------------------------------------------- |
-| **Runtime**  | Node.js 24, pnpm 10.28.0                       |
-| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS |
-| **Backend**  | Next.js API Routes, Prisma ORM 7               |
-| **Database** | PostgreSQL 15                                  |
-| **Auth**     | NextAuth.js (카카오, 구글)                     |
-| **Scraping** | Puppeteer                                      |
-| **Worker**   | Node.js + node-cron                            |
-| **CI/CD**    | GitHub Actions                                 |
-| **Infra**    | Docker, AWS EC2, RDS                           |
+| 분류         | 기술                                                      |
+| :----------- | :-------------------------------------------------------- |
+| **Runtime**  | Node.js 24, pnpm 10.28.0                                  |
+| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui, TanStack React Query |
+| **Backend**  | Next.js API Routes, Prisma ORM 7                          |
+| **Database** | PostgreSQL 15                                             |
+| **Auth**     | NextAuth.js (카카오, 구글)                                |
+| **Scraping** | Puppeteer                                                 |
+| **Worker**   | Node.js + node-cron                                       |
+| **CI/CD**    | GitHub Actions                                            |
+| **Infra**    | Docker, AWS EC2, RDS                                      |
 
 ---
 
@@ -166,6 +179,17 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 - 구글 OAuth 클라이언트 (선택)
 
 ---
+
+## 🎨 UI 개발 가이드 (v2.6.0+)
+
+v2.6.0부터 스타일 관리 방식이 `globals.css` 중심으로 변경되었습니다.
+
+- **Semantic 토큰 강제**: `bg-white` 대신 `bg-card`, `text-primary` 등 정의된 토큰을 사용해야 합니다.
+- **컴포넌트 추가**: 새 UI 컴포넌트는 반드시 shadcn CLI를 통해 추가합니다.
+  ```bash
+  pnpm dlx shadcn@latest add [컴포넌트명] --overwrite
+  ```
+- **설정 금지**: `tailwind.config.ts`를 다시 생성하거나 사용하지 마십시오. 모든 스타일링은 CSS 변수를 통해 처리합니다.
 
 ## 🚀 CI/CD 파이프라인
 
@@ -354,8 +378,10 @@ pnpm local:docker:db:push
 - 기존 데이터는 삭제하지 않음
 
 # 5. 브라우저 접속
+
 open http://localhost:3000
-```
+
+````
 
 ### Docker 없이 로컬 실행
 
@@ -385,7 +411,7 @@ pnpm install
 
 # 2. 환경변수 설정
 cp .env.example .env
-```
+````
 
 #### ▶ DATABASE_URL 설정 (중요!)
 
@@ -399,8 +425,8 @@ cp .env.example .env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor
 ```
 
-> **왜 `localhost`인가요?**  
-> Docker Compose 내부에서는 서비스명(`db`)으로 접근하지만,  
+> **왜 `localhost`인가요?**
+> Docker Compose 내부에서는 서비스명(`db`)으로 접근하지만,
 > 호스트(로컬 PC)에서 컨테이너로 접근할 때는 `localhost`를 사용해야 합니다.
 
 #### ▶ DB 컨테이너 실행
@@ -427,6 +453,7 @@ pnpm cron       # 워커 (별도 터미널)
 ```
 
 # 3. .env에서 DATABASE_URL을 localhost로 설정
+
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor_local
 
 ```bash
@@ -696,3 +723,7 @@ pnpm vitest --coverage
 - [Next.js](https://nextjs.org/) - React 프레임워크
 - [Prisma](https://www.prisma.io/) - ORM
 - [NextAuth.js](https://next-auth.js.org/) - 인증
+
+```
+
+```

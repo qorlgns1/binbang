@@ -1,73 +1,78 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { useDeleteAccommodation } from '@/hooks/useDeleteAccommodation';
+import { useToggleActive } from '@/hooks/useToggleActive';
 
 export function DeleteButton({ id }: { id: string }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const deleteMutation = useDeleteAccommodation();
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
 
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/accommodations/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
         router.push('/dashboard');
         router.refresh();
-      }
-    } finally {
-      setLoading(false);
-    }
+      },
+    });
   }
 
   return (
     <Button
       variant='destructive'
       onClick={handleDelete}
-      disabled={loading}
+      disabled={deleteMutation.isPending}
     >
-      {loading ? '삭제 중...' : '삭제'}
+      {deleteMutation.isPending ? '삭제 중...' : '삭제'}
     </Button>
   );
 }
 
 export function ToggleActiveButton({ id, isActive }: { id: string; isActive: boolean }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const toggleMutation = useToggleActive();
 
-  async function handleToggle() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/accommodations/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !isActive }),
-      });
+  const [optimisticActive, setOptimisticActive] = useState(isActive);
 
-      if (res.ok) {
-        router.refresh();
-      }
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    setOptimisticActive(isActive);
+  }, [isActive]);
+
+  function handleToggle() {
+    const newActive = !optimisticActive;
+    setOptimisticActive(newActive);
+
+    toggleMutation.mutate(
+      { id, isActive: newActive },
+      {
+        onSuccess: () => {
+          router.refresh();
+        },
+        onError: () => {
+          setOptimisticActive(isActive);
+        },
+      },
+    );
   }
 
   return (
     <Button
       onClick={handleToggle}
-      disabled={loading}
-      variant={isActive ? 'secondary' : 'default'}
-      className={isActive ? 'text-muted-foreground' : 'bg-emerald-600 text-white hover:bg-emerald-700'}
+      disabled={toggleMutation.isPending}
+      variant={optimisticActive ? 'secondary' : 'default'}
+      className={
+        optimisticActive
+          ? 'text-muted-foreground'
+          : 'bg-status-success-foreground text-white hover:bg-status-success-foreground/80'
+      }
     >
-      {loading ? '처리 중...' : isActive ? '일시정지' : '모니터링 시작'}
+      {toggleMutation.isPending ? '처리 중...' : optimisticActive ? '일시정지' : '모니터링 시작'}
     </Button>
   );
 }
