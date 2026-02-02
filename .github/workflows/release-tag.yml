@@ -4,7 +4,12 @@ on:
   push:
     branches: ['main']
 
-permissions: {}
+concurrency:
+  group: release-tag
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   tag:
@@ -13,25 +18,37 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_TAG_PAT }}
 
-      - name: Read version
-        id: version
+      - name: Extract version
+        id: get_version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          VERSION=$(jq -r .version package.json)
+          echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Create tag if missing
+      - name: Check and Push Tag
+        env:
+          RELEASE_TAG_PAT: ${{ secrets.RELEASE_TAG_PAT }}
         run: |
-          TAG="v${{ steps.version.outputs.version }}"
+          TAG=${{ steps.get_version.outputs.version }}
+
+          if [ -z "$RELEASE_TAG_PAT" ]; then
+            echo "RELEASE_TAG_PAT is not set"
+            exit 1
+          fi
+
           git fetch --tags
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists. Skip."
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "⚠️ Tag $TAG already exists. Skipping..."
             exit 0
           fi
+
+          echo "🚀 Creating new tag: $TAG"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "$TAG"
-          git push origin "$TAG"
+          git push "https://${RELEASE_TAG_PAT}@github.com/${{ github.repository }}.git" "$TAG"
