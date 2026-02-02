@@ -1,18 +1,8 @@
 services:
-  # ==============================
-  # Next.js Web
-  # ==============================
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        DATABASE_URL: ${DATABASE_URL}
-        NEXT_PUBLIC_GA_MEASUREMENT_ID: ${NEXT_PUBLIC_GA_MEASUREMENT_ID}
-        NEXT_PUBLIC_NAVER_SITE_VERIFICATION: ${NEXT_PUBLIC_NAVER_SITE_VERIFICATION}
-        NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION}
+    image: kihoonbae/accommodation-monitor:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
     ports:
-      - "4000:3000"
+      - '4000:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
@@ -22,16 +12,11 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     restart: unless-stopped
-    depends_on:
-      - worker
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
 
-  # ==============================
-  # Worker (Cron / Monitoring)
-  # ==============================
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
+    image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
     environment:
       DATABASE_URL: ${DATABASE_URL}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
@@ -44,9 +29,11 @@ services:
       CONTENT_WAIT_MS: ${CONTENT_WAIT_MS:-10000}
       PATTERN_RETRY_MS: ${PATTERN_RETRY_MS:-5000}
     restart: unless-stopped
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
     deploy:
       resources:
         limits:
-          memory: 4G
+          memory: 512M
         reservations:
-          memory: 2G
+          memory: 256M

@@ -1,64 +1,73 @@
 # ============================================
-# Stage 1: Builder
+# Stage 1: Base
 # ============================================
-FROM node:20-slim AS builder
+FROM node:24-slim AS base
 
-# 필수 패키지 (Prisma용 OpenSSL 포함)
-RUN apt-get update -y \
-  && apt-get install -y openssl \
-  && rm -rf /var/lib/apt/lists/*
-
-# pnpm
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
-
 WORKDIR /app
 
-# 의존성 설치
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# ============================================
+# Stage 2: Builder
+# ============================================
+FROM base AS builder
 
-# 소스 복사
-COPY . .
-
-# Prisma Client 생성 (빌드 타임)
-RUN pnpm prisma generate
-
-# Analytics & SEO (빌드 타임 환경변수)
 ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
 ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
 
-# Next.js build
-# ⚠️ build 시 env 검증 로직이 실행되지 않도록 코드에서 분리되어 있어야 함
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor
+
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+RUN pnpm install --frozen-lockfile
+
+COPY . .
 RUN pnpm build
 
-
 # ============================================
-# Stage 2: Runner
+# Stage 3: Web Runner
 # ============================================
-FROM node:20-slim AS runner
+FROM base AS web
 
-# 런타임 OpenSSL (Prisma 실행용)
-RUN apt-get update -y \
-  && apt-get install -y openssl \
-  && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 ENV NODE_ENV=production
 
-# non-root 유저
-RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# standalone 결과물만 복사
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
-
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
 CMD ["node", "server.js"]
+
+# ============================================
+# Stage 4: Worker Runner
+# ============================================
+FROM base AS worker
+
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation libasound2 libatk-bridge2.0-0 \
+    libatk1.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 \
+    libgbm1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 \
+    libpangocairo-1.0-0 libstdc++6 libx11-6 libxcb1 libxcomposite1 \
+    libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
+    libxss1 libxtst6 && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/prisma.config.ts ./
+
+CMD ["pnpm", "cron"]
