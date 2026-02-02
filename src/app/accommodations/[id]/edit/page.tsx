@@ -172,7 +172,10 @@ export default function EditAccommodationPage() {
           </CardHeader>
           <CardContent>
             {error && (
-              <Alert variant='destructive' className='mb-6'>
+              <Alert
+                variant='destructive'
+                className='mb-6'
+              >
                 <AlertTitle>오류</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>

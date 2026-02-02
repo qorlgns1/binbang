@@ -89,9 +89,7 @@ export default async function DashboardPage() {
               <CardDescription>모니터링 중</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className='text-3xl font-bold text-emerald-600'>
-                {accommodations.filter((a) => a.isActive).length}
-              </p>
+              <p className='text-3xl font-bold text-emerald-600'>{accommodations.filter((a) => a.isActive).length}</p>
             </CardContent>
           </Card>
           <Card>
@@ -139,9 +137,7 @@ export default async function DashboardPage() {
                       <Badge className={statusColors[acc.lastStatus] ?? statusColors.UNKNOWN}>
                         {statusText[acc.lastStatus] ?? statusText.UNKNOWN}
                       </Badge>
-                      {!acc.isActive && (
-                        <Badge variant='secondary'>일시정지</Badge>
-                      )}
+                      {!acc.isActive && <Badge variant='secondary'>일시정지</Badge>}
                     </div>
                     <p className='text-sm text-muted-foreground'>
                       {acc.platform} · {acc.checkIn.toISOString().split('T')[0]} ~{' '}
@@ -174,9 +170,7 @@ export default async function DashboardPage() {
           </CardHeader>
 
           {recentLogs.length === 0 ? (
-            <CardContent className='p-12 text-center text-muted-foreground'>
-              아직 체크 로그가 없습니다
-            </CardContent>
+            <CardContent className='p-12 text-center text-muted-foreground'>아직 체크 로그가 없습니다</CardContent>
           ) : (
             <div className='divide-y'>
               {recentLogs.map((log) => (
