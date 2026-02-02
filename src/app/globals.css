@@ -49,6 +49,24 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* 상태 뱃지 토큰 */
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-error: var(--status-error);
+  --color-status-error-foreground: var(--status-error-foreground);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
+
+  /* Info / Caution 알림 토큰 */
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-border: var(--info-border);
+  --color-caution: var(--caution);
+  --color-caution-foreground: var(--caution-foreground);
+  --color-caution-border: var(--caution-border);
+
   /* Radius 변형 (shadcn 기본 + 확장) */
   --radius: 0.625rem;
   --radius-sm: calc(var(--radius) - 0.25rem);
@@ -92,6 +110,26 @@
   --chart-3: oklch(62% 0.18 140);
   --chart-4: oklch(55% 0.16 60);
   --chart-5: oklch(48% 0.14 300);
+
+  /* 상태 뱃지 */
+  --status-success: oklch(95.3% 0.051 163);
+  --status-success-foreground: oklch(52.7% 0.126 162);
+  --status-error: oklch(94.2% 0.027 13);
+  --status-error-foreground: oklch(50.5% 0.162 16);
+  --status-warning: oklch(96.2% 0.059 95);
+  --status-warning-foreground: oklch(55.5% 0.123 66);
+  --status-neutral: oklch(96.8% 0.005 265);
+  --status-neutral-foreground: oklch(44.6% 0.025 265);
+
+  /* Info 알림 (파싱 결과 등) */
+  --info: oklch(97% 0.014 255);
+  --info-foreground: oklch(42.4% 0.178 266);
+  --info-border: oklch(88.2% 0.059 254);
+
+  /* Caution 알림 (카카오 배너 등) */
+  --caution: oklch(98.7% 0.026 102);
+  --caution-foreground: oklch(47.6% 0.106 61);
+  --caution-border: oklch(94.5% 0.097 100);
 
   /* Sidebar (기존 유지하면서 chroma 보강) */
   --sidebar: oklch(99% 0.003 0);
@@ -138,6 +176,24 @@
   --chart-3: oklch(62% 0.18 140);
   --chart-4: oklch(55% 0.16 60);
   --chart-5: oklch(48% 0.14 300);
+
+  /* 상태 뱃지 dark */
+  --status-success: oklch(25% 0.04 163);
+  --status-success-foreground: oklch(75% 0.12 162);
+  --status-error: oklch(25% 0.03 13);
+  --status-error-foreground: oklch(75% 0.14 16);
+  --status-warning: oklch(25% 0.04 95);
+  --status-warning-foreground: oklch(75% 0.1 66);
+  --status-neutral: oklch(25% 0.005 265);
+  --status-neutral-foreground: oklch(70% 0.02 265);
+
+  /* Info / Caution dark */
+  --info: oklch(22% 0.03 255);
+  --info-foreground: oklch(78% 0.12 254);
+  --info-border: oklch(30% 0.05 254);
+  --caution: oklch(22% 0.03 102);
+  --caution-foreground: oklch(78% 0.08 61);
+  --caution-border: oklch(30% 0.06 100);
 
   /* Sidebar dark */
   --sidebar: oklch(18% 0.03 260);

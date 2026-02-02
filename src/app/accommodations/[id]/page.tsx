@@ -10,12 +10,13 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 import { DeleteButton, ToggleActiveButton } from './actions';
+import { CheckLogList } from './checkLogList';
 
 const statusColors: Record<string, string> = {
-  AVAILABLE: 'bg-emerald-100 text-emerald-700 border-transparent',
-  UNAVAILABLE: 'bg-rose-100 text-rose-700 border-transparent',
-  ERROR: 'bg-amber-100 text-amber-700 border-transparent',
-  UNKNOWN: 'bg-slate-100 text-slate-700 border-transparent',
+  AVAILABLE: 'bg-status-success text-status-success-foreground border-transparent',
+  UNAVAILABLE: 'bg-status-error text-status-error-foreground border-transparent',
+  ERROR: 'bg-status-warning text-status-warning-foreground border-transparent',
+  UNKNOWN: 'bg-status-neutral text-status-neutral-foreground border-transparent',
 };
 
 const statusText: Record<string, string> = {
@@ -24,23 +25,6 @@ const statusText: Record<string, string> = {
   ERROR: '오류',
   UNKNOWN: '확인 중',
 };
-
-function getStatusColor(status: string): string {
-  return statusColors[status] ?? statusColors.UNKNOWN;
-}
-
-function getStatusLabel(status: string): string {
-  return statusText[status] ?? statusText.UNKNOWN;
-}
-
-interface CheckLogItem {
-  id: string;
-  status: string;
-  price: string | null;
-  errorMessage: string | null;
-  notificationSent: boolean;
-  createdAt: Date;
-}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -58,12 +42,6 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
     where: {
       id,
       userId: session.user.id,
-    },
-    include: {
-      checkLogs: {
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      },
     },
   });
 
@@ -91,8 +69,8 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
             <div>
               <div className='flex items-center gap-3 mb-2'>
                 <CardTitle className='text-2xl'>{accommodation.name}</CardTitle>
-                <Badge className={getStatusColor(accommodation.lastStatus)}>
-                  {getStatusLabel(accommodation.lastStatus)}
+                <Badge className={statusColors[accommodation.lastStatus] ?? statusColors.UNKNOWN}>
+                  {statusText[accommodation.lastStatus] ?? statusText.UNKNOWN}
                 </Badge>
               </div>
               <p className='text-muted-foreground'>{accommodation.platform}</p>
@@ -158,35 +136,7 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
         </Card>
 
         {/* 체크 로그 */}
-        <Card>
-          <CardHeader className='border-b'>
-            <CardTitle>체크 로그</CardTitle>
-          </CardHeader>
-
-          {accommodation.checkLogs.length === 0 ? (
-            <CardContent className='p-12 text-center text-muted-foreground'>아직 체크 로그가 없습니다</CardContent>
-          ) : (
-            <div className='divide-y max-h-96 overflow-y-auto'>
-              {accommodation.checkLogs.map((log: CheckLogItem) => (
-                <div
-                  key={log.id}
-                  className='p-4 flex items-center gap-4'
-                >
-                  <Badge className={getStatusColor(log.status)}>{getStatusLabel(log.status)}</Badge>
-                  <span className='flex-1 text-sm'>
-                    {log.price && `${log.price}`}
-                    {log.errorMessage && <span className='text-rose-500 ml-2'>{log.errorMessage}</span>}
-                  </span>
-                  <LocalDateTime
-                    date={log.createdAt}
-                    className='text-xs text-muted-foreground'
-                  />
-                  {log.notificationSent && <span className='text-xs text-emerald-600'>📱</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <CheckLogList accommodationId={accommodation.id} />
       </main>
     </div>
   );

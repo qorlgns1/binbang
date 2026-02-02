@@ -10,12 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCreateAccommodation } from '@/hooks/useCreateAccommodation';
 import { type ParsedAccommodationUrl, parseAccommodationUrl } from '@/lib/url-parser';
 
 export default function NewAccommodationPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const createMutation = useCreateAccommodation();
   const [parsedInfo, setParsedInfo] = useState<ParsedAccommodationUrl | null>(null);
 
   // 폼 상태
@@ -60,10 +60,8 @@ export default function NewAccommodationPage() {
     if (parsedInfo.name) setName(parsedInfo.name);
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
     // URL에서 플랫폼 자동 감지
     let platform = 'AIRBNB';
@@ -74,34 +72,15 @@ export default function NewAccommodationPage() {
     // 기본 URL 사용 (쿼리 파라미터 제거된 버전)
     const baseUrl = parsedInfo?.baseUrl || url;
 
-    const data = {
-      name,
-      platform,
-      url: baseUrl,
-      checkIn,
-      checkOut,
-      adults,
-    };
-
-    try {
-      const res = await fetch('/api/accommodations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || '숙소 추가에 실패했습니다');
-      }
-
-      router.push('/dashboard');
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다');
-    } finally {
-      setLoading(false);
-    }
+    createMutation.mutate(
+      { name, platform, url: baseUrl, checkIn, checkOut, adults },
+      {
+        onSuccess: () => {
+          router.push('/dashboard');
+          router.refresh();
+        },
+      },
+    );
   }
 
   return (
@@ -123,18 +102,19 @@ export default function NewAccommodationPage() {
             <CardTitle className='text-2xl'>숙소 추가</CardTitle>
           </CardHeader>
           <CardContent>
-            {error && (
+            {createMutation.error && (
               <Alert
                 variant='destructive'
                 className='mb-6'
               >
                 <AlertTitle>오류</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{createMutation.error.message}</AlertDescription>
               </Alert>
             )}
 
             <form
               onSubmit={handleSubmit}
+              onChange={() => createMutation.reset()}
               className='space-y-6'
             >
               {/* URL 입력 */}
@@ -155,21 +135,20 @@ export default function NewAccommodationPage() {
 
                 {/* 파싱 결과 표시 */}
                 {parsedInfo?.platform && (
-                  <Alert className='border-blue-200 bg-blue-50 text-blue-900'>
+                  <Alert className='border-info-border bg-info text-info-foreground'>
                     <div className='flex items-center justify-between gap-4'>
-                      <AlertTitle className='text-sm font-medium text-blue-800'>
+                      <AlertTitle className='text-sm font-medium text-info-foreground'>
                         🔍 URL에서 정보를 찾았습니다
                       </AlertTitle>
                       <Button
                         type='button'
                         size='sm'
-                        className='bg-blue-600 text-white hover:bg-blue-700'
                         onClick={applyParsedInfo}
                       >
                         모두 적용
                       </Button>
                     </div>
-                    <AlertDescription className='text-xs text-blue-700 space-y-1 mt-2'>
+                    <AlertDescription className='text-xs text-info-foreground/80 space-y-1 mt-2'>
                       <p>• 플랫폼: {parsedInfo.platform}</p>
                       {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
                       {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
@@ -238,10 +217,10 @@ export default function NewAccommodationPage() {
               <div className='flex gap-4'>
                 <Button
                   type='submit'
-                  disabled={loading}
+                  disabled={createMutation.isPending}
                   className='flex-1'
                 >
-                  {loading ? '추가 중...' : '숙소 추가'}
+                  {createMutation.isPending ? '추가 중...' : '숙소 추가'}
                 </Button>
                 <Button
                   asChild

@@ -15,7 +15,7 @@ export function KakaoAlertBanner() {
       <Button
         variant='link'
         onClick={() => setIsExpanded(true)}
-        className='mb-4 px-0 text-sm text-yellow-700'
+        className='mb-4 px-0 text-sm text-caution-foreground'
       >
         ⚠️ 카카오톡 알림 설정 안내 보기
       </Button>
@@ -29,13 +29,13 @@ export function KakaoAlertBanner() {
   };
 
   return (
-    <Alert className='mb-6 border-yellow-200 bg-yellow-50 text-yellow-900'>
+    <Alert className='mb-6 border-caution-border bg-caution text-caution-foreground'>
       <div className='flex items-start justify-between gap-4'>
         <div className='flex gap-3'>
           <span className='text-2xl'>⚠️</span>
           <div>
-            <AlertTitle className='text-yellow-900'>카카오톡 알림을 받을 수 없습니다</AlertTitle>
-            <AlertDescription className='text-yellow-800'>
+            <AlertTitle className='text-caution-foreground'>카카오톡 알림을 받을 수 없습니다</AlertTitle>
+            <AlertDescription className='text-caution-foreground/80'>
               현재 Google 계정으로 로그인되어 있습니다. 숙소 예약 가능 알림을 카카오톡으로 받으려면 카카오 계정으로
               로그인해주세요.
             </AlertDescription>
@@ -61,7 +61,7 @@ export function KakaoAlertBanner() {
           size='icon'
           onClick={() => setIsExpanded(false)}
           aria-label='닫기'
-          className='text-yellow-700 hover:text-yellow-900'
+          className='text-caution-foreground/80 hover:text-caution-foreground'
         >
           <svg
             width='20'
