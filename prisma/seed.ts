@@ -196,8 +196,18 @@ const inferNameFromUrl = (value: string) => {
   }
 };
 
-const inferPlatformFromUrl = (value: string) =>
-  value.includes('agoda.com') ? Platform.AGODA : Platform.AIRBNB;
+const inferPlatformFromUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    // Treat known Agoda hostnames as Agoda; everything else defaults to Airbnb.
+    const agodaHosts = ['agoda.com', 'www.agoda.com'];
+    return agodaHosts.includes(host) ? Platform.AGODA : Platform.AIRBNB;
+  } catch {
+    // On invalid URLs, fall back to Airbnb to preserve previous default behavior.
+    return Platform.AIRBNB;
+  }
+};
 
 const baseAccommodationUrl = (value: string) => {
   try {
@@ -220,7 +230,9 @@ const applyRandomDatesToUrl = (value: string, checkIn: Date, checkOut: Date) => 
       Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)),
     );
 
-    if (value.includes('agoda.com')) {
+    const host = url.hostname.toLowerCase();
+    const agodaHosts = ['agoda.com', 'www.agoda.com'];
+    if (agodaHosts.includes(host)) {
       url.searchParams.set('checkIn', checkInText);
       url.searchParams.set('los', String(nights));
       return url.toString();
