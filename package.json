@@ -1,6 +1,6 @@
 {
-  "name": "accommodation-monitor-web",
-  "version": "2.8.0",
+  "name": "accommodation-monitor",
+  "version": "2.9.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
