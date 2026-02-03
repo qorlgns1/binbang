@@ -39,9 +39,12 @@
 ### Prisma / DB
 
 - `src/generated/**` 파일 직접 수정 ❌
-- Prisma import 경로 혼용 ❌  
+- Prisma import 경로 혼용 ❌
   (`@prisma/client` 사용 금지, `@/generated/prisma/client`만 허용)
 - DB 연결 보안 하향 (`sslmode=require`, `prefer` 등) 제안 ❌
+- `prisma db push` 사용 ❌ → **`prisma migrate dev`만 사용**
+- 이미 배포된 migration 파일 수정/삭제 ❌
+- migration SQL 직접 작성 ❌ → `migrate dev`로 자동 생성
 
 ### 보안
 
@@ -104,6 +107,37 @@
 
 - Prisma Client: `src/lib/prisma.ts`
 - Schema: `prisma/schema.prisma`
+- Migrations: `prisma/migrations/`
+- 설정: `prisma.config.ts`
+
+### Prisma Migrate 워크플로우
+
+스키마 변경은 **반드시 `prisma migrate dev`로 마이그레이션을 생성**하고, 서버에서는 worker 시작 시 `prisma migrate deploy`가 자동 실행된다.
+
+**로컬 개발 (마이그레이션 생성)**
+
+```bash
+# 1. prisma/schema.prisma 수정
+# 2. 마이그레이션 생성 + 로컬 DB 적용
+pnpm prisma migrate dev --name 변경내용
+
+# SQL만 생성하고 적용은 나중에 하려면
+pnpm prisma migrate dev --name 변경내용 --create-only
+# → SQL 확인/수정 후
+pnpm prisma migrate dev
+```
+
+**서버 배포 (자동)**
+
+- Worker Dockerfile CMD: `pnpm db:migrate:deploy && pnpm cron`
+- 컨테이너 시작 시 새 마이그레이션만 자동 적용, 이미 적용된 것은 skip
+
+**규칙**
+
+- `prisma/migrations/` 폴더는 **반드시 git에 커밋**한다
+- 이미 적용된(서버에 배포된) migration 파일은 **수정/삭제 금지**
+- `db push`는 **사용하지 않는다** (migrate와 혼용 금지)
+- migration SQL 파일을 직접 작성하지 않는다 (`migrate dev`로 생성)
 
 ### Rate Limiting / 미들웨어
 
