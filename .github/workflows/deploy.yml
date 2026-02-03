@@ -1,0 +1,137 @@
+name: Deploy
+
+on:
+  push:
+    branches: ['main', 'develop']
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  docker:
+    name: Build and Push
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+      web_digest: ${{ steps.build-web.outputs.digest }}
+      worker_digest: ${{ steps.build-worker.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve tags
+        id: vars
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "image_tag=main" >> "$GITHUB_OUTPUT"
+            echo "web_tag=web-main" >> "$GITHUB_OUTPUT"
+            echo "worker_tag=worker-main" >> "$GITHUB_OUTPUT"
+          else
+            echo "image_tag=develop" >> "$GITHUB_OUTPUT"
+            echo "web_tag=web-develop" >> "$GITHUB_OUTPUT"
+            echo "worker_tag=worker-develop" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push (web)
+        id: build-web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          platforms: linux/arm64
+          push: true
+          tags: kihoonbae/accommodation-monitor:${{ steps.vars.outputs.web_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+            NEXT_PUBLIC_NAVER_SITE_VERIFICATION=${{ vars.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }}
+            NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
+
+      - name: Build and push (worker)
+        id: build-worker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: worker
+          platforms: linux/arm64
+          push: true
+          tags: kihoonbae/accommodation-monitor:${{ steps.vars.outputs.worker_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+            NEXT_PUBLIC_NAVER_SITE_VERIFICATION=${{ vars.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }}
+            NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
+
+  deploy:
+    name: Deploy to OCI
+    needs: docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          port: ${{ secrets.OCI_PORT }}
+          script: |
+            set -e
+            cd ~/workspace/accommodation-monitor
+            git pull
+
+            update_env_var() {
+              key="$1"
+              value="$2"
+              if grep -q "^${key}=" .env.production; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env.production
+              else
+                echo "${key}=${value}" >> .env.production
+              fi
+            }
+
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              IMAGE_TAG=${{ needs.docker.outputs.image_tag }}
+              WEB_DIGEST=${{ needs.docker.outputs.web_digest }}
+              WORKER_DIGEST=${{ needs.docker.outputs.worker_digest }}
+              DEPLOY_SHA=${{ github.sha }}
+              DEPLOYED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+              update_env_var IMAGE_TAG "$IMAGE_TAG"
+              update_env_var IMAGE_WEB_DIGEST "$WEB_DIGEST"
+              update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST"
+              update_env_var DEPLOY_SHA "$DEPLOY_SHA"
+              update_env_var DEPLOYED_AT "$DEPLOYED_AT"
+
+              if ! grep -E '^DATABASE_URL=' .env.production | grep -q 'sslrootcert='; then
+                echo "DATABASE_URL must include sslrootcert=... for RDS TLS"
+                exit 1
+              fi
+
+              docker compose -f docker-compose.production.yml --env-file .env.production pull
+              docker compose -f docker-compose.production.yml --env-file .env.production up -d
+            else
+              docker compose -f docker-compose.develop.yml --env-file .env.develop pull
+              docker compose -f docker-compose.develop.yml --env-file .env.develop up -d
+            fi
