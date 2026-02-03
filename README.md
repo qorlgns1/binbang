@@ -24,6 +24,10 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 - **브라우저 풀** – Chromium 인스턴스 재사용으로 성능 최적화
 - **관리자 설정** – Worker / 브라우저 / 체커 설정을 DB 기반 관리자 UI에서 실시간 변경
 - **설정 변경 이력** – 누가 언제 어떤 설정을 변경했는지 감사 로그 확인
+- **하트비트 모니터링** – 워커 생존 상태 추적, 이상 시 카카오 알림, 2시간 타임라인
+- **워커 재시작** – 관리자 UI에서 원클릭 워커 재시작
+- **사용자 관리** – 관리자가 사용자 목록 조회, 역할(Role) 변경
+- **API Rate Limiting** – IP 기반 슬라이딩 윈도우 요청 제한
 - **일관된 디자인 시스템** – shadcn/ui 기반의 모던한 UI
 
 ---
@@ -158,6 +162,13 @@ docker compose -f docker-compose.local.yml up --build
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Google Search Console 인증 코드 |
 | `NEXT_PUBLIC_NAVER_SITE_VERIFICATION`  | 네이버 서치어드바이저 인증 코드 |
 
+### 시스템
+
+| 변수                  | 설명                                | 기본값 |
+| --------------------- | ----------------------------------- | ------ |
+| `WORKER_CONTROL_PORT` | 워커 내부 HTTP 서버 포트            | 3500   |
+| `PRISMA_LOG_LEVEL`    | Prisma 로그 레벨 (query/warn/error) | warn   |
+
 ### Worker / 브라우저 / 체커 설정
 
 Worker, 브라우저, 체커 관련 설정은 **관리자 페이지 > 설정**에서 DB로 관리됩니다.
@@ -179,13 +190,12 @@ Worker, 브라우저, 체커 관련 설정은 **관리자 페이지 > 설정**�
 
 ### 워크플로우 구성
 
-| 워크플로우      | 트리거                    | 설명                                 |
-| --------------- | ------------------------- | ------------------------------------ |
-| **CI**          | PR, push (main/develop)   | lint, format, test, build 검증       |
-| **CodeQL**      | PR, push, 주간 스케줄     | 보안 취약점 분석                     |
-| **Publish Dev** | develop 브랜치 CI 성공 시 | Docker Hub에 dev 이미지 푸시         |
-| **Release Tag** | main 브랜치 push          | package.json 버전으로 태그 자동 생성 |
-| **Deploy Prod** | 태그 push (v\*)           | 프로덕션 빌드 및 EC2 자동 배포       |
+| 워크플로우      | 트리거                  | 설명                                    |
+| --------------- | ----------------------- | --------------------------------------- |
+| **CI**          | PR, push (main/develop) | lint, format, test, build 검증          |
+| **CodeQL**      | PR, push, 주간 스케줄   | 보안 취약점 분석                        |
+| **Deploy**      | develop/main push       | 브랜치별 Docker 이미지 빌드 및 EC2 배포 |
+| **Release Tag** | main 브랜치 push        | package.json 버전으로 태그 자동 생성    |
 
 ### 필요한 GitHub Secrets
 
@@ -291,15 +301,14 @@ accommodation-monitor/
 │   └── workflows/              # CI/CD 워크플로우
 │       ├── ci.yml              # PR/push 검증
 │       ├── codeql.yml          # 보안 분석
-│       ├── publish-dev.yml     # dev 이미지 빌드
-│       ├── release-tag.yml     # 자동 태그 생성
-│       └── deploy-prod.yml     # 프로덕션 배포
+│       ├── deploy.yml          # develop/main 브랜치별 빌드·배포
+│       └── release-tag.yml     # 자동 태그 생성
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── api/                # API Routes
 │   │   ├── login/              # 로그인 페이지
 │   │   ├── dashboard/          # 대시보드
-│   │   ├── admin/              # 관리자 (모니터링, 설정, 사용자)
+│   │   ├── admin/              # 관리자 (모니터링, 하트비트, 설정, 사용자)
 │   │   └── accommodations/     # 숙소 관리 (목록, 상세, 수정)
 │   ├── components/             # React 컴포넌트
 │   ├── generated/              # Prisma 생성 파일
@@ -308,9 +317,12 @@ accommodation-monitor/
 │   │   ├── auth.ts             # NextAuth 설정
 │   │   ├── prisma.ts           # Prisma 클라이언트
 │   │   ├── settings.ts         # 시스템 설정 로더 (DB → env → 기본값)
+│   │   ├── rateLimit.ts        # IP 기반 API Rate Limiting
 │   │   ├── checkers/           # Airbnb, Agoda 체커
+│   │   ├── heartbeat/          # 워커 하트비트 모니터링 및 히스토리
 │   │   ├── kakao/              # 카카오톡 메시지
-│   │   └── cron/               # 크론 워커
+│   │   └── cron/               # 크론 워커 + 내부 HTTP 서버
+│   ├── middleware.ts            # API Rate Limiting 미들웨어
 │   └── types/                  # TypeScript 타입
 ├── prisma/
 │   ├── schema.prisma           # DB 스키마
@@ -363,7 +375,25 @@ pnpm vitest --coverage
 
 ## 버전 히스토리
 
-### v2.7.0 – TanStack Query 도입 및 데이터 관리/UX 대폭 개선 (Latest)
+### v2.9.0 – 관리자 시스템 구축, 보안 강화, CI/CD 통합 (Latest)
+
+관리자 전용 시스템(모니터링·사용자 관리·설정), 워커 하트비트, API 보안을 전면적으로 구축했습니다.
+
+- **관리자 모니터링 대시보드**: 워커 상태, DB 상태, 24시간 성공률 요약 카드 + 로그 타임라인 (필터·무한 스크롤)
+- **사용자 관리**: 사용자 목록 조회, 역할(Role) 변경, 검색·필터·커서 페이지네이션
+- **시스템 설정 env → DB 마이그레이션**: 7개 환경변수를 DB 기반으로 전환, 관리자 UI에서 실시간 변경, 변경 감사 로그
+- **워커 하트비트**: 1분 단위 상태 기록, 워커 다운/처리 초과 감지 시 카카오 알림, 2시간 타임라인 UI
+- **워커 재시작**: 내부 HTTP 서버(3500) + 관리자 원클릭 재시작 (Docker 자동 복구)
+- **API Rate Limiting**: IP 기반 슬라이딩 윈도우 (auth: 10req/min, API: 60req/min)
+- **CI/CD 통합**: deploy-prod + publish-dev → deploy.yml 단일 워크플로우, ARM64 전용
+- **보안**: production 워커 포트 외부 노출 차단 (`expose`), 하트비트 API ADMIN 인증
+- **Prisma Schema**: `Role` enum, `WorkerHeartbeat`, `HeartbeatHistory`, `SystemSettings`, `SettingsChangeLog` 모델 추가
+
+### v2.8.0 – CI/CD 파이프라인 개선, 코드 품질 강화 및 Docker
+
+빌드 최적화, 테스트 커버리지를 확대하고, CI/CD 파이프라인을 안정화하며, 빌드·배포 효율을 개선했습니다.
+
+### v2.7.0 – TanStack Query 도입 및 데이터 관리/UX 대폭 개선
 
 데이터 패칭을 React Query 중심으로 재정비해 실시간성/반응성/로딩 UX를 전반적으로 끌어올렸습니다.
 
