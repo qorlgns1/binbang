@@ -14,7 +14,7 @@ permissions:
 jobs:
   tag:
     name: Create Tag from package.json
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest-arm64
     permissions:
       contents: write
     steps:
