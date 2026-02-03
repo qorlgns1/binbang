@@ -45,8 +45,12 @@
 
 ### 보안
 
-- 시크릿 / 토큰 / 키를 문서나 코드 예시에 그대로 작성 ❌  
+- 시크릿 / 토큰 / 키를 문서나 코드 예시에 그대로 작성 ❌
   (항상 마스킹 또는 placeholder 사용)
+- production에서 워커 제어 포트를 `ports`로 호스트에 노출 ❌
+  → `expose`만 사용 (Docker 내부 네트워크에서만 접근)
+- 관리자 전용 API에 인증 누락 ❌
+  → `getServerSession` + ADMIN role 체크 필수
 
 ### UI / 스타일
 
@@ -73,6 +77,8 @@
 
 - 엔트리 포인트: `src/lib/cron/worker.ts`
 - 처리 흐름: `worker.ts` → `processor.ts` → `checkers/*`
+- 내부 HTTP 서버: `worker.ts` 하단 (`/health`, `/restart` 엔드포인트, 포트 3500)
+- 재시작 API: `src/app/api/worker/restart/route.ts` (ADMIN 인증 → 워커 HTTP로 전달)
 
 ### 체커 (Scraping)
 
@@ -82,6 +88,14 @@
   - Agoda: `src/lib/checkers/agoda.ts`
 - 브라우저 관리: `src/lib/checkers/browserPool.ts`
 
+### 하트비트 모니터링
+
+- 핵심 모듈: `src/lib/heartbeat/index.ts` (업데이트, 모니터링, 알림)
+- 히스토리: `src/lib/heartbeat/history.ts` (기록, 조회, 24시간 자동 정리)
+- API: `src/app/api/health/heartbeat/route.ts`, `src/app/api/heartbeat/history/route.ts`
+- 페이지: `src/app/admin/heartbeat/page.tsx`
+- 타임라인: `src/app/admin/heartbeat/_components/HeartbeatTimeline.tsx`
+
 ### 알림
 
 - 카카오 메시지: `src/lib/kakao/*`
@@ -90,6 +104,12 @@
 
 - Prisma Client: `src/lib/prisma.ts`
 - Schema: `prisma/schema.prisma`
+
+### Rate Limiting / 미들웨어
+
+- 미들웨어: `src/middleware.ts` (API 경로별 rate limit 적용)
+- Rate Limiter: `src/lib/rateLimit.ts` (in-memory 슬라이딩 윈도우)
+- 테스트: `src/lib/rateLimit.test.ts`
 
 ### UI 컴포넌트
 
@@ -153,6 +173,8 @@ pnpm dlx shadcn@latest add <component> --overwrite
   - DB 포함
   - `build:` 사용 허용
   - 메모리/동시성 제한 느슨함
+  - `restart: unless-stopped` (워커 재시작 시 자동 복구)
+  - 워커 제어 포트 `ports` 노출 (개발 편의)
 
 ### Develop (`docker-compose.develop.yml`)
 
@@ -169,6 +191,7 @@ pnpm dlx shadcn@latest add <component> --overwrite
   - CA 번들 마운트 필수
   - Worker 메모리 제한 엄수
   - 동시성/풀 크기 변경 금지
+  - 워커 제어 포트는 `expose`만 사용 (`ports` 금지)
 
 ---
 
