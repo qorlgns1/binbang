@@ -1,7 +1,12 @@
 // src/lib/cron/worker.ts
+// ============================================
+// Worker Control HTTP Server
+// ============================================
+import { createServer } from 'http';
 import cron from 'node-cron';
 
 import { closeBrowserPool, initBrowserPool } from '@/lib/checkers/browserPool';
+import { recordHeartbeatHistory, startHeartbeatMonitoring, updateHeartbeat } from '@/lib/heartbeat';
 import prisma from '@/lib/prisma';
 
 import { getCronConfig, initCronConfig, logConfig } from './config';
@@ -19,6 +24,9 @@ async function main() {
   console.log(`\n🚀 숙소 모니터링 워커 시작`);
   logConfig();
   console.log(`⏰ 다음 실행 대기 중...\n`);
+
+  // 하트비트 모니터링 시작
+  startHeartbeatMonitoring();
 
   // 4. Worker Heartbeat 기록
   prisma.workerHeartbeat
@@ -92,3 +100,87 @@ main().catch((error) => {
   console.error('❌ 워커 시작 실패:', error);
   process.exit(1);
 });
+
+const server = createServer((req, res) => {
+  // CORS 헤더
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  if (req.url === '/restart' && req.method === 'POST') {
+    console.log('🔄 Worker 재시작 요청 수신');
+
+    // 1초 후 종료하여 Docker가 재시작하도록 함
+    setTimeout(() => {
+      console.log('🔄 Worker 재시작 중...');
+      process.exit(1);
+    }, 1000);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        message: 'Worker restarting...',
+        timestamp: new Date().toISOString(),
+      }),
+    );
+    return;
+  }
+
+  if (req.url === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        isProcessing: isProcessing(),
+      }),
+    );
+    return;
+  }
+
+  // 404
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(
+    JSON.stringify({
+      error: 'Not found',
+    }),
+  );
+});
+
+const PORT = process.env.WORKER_CONTROL_PORT || 3500;
+server.listen(PORT, () => {
+  console.log(`🌐 Worker Control Server listening on port ${PORT}`);
+});
+
+// ============================================
+// Smart Heartbeat Update
+// ============================================
+let lastHeartbeatUpdateAt = 0;
+const HEARTBEAT_MIN_INTERVAL_MS = 60_000; // 1분
+
+// 20초마다 하트비트 업데이트 (스마트 로직)
+setInterval(async () => {
+  try {
+    const now = Date.now();
+    const elapsed = now - lastHeartbeatUpdateAt;
+
+    // 처리 중이거나, 1분 이상 업데이트되지 않았을 때 DB 업데이트
+    if (isProcessing() || elapsed >= HEARTBEAT_MIN_INTERVAL_MS) {
+      lastHeartbeatUpdateAt = now;
+      await updateHeartbeat(isProcessing());
+
+      // 하트비트 히스토리 기록
+      const status = isProcessing() ? 'processing' : 'healthy';
+      await recordHeartbeatHistory(status, isProcessing(), process.uptime());
+    }
+  } catch (error) {
+    console.error('하트비트 업데이트 실패:', error);
+  }
+}, 20_000); // 20초마다 확인

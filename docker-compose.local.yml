@@ -45,9 +45,12 @@ services:
       dockerfile: Dockerfile
       target: worker
     container_name: accommodation-monitor-worker-local
+    restart: unless-stopped
+    ports:
+      - '3500:3500'
     environment:
       NODE_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@${DB_HOST:-db}:5432/${DB_NAME:-accommodation_monitor}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     depends_on:

@@ -1,5 +1,6 @@
 import type { AvailabilityStatus } from '@/generated/prisma/client';
 import { checkAccommodation } from '@/lib/checkers';
+import { updateHeartbeat } from '@/lib/heartbeat';
 import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
 import { loadSettings } from '@/lib/settings';
@@ -17,11 +18,6 @@ let isRunning = false;
 export function isProcessing(): boolean {
   return isRunning;
 }
-
-// ============================================
-// 사이클 에러 카운터
-// ============================================
-let cycleErrorCount = 0;
 
 // ============================================
 // 단일 숙소 처리
@@ -51,7 +47,6 @@ async function processAccommodation(accommodation: AccommodationWithUser): Promi
     const elapsed = Date.now() - startTime;
     console.log(`  ⏱️  완료 (${elapsed}ms)`);
   } catch (error) {
-    cycleErrorCount++;
     console.error(`  💥 처리 실패:`, error);
   }
 }
@@ -183,7 +178,6 @@ export async function checkAllAccommodations(): Promise<void> {
   }
 
   isRunning = true;
-  cycleErrorCount = 0;
   const startTime = Date.now();
 
   // 사이클 시작 시 DB에서 동적 설정 갱신 (타임아웃, 재시도 등)
@@ -197,17 +191,7 @@ export async function checkAllAccommodations(): Promise<void> {
   console.log('========================================');
 
   // Heartbeat: 사이클 시작
-  prisma.workerHeartbeat
-    .upsert({
-      where: { id: 'singleton' },
-      update: { isProcessing: true, lastHeartbeatAt: new Date() },
-      create: { id: 'singleton', isProcessing: true },
-    })
-    .catch((error) => {
-      console.error('Error starting worker heartbeat:', error);
-    });
-
-  let checkedCount = 0;
+  await updateHeartbeat(true);
 
   try {
     const accommodations = await getActiveAccommodations();
@@ -216,14 +200,12 @@ export async function checkAllAccommodations(): Promise<void> {
 
     if (accommodations.length === 0) {
       console.log('체크할 숙소가 없습니다.\n');
-      return; // finally에서 isRunning = false 처리됨
+      return;
     }
 
     const limit = createLimiter(config.concurrency);
 
     await Promise.all(accommodations.map((accommodation) => limit(() => processAccommodation(accommodation))));
-
-    checkedCount = accommodations.length;
 
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     console.log(`\n✅ 모니터링 완료 (총 ${elapsed}초 소요)\n`);
@@ -233,19 +215,6 @@ export async function checkAllAccommodations(): Promise<void> {
     isRunning = false;
 
     // Heartbeat: 사이클 종료
-    prisma.workerHeartbeat
-      .update({
-        where: { id: 'singleton' },
-        data: {
-          isProcessing: false,
-          lastHeartbeatAt: new Date(),
-          accommodationsChecked: checkedCount,
-          lastCycleErrors: cycleErrorCount,
-          lastCycleDurationMs: Date.now() - startTime,
-        },
-      })
-      .catch((error) => {
-        console.error('Error updating worker heartbeat:', error);
-      });
+    await updateHeartbeat(false);
   }
 }

@@ -20,3 +20,9 @@ export const adminKeys = {
   settings: () => [...adminKeys.all, 'settings'] as const,
   settingsHistory: (filters?: Record<string, string>) => [...adminKeys.settings(), 'history', filters ?? {}] as const,
 };
+
+export const heartbeatKeys = {
+  all: ['heartbeat'] as const,
+  status: () => [...heartbeatKeys.all, 'status'] as const,
+  history: () => [...heartbeatKeys.all, 'history'] as const,
+};
