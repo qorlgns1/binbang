@@ -13,7 +13,7 @@ permissions: {}
 jobs:
   ci:
     name: Validate
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
     env:
