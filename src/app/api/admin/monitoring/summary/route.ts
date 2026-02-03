@@ -2,16 +2,18 @@ import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
 import prisma from '@/lib/prisma';
+import { loadSettings } from '@/lib/settings';
 import type { MonitoringSummary, WorkerHealthInfo } from '@/types/admin';
 
-const WORKER_HEALTHY_THRESHOLD_MS = 40 * 60 * 1000; // 40분
-const WORKER_DEGRADED_THRESHOLD_MS = 90 * 60 * 1000; // 90분
-
-function getWorkerStatus(lastHeartbeatAt: Date | null): WorkerHealthInfo['status'] {
+function getWorkerStatus(
+  lastHeartbeatAt: Date | null,
+  healthyMs: number,
+  degradedMs: number,
+): WorkerHealthInfo['status'] {
   if (!lastHeartbeatAt) return 'down';
   const elapsed = Date.now() - lastHeartbeatAt.getTime();
-  if (elapsed < WORKER_HEALTHY_THRESHOLD_MS) return 'healthy';
-  if (elapsed < WORKER_DEGRADED_THRESHOLD_MS) return 'degraded';
+  if (elapsed < healthyMs) return 'healthy';
+  if (elapsed < degradedMs) return 'degraded';
   return 'down';
 }
 
@@ -22,6 +24,7 @@ export async function GET() {
   }
 
   try {
+    const settings = await loadSettings();
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -67,7 +70,11 @@ export async function GET() {
 
     const summary: MonitoringSummary = {
       worker: {
-        status: getWorkerStatus(heartbeat?.lastHeartbeatAt ?? null),
+        status: getWorkerStatus(
+          heartbeat?.lastHeartbeatAt ?? null,
+          settings.monitoring.workerHealthyThresholdMs,
+          settings.monitoring.workerDegradedThresholdMs,
+        ),
         startedAt: heartbeat?.startedAt?.toISOString() ?? null,
         lastHeartbeatAt: heartbeat?.lastHeartbeatAt?.toISOString() ?? null,
         isProcessing: heartbeat?.isProcessing ?? false,

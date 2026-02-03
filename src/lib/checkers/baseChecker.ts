@@ -1,6 +1,6 @@
 import type { Browser, Page } from 'puppeteer';
 
-import { getEnvNumber } from '@/lib/env';
+import { getSettings } from '@/lib/settings';
 import type { AccommodationToCheck, CheckResult } from '@/types/checker';
 
 import { setupPage } from './browser';
@@ -20,10 +20,12 @@ interface CheckerConfig {
 }
 
 export async function baseCheck(accommodation: AccommodationToCheck, config: CheckerConfig): Promise<CheckResult> {
-  const MAX_RETRIES = 2;
-  const NAVIGATION_TIMEOUT_MS = getEnvNumber('NAVIGATION_TIMEOUT_MS', 25000);
-  const CONTENT_WAIT_MS = getEnvNumber('CONTENT_WAIT_MS', 10000);
-  const PATTERN_RETRY_MS = getEnvNumber('PATTERN_RETRY_MS', 5000);
+  const settings = getSettings();
+  const MAX_RETRIES = settings.checker.maxRetries;
+  const NAVIGATION_TIMEOUT_MS = settings.browser.navigationTimeoutMs;
+  const CONTENT_WAIT_MS = settings.browser.contentWaitMs;
+  const PATTERN_RETRY_MS = settings.browser.patternRetryMs;
+  const RETRY_DELAY_MS = settings.checker.retryDelayMs;
   const checkUrl = config.buildUrl(accommodation);
   let lastError: string | null = null;
 
@@ -144,7 +146,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
     }
 
     if (shouldRetry) {
-      await delay(3000);
+      await delay(RETRY_DELAY_MS);
     }
   }
 

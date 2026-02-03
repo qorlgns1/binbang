@@ -57,8 +57,9 @@ model User {
   kakaoTokenExpiry  DateTime?
 
   // 관계
-  accommodations Accommodation[]
-  checkLogs      CheckLog[]
+  accommodations     Accommodation[]
+  checkLogs          CheckLog[]
+  settingsChangeLogs SettingsChangeLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -140,4 +141,30 @@ enum AvailabilityStatus {
   UNAVAILABLE
   ERROR
   UNKNOWN
+}
+
+// 설정 변경 감사 로그
+model SettingsChangeLog {
+  id          String   @id @default(cuid())
+  settingKey  String
+  oldValue    String
+  newValue    String
+  changedById String
+  changedBy   User     @relation(fields: [changedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([settingKey])
+  @@index([createdAt])
+}
+
+// 운영 설정 (KV 방식)
+model SystemSettings {
+  key         String   @id            // 설정 키 (예: "worker.cronSchedule")
+  value       String                  // 문자열로 저장
+  type        String   @default("string") // string | int | boolean
+  category    String                  // worker | browser | checker | monitoring | notification | seo
+  description String?                 // 관리자 UI 표시용 설명
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
 }

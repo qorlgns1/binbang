@@ -17,4 +17,6 @@ export const adminKeys = {
   summary: () => [...adminKeys.monitoring(), 'summary'] as const,
   logs: (filters?: Record<string, string>) => [...adminKeys.monitoring(), 'logs', filters ?? {}] as const,
   users: (filters?: Record<string, string>) => [...adminKeys.all, 'users', filters ?? {}] as const,
+  settings: () => [...adminKeys.all, 'settings'] as const,
+  settingsHistory: (filters?: Record<string, string>) => [...adminKeys.settings(), 'history', filters ?? {}] as const,
 };

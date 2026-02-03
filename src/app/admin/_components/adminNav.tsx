@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { href: '/admin/monitoring', label: 'Monitoring' },
   { href: '/admin/users', label: 'Users' },
+  { href: '/admin/settings', label: '설정' },
 ] as const;
 
 export function AdminNav() {

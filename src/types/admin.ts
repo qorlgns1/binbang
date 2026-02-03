@@ -78,3 +78,34 @@ export interface AdminUsersResponse {
   nextCursor: string | null;
   total?: number;
 }
+
+export interface SystemSettingItem {
+  key: string;
+  value: string;
+  type: string;
+  category: string;
+  description: string | null;
+  updatedAt: string;
+}
+
+export interface SystemSettingsResponse {
+  settings: SystemSettingItem[];
+}
+
+export interface SystemSettingsUpdatePayload {
+  settings: { key: string; value: string }[];
+}
+
+export interface SettingsChangeLogEntry {
+  id: string;
+  settingKey: string;
+  oldValue: string;
+  newValue: string;
+  changedBy: { id: string; name: string | null };
+  createdAt: string;
+}
+
+export interface SettingsChangeLogsResponse {
+  logs: SettingsChangeLogEntry[];
+  nextCursor: string | null;
+}
