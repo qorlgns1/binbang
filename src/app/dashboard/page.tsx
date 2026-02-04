@@ -1,4 +1,5 @@
 import { getServerSession } from 'next-auth';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { authOptions } from '@/lib/auth';
@@ -31,6 +32,14 @@ export default async function DashboardPage() {
         <div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
           <h1 className='text-xl font-bold'>🏨 숙소 모니터링</h1>
           <div className='flex items-center gap-4'>
+            {session.user.role === 'ADMIN' && (
+              <Link
+                href='/admin/monitoring'
+                className='px-3 py-1.5 text-sm rounded-md transition-colors bg-primary text-primary-foreground'
+              >
+                Admin
+              </Link>
+            )}
             <span className='text-muted-foreground'>{session.user.name}</span>
             <LogoutButton />
           </div>
