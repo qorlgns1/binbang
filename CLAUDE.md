@@ -96,6 +96,13 @@
 - 페이지: `src/app/admin/heartbeat/page.tsx`
 - 타임라인: `src/app/admin/heartbeat/_components/HeartbeatTimeline.tsx`
 
+### 처리량(Throughput) 모니터링
+
+- API: `src/app/api/admin/throughput/summary/route.ts`, `src/app/api/admin/throughput/history/route.ts`, `src/app/api/admin/throughput/compare/route.ts`
+- Hooks: `src/hooks/useThroughputSummary.ts`, `src/hooks/useThroughputHistory.ts`, `src/hooks/useThroughputComparison.ts`
+- Query Keys: `src/hooks/queryKeys.ts` (adminKeys.throughput*)
+- 페이지/UI: `src/app/admin/throughput/page.tsx`, `src/app/admin/throughput/_components/*`
+
 ### 알림
 
 - 카카오 메시지: `src/lib/kakao/*`
@@ -106,6 +113,7 @@
 - Schema: `prisma/schema.prisma`
 - Migrations: `prisma/migrations/`
 - 설정: `prisma.config.ts`
+- 체크 사이클: `CheckCycle` 모델 + `CheckLog` 확장 필드 (cycleId, durationMs, retryCount, previousStatus)
 
 ### Prisma Migrate 워크플로우
 
