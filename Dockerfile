@@ -38,21 +38,6 @@ RUN pnpm db:generate
 RUN pnpm build
 
 # ============================================
-# migrate (1회성: prisma migrate deploy 전용)
-# - devDependencies(prisma CLI)가 들어있는 deps/node_modules를 사용
-# ============================================
-FROM base AS migrate
-WORKDIR /app
-ENV NODE_ENV=production
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma.config.ts ./
-
-CMD ["pnpm", "prisma", "migrate", "deploy"]
-
-# ============================================
 # web (runtime - Next.js standalone)
 # ============================================
 FROM node:24-slim AS web
@@ -116,5 +101,6 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./
 
-CMD ["pnpm", "cron"]
+CMD ["sh", "-c", "pnpm db:migrate:deploy && pnpm cron"]
