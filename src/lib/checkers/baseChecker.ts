@@ -39,7 +39,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
       page = await browser.newPage();
       await setupPage(page);
 
-      console.log(`    🔍 접속 중...`);
+      console.log(`    🔍 접속 중... ${checkUrl}`);
 
       await page.goto(checkUrl, {
         waitUntil: 'domcontentloaded',
