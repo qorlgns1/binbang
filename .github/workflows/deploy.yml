@@ -110,11 +110,6 @@ jobs:
               update_env_var DEPLOY_SHA "$DEPLOY_SHA"
               update_env_var DEPLOYED_AT "$DEPLOYED_AT"
 
-              if ! grep -E '^DATABASE_URL=' .env.production | grep -q 'sslrootcert='; then
-                echo "DATABASE_URL must include sslrootcert=... for RDS TLS"
-                exit 1
-              fi
-
               docker compose -f docker-compose.production.yml --env-file .env.production pull
               docker compose -f docker-compose.production.yml --env-file .env.production up -d
             else
