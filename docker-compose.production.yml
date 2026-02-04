@@ -34,4 +34,5 @@ services:
 networks:
   shared-network:
     driver: bridge
+    external: true
     name: accommodation_monitor_shared_network
