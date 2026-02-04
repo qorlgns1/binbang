@@ -17,8 +17,8 @@ export function getClientIp(request: NextRequest): string {
 
 export function getRateLimit(pathname: string): number | null {
   if (pathname === '/api/health') return null;
-  if (pathname.startsWith('/api/auth/')) return 10;
-  if (pathname.startsWith('/api/')) return 60;
+  if (pathname.startsWith('/api/auth/')) return 30;
+  if (pathname.startsWith('/api/')) return 120;
   return null;
 }
 

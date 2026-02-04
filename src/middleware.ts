@@ -13,7 +13,6 @@ export function middleware(request: NextRequest) {
 
   const ip = getClientIp(request);
   const result = checkRateLimit(ip, limit);
-  console.log('result', result);
 
   cleanupStore();
 
