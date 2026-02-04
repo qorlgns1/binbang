@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 // NextAuth.js 필수 모델
 model Account {
   id                String  @id @default(cuid())
@@ -42,17 +47,18 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  accounts      Account[]
-  sessions      Session[]
-
+  role          Role      @default(USER)
   // 카카오톡 알림용 토큰
   kakaoAccessToken  String? @db.Text
   kakaoRefreshToken String? @db.Text
   kakaoTokenExpiry  DateTime?
-
+  
   // 관계
-  accommodations Accommodation[]
-  checkLogs      CheckLog[]
+  accounts          Account[]
+  sessions          Session[]
+  accommodations     Accommodation[]
+  checkLogs          CheckLog[]
+  settingsChangeLogs SettingsChangeLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -93,6 +99,28 @@ model Accommodation {
   @@index([isActive])
 }
 
+// 모니터링 사이클
+model CheckCycle {
+  id              String    @id @default(cuid())
+  startedAt       DateTime
+  completedAt     DateTime?
+  durationMs      Int?
+  totalCount      Int       @default(0)
+  successCount    Int       @default(0)
+  errorCount      Int       @default(0)
+  concurrency     Int
+  browserPoolSize Int
+  navigationTimeoutMs Int
+  contentWaitMs   Int
+  maxRetries      Int
+  createdAt       DateTime  @default(now())
+
+  checkLogs       CheckLog[]
+
+  @@index([startedAt])
+  @@index([concurrency, browserPoolSize])
+}
+
 // 체크 로그
 model CheckLog {
   id              String   @id @default(cuid())
@@ -106,10 +134,43 @@ model CheckLog {
   errorMessage    String?
   notificationSent Boolean @default(false)
 
+  cycleId         String?
+  cycle           CheckCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  durationMs      Int?
+  retryCount      Int       @default(0)
+  previousStatus  AvailabilityStatus?
+
   createdAt       DateTime @default(now())
 
   @@index([accommodationId])
   @@index([createdAt])
+  @@index([cycleId])
+}
+
+model WorkerHeartbeat {
+  id                    String   @id @default("singleton")
+  startedAt             DateTime @default(now())
+  lastHeartbeatAt       DateTime @default(now())
+  isProcessing          Boolean  @default(false)
+  schedule              String   @default("*/30 * * * *")
+  accommodationsChecked Int      @default(0)
+  lastCycleErrors       Int      @default(0)
+  lastCycleDurationMs   Int?
+  updatedAt             DateTime @updatedAt
+  history               HeartbeatHistory[]
+}
+
+model HeartbeatHistory {
+  id          Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  status      String   // 'healthy', 'unhealthy', 'processing'
+  isProcessing Boolean  @default(false)
+  uptime      Float?   // 실행 시간 (초)
+  workerId    String   @default("singleton")
+  worker      WorkerHeartbeat @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@index([workerId])
 }
 
 enum Platform {
@@ -122,4 +183,30 @@ enum AvailabilityStatus {
   UNAVAILABLE
   ERROR
   UNKNOWN
+}
+
+// 설정 변경 감사 로그
+model SettingsChangeLog {
+  id          String   @id @default(cuid())
+  settingKey  String
+  oldValue    String
+  newValue    String
+  changedById String
+  changedBy   User     @relation(fields: [changedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([settingKey])
+  @@index([createdAt])
+}
+
+// 운영 설정 (KV 방식)
+model SystemSettings {
+  key         String   @id            // 설정 키 (예: "worker.cronSchedule")
+  value       String                  // 문자열로 저장
+  type        String   @default("string") // string | int | boolean
+  category    String                  // worker | browser | checker | monitoring | notification | seo
+  description String?                 // 관리자 UI 표시용 설명
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
 }

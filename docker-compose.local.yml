@@ -45,18 +45,14 @@ services:
       dockerfile: Dockerfile
       target: worker
     container_name: accommodation-monitor-worker-local
+    restart: unless-stopped
+    ports:
+      - '3500:3500'
     environment:
       NODE_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@${DB_HOST:-db}:5432/${DB_NAME:-accommodation_monitor}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
-      CRON_SCHEDULE: ${CRON_SCHEDULE:-*/5 * * * *}
-      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-3}
-      BROWSER_POOL_SIZE: ${BROWSER_POOL_SIZE:-3}
-      BLOCK_RESOURCE_TYPES: ${BLOCK_RESOURCE_TYPES:-image,media,font}
-      NAVIGATION_TIMEOUT_MS: ${NAVIGATION_TIMEOUT_MS:-25000}
-      CONTENT_WAIT_MS: ${CONTENT_WAIT_MS:-10000}
-      PATTERN_RETRY_MS: ${PATTERN_RETRY_MS:-5000}
     depends_on:
       db:
         condition: service_healthy

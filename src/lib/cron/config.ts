@@ -1,28 +1,47 @@
-import { getEnvNumber, validateWorkerEnv } from '@/lib/env';
+import { validateWorkerEnv } from '@/lib/env';
+import { loadSettings } from '@/lib/settings';
 
-// 워커 시작 시 환경변수 검증
-validateWorkerEnv();
+interface CronConfig {
+  schedule: string;
+  concurrency: number;
+  browserPoolSize: number;
+  startupDelay: number;
+  shutdownTimeoutMs: number;
+}
 
-const schedule = process.env.CRON_SCHEDULE || '*/30 * * * *';
-const configuredConcurrency = getEnvNumber('WORKER_CONCURRENCY', 3);
-const browserPoolSize = getEnvNumber('BROWSER_POOL_SIZE', 2);
+let cronConfig: CronConfig | null = null;
 
-export const CRON_CONFIG = {
-  schedule,
-  concurrency: Math.min(configuredConcurrency, browserPoolSize),
-  browserPoolSize,
-  startupDelay: 10000, // 10초
-} as const;
+/**
+ * DB에서 설정을 읽어 워커 설정을 초기화한다.
+ * 워커 시작 시 1회 호출.
+ */
+export async function initCronConfig(): Promise<void> {
+  validateWorkerEnv();
+  const settings = await loadSettings();
 
-// 설정 로깅
+  const concurrency = Math.min(settings.worker.concurrency, settings.worker.browserPoolSize);
+
+  cronConfig = {
+    schedule: settings.worker.cronSchedule,
+    concurrency,
+    browserPoolSize: settings.worker.browserPoolSize,
+    startupDelay: settings.worker.startupDelayMs,
+    shutdownTimeoutMs: settings.worker.shutdownTimeoutMs,
+  };
+}
+
+export function getCronConfig(): CronConfig {
+  if (!cronConfig) {
+    throw new Error('CRON_CONFIG not initialized. Call initCronConfig() first.');
+  }
+  return cronConfig;
+}
+
 export function logConfig(): void {
+  const config = getCronConfig();
   console.log('📋 워커 설정:');
-  console.log(`   - 스케줄: ${CRON_CONFIG.schedule}`);
-  const concurrencyLabel =
-    configuredConcurrency > browserPoolSize
-      ? `${CRON_CONFIG.concurrency}개 (풀 크기 ${browserPoolSize}로 제한됨)`
-      : `${CRON_CONFIG.concurrency}개`;
-  console.log(`   - 동시 처리: ${concurrencyLabel}`);
-  console.log(`   - 브라우저 풀: ${CRON_CONFIG.browserPoolSize}개`);
-  console.log(`   - 시작 딜레이: ${CRON_CONFIG.startupDelay}ms`);
+  console.log(`   - 스케줄: ${config.schedule}`);
+  console.log(`   - 동시 처리: ${config.concurrency}개`);
+  console.log(`   - 브라우저 풀: ${config.browserPoolSize}개`);
+  console.log(`   - 시작 딜레이: ${config.startupDelay}ms`);
 }

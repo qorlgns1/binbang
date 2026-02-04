@@ -4,6 +4,9 @@ export function isRetryableError(errorMessage: string): boolean {
   if (errorMessage.includes('Navigation timeout')) {
     return false;
   }
+  if (errorMessage.includes('Runtime.callFunctionOn timed out')) {
+    return false;
+  }
   return RETRYABLE_ERRORS.some((pattern) => errorMessage.includes(pattern));
 }
 

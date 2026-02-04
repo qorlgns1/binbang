@@ -2,8 +2,6 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: ['main', 'develop']
   workflow_call:
 
 concurrency:
@@ -30,14 +28,14 @@ jobs:
       NEXT_PUBLIC_NAVER_SITE_VERIFICATION: naver-verification-dummy
       NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: google-site-verification-dummy
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+      - uses: pnpm/action-setup@v4
         with:
           version: 10.28.0
           run_install: false
 
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -46,16 +44,5 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm test
+      - run: pnpm db:generate
       - run: pnpm build
-
-  call-publish-dev:
-    name: Publish Dev Images
-    needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-    uses: ./.github/workflows/publish-dev.yml
-    permissions:
-      contents: read
-      id-token: write
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

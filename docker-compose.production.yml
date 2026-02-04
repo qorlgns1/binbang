@@ -3,6 +3,8 @@ services:
     image: kihoonbae/accommodation-monitor:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
     ports:
       - '4000:3000'
+    networks:
+      - shared-network
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
@@ -17,23 +19,20 @@ services:
 
   worker:
     image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
+    networks:
+      - shared-network
+    expose:
+      - '3500'
     environment:
       DATABASE_URL: ${DATABASE_URL}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
-      CRON_SCHEDULE: ${CRON_SCHEDULE:-*/30 * * * *}
-      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
-      BROWSER_POOL_SIZE: ${BROWSER_POOL_SIZE:-1}
-      BLOCK_RESOURCE_TYPES: ${BLOCK_RESOURCE_TYPES:-image,media,font}
-      NAVIGATION_TIMEOUT_MS: ${NAVIGATION_TIMEOUT_MS:-25000}
-      CONTENT_WAIT_MS: ${CONTENT_WAIT_MS:-10000}
-      PATTERN_RETRY_MS: ${PATTERN_RETRY_MS:-5000}
     restart: unless-stopped
     volumes:
       - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
+
+networks:
+  shared-network:
+    driver: bridge
+    external: true
+    name: accommodation_monitor_shared_network

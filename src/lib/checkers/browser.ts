@@ -1,21 +1,18 @@
 import type { Browser, Page } from 'puppeteer';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
-import { getEnvNumber } from '@/lib/env';
+import { getSettings } from '@/lib/settings';
+
+puppeteer.use(StealthPlugin());
 
 const DEFAULT_BLOCKED_RESOURCE_TYPES = ['image', 'media', 'font'];
 
-function parseBlockedResourceTypes(): Set<string> {
-  const raw = process.env.BLOCK_RESOURCE_TYPES;
-  if (raw === undefined) {
-    return new Set(DEFAULT_BLOCKED_RESOURCE_TYPES);
-  }
-
+function parseBlockedResourceTypes(raw: string): Set<string> {
   const normalized = raw.trim().toLowerCase();
   if (!normalized || ['0', 'false', 'off', 'none'].includes(normalized)) {
     return new Set();
   }
-
   return new Set(
     normalized
       .split(',')
@@ -24,13 +21,11 @@ function parseBlockedResourceTypes(): Set<string> {
   );
 }
 
-const BLOCKED_RESOURCE_TYPES = parseBlockedResourceTypes();
-const NAVIGATION_TIMEOUT_MS = getEnvNumber('NAVIGATION_TIMEOUT_MS', 25000);
-
 export async function createBrowser(): Promise<Browser> {
+  const settings = getSettings();
   return puppeteer.launch({
     headless: true,
-    protocolTimeout: 60000,
+    protocolTimeout: settings.browser.protocolTimeoutMs,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -46,18 +41,20 @@ export async function createBrowser(): Promise<Browser> {
 }
 
 export async function setupPage(page: Page): Promise<void> {
-  await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  );
+  const settings = getSettings();
+  const blockRaw = settings.checker.blockResourceTypes;
+  const blockedResourceTypes = blockRaw ? parseBlockedResourceTypes(blockRaw) : new Set(DEFAULT_BLOCKED_RESOURCE_TYPES);
+  const navigationTimeoutMs = settings.browser.navigationTimeoutMs;
+
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setExtraHTTPHeaders({
     'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
   });
 
-  if (BLOCKED_RESOURCE_TYPES.size > 0) {
+  if (blockedResourceTypes.size > 0) {
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (BLOCKED_RESOURCE_TYPES.has(request.resourceType())) {
+      if (blockedResourceTypes.has(request.resourceType())) {
         request.abort();
         return;
       }
@@ -65,10 +62,6 @@ export async function setupPage(page: Page): Promise<void> {
     });
   }
 
-  await page.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-  });
-
-  page.setDefaultTimeout(NAVIGATION_TIMEOUT_MS);
-  page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
+  page.setDefaultTimeout(navigationTimeoutMs);
+  page.setDefaultNavigationTimeout(navigationTimeoutMs);
 }

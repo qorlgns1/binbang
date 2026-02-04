@@ -23,6 +23,14 @@ describe('isRetryableError', () => {
     expect(isRetryableError('protocolTimeout')).toBe(true);
   });
 
+  it('Runtime.callFunctionOn timed out → 재시도 불가 (페이지 JS 런타임 멈춤)', () => {
+    expect(
+      isRetryableError(
+        "Runtime.callFunctionOn timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.",
+      ),
+    ).toBe(false);
+  });
+
   it('net::ERR_ 패턴 → 재시도 가능', () => {
     expect(isRetryableError('net::ERR_CONNECTION_REFUSED')).toBe(true);
   });

@@ -1,6 +1,6 @@
 import type { Browser, Page } from 'puppeteer';
 
-import { getEnvNumber } from '@/lib/env';
+import { getSettings } from '@/lib/settings';
 import type { AccommodationToCheck, CheckResult } from '@/types/checker';
 
 import { setupPage } from './browser';
@@ -20,10 +20,12 @@ interface CheckerConfig {
 }
 
 export async function baseCheck(accommodation: AccommodationToCheck, config: CheckerConfig): Promise<CheckResult> {
-  const MAX_RETRIES = 2;
-  const NAVIGATION_TIMEOUT_MS = getEnvNumber('NAVIGATION_TIMEOUT_MS', 25000);
-  const CONTENT_WAIT_MS = getEnvNumber('CONTENT_WAIT_MS', 10000);
-  const PATTERN_RETRY_MS = getEnvNumber('PATTERN_RETRY_MS', 5000);
+  const settings = getSettings();
+  const MAX_RETRIES = settings.checker.maxRetries;
+  const NAVIGATION_TIMEOUT_MS = settings.browser.navigationTimeoutMs;
+  const CONTENT_WAIT_MS = settings.browser.contentWaitMs;
+  const PATTERN_RETRY_MS = settings.browser.patternRetryMs;
+  const RETRY_DELAY_MS = settings.checker.retryDelayMs;
   const checkUrl = config.buildUrl(accommodation);
   let lastError: string | null = null;
 
@@ -37,7 +39,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
       page = await browser.newPage();
       await setupPage(page);
 
-      console.log(`    🔍 접속 중...`);
+      console.log(`    🔍 접속 중... ${checkUrl}`);
 
       await page.goto(checkUrl, {
         waitUntil: 'domcontentloaded',
@@ -114,6 +116,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
           price: null,
           checkUrl,
           error: '패턴 미탐지',
+          retryCount: attempt,
         };
       }
 
@@ -122,6 +125,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
         price: result.price,
         checkUrl,
         error: null,
+        retryCount: attempt,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -136,6 +140,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
           price: null,
           checkUrl,
           error: errorMessage,
+          retryCount: attempt,
         };
       }
     } finally {
@@ -144,7 +149,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
     }
 
     if (shouldRetry) {
-      await delay(3000);
+      await delay(RETRY_DELAY_MS);
     }
   }
 
@@ -153,5 +158,6 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
     price: null,
     checkUrl,
     error: lastError || 'Unknown error',
+    retryCount: MAX_RETRIES,
   };
 }
