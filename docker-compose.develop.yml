@@ -16,6 +16,13 @@ services:
     volumes:
       - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
 
+  migrate:
+    image: kihoonbae/accommodation-monitor:migrate-develop
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
+
   worker:
     image: kihoonbae/accommodation-monitor:worker-develop
     environment:
