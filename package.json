@@ -45,6 +45,8 @@
     "node-cron": "^3.0.3",
     "pg": "^8.18.0",
     "puppeteer": "^24.36.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "radix-ui": "^1.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -54,10 +56,10 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^5.91.3",
     "@eslint/js": "^9.39.2",
     "@next/eslint-plugin-next": "^16.1.6",
     "@tailwindcss/postcss": "^4.1.18",
+    "@tanstack/react-query-devtools": "^5.91.3",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/node": "^24.10.9",
     "@types/node-cron": "^3.0.11",
