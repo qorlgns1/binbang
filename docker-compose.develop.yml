@@ -3,6 +3,8 @@ services:
     image: kihoonbae/accommodation-monitor:web-develop
     ports:
       - '3200:3000'
+    networks:
+      - shared-network
     environment:
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL}
@@ -16,9 +18,16 @@ services:
 
   worker:
     image: kihoonbae/accommodation-monitor:worker-develop
+    networks:
+      - shared-network
     environment:
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     restart: unless-stopped
+
+networks:
+  shared-network:
+    driver: bridge
+    name: accommodation_monitor_shared_network
