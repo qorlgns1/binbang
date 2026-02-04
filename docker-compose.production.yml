@@ -4,7 +4,7 @@ services:
     ports:
       - '4000:3000'
     networks:
-      - shared
+      - shared-network
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
@@ -20,7 +20,7 @@ services:
   worker:
     image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
     networks:
-      - shared
+      - shared-network
     expose:
       - '3500'
     environment:
@@ -32,6 +32,6 @@ services:
       - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
 
 networks:
-  shared:
+  shared-network:
     driver: bridge
     name: accommodation_monitor_shared_network
