@@ -3,7 +3,7 @@ import { checkAccommodation } from '@/lib/checkers';
 import { updateHeartbeat } from '@/lib/heartbeat';
 import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
-import { loadSettings } from '@/lib/settings';
+import { getSettings, loadSettings } from '@/lib/settings';
 import type { AccommodationWithUser } from '@/types/accommodation';
 
 import { getCronConfig } from './config';
@@ -22,7 +22,10 @@ export function isProcessing(): boolean {
 // ============================================
 // 단일 숙소 처리
 // ============================================
-async function processAccommodation(accommodation: AccommodationWithUser): Promise<void> {
+async function processAccommodation(
+  accommodation: AccommodationWithUser,
+  cycleId: string,
+): Promise<{ success: boolean }> {
   const startTime = Date.now();
 
   try {
@@ -40,14 +43,23 @@ async function processAccommodation(accommodation: AccommodationWithUser): Promi
     const status = determineStatus(result);
     logStatus(status, result);
 
-    await saveCheckLog(accommodation, status, result);
+    const durationMs = Date.now() - startTime;
+
+    await saveCheckLog(accommodation, status, result, {
+      cycleId,
+      durationMs,
+      retryCount: result.retryCount,
+      previousStatus: accommodation.lastStatus,
+    });
     await sendNotificationIfNeeded(accommodation, status, result);
     await updateAccommodationStatus(accommodation.id, status, result.price);
 
-    const elapsed = Date.now() - startTime;
-    console.log(`  ⏱️  완료 (${elapsed}ms)`);
+    console.log(`  ⏱️  완료 (${durationMs}ms)`);
+
+    return { success: status !== 'ERROR' };
   } catch (error) {
     console.error(`  💥 처리 실패:`, error);
+    return { success: false };
   }
 }
 
@@ -75,6 +87,12 @@ async function saveCheckLog(
   accommodation: AccommodationWithUser,
   status: AvailabilityStatus,
   result: { price: string | null; error: string | null },
+  extra: {
+    cycleId: string;
+    durationMs: number;
+    retryCount: number;
+    previousStatus: AvailabilityStatus | null;
+  },
 ): Promise<void> {
   await prisma.checkLog.create({
     data: {
@@ -84,6 +102,10 @@ async function saveCheckLog(
       price: result.price,
       errorMessage: result.error,
       notificationSent: false,
+      cycleId: extra.cycleId,
+      durationMs: extra.durationMs,
+      retryCount: extra.retryCount,
+      previousStatus: extra.previousStatus,
     },
   });
 }
@@ -184,6 +206,7 @@ export async function checkAllAccommodations(): Promise<void> {
   await loadSettings().catch((err) => console.warn('⚠️ 설정 갱신 실패, 이전 캐시 사용:', err));
 
   const config = getCronConfig();
+  const settings = getSettings();
 
   console.log('\n========================================');
   console.log(`🕐 모니터링 시작: ${new Date().toLocaleString('ko-KR')}`);
@@ -193,7 +216,22 @@ export async function checkAllAccommodations(): Promise<void> {
   // Heartbeat: 사이클 시작
   await updateHeartbeat(true);
 
+  let cycleId: string | null = null;
+
   try {
+    // CheckCycle 생성 (설정 스냅샷 포함)
+    const cycle = await prisma.checkCycle.create({
+      data: {
+        startedAt: new Date(startTime),
+        concurrency: config.concurrency,
+        browserPoolSize: config.browserPoolSize,
+        navigationTimeoutMs: settings.browser.navigationTimeoutMs,
+        contentWaitMs: settings.browser.contentWaitMs,
+        maxRetries: settings.checker.maxRetries,
+      },
+    });
+    cycleId = cycle.id;
+
     const accommodations = await getActiveAccommodations();
 
     console.log(`📋 체크할 숙소: ${accommodations.length}개`);
@@ -205,9 +243,27 @@ export async function checkAllAccommodations(): Promise<void> {
 
     const limit = createLimiter(config.concurrency);
 
-    await Promise.all(accommodations.map((accommodation) => limit(() => processAccommodation(accommodation))));
+    const results = await Promise.all(
+      accommodations.map((accommodation) => limit(() => processAccommodation(accommodation, cycleId as string))),
+    );
 
-    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    const durationMs = Date.now() - startTime;
+    const successCount = results.filter((r) => r.success).length;
+    const errorCount = results.length - successCount;
+
+    // CheckCycle 완료 업데이트
+    await prisma.checkCycle.update({
+      where: { id: cycleId },
+      data: {
+        completedAt: new Date(),
+        durationMs,
+        totalCount: results.length,
+        successCount,
+        errorCount,
+      },
+    });
+
+    const elapsed = Math.round(durationMs / 1000);
     console.log(`\n✅ 모니터링 완료 (총 ${elapsed}초 소요)\n`);
   } catch (error) {
     console.error('모니터링 중 오류 발생:', error);

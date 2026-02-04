@@ -5,6 +5,7 @@ export interface CheckResult {
   price: string | null;
   checkUrl: string;
   error: string | null;
+  retryCount: number;
 }
 
 export interface AccommodationToCheck {

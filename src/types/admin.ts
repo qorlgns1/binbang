@@ -109,3 +109,50 @@ export interface SettingsChangeLogsResponse {
   logs: SettingsChangeLogEntry[];
   nextCursor: string | null;
 }
+
+// ── Throughput ──
+
+export interface ThroughputSummary {
+  totalChecks: number;
+  successCount: number;
+  errorCount: number;
+  successRate: number;
+  avgThroughputPerMin: number;
+  lastCheckAt: string | null;
+  lastCycle: {
+    startedAt: string;
+    durationMs: number;
+    totalCount: number;
+    successCount: number;
+    errorCount: number;
+    concurrency: number;
+    browserPoolSize: number;
+  } | null;
+}
+
+export interface ThroughputBucket {
+  bucketStart: string;
+  totalChecks: number;
+  successCount: number;
+  errorCount: number;
+  throughputPerMin: number;
+}
+
+export interface ThroughputHistoryResponse {
+  buckets: ThroughputBucket[];
+  bucketMinutes: number;
+}
+
+export interface ThroughputComparisonGroup {
+  key: string;
+  value: number;
+  avgThroughputPerMin: number;
+  avgCycleDurationMs: number;
+  avgSuccessRate: number;
+  cycleCount: number;
+}
+
+export interface ThroughputComparisonResponse {
+  compareBy: string;
+  groups: ThroughputComparisonGroup[];
+}

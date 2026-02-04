@@ -116,6 +116,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
           price: null,
           checkUrl,
           error: '패턴 미탐지',
+          retryCount: attempt,
         };
       }
 
@@ -124,6 +125,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
         price: result.price,
         checkUrl,
         error: null,
+        retryCount: attempt,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -138,6 +140,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
           price: null,
           checkUrl,
           error: errorMessage,
+          retryCount: attempt,
         };
       }
     } finally {
@@ -155,5 +158,6 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
     price: null,
     checkUrl,
     error: lastError || 'Unknown error',
+    retryCount: MAX_RETRIES,
   };
 }
