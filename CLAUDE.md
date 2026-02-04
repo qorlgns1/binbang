@@ -9,7 +9,7 @@
 
 모든 코드 변경, 리팩토링, 기능 제안은 아래 우선순위를 **반드시** 따른다.
 
-1. **운영 안정성** (t2.micro에서 프로세스가 죽지 않는 것)
+1. **운영 안정성** (운영 환경에서 프로세스가 죽지 않는 것)
 2. **메모리 / CPU 사용량 최소화**
 3. **데이터 정합성**
    - 중복 체크 방지
@@ -27,12 +27,9 @@
 
 - production 환경에서 `docker compose`에 `build:` 사용 ❌  
   → **항상 image + digest 고정**
-- production에서 멀티 브라우저 풀, 동시성 증가 제안 ❌
-- t2.micro 기준에서 메모리 사용량 증가를 전제로 한 설계 ❌
 
 ### Worker / Puppeteer
 
-- `BROWSER_POOL_SIZE`, `WORKER_CONCURRENCY` 증가 제안 ❌
 - 새 Chromium 인스턴스를 매 작업마다 생성 ❌
 - 페이지/브라우저 close 누락 ❌
 
@@ -223,8 +220,6 @@ pnpm dlx shadcn@latest add <component> --overwrite
 - 필수 규칙:
   - image + digest 고정
   - CA 번들 마운트 필수
-  - Worker 메모리 제한 엄수
-  - 동시성/풀 크기 변경 금지
   - 워커 제어 포트는 `expose`만 사용 (`ports` 금지)
 
 ---
@@ -246,21 +241,6 @@ pnpm dlx shadcn@latest add <component> --overwrite
 
 ---
 
-### Worker 메모리 급증 / 프로세스 종료
-
-점검 포인트:
-
-- 브라우저/페이지 close 누락 여부
-- 브라우저 풀 재사용 여부
-- 리소스 차단 설정 유지 여부
-- 장시간 실행 시 메모리 누수 가능성
-
-원칙:
-
-- **브라우저 1개**
-- **동시 처리 1개**
-- 필요 시 재시작은 허용, 확장은 불가
-
 ---
 
 ## 🧪 변경 시 검증 기준
@@ -269,8 +249,6 @@ pnpm dlx shadcn@latest add <component> --overwrite
 
 - 체크 결과 로직 동일 (패턴 탐지 결과 변경 ❌)
 - 중복 알림 발생 ❌
-- Worker 쿼리 수 증가 ❌
-- 메모리 사용량 증가 ❌
 
 권장 검증 명령:
 
