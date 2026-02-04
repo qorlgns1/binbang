@@ -59,7 +59,7 @@ async function checkWorker(): Promise<void> {
     const timeSinceLastHeartbeat = now - new Date(heartbeat.lastHeartbeatAt).getTime();
     const missedBeats = Math.floor(timeSinceLastHeartbeat / DEFAULT_CONFIG.intervalMs);
 
-    console.log(`💓 하트비트 체크: ${Math.floor(timeSinceLastHeartbeat / 1000)}초 전, 놓침: ${missedBeats}`);
+    // console.log(`💓 하트비트 체크: ${Math.floor(timeSinceLastHeartbeat / 1000)}초 전, 놓침: ${missedBeats}`);
 
     // 워커 다운 감지
     if (missedBeats >= DEFAULT_CONFIG.missedThreshold) {
