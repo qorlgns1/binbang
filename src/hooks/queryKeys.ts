@@ -19,6 +19,11 @@ export const adminKeys = {
   summary: () => [...adminKeys.monitoring(), 'summary'] as const,
   logs: (filters?: Record<string, string>) => [...adminKeys.monitoring(), 'logs', filters ?? {}] as const,
   users: (filters?: Record<string, string>) => [...adminKeys.all, 'users', filters ?? {}] as const,
+  userDetail: (id: string) => [...adminKeys.all, 'users', id] as const,
+  userActivity: (id: string, filters?: Record<string, string>) =>
+    [...adminKeys.all, 'users', id, 'activity', filters ?? {}] as const,
+  plans: () => [...adminKeys.all, 'plans'] as const,
+  auditLogs: (filters?: Record<string, string>) => [...adminKeys.all, 'auditLogs', filters ?? {}] as const,
   settings: () => [...adminKeys.all, 'settings'] as const,
   settingsHistory: (filters?: Record<string, string>) => [...adminKeys.settings(), 'history', filters ?? {}] as const,
   throughput: () => [...adminKeys.all, 'throughput'] as const,
@@ -34,4 +39,10 @@ export const heartbeatKeys = {
   all: ['heartbeat'] as const,
   status: () => [...heartbeatKeys.all, 'status'] as const,
   history: () => [...heartbeatKeys.all, 'history'] as const,
+};
+
+export const userKeys = {
+  all: ['user'] as const,
+  quota: () => [...userKeys.all, 'quota'] as const,
+  subscription: () => [...userKeys.all, 'subscription'] as const,
 };

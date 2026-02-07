@@ -562,5 +562,49 @@ export const SYSTEM_SETTINGS = [
     category: 'notification',
     description: '카카오 알림 인증이 만료되기 전 미리 갱신하는 여유 시간',
   },
+
+  // ── 하트비트 모니터링 ──
+  {
+    key: 'heartbeat.intervalMs',
+    value: '60000',
+    type: 'int',
+    category: 'heartbeat',
+    description: '워커가 살아있음을 알리는 하트비트 업데이트 간격',
+  },
+  {
+    key: 'heartbeat.missedThreshold',
+    value: '1',
+    type: 'int',
+    category: 'heartbeat',
+    description: '알림 발송 전 놓쳐도 되는 하트비트 횟수 (이 횟수 이상 놓치면 알림)',
+  },
+  {
+    key: 'heartbeat.checkIntervalMs',
+    value: '60000',
+    type: 'int',
+    category: 'heartbeat',
+    description: '워커 상태를 확인하는 간격',
+  },
+  {
+    key: 'heartbeat.workerDownCooldownMs',
+    value: '3600000',
+    type: 'int',
+    category: 'heartbeat',
+    description: '워커 다운 알림 후 다음 알림까지 기다리는 시간 (중복 알림 방지)',
+  },
+  {
+    key: 'heartbeat.workerStuckCooldownMs',
+    value: '1800000',
+    type: 'int',
+    category: 'heartbeat',
+    description: '워커 처리 지연 알림 후 다음 알림까지 기다리는 시간',
+  },
+  {
+    key: 'heartbeat.maxProcessingTimeMs',
+    value: '3600000',
+    type: 'int',
+    category: 'heartbeat',
+    description: '워커가 한 작업을 처리하는 최대 허용 시간 (초과 시 "처리 지연" 알림)',
+  },
 ];
 

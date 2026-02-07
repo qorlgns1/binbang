@@ -22,6 +22,25 @@ export const authOptions: NextAuthOptions = {
       if (!user) return null;
       return user as typeof user & { email: string };
     },
+    async getSessionAndUser(sessionToken: string) {
+      const session = await prisma.session.findUnique({
+        where: { sessionToken },
+        include: {
+          user: {
+            include: {
+              roles: { select: { name: true } },
+              plan: { select: { name: true } },
+            },
+          },
+        },
+      });
+      if (!session) return null;
+      const { user, ...rest } = session;
+      return {
+        session: rest,
+        user: user as typeof user & { email: string },
+      };
+    },
   },
   providers: [
     GoogleProvider({

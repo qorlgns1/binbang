@@ -100,7 +100,7 @@
 
 - API: `src/app/api/admin/throughput/summary/route.ts`, `src/app/api/admin/throughput/history/route.ts`, `src/app/api/admin/throughput/compare/route.ts`
 - Hooks: `src/hooks/useThroughputSummary.ts`, `src/hooks/useThroughputHistory.ts`, `src/hooks/useThroughputComparison.ts`
-- Query Keys: `src/hooks/queryKeys.ts` (adminKeys.throughput*)
+- Query Keys: `src/hooks/queryKeys.ts` (adminKeys.throughput\*)
 - 페이지/UI: `src/app/admin/throughput/page.tsx`, `src/app/admin/throughput/_components/*`
 
 ### 알림

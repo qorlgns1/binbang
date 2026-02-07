@@ -69,9 +69,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   checker: '체크 동작',
   monitoring: '모니터링 임계값',
   notification: '알림',
+  heartbeat: '하트비트 모니터링',
 };
 
-const CATEGORY_ORDER = ['worker', 'browser', 'checker', 'monitoring', 'notification'];
+const CATEGORY_ORDER = ['worker', 'browser', 'checker', 'monitoring', 'notification', 'heartbeat'];
 
 export function SettingsManager() {
   const { data, isLoading, isError } = useSystemSettings();

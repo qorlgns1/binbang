@@ -25,9 +25,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
           <div className='flex items-center gap-6'>
             <h1 className='text-xl font-bold'>Admin</h1>
-            <AdminNav />
+            <AdminNav userName={session.user.name ?? null} />
           </div>
-          <div className='flex items-center gap-4'>
+          <div className='hidden md:flex items-center gap-4'>
             <span className='text-sm text-muted-foreground'>{session.user.name}</span>
             <Link
               href='/dashboard'

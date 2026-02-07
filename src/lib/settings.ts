@@ -32,12 +32,22 @@ interface NotificationSettings {
   kakaoTokenRefreshMarginMs: number;
 }
 
+interface HeartbeatSettings {
+  intervalMs: number;
+  missedThreshold: number;
+  checkIntervalMs: number;
+  workerDownCooldownMs: number;
+  workerStuckCooldownMs: number;
+  maxProcessingTimeMs: number;
+}
+
 export interface SystemSettingsCache {
   worker: WorkerSettings;
   browser: BrowserSettings;
   checker: CheckerSettings;
   monitoring: MonitoringSettings;
   notification: NotificationSettings;
+  heartbeat: HeartbeatSettings;
 }
 
 // ── 기본값 맵 (DB → env → default 순서로 해소) ──
@@ -58,6 +68,13 @@ const DEFAULTS: Record<string, { env?: string; default: string }> = {
   'monitoring.workerHealthyThresholdMs': { default: '2400000' },
   'monitoring.workerDegradedThresholdMs': { default: '5400000' },
   'notification.kakaoTokenRefreshMarginMs': { default: '300000' },
+  // Heartbeat
+  'heartbeat.intervalMs': { env: 'HEARTBEAT_INTERVAL_MS', default: '60000' },
+  'heartbeat.missedThreshold': { env: 'HEARTBEAT_MISSED_THRESHOLD', default: '1' },
+  'heartbeat.checkIntervalMs': { env: 'HEARTBEAT_CHECK_INTERVAL_MS', default: '60000' },
+  'heartbeat.workerDownCooldownMs': { default: '3600000' },
+  'heartbeat.workerStuckCooldownMs': { default: '1800000' },
+  'heartbeat.maxProcessingTimeMs': { env: 'MAX_PROCESSING_TIME_MS', default: '3600000' },
 };
 
 // ── 캐시 ──
@@ -118,6 +135,14 @@ function buildCache(dbMap: Map<string, string>): SystemSettingsCache {
     },
     notification: {
       kakaoTokenRefreshMarginMs: toInt(r('notification.kakaoTokenRefreshMarginMs'), 300000),
+    },
+    heartbeat: {
+      intervalMs: toInt(r('heartbeat.intervalMs'), 60000),
+      missedThreshold: toInt(r('heartbeat.missedThreshold'), 1),
+      checkIntervalMs: toInt(r('heartbeat.checkIntervalMs'), 60000),
+      workerDownCooldownMs: toInt(r('heartbeat.workerDownCooldownMs'), 3600000),
+      workerStuckCooldownMs: toInt(r('heartbeat.workerStuckCooldownMs'), 1800000),
+      maxProcessingTimeMs: toInt(r('heartbeat.maxProcessingTimeMs'), 3600000),
     },
   };
 }

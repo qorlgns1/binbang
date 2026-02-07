@@ -17,10 +17,11 @@ export function getClientIp(request: NextRequest): string {
 
 export function getRateLimit(pathname: string): number | null {
   if (pathname === '/api/health') return null;
-  // Credentials endpoints – brute-force 방지를 위해 더 엄격하게 제한
-  if (pathname === '/api/auth/credentials-login') return 10;
-  if (pathname === '/api/auth/signup') return 5;
-  if (pathname.startsWith('/api/auth/')) return 30;
+  // Credentials endpoints – brute-force 방지 (1분 기준)
+  // 실패 시에만 카운트하는 것이 이상적이지만, 현재는 모든 요청을 카운트
+  if (pathname === '/api/auth/credentials-login') return 30; // 1분에 30회 (2초에 1회)
+  if (pathname === '/api/auth/signup') return 10; // 1분에 10회
+  if (pathname.startsWith('/api/auth/')) return 60;
   if (pathname.startsWith('/api/')) return 120;
   return null;
 }

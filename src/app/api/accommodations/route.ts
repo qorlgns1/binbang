@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
+import { QuotaKey } from '@/generated/prisma/enums';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
@@ -41,6 +42,36 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Quota 체크
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        plan: {
+          select: {
+            quotas: {
+              where: { key: QuotaKey.MAX_ACCOMMODATIONS },
+              select: { value: true },
+            },
+          },
+        },
+        _count: { select: { accommodations: true } },
+      },
+    });
+
+    const maxAccommodations = user?.plan?.quotas[0]?.value ?? 5;
+    const currentCount = user?._count.accommodations ?? 0;
+
+    if (currentCount >= maxAccommodations) {
+      return NextResponse.json(
+        {
+          error: 'quota_exceeded',
+          message: `숙소 등록 한도(${maxAccommodations}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
+          quota: { max: maxAccommodations, current: currentCount },
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const data = createAccommodationSchema.parse(body);
 

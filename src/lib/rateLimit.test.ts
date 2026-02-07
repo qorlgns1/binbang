@@ -12,9 +12,17 @@ describe('getRateLimit', () => {
     expect(getRateLimit('/api/health')).toBeNull();
   });
 
-  it('/api/auth/* 경로는 분당 30회', () => {
-    expect(getRateLimit('/api/auth/signin')).toBe(30);
-    expect(getRateLimit('/api/auth/callback/kakao')).toBe(30);
+  it('/api/auth/credentials-login은 분당 30회', () => {
+    expect(getRateLimit('/api/auth/credentials-login')).toBe(30);
+  });
+
+  it('/api/auth/signup은 분당 10회', () => {
+    expect(getRateLimit('/api/auth/signup')).toBe(10);
+  });
+
+  it('/api/auth/* 기타 경로는 분당 60회', () => {
+    expect(getRateLimit('/api/auth/signin')).toBe(60);
+    expect(getRateLimit('/api/auth/callback/kakao')).toBe(60);
   });
 
   it('/api/* 기본 경로는 분당 120회', () => {

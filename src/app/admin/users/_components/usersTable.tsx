@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import Image from 'next/image';
+import Link from 'next/link';
 
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -14,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import type { AdminUserInfo } from '@/types/admin';
 
+import { PlanChangeDialog } from './planChangeDialog';
 import { RoleChangeDialog } from './roleChangeDialog';
 
 function RoleBadges({ roles }: { roles: string[] }) {
@@ -59,7 +61,8 @@ interface UsersTableProps {
 
 export function UsersTable({ filters }: UsersTableProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useAdminUsers(filters);
-  const [selectedUser, setSelectedUser] = useState<AdminUserInfo | null>(null);
+  const [selectedUserForRole, setSelectedUserForRole] = useState<AdminUserInfo | null>(null);
+  const [selectedUserForPlan, setSelectedUserForPlan] = useState<AdminUserInfo | null>(null);
 
   const users = data?.pages.flatMap((p) => p.users) ?? [];
   const total = data?.pages[0]?.total ?? 0;
@@ -85,6 +88,7 @@ export function UsersTable({ filters }: UsersTableProps) {
                 <TableHead>사용자</TableHead>
                 <TableHead>이메일</TableHead>
                 <TableHead>역할</TableHead>
+                <TableHead>플랜</TableHead>
                 <TableHead>숙소</TableHead>
                 <TableHead>가입일</TableHead>
                 <TableHead>액션</TableHead>
@@ -94,7 +98,10 @@ export function UsersTable({ filters }: UsersTableProps) {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
-                    <div className='flex items-center gap-2'>
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className='flex items-center gap-2 hover:underline'
+                    >
                       {user.image ? (
                         <Image
                           src={user.image}
@@ -108,24 +115,41 @@ export function UsersTable({ filters }: UsersTableProps) {
                         <div className='size-7 rounded-full bg-muted' />
                       )}
                       <span className='font-medium'>{user.name ?? '-'}</span>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell className='text-sm text-muted-foreground'>{user.email ?? '-'}</TableCell>
                   <TableCell>
                     <RoleBadges roles={user.roles} />
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant='outline'
+                      className='text-xs'
+                    >
+                      {user.planName ?? '-'}
+                    </Badge>
                   </TableCell>
                   <TableCell className='text-sm'>{user._count.accommodations}</TableCell>
                   <TableCell className='text-xs text-muted-foreground'>
                     {format(new Date(user.createdAt), 'yyyy.MM.dd', { locale: ko })}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant='outline'
-                      size='xs'
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      역할 변경
-                    </Button>
+                    <div className='flex gap-1'>
+                      <Button
+                        variant='outline'
+                        size='xs'
+                        onClick={() => setSelectedUserForRole(user)}
+                      >
+                        역할
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='xs'
+                        onClick={() => setSelectedUserForPlan(user)}
+                      >
+                        플랜
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -148,8 +172,12 @@ export function UsersTable({ filters }: UsersTableProps) {
       )}
 
       <RoleChangeDialog
-        user={selectedUser}
-        onClose={() => setSelectedUser(null)}
+        user={selectedUserForRole}
+        onClose={() => setSelectedUserForRole(null)}
+      />
+      <PlanChangeDialog
+        user={selectedUserForPlan}
+        onClose={() => setSelectedUserForPlan(null)}
       />
     </>
   );

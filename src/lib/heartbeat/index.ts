@@ -1,19 +1,8 @@
 import { sendKakaoMessage } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
+import { getSettings } from '@/lib/settings';
 
 export { recordHeartbeatHistory, getHeartbeatHistory } from './history';
-
-interface HeartbeatConfig {
-  intervalMs: number;
-  missedThreshold: number;
-  checkIntervalMs: number;
-}
-
-const DEFAULT_CONFIG: HeartbeatConfig = {
-  intervalMs: parseInt(process.env.HEARTBEAT_INTERVAL_MS || '60000'),
-  missedThreshold: parseInt(process.env.HEARTBEAT_MISSED_THRESHOLD || '1'),
-  checkIntervalMs: parseInt(process.env.HEARTBEAT_CHECK_INTERVAL_MS || '60000'),
-};
 
 let monitoringInterval: NodeJS.Timeout | null = null;
 const lastAlertTime = new Map<string, number>();
@@ -55,21 +44,19 @@ async function checkWorker(): Promise<void> {
       return;
     }
 
+    const config = getSettings().heartbeat;
     const now = Date.now();
     const timeSinceLastHeartbeat = now - new Date(heartbeat.lastHeartbeatAt).getTime();
-    const missedBeats = Math.floor(timeSinceLastHeartbeat / DEFAULT_CONFIG.intervalMs);
-
-    // console.log(`💓 하트비트 체크: ${Math.floor(timeSinceLastHeartbeat / 1000)}초 전, 놓침: ${missedBeats}`);
+    const missedBeats = Math.floor(timeSinceLastHeartbeat / config.intervalMs);
 
     // 워커 다운 감지
-    if (missedBeats >= DEFAULT_CONFIG.missedThreshold) {
+    if (missedBeats >= config.missedThreshold) {
       const alertKey = 'worker_down';
-      const cooldown = 60 * 60 * 1000; // 1시간
 
-      if (shouldSendAlert(alertKey, cooldown)) {
+      if (shouldSendAlert(alertKey, config.workerDownCooldownMs)) {
         await sendAlert(
           `워커 응답 없음 (${missedBeats}회 놓침)`,
-          `마지막 하트비트: ${heartbeat.lastHeartbeatAt.toISOString()}\n예상 간격: ${DEFAULT_CONFIG.intervalMs / 1000}초`,
+          `마지막 하트비트: ${heartbeat.lastHeartbeatAt.toISOString()}\n예상 간격: ${config.intervalMs / 1000}초`,
         );
       }
     }
@@ -77,13 +64,11 @@ async function checkWorker(): Promise<void> {
     // 처리 시간 초과 감지
     if (heartbeat.isProcessing) {
       const processingTime = now - new Date(heartbeat.updatedAt).getTime();
-      const maxProcessingTime = 60 * 60 * 1000; // 1시간
 
-      if (processingTime > maxProcessingTime) {
+      if (processingTime > config.maxProcessingTimeMs) {
         const alertKey = 'worker_stuck';
-        const cooldown = 30 * 60 * 1000; // 30분
 
-        if (shouldSendAlert(alertKey, cooldown)) {
+        if (shouldSendAlert(alertKey, config.workerStuckCooldownMs)) {
           await sendAlert(
             '워커 처리 시간 초과',
             `처리 시간: ${Math.floor(processingTime / 60000)}분\n마지막 업데이트: ${heartbeat.updatedAt.toISOString()}`,
@@ -159,11 +144,13 @@ export function startHeartbeatMonitoring(): void {
     clearInterval(monitoringInterval);
   }
 
-  console.log('🔍 하트비트 모니터링 시작');
-  console.log(`   - 체크 간격: ${DEFAULT_CONFIG.checkIntervalMs / 1000}초`);
-  console.log(`   - 놓침 기준: ${DEFAULT_CONFIG.missedThreshold}회`);
+  const config = getSettings().heartbeat;
 
-  monitoringInterval = setInterval(checkWorker, DEFAULT_CONFIG.checkIntervalMs);
+  console.log('🔍 하트비트 모니터링 시작');
+  console.log(`   - 체크 간격: ${config.checkIntervalMs / 1000}초`);
+  console.log(`   - 놓침 기준: ${config.missedThreshold}회`);
+
+  monitoringInterval = setInterval(checkWorker, config.checkIntervalMs);
   checkWorker(); // 즉시 실행
 }
 
