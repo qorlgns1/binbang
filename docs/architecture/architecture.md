@@ -10,6 +10,7 @@
 추가 설계 방향/이행 계획은 아래 문서를 참고합니다.
 
 - `docs/architecture/monorepo-plan.md`
+- `docs/architecture/project-structure.md`
 
 ## 모노레포 구조
 

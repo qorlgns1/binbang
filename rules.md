@@ -219,6 +219,15 @@ Any exception requires explicit justification and approval.
 
 ---
 
+## 8. Post-task Validation Rule (LLM)
+
+- After an LLM completes a code-change task, `pnpm ci:check` must be executed at the repository root.
+- “Task completed” means the LLM has finished making code changes and is about to report completion.
+- Completion is forbidden if `pnpm ci:check` fails.
+- Do not bypass this rule by running only a subset (such as lint/test/build separately).
+
+---
+
 ## Final Note
 
 Worker implementation, runtime, and infrastructure are expected to change over time.  

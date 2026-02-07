@@ -4,6 +4,7 @@
 
 - `docs/architecture/`
   - `architecture.md`: 현재 모노레포 구조/경계 요약
+  - `project-structure.md`: 디렉터리/파일 구조 상세
   - `monorepo-plan.md`: 모노레포 전환 계획 원문
 - `docs/guides/`
   - `local-development.md`: 로컬 개발/환경변수/명령

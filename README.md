@@ -1,4 +1,6 @@
-# Accommodation Monitor
+# 빈방어때
+
+> binbang — Airbnb · Agoda 빈방 모니터링 & 알림 서비스
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-green.svg)](https://nodejs.org/)
@@ -7,9 +9,26 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![CI](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml)
 
-Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내주는 웹 애플리케이션입니다
+Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내는 서비스입니다.
 
 > 인기 숙소의 취소 건을 잡기 위해 만들었습니다.
+
+## 프로젝트 소개
+
+- **Problem**: 경쟁이 높은 숙소의 빈방 발생을 사람이 수동으로 추적하기 어려움
+- **Role**: Full-stack 개발 (아키텍처, 웹, 워커, DB 모델링, CI/CD, 운영)
+- **Architecture**:
+  - Next.js 웹 앱(`apps/web`)과 백그라운드 워커(`apps/worker`) 분리
+  - Prisma 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
+  - monorepo 경계 규칙(`rules.md`, `RULES_SUMMARY.md`) 기반으로 유지보수성 확보
+- **Technical Decisions**:
+  - 브라우저 풀 기반 워커로 스크래핑 성능/안정성 개선
+  - 플랫폼 셀렉터를 DB에서 동적으로 관리해 UI 변경 대응 비용 절감
+  - GitHub Actions + Docker로 빌드/배포 자동화 및 재현 가능한 운영 환경 구성
+- **Outcomes**:
+  - 웹/워커/DB 책임 분리로 변경 영향 범위를 축소
+  - 규칙 중심 구조로 리팩터링 시 회귀 리스크 완화
+  - 운영 이슈(배포/환경/런타임)를 코드와 워크플로우로 관리 가능한 형태로 전환
 
 ## 필수 규칙
 
@@ -81,6 +100,7 @@ pnpm local:docker up -d --build
 - 로컬 개발: `docs/guides/local-development.md`
 - 배포: `docs/guides/deployment.md`
 - 아키텍처/경계: `docs/architecture/architecture.md`
+- 프로젝트 구조 상세: `docs/architecture/project-structure.md`
 - 모노레포 계획: `docs/architecture/monorepo-plan.md`
 - 변경 이력: `docs/history/changelog.md`
 - 작업 단위 히스토리 정리: `docs/history/develop-work-units.md`
