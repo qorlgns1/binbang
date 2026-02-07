@@ -4,6 +4,11 @@ import { Home, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
+export const metadata = {
+  title: '페이지를 찾을 수 없습니다',
+  description: '요청하신 페이지를 찾을 수 없습니다. 대시보드 또는 홈으로 이동하세요.',
+};
+
 export default function NotFound(): React.ReactElement {
   return (
     <div className='relative min-h-screen overflow-hidden bg-background'>

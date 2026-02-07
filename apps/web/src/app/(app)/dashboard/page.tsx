@@ -6,6 +6,15 @@ import prisma from '@/lib/prisma';
 import { DashboardContent } from './dashboardContent';
 import { KakaoAlertBanner } from './kakao-alert-banner';
 
+export const metadata = {
+  title: '대시보드',
+  description: '빈방어때 대시보드 - 등록된 숙소 모니터링 현황을 확인하세요',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
 

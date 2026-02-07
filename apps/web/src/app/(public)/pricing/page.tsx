@@ -9,8 +9,14 @@ import { authOptions } from '@/lib/auth';
 import { PricingCards } from './_components/pricingCards';
 
 export const metadata = {
-  title: '요금제 - 숙소 모니터링',
-  description: '숙소 모니터링 서비스 요금제를 확인하세요.',
+  title: '요금제 안내',
+  description:
+    '빈방어때 요금제를 확인하세요. FREE 플랜으로 무료 체험 후 업그레이드 가능. 1분마다 자동 체크, 실시간 카카오톡 알림, 가격 추이 분석까지 제공합니다.',
+  openGraph: {
+    title: '요금제 - 빈방어때',
+    description: 'FREE 플랜으로 무료 시작. 1분마다 자동 체크, 실시간 알림.',
+    url: '/pricing',
+  },
 };
 
 export default async function PricingPage(): Promise<React.ReactElement> {

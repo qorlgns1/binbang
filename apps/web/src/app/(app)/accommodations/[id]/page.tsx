@@ -30,6 +30,15 @@ const statusText: Record<string, string> = {
   UNKNOWN: '확인 중',
 };
 
+export const metadata = {
+  title: '숙소 상세',
+  description: '등록된 숙소의 모니터링 현황 상세 정보',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 export default async function AccommodationDetailPage({ params }: PageParams): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
   const { id } = await params;

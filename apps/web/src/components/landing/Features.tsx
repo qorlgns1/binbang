@@ -9,9 +9,18 @@ interface FeaturesProps {
 }
 
 const FEATURE_IMAGES = [
-  'https://images.unsplash.com/photo-1552858725-2758b5fb1286?auto=format&fit=crop&w=1400&q=80',
-  'https://images.unsplash.com/photo-1536125434175-6c5657605fb0?auto=format&fit=crop&w=1400&q=80',
-  'https://images.unsplash.com/photo-1610029795220-e5afca4dc7ba?auto=format&fit=crop&w=1400&q=80',
+  {
+    url: 'https://images.unsplash.com/photo-1552858725-2758b5fb1286?auto=format&fit=crop&w=1400&q=80',
+    alt: '빠른 속도 - 1분마다 자동으로 체크하는 실시간 모니터링',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1536125434175-6c5657605fb0?auto=format&fit=crop&w=1400&q=80',
+    alt: '정확한 추적 - 사이트 변경에도 대응하는 동적 셀렉터',
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1610029795220-e5afca4dc7ba?auto=format&fit=crop&w=1400&q=80',
+    alt: '안정적인 운영 - 24시간 하트비트 모니터링',
+  },
 ] as const;
 
 export function Features({ copy }: FeaturesProps): React.ReactElement {
@@ -20,19 +29,22 @@ export function Features({ copy }: FeaturesProps): React.ReactElement {
       icon: <Zap className='size-8 text-primary' />,
       title: copy.features.f1Title,
       description: copy.features.f1Desc,
-      image: FEATURE_IMAGES[0],
+      image: FEATURE_IMAGES[0].url,
+      imageAlt: FEATURE_IMAGES[0].alt,
     },
     {
       icon: <Target className='size-8 text-primary' />,
       title: copy.features.f2Title,
       description: copy.features.f2Desc,
-      image: FEATURE_IMAGES[1],
+      image: FEATURE_IMAGES[1].url,
+      imageAlt: FEATURE_IMAGES[1].alt,
     },
     {
       icon: <Anchor className='size-8 text-primary' />,
       title: copy.features.f3Title,
       description: copy.features.f3Desc,
-      image: FEATURE_IMAGES[2],
+      image: FEATURE_IMAGES[2].url,
+      imageAlt: FEATURE_IMAGES[2].alt,
     },
   ];
 
@@ -49,7 +61,7 @@ export function Features({ copy }: FeaturesProps): React.ReactElement {
           >
             <Image
               src={item.image}
-              alt=''
+              alt={item.imageAlt}
               fill
               className='object-cover opacity-0 grayscale transition-all duration-500 group-hover:scale-110 group-hover:opacity-25 group-hover:grayscale-0'
               sizes='(max-width: 768px) 100vw, 33vw'
