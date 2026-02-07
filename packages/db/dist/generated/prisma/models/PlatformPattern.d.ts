@@ -1,0 +1,1413 @@
+import type * as runtime from "@prisma/client/runtime/client";
+import type * as $Enums from "../enums";
+import type * as Prisma from "../internal/prismaNamespace";
+/**
+ * Model PlatformPattern
+ *
+ */
+export type PlatformPatternModel = runtime.Types.Result.DefaultSelection<Prisma.$PlatformPatternPayload>;
+export type AggregatePlatformPattern = {
+    _count: PlatformPatternCountAggregateOutputType | null;
+    _avg: PlatformPatternAvgAggregateOutputType | null;
+    _sum: PlatformPatternSumAggregateOutputType | null;
+    _min: PlatformPatternMinAggregateOutputType | null;
+    _max: PlatformPatternMaxAggregateOutputType | null;
+};
+export type PlatformPatternAvgAggregateOutputType = {
+    priority: number | null;
+};
+export type PlatformPatternSumAggregateOutputType = {
+    priority: number | null;
+};
+export type PlatformPatternMinAggregateOutputType = {
+    id: string | null;
+    platform: $Enums.Platform | null;
+    patternType: $Enums.PatternType | null;
+    pattern: string | null;
+    locale: string | null;
+    isActive: boolean | null;
+    priority: number | null;
+    createdById: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+};
+export type PlatformPatternMaxAggregateOutputType = {
+    id: string | null;
+    platform: $Enums.Platform | null;
+    patternType: $Enums.PatternType | null;
+    pattern: string | null;
+    locale: string | null;
+    isActive: boolean | null;
+    priority: number | null;
+    createdById: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+};
+export type PlatformPatternCountAggregateOutputType = {
+    id: number;
+    platform: number;
+    patternType: number;
+    pattern: number;
+    locale: number;
+    isActive: number;
+    priority: number;
+    createdById: number;
+    createdAt: number;
+    updatedAt: number;
+    _all: number;
+};
+export type PlatformPatternAvgAggregateInputType = {
+    priority?: true;
+};
+export type PlatformPatternSumAggregateInputType = {
+    priority?: true;
+};
+export type PlatformPatternMinAggregateInputType = {
+    id?: true;
+    platform?: true;
+    patternType?: true;
+    pattern?: true;
+    locale?: true;
+    isActive?: true;
+    priority?: true;
+    createdById?: true;
+    createdAt?: true;
+    updatedAt?: true;
+};
+export type PlatformPatternMaxAggregateInputType = {
+    id?: true;
+    platform?: true;
+    patternType?: true;
+    pattern?: true;
+    locale?: true;
+    isActive?: true;
+    priority?: true;
+    createdById?: true;
+    createdAt?: true;
+    updatedAt?: true;
+};
+export type PlatformPatternCountAggregateInputType = {
+    id?: true;
+    platform?: true;
+    patternType?: true;
+    pattern?: true;
+    locale?: true;
+    isActive?: true;
+    priority?: true;
+    createdById?: true;
+    createdAt?: true;
+    updatedAt?: true;
+    _all?: true;
+};
+export type PlatformPatternAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Filter which PlatformPattern to aggregate.
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of PlatformPatterns to fetch.
+     */
+    orderBy?: Prisma.PlatformPatternOrderByWithRelationInput | Prisma.PlatformPatternOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the start position
+     */
+    cursor?: Prisma.PlatformPatternWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` PlatformPatterns from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` PlatformPatterns.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Count returned PlatformPatterns
+    **/
+    _count?: true | PlatformPatternCountAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to average
+    **/
+    _avg?: PlatformPatternAvgAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to sum
+    **/
+    _sum?: PlatformPatternSumAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the minimum value
+    **/
+    _min?: PlatformPatternMinAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the maximum value
+    **/
+    _max?: PlatformPatternMaxAggregateInputType;
+};
+export type GetPlatformPatternAggregateType<T extends PlatformPatternAggregateArgs> = {
+    [P in keyof T & keyof AggregatePlatformPattern]: P extends '_count' | 'count' ? T[P] extends true ? number : Prisma.GetScalarType<T[P], AggregatePlatformPattern[P]> : Prisma.GetScalarType<T[P], AggregatePlatformPattern[P]>;
+};
+export type PlatformPatternGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.PlatformPatternWhereInput;
+    orderBy?: Prisma.PlatformPatternOrderByWithAggregationInput | Prisma.PlatformPatternOrderByWithAggregationInput[];
+    by: Prisma.PlatformPatternScalarFieldEnum[] | Prisma.PlatformPatternScalarFieldEnum;
+    having?: Prisma.PlatformPatternScalarWhereWithAggregatesInput;
+    take?: number;
+    skip?: number;
+    _count?: PlatformPatternCountAggregateInputType | true;
+    _avg?: PlatformPatternAvgAggregateInputType;
+    _sum?: PlatformPatternSumAggregateInputType;
+    _min?: PlatformPatternMinAggregateInputType;
+    _max?: PlatformPatternMaxAggregateInputType;
+};
+export type PlatformPatternGroupByOutputType = {
+    id: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale: string;
+    isActive: boolean;
+    priority: number;
+    createdById: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: PlatformPatternCountAggregateOutputType | null;
+    _avg: PlatformPatternAvgAggregateOutputType | null;
+    _sum: PlatformPatternSumAggregateOutputType | null;
+    _min: PlatformPatternMinAggregateOutputType | null;
+    _max: PlatformPatternMaxAggregateOutputType | null;
+};
+type GetPlatformPatternGroupByPayload<T extends PlatformPatternGroupByArgs> = Prisma.PrismaPromise<Array<Prisma.PickEnumerable<PlatformPatternGroupByOutputType, T['by']> & {
+    [P in ((keyof T) & (keyof PlatformPatternGroupByOutputType))]: P extends '_count' ? T[P] extends boolean ? number : Prisma.GetScalarType<T[P], PlatformPatternGroupByOutputType[P]> : Prisma.GetScalarType<T[P], PlatformPatternGroupByOutputType[P]>;
+}>>;
+export type PlatformPatternWhereInput = {
+    AND?: Prisma.PlatformPatternWhereInput | Prisma.PlatformPatternWhereInput[];
+    OR?: Prisma.PlatformPatternWhereInput[];
+    NOT?: Prisma.PlatformPatternWhereInput | Prisma.PlatformPatternWhereInput[];
+    id?: Prisma.StringFilter<"PlatformPattern"> | string;
+    platform?: Prisma.EnumPlatformFilter<"PlatformPattern"> | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFilter<"PlatformPattern"> | $Enums.PatternType;
+    pattern?: Prisma.StringFilter<"PlatformPattern"> | string;
+    locale?: Prisma.StringFilter<"PlatformPattern"> | string;
+    isActive?: Prisma.BoolFilter<"PlatformPattern"> | boolean;
+    priority?: Prisma.IntFilter<"PlatformPattern"> | number;
+    createdById?: Prisma.StringNullableFilter<"PlatformPattern"> | string | null;
+    createdAt?: Prisma.DateTimeFilter<"PlatformPattern"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"PlatformPattern"> | Date | string;
+    createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
+};
+export type PlatformPatternOrderByWithRelationInput = {
+    id?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    patternType?: Prisma.SortOrder;
+    pattern?: Prisma.SortOrder;
+    locale?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    priority?: Prisma.SortOrder;
+    createdById?: Prisma.SortOrderInput | Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    createdBy?: Prisma.UserOrderByWithRelationInput;
+};
+export type PlatformPatternWhereUniqueInput = Prisma.AtLeast<{
+    id?: string;
+    platform_patternType_pattern?: Prisma.PlatformPatternPlatformPatternTypePatternCompoundUniqueInput;
+    AND?: Prisma.PlatformPatternWhereInput | Prisma.PlatformPatternWhereInput[];
+    OR?: Prisma.PlatformPatternWhereInput[];
+    NOT?: Prisma.PlatformPatternWhereInput | Prisma.PlatformPatternWhereInput[];
+    platform?: Prisma.EnumPlatformFilter<"PlatformPattern"> | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFilter<"PlatformPattern"> | $Enums.PatternType;
+    pattern?: Prisma.StringFilter<"PlatformPattern"> | string;
+    locale?: Prisma.StringFilter<"PlatformPattern"> | string;
+    isActive?: Prisma.BoolFilter<"PlatformPattern"> | boolean;
+    priority?: Prisma.IntFilter<"PlatformPattern"> | number;
+    createdById?: Prisma.StringNullableFilter<"PlatformPattern"> | string | null;
+    createdAt?: Prisma.DateTimeFilter<"PlatformPattern"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"PlatformPattern"> | Date | string;
+    createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null;
+}, "id" | "platform_patternType_pattern">;
+export type PlatformPatternOrderByWithAggregationInput = {
+    id?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    patternType?: Prisma.SortOrder;
+    pattern?: Prisma.SortOrder;
+    locale?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    priority?: Prisma.SortOrder;
+    createdById?: Prisma.SortOrderInput | Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    _count?: Prisma.PlatformPatternCountOrderByAggregateInput;
+    _avg?: Prisma.PlatformPatternAvgOrderByAggregateInput;
+    _max?: Prisma.PlatformPatternMaxOrderByAggregateInput;
+    _min?: Prisma.PlatformPatternMinOrderByAggregateInput;
+    _sum?: Prisma.PlatformPatternSumOrderByAggregateInput;
+};
+export type PlatformPatternScalarWhereWithAggregatesInput = {
+    AND?: Prisma.PlatformPatternScalarWhereWithAggregatesInput | Prisma.PlatformPatternScalarWhereWithAggregatesInput[];
+    OR?: Prisma.PlatformPatternScalarWhereWithAggregatesInput[];
+    NOT?: Prisma.PlatformPatternScalarWhereWithAggregatesInput | Prisma.PlatformPatternScalarWhereWithAggregatesInput[];
+    id?: Prisma.StringWithAggregatesFilter<"PlatformPattern"> | string;
+    platform?: Prisma.EnumPlatformWithAggregatesFilter<"PlatformPattern"> | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeWithAggregatesFilter<"PlatformPattern"> | $Enums.PatternType;
+    pattern?: Prisma.StringWithAggregatesFilter<"PlatformPattern"> | string;
+    locale?: Prisma.StringWithAggregatesFilter<"PlatformPattern"> | string;
+    isActive?: Prisma.BoolWithAggregatesFilter<"PlatformPattern"> | boolean;
+    priority?: Prisma.IntWithAggregatesFilter<"PlatformPattern"> | number;
+    createdById?: Prisma.StringNullableWithAggregatesFilter<"PlatformPattern"> | string | null;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"PlatformPattern"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"PlatformPattern"> | Date | string;
+};
+export type PlatformPatternCreateInput = {
+    id?: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale?: string;
+    isActive?: boolean;
+    priority?: number;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    createdBy?: Prisma.UserCreateNestedOneWithoutCreatedPatternsInput;
+};
+export type PlatformPatternUncheckedCreateInput = {
+    id?: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale?: string;
+    isActive?: boolean;
+    priority?: number;
+    createdById?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type PlatformPatternUpdateInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    createdBy?: Prisma.UserUpdateOneWithoutCreatedPatternsNestedInput;
+};
+export type PlatformPatternUncheckedUpdateInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type PlatformPatternCreateManyInput = {
+    id?: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale?: string;
+    isActive?: boolean;
+    priority?: number;
+    createdById?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type PlatformPatternUpdateManyMutationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type PlatformPatternUncheckedUpdateManyInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type PlatformPatternListRelationFilter = {
+    every?: Prisma.PlatformPatternWhereInput;
+    some?: Prisma.PlatformPatternWhereInput;
+    none?: Prisma.PlatformPatternWhereInput;
+};
+export type PlatformPatternOrderByRelationAggregateInput = {
+    _count?: Prisma.SortOrder;
+};
+export type PlatformPatternPlatformPatternTypePatternCompoundUniqueInput = {
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+};
+export type PlatformPatternCountOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    patternType?: Prisma.SortOrder;
+    pattern?: Prisma.SortOrder;
+    locale?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    priority?: Prisma.SortOrder;
+    createdById?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type PlatformPatternAvgOrderByAggregateInput = {
+    priority?: Prisma.SortOrder;
+};
+export type PlatformPatternMaxOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    patternType?: Prisma.SortOrder;
+    pattern?: Prisma.SortOrder;
+    locale?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    priority?: Prisma.SortOrder;
+    createdById?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type PlatformPatternMinOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    patternType?: Prisma.SortOrder;
+    pattern?: Prisma.SortOrder;
+    locale?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    priority?: Prisma.SortOrder;
+    createdById?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type PlatformPatternSumOrderByAggregateInput = {
+    priority?: Prisma.SortOrder;
+};
+export type PlatformPatternCreateNestedManyWithoutCreatedByInput = {
+    create?: Prisma.XOR<Prisma.PlatformPatternCreateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput> | Prisma.PlatformPatternCreateWithoutCreatedByInput[] | Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput[];
+    connectOrCreate?: Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput | Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput[];
+    createMany?: Prisma.PlatformPatternCreateManyCreatedByInputEnvelope;
+    connect?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+};
+export type PlatformPatternUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: Prisma.XOR<Prisma.PlatformPatternCreateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput> | Prisma.PlatformPatternCreateWithoutCreatedByInput[] | Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput[];
+    connectOrCreate?: Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput | Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput[];
+    createMany?: Prisma.PlatformPatternCreateManyCreatedByInputEnvelope;
+    connect?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+};
+export type PlatformPatternUpdateManyWithoutCreatedByNestedInput = {
+    create?: Prisma.XOR<Prisma.PlatformPatternCreateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput> | Prisma.PlatformPatternCreateWithoutCreatedByInput[] | Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput[];
+    connectOrCreate?: Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput | Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput[];
+    upsert?: Prisma.PlatformPatternUpsertWithWhereUniqueWithoutCreatedByInput | Prisma.PlatformPatternUpsertWithWhereUniqueWithoutCreatedByInput[];
+    createMany?: Prisma.PlatformPatternCreateManyCreatedByInputEnvelope;
+    set?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    disconnect?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    delete?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    connect?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    update?: Prisma.PlatformPatternUpdateWithWhereUniqueWithoutCreatedByInput | Prisma.PlatformPatternUpdateWithWhereUniqueWithoutCreatedByInput[];
+    updateMany?: Prisma.PlatformPatternUpdateManyWithWhereWithoutCreatedByInput | Prisma.PlatformPatternUpdateManyWithWhereWithoutCreatedByInput[];
+    deleteMany?: Prisma.PlatformPatternScalarWhereInput | Prisma.PlatformPatternScalarWhereInput[];
+};
+export type PlatformPatternUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: Prisma.XOR<Prisma.PlatformPatternCreateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput> | Prisma.PlatformPatternCreateWithoutCreatedByInput[] | Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput[];
+    connectOrCreate?: Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput | Prisma.PlatformPatternCreateOrConnectWithoutCreatedByInput[];
+    upsert?: Prisma.PlatformPatternUpsertWithWhereUniqueWithoutCreatedByInput | Prisma.PlatformPatternUpsertWithWhereUniqueWithoutCreatedByInput[];
+    createMany?: Prisma.PlatformPatternCreateManyCreatedByInputEnvelope;
+    set?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    disconnect?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    delete?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    connect?: Prisma.PlatformPatternWhereUniqueInput | Prisma.PlatformPatternWhereUniqueInput[];
+    update?: Prisma.PlatformPatternUpdateWithWhereUniqueWithoutCreatedByInput | Prisma.PlatformPatternUpdateWithWhereUniqueWithoutCreatedByInput[];
+    updateMany?: Prisma.PlatformPatternUpdateManyWithWhereWithoutCreatedByInput | Prisma.PlatformPatternUpdateManyWithWhereWithoutCreatedByInput[];
+    deleteMany?: Prisma.PlatformPatternScalarWhereInput | Prisma.PlatformPatternScalarWhereInput[];
+};
+export type EnumPatternTypeFieldUpdateOperationsInput = {
+    set?: $Enums.PatternType;
+};
+export type PlatformPatternCreateWithoutCreatedByInput = {
+    id?: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale?: string;
+    isActive?: boolean;
+    priority?: number;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type PlatformPatternUncheckedCreateWithoutCreatedByInput = {
+    id?: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale?: string;
+    isActive?: boolean;
+    priority?: number;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type PlatformPatternCreateOrConnectWithoutCreatedByInput = {
+    where: Prisma.PlatformPatternWhereUniqueInput;
+    create: Prisma.XOR<Prisma.PlatformPatternCreateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput>;
+};
+export type PlatformPatternCreateManyCreatedByInputEnvelope = {
+    data: Prisma.PlatformPatternCreateManyCreatedByInput | Prisma.PlatformPatternCreateManyCreatedByInput[];
+    skipDuplicates?: boolean;
+};
+export type PlatformPatternUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: Prisma.PlatformPatternWhereUniqueInput;
+    update: Prisma.XOR<Prisma.PlatformPatternUpdateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedUpdateWithoutCreatedByInput>;
+    create: Prisma.XOR<Prisma.PlatformPatternCreateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedCreateWithoutCreatedByInput>;
+};
+export type PlatformPatternUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: Prisma.PlatformPatternWhereUniqueInput;
+    data: Prisma.XOR<Prisma.PlatformPatternUpdateWithoutCreatedByInput, Prisma.PlatformPatternUncheckedUpdateWithoutCreatedByInput>;
+};
+export type PlatformPatternUpdateManyWithWhereWithoutCreatedByInput = {
+    where: Prisma.PlatformPatternScalarWhereInput;
+    data: Prisma.XOR<Prisma.PlatformPatternUpdateManyMutationInput, Prisma.PlatformPatternUncheckedUpdateManyWithoutCreatedByInput>;
+};
+export type PlatformPatternScalarWhereInput = {
+    AND?: Prisma.PlatformPatternScalarWhereInput | Prisma.PlatformPatternScalarWhereInput[];
+    OR?: Prisma.PlatformPatternScalarWhereInput[];
+    NOT?: Prisma.PlatformPatternScalarWhereInput | Prisma.PlatformPatternScalarWhereInput[];
+    id?: Prisma.StringFilter<"PlatformPattern"> | string;
+    platform?: Prisma.EnumPlatformFilter<"PlatformPattern"> | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFilter<"PlatformPattern"> | $Enums.PatternType;
+    pattern?: Prisma.StringFilter<"PlatformPattern"> | string;
+    locale?: Prisma.StringFilter<"PlatformPattern"> | string;
+    isActive?: Prisma.BoolFilter<"PlatformPattern"> | boolean;
+    priority?: Prisma.IntFilter<"PlatformPattern"> | number;
+    createdById?: Prisma.StringNullableFilter<"PlatformPattern"> | string | null;
+    createdAt?: Prisma.DateTimeFilter<"PlatformPattern"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"PlatformPattern"> | Date | string;
+};
+export type PlatformPatternCreateManyCreatedByInput = {
+    id?: string;
+    platform: $Enums.Platform;
+    patternType: $Enums.PatternType;
+    pattern: string;
+    locale?: string;
+    isActive?: boolean;
+    priority?: number;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type PlatformPatternUpdateWithoutCreatedByInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type PlatformPatternUncheckedUpdateWithoutCreatedByInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type PlatformPatternUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    patternType?: Prisma.EnumPatternTypeFieldUpdateOperationsInput | $Enums.PatternType;
+    pattern?: Prisma.StringFieldUpdateOperationsInput | string;
+    locale?: Prisma.StringFieldUpdateOperationsInput | string;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    priority?: Prisma.IntFieldUpdateOperationsInput | number;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type PlatformPatternSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    platform?: boolean;
+    patternType?: boolean;
+    pattern?: boolean;
+    locale?: boolean;
+    isActive?: boolean;
+    priority?: boolean;
+    createdById?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    createdBy?: boolean | Prisma.PlatformPattern$createdByArgs<ExtArgs>;
+}, ExtArgs["result"]["platformPattern"]>;
+export type PlatformPatternSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    platform?: boolean;
+    patternType?: boolean;
+    pattern?: boolean;
+    locale?: boolean;
+    isActive?: boolean;
+    priority?: boolean;
+    createdById?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    createdBy?: boolean | Prisma.PlatformPattern$createdByArgs<ExtArgs>;
+}, ExtArgs["result"]["platformPattern"]>;
+export type PlatformPatternSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    platform?: boolean;
+    patternType?: boolean;
+    pattern?: boolean;
+    locale?: boolean;
+    isActive?: boolean;
+    priority?: boolean;
+    createdById?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    createdBy?: boolean | Prisma.PlatformPattern$createdByArgs<ExtArgs>;
+}, ExtArgs["result"]["platformPattern"]>;
+export type PlatformPatternSelectScalar = {
+    id?: boolean;
+    platform?: boolean;
+    patternType?: boolean;
+    pattern?: boolean;
+    locale?: boolean;
+    isActive?: boolean;
+    priority?: boolean;
+    createdById?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+};
+export type PlatformPatternOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "platform" | "patternType" | "pattern" | "locale" | "isActive" | "priority" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["platformPattern"]>;
+export type PlatformPatternInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    createdBy?: boolean | Prisma.PlatformPattern$createdByArgs<ExtArgs>;
+};
+export type PlatformPatternIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    createdBy?: boolean | Prisma.PlatformPattern$createdByArgs<ExtArgs>;
+};
+export type PlatformPatternIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    createdBy?: boolean | Prisma.PlatformPattern$createdByArgs<ExtArgs>;
+};
+export type $PlatformPatternPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    name: "PlatformPattern";
+    objects: {
+        createdBy: Prisma.$UserPayload<ExtArgs> | null;
+    };
+    scalars: runtime.Types.Extensions.GetPayloadResult<{
+        id: string;
+        platform: $Enums.Platform;
+        patternType: $Enums.PatternType;
+        pattern: string;
+        locale: string;
+        isActive: boolean;
+        priority: number;
+        createdById: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }, ExtArgs["result"]["platformPattern"]>;
+    composites: {};
+};
+export type PlatformPatternGetPayload<S extends boolean | null | undefined | PlatformPatternDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload, S>;
+export type PlatformPatternCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = Omit<PlatformPatternFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: PlatformPatternCountAggregateInputType | true;
+};
+export interface PlatformPatternDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: {
+        types: Prisma.TypeMap<ExtArgs>['model']['PlatformPattern'];
+        meta: {
+            name: 'PlatformPattern';
+        };
+    };
+    /**
+     * Find zero or one PlatformPattern that matches the filter.
+     * @param {PlatformPatternFindUniqueArgs} args - Arguments to find a PlatformPattern
+     * @example
+     * // Get one PlatformPattern
+     * const platformPattern = await prisma.platformPattern.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PlatformPatternFindUniqueArgs>(args: Prisma.SelectSubset<T, PlatformPatternFindUniqueArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find one PlatformPattern that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PlatformPatternFindUniqueOrThrowArgs} args - Arguments to find a PlatformPattern
+     * @example
+     * // Get one PlatformPattern
+     * const platformPattern = await prisma.platformPattern.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PlatformPatternFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, PlatformPatternFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find the first PlatformPattern that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternFindFirstArgs} args - Arguments to find a PlatformPattern
+     * @example
+     * // Get one PlatformPattern
+     * const platformPattern = await prisma.platformPattern.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PlatformPatternFindFirstArgs>(args?: Prisma.SelectSubset<T, PlatformPatternFindFirstArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find the first PlatformPattern that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternFindFirstOrThrowArgs} args - Arguments to find a PlatformPattern
+     * @example
+     * // Get one PlatformPattern
+     * const platformPattern = await prisma.platformPattern.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PlatformPatternFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, PlatformPatternFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find zero or more PlatformPatterns that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PlatformPatterns
+     * const platformPatterns = await prisma.platformPattern.findMany()
+     *
+     * // Get first 10 PlatformPatterns
+     * const platformPatterns = await prisma.platformPattern.findMany({ take: 10 })
+     *
+     * // Only select the `id`
+     * const platformPatternWithIdOnly = await prisma.platformPattern.findMany({ select: { id: true } })
+     *
+     */
+    findMany<T extends PlatformPatternFindManyArgs>(args?: Prisma.SelectSubset<T, PlatformPatternFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>;
+    /**
+     * Create a PlatformPattern.
+     * @param {PlatformPatternCreateArgs} args - Arguments to create a PlatformPattern.
+     * @example
+     * // Create one PlatformPattern
+     * const PlatformPattern = await prisma.platformPattern.create({
+     *   data: {
+     *     // ... data to create a PlatformPattern
+     *   }
+     * })
+     *
+     */
+    create<T extends PlatformPatternCreateArgs>(args: Prisma.SelectSubset<T, PlatformPatternCreateArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Create many PlatformPatterns.
+     * @param {PlatformPatternCreateManyArgs} args - Arguments to create many PlatformPatterns.
+     * @example
+     * // Create many PlatformPatterns
+     * const platformPattern = await prisma.platformPattern.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     */
+    createMany<T extends PlatformPatternCreateManyArgs>(args?: Prisma.SelectSubset<T, PlatformPatternCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Create many PlatformPatterns and returns the data saved in the database.
+     * @param {PlatformPatternCreateManyAndReturnArgs} args - Arguments to create many PlatformPatterns.
+     * @example
+     * // Create many PlatformPatterns
+     * const platformPattern = await prisma.platformPattern.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Create many PlatformPatterns and only return the `id`
+     * const platformPatternWithIdOnly = await prisma.platformPattern.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    createManyAndReturn<T extends PlatformPatternCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, PlatformPatternCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>;
+    /**
+     * Delete a PlatformPattern.
+     * @param {PlatformPatternDeleteArgs} args - Arguments to delete one PlatformPattern.
+     * @example
+     * // Delete one PlatformPattern
+     * const PlatformPattern = await prisma.platformPattern.delete({
+     *   where: {
+     *     // ... filter to delete one PlatformPattern
+     *   }
+     * })
+     *
+     */
+    delete<T extends PlatformPatternDeleteArgs>(args: Prisma.SelectSubset<T, PlatformPatternDeleteArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Update one PlatformPattern.
+     * @param {PlatformPatternUpdateArgs} args - Arguments to update one PlatformPattern.
+     * @example
+     * // Update one PlatformPattern
+     * const platformPattern = await prisma.platformPattern.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    update<T extends PlatformPatternUpdateArgs>(args: Prisma.SelectSubset<T, PlatformPatternUpdateArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Delete zero or more PlatformPatterns.
+     * @param {PlatformPatternDeleteManyArgs} args - Arguments to filter PlatformPatterns to delete.
+     * @example
+     * // Delete a few PlatformPatterns
+     * const { count } = await prisma.platformPattern.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     *
+     */
+    deleteMany<T extends PlatformPatternDeleteManyArgs>(args?: Prisma.SelectSubset<T, PlatformPatternDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Update zero or more PlatformPatterns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PlatformPatterns
+     * const platformPattern = await prisma.platformPattern.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    updateMany<T extends PlatformPatternUpdateManyArgs>(args: Prisma.SelectSubset<T, PlatformPatternUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Update zero or more PlatformPatterns and returns the data updated in the database.
+     * @param {PlatformPatternUpdateManyAndReturnArgs} args - Arguments to update many PlatformPatterns.
+     * @example
+     * // Update many PlatformPatterns
+     * const platformPattern = await prisma.platformPattern.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Update zero or more PlatformPatterns and only return the `id`
+     * const platformPatternWithIdOnly = await prisma.platformPattern.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    updateManyAndReturn<T extends PlatformPatternUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, PlatformPatternUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>;
+    /**
+     * Create or update one PlatformPattern.
+     * @param {PlatformPatternUpsertArgs} args - Arguments to update or create a PlatformPattern.
+     * @example
+     * // Update or create a PlatformPattern
+     * const platformPattern = await prisma.platformPattern.upsert({
+     *   create: {
+     *     // ... data to create a PlatformPattern
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PlatformPattern we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PlatformPatternUpsertArgs>(args: Prisma.SelectSubset<T, PlatformPatternUpsertArgs<ExtArgs>>): Prisma.Prisma__PlatformPatternClient<runtime.Types.Result.GetResult<Prisma.$PlatformPatternPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Count the number of PlatformPatterns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternCountArgs} args - Arguments to filter PlatformPatterns to count.
+     * @example
+     * // Count the number of PlatformPatterns
+     * const count = await prisma.platformPattern.count({
+     *   where: {
+     *     // ... the filter for the PlatformPatterns we want to count
+     *   }
+     * })
+    **/
+    count<T extends PlatformPatternCountArgs>(args?: Prisma.Subset<T, PlatformPatternCountArgs>): Prisma.PrismaPromise<T extends runtime.Types.Utils.Record<'select', any> ? T['select'] extends true ? number : Prisma.GetScalarType<T['select'], PlatformPatternCountAggregateOutputType> : number>;
+    /**
+     * Allows you to perform aggregations operations on a PlatformPattern.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PlatformPatternAggregateArgs>(args: Prisma.Subset<T, PlatformPatternAggregateArgs>): Prisma.PrismaPromise<GetPlatformPatternAggregateType<T>>;
+    /**
+     * Group by PlatformPattern.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformPatternGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     *
+    **/
+    groupBy<T extends PlatformPatternGroupByArgs, HasSelectOrTake extends Prisma.Or<Prisma.Extends<'skip', Prisma.Keys<T>>, Prisma.Extends<'take', Prisma.Keys<T>>>, OrderByArg extends Prisma.True extends HasSelectOrTake ? {
+        orderBy: PlatformPatternGroupByArgs['orderBy'];
+    } : {
+        orderBy?: PlatformPatternGroupByArgs['orderBy'];
+    }, OrderFields extends Prisma.ExcludeUnderscoreKeys<Prisma.Keys<Prisma.MaybeTupleToUnion<T['orderBy']>>>, ByFields extends Prisma.MaybeTupleToUnion<T['by']>, ByValid extends Prisma.Has<ByFields, OrderFields>, HavingFields extends Prisma.GetHavingFields<T['having']>, HavingValid extends Prisma.Has<ByFields, HavingFields>, ByEmpty extends T['by'] extends never[] ? Prisma.True : Prisma.False, InputErrors extends ByEmpty extends Prisma.True ? `Error: "by" must not be empty.` : HavingValid extends Prisma.False ? {
+        [P in HavingFields]: P extends ByFields ? never : P extends string ? `Error: Field "${P}" used in "having" needs to be provided in "by".` : [
+            Error,
+            'Field ',
+            P,
+            ` in "having" needs to be provided in "by"`
+        ];
+    }[HavingFields] : 'take' extends Prisma.Keys<T> ? 'orderBy' extends Prisma.Keys<T> ? ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields] : 'Error: If you provide "take", you also need to provide "orderBy"' : 'skip' extends Prisma.Keys<T> ? 'orderBy' extends Prisma.Keys<T> ? ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields] : 'Error: If you provide "skip", you also need to provide "orderBy"' : ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields]>(args: Prisma.SubsetIntersection<T, PlatformPatternGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPlatformPatternGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
+    /**
+     * Fields of the PlatformPattern model
+     */
+    readonly fields: PlatformPatternFieldRefs;
+}
+/**
+ * The delegate class that acts as a "Promise-like" for PlatformPattern.
+ * Why is this prefixed with `Prisma__`?
+ * Because we want to prevent naming conflicts as mentioned in
+ * https://github.com/prisma/prisma-client-js/issues/707
+ */
+export interface Prisma__PlatformPatternClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise";
+    createdBy<T extends Prisma.PlatformPattern$createdByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PlatformPattern$createdByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): runtime.Types.Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
+}
+/**
+ * Fields of the PlatformPattern model
+ */
+export interface PlatformPatternFieldRefs {
+    readonly id: Prisma.FieldRef<"PlatformPattern", 'String'>;
+    readonly platform: Prisma.FieldRef<"PlatformPattern", 'Platform'>;
+    readonly patternType: Prisma.FieldRef<"PlatformPattern", 'PatternType'>;
+    readonly pattern: Prisma.FieldRef<"PlatformPattern", 'String'>;
+    readonly locale: Prisma.FieldRef<"PlatformPattern", 'String'>;
+    readonly isActive: Prisma.FieldRef<"PlatformPattern", 'Boolean'>;
+    readonly priority: Prisma.FieldRef<"PlatformPattern", 'Int'>;
+    readonly createdById: Prisma.FieldRef<"PlatformPattern", 'String'>;
+    readonly createdAt: Prisma.FieldRef<"PlatformPattern", 'DateTime'>;
+    readonly updatedAt: Prisma.FieldRef<"PlatformPattern", 'DateTime'>;
+}
+/**
+ * PlatformPattern findUnique
+ */
+export type PlatformPatternFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * Filter, which PlatformPattern to fetch.
+     */
+    where: Prisma.PlatformPatternWhereUniqueInput;
+};
+/**
+ * PlatformPattern findUniqueOrThrow
+ */
+export type PlatformPatternFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * Filter, which PlatformPattern to fetch.
+     */
+    where: Prisma.PlatformPatternWhereUniqueInput;
+};
+/**
+ * PlatformPattern findFirst
+ */
+export type PlatformPatternFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * Filter, which PlatformPattern to fetch.
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of PlatformPatterns to fetch.
+     */
+    orderBy?: Prisma.PlatformPatternOrderByWithRelationInput | Prisma.PlatformPatternOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for PlatformPatterns.
+     */
+    cursor?: Prisma.PlatformPatternWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` PlatformPatterns from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` PlatformPatterns.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of PlatformPatterns.
+     */
+    distinct?: Prisma.PlatformPatternScalarFieldEnum | Prisma.PlatformPatternScalarFieldEnum[];
+};
+/**
+ * PlatformPattern findFirstOrThrow
+ */
+export type PlatformPatternFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * Filter, which PlatformPattern to fetch.
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of PlatformPatterns to fetch.
+     */
+    orderBy?: Prisma.PlatformPatternOrderByWithRelationInput | Prisma.PlatformPatternOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for PlatformPatterns.
+     */
+    cursor?: Prisma.PlatformPatternWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` PlatformPatterns from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` PlatformPatterns.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of PlatformPatterns.
+     */
+    distinct?: Prisma.PlatformPatternScalarFieldEnum | Prisma.PlatformPatternScalarFieldEnum[];
+};
+/**
+ * PlatformPattern findMany
+ */
+export type PlatformPatternFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * Filter, which PlatformPatterns to fetch.
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of PlatformPatterns to fetch.
+     */
+    orderBy?: Prisma.PlatformPatternOrderByWithRelationInput | Prisma.PlatformPatternOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for listing PlatformPatterns.
+     */
+    cursor?: Prisma.PlatformPatternWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` PlatformPatterns from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` PlatformPatterns.
+     */
+    skip?: number;
+    distinct?: Prisma.PlatformPatternScalarFieldEnum | Prisma.PlatformPatternScalarFieldEnum[];
+};
+/**
+ * PlatformPattern create
+ */
+export type PlatformPatternCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * The data needed to create a PlatformPattern.
+     */
+    data: Prisma.XOR<Prisma.PlatformPatternCreateInput, Prisma.PlatformPatternUncheckedCreateInput>;
+};
+/**
+ * PlatformPattern createMany
+ */
+export type PlatformPatternCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PlatformPatterns.
+     */
+    data: Prisma.PlatformPatternCreateManyInput | Prisma.PlatformPatternCreateManyInput[];
+    skipDuplicates?: boolean;
+};
+/**
+ * PlatformPattern createManyAndReturn
+ */
+export type PlatformPatternCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelectCreateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * The data used to create many PlatformPatterns.
+     */
+    data: Prisma.PlatformPatternCreateManyInput | Prisma.PlatformPatternCreateManyInput[];
+    skipDuplicates?: boolean;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternIncludeCreateManyAndReturn<ExtArgs> | null;
+};
+/**
+ * PlatformPattern update
+ */
+export type PlatformPatternUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * The data needed to update a PlatformPattern.
+     */
+    data: Prisma.XOR<Prisma.PlatformPatternUpdateInput, Prisma.PlatformPatternUncheckedUpdateInput>;
+    /**
+     * Choose, which PlatformPattern to update.
+     */
+    where: Prisma.PlatformPatternWhereUniqueInput;
+};
+/**
+ * PlatformPattern updateMany
+ */
+export type PlatformPatternUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PlatformPatterns.
+     */
+    data: Prisma.XOR<Prisma.PlatformPatternUpdateManyMutationInput, Prisma.PlatformPatternUncheckedUpdateManyInput>;
+    /**
+     * Filter which PlatformPatterns to update
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * Limit how many PlatformPatterns to update.
+     */
+    limit?: number;
+};
+/**
+ * PlatformPattern updateManyAndReturn
+ */
+export type PlatformPatternUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelectUpdateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * The data used to update PlatformPatterns.
+     */
+    data: Prisma.XOR<Prisma.PlatformPatternUpdateManyMutationInput, Prisma.PlatformPatternUncheckedUpdateManyInput>;
+    /**
+     * Filter which PlatformPatterns to update
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * Limit how many PlatformPatterns to update.
+     */
+    limit?: number;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternIncludeUpdateManyAndReturn<ExtArgs> | null;
+};
+/**
+ * PlatformPattern upsert
+ */
+export type PlatformPatternUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * The filter to search for the PlatformPattern to update in case it exists.
+     */
+    where: Prisma.PlatformPatternWhereUniqueInput;
+    /**
+     * In case the PlatformPattern found by the `where` argument doesn't exist, create a new PlatformPattern with this data.
+     */
+    create: Prisma.XOR<Prisma.PlatformPatternCreateInput, Prisma.PlatformPatternUncheckedCreateInput>;
+    /**
+     * In case the PlatformPattern was found with the provided `where` argument, update it with this data.
+     */
+    update: Prisma.XOR<Prisma.PlatformPatternUpdateInput, Prisma.PlatformPatternUncheckedUpdateInput>;
+};
+/**
+ * PlatformPattern delete
+ */
+export type PlatformPatternDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+    /**
+     * Filter which PlatformPattern to delete.
+     */
+    where: Prisma.PlatformPatternWhereUniqueInput;
+};
+/**
+ * PlatformPattern deleteMany
+ */
+export type PlatformPatternDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Filter which PlatformPatterns to delete
+     */
+    where?: Prisma.PlatformPatternWhereInput;
+    /**
+     * Limit how many PlatformPatterns to delete.
+     */
+    limit?: number;
+};
+/**
+ * PlatformPattern.createdBy
+ */
+export type PlatformPattern$createdByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: Prisma.UserSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: Prisma.UserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
+    where?: Prisma.UserWhereInput;
+};
+/**
+ * PlatformPattern without action
+ */
+export type PlatformPatternDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformPattern
+     */
+    select?: Prisma.PlatformPatternSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the PlatformPattern
+     */
+    omit?: Prisma.PlatformPatternOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.PlatformPatternInclude<ExtArgs> | null;
+};
+export {};
+//# sourceMappingURL=PlatformPattern.d.ts.map

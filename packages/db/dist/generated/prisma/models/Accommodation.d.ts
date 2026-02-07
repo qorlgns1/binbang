@@ -1,0 +1,2399 @@
+import type * as runtime from "@prisma/client/runtime/client";
+import type * as $Enums from "../enums";
+import type * as Prisma from "../internal/prismaNamespace";
+/**
+ * Model Accommodation
+ *
+ */
+export type AccommodationModel = runtime.Types.Result.DefaultSelection<Prisma.$AccommodationPayload>;
+export type AggregateAccommodation = {
+    _count: AccommodationCountAggregateOutputType | null;
+    _avg: AccommodationAvgAggregateOutputType | null;
+    _sum: AccommodationSumAggregateOutputType | null;
+    _min: AccommodationMinAggregateOutputType | null;
+    _max: AccommodationMaxAggregateOutputType | null;
+};
+export type AccommodationAvgAggregateOutputType = {
+    adults: number | null;
+    rooms: number | null;
+    lastPriceAmount: number | null;
+    ratingValue: number | null;
+    reviewCount: number | null;
+    latitude: number | null;
+    longitude: number | null;
+};
+export type AccommodationSumAggregateOutputType = {
+    adults: number | null;
+    rooms: number | null;
+    lastPriceAmount: number | null;
+    ratingValue: number | null;
+    reviewCount: number | null;
+    latitude: number | null;
+    longitude: number | null;
+};
+export type AccommodationMinAggregateOutputType = {
+    id: string | null;
+    userId: string | null;
+    name: string | null;
+    platform: $Enums.Platform | null;
+    url: string | null;
+    checkIn: Date | null;
+    checkOut: Date | null;
+    adults: number | null;
+    rooms: number | null;
+    isActive: boolean | null;
+    lastCheck: Date | null;
+    lastStatus: $Enums.AvailabilityStatus | null;
+    lastPrice: string | null;
+    lastPriceAmount: number | null;
+    lastPriceCurrency: string | null;
+    platformId: string | null;
+    platformName: string | null;
+    platformImage: string | null;
+    platformDescription: string | null;
+    addressCountry: string | null;
+    addressRegion: string | null;
+    addressLocality: string | null;
+    postalCode: string | null;
+    streetAddress: string | null;
+    ratingValue: number | null;
+    reviewCount: number | null;
+    latitude: number | null;
+    longitude: number | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+};
+export type AccommodationMaxAggregateOutputType = {
+    id: string | null;
+    userId: string | null;
+    name: string | null;
+    platform: $Enums.Platform | null;
+    url: string | null;
+    checkIn: Date | null;
+    checkOut: Date | null;
+    adults: number | null;
+    rooms: number | null;
+    isActive: boolean | null;
+    lastCheck: Date | null;
+    lastStatus: $Enums.AvailabilityStatus | null;
+    lastPrice: string | null;
+    lastPriceAmount: number | null;
+    lastPriceCurrency: string | null;
+    platformId: string | null;
+    platformName: string | null;
+    platformImage: string | null;
+    platformDescription: string | null;
+    addressCountry: string | null;
+    addressRegion: string | null;
+    addressLocality: string | null;
+    postalCode: string | null;
+    streetAddress: string | null;
+    ratingValue: number | null;
+    reviewCount: number | null;
+    latitude: number | null;
+    longitude: number | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+};
+export type AccommodationCountAggregateOutputType = {
+    id: number;
+    userId: number;
+    name: number;
+    platform: number;
+    url: number;
+    checkIn: number;
+    checkOut: number;
+    adults: number;
+    rooms: number;
+    isActive: number;
+    lastCheck: number;
+    lastStatus: number;
+    lastPrice: number;
+    lastPriceAmount: number;
+    lastPriceCurrency: number;
+    platformId: number;
+    platformName: number;
+    platformImage: number;
+    platformDescription: number;
+    addressCountry: number;
+    addressRegion: number;
+    addressLocality: number;
+    postalCode: number;
+    streetAddress: number;
+    ratingValue: number;
+    reviewCount: number;
+    latitude: number;
+    longitude: number;
+    platformMetadata: number;
+    createdAt: number;
+    updatedAt: number;
+    _all: number;
+};
+export type AccommodationAvgAggregateInputType = {
+    adults?: true;
+    rooms?: true;
+    lastPriceAmount?: true;
+    ratingValue?: true;
+    reviewCount?: true;
+    latitude?: true;
+    longitude?: true;
+};
+export type AccommodationSumAggregateInputType = {
+    adults?: true;
+    rooms?: true;
+    lastPriceAmount?: true;
+    ratingValue?: true;
+    reviewCount?: true;
+    latitude?: true;
+    longitude?: true;
+};
+export type AccommodationMinAggregateInputType = {
+    id?: true;
+    userId?: true;
+    name?: true;
+    platform?: true;
+    url?: true;
+    checkIn?: true;
+    checkOut?: true;
+    adults?: true;
+    rooms?: true;
+    isActive?: true;
+    lastCheck?: true;
+    lastStatus?: true;
+    lastPrice?: true;
+    lastPriceAmount?: true;
+    lastPriceCurrency?: true;
+    platformId?: true;
+    platformName?: true;
+    platformImage?: true;
+    platformDescription?: true;
+    addressCountry?: true;
+    addressRegion?: true;
+    addressLocality?: true;
+    postalCode?: true;
+    streetAddress?: true;
+    ratingValue?: true;
+    reviewCount?: true;
+    latitude?: true;
+    longitude?: true;
+    createdAt?: true;
+    updatedAt?: true;
+};
+export type AccommodationMaxAggregateInputType = {
+    id?: true;
+    userId?: true;
+    name?: true;
+    platform?: true;
+    url?: true;
+    checkIn?: true;
+    checkOut?: true;
+    adults?: true;
+    rooms?: true;
+    isActive?: true;
+    lastCheck?: true;
+    lastStatus?: true;
+    lastPrice?: true;
+    lastPriceAmount?: true;
+    lastPriceCurrency?: true;
+    platformId?: true;
+    platformName?: true;
+    platformImage?: true;
+    platformDescription?: true;
+    addressCountry?: true;
+    addressRegion?: true;
+    addressLocality?: true;
+    postalCode?: true;
+    streetAddress?: true;
+    ratingValue?: true;
+    reviewCount?: true;
+    latitude?: true;
+    longitude?: true;
+    createdAt?: true;
+    updatedAt?: true;
+};
+export type AccommodationCountAggregateInputType = {
+    id?: true;
+    userId?: true;
+    name?: true;
+    platform?: true;
+    url?: true;
+    checkIn?: true;
+    checkOut?: true;
+    adults?: true;
+    rooms?: true;
+    isActive?: true;
+    lastCheck?: true;
+    lastStatus?: true;
+    lastPrice?: true;
+    lastPriceAmount?: true;
+    lastPriceCurrency?: true;
+    platformId?: true;
+    platformName?: true;
+    platformImage?: true;
+    platformDescription?: true;
+    addressCountry?: true;
+    addressRegion?: true;
+    addressLocality?: true;
+    postalCode?: true;
+    streetAddress?: true;
+    ratingValue?: true;
+    reviewCount?: true;
+    latitude?: true;
+    longitude?: true;
+    platformMetadata?: true;
+    createdAt?: true;
+    updatedAt?: true;
+    _all?: true;
+};
+export type AccommodationAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Filter which Accommodation to aggregate.
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Accommodations to fetch.
+     */
+    orderBy?: Prisma.AccommodationOrderByWithRelationInput | Prisma.AccommodationOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the start position
+     */
+    cursor?: Prisma.AccommodationWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Accommodations from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Accommodations.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Count returned Accommodations
+    **/
+    _count?: true | AccommodationCountAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to average
+    **/
+    _avg?: AccommodationAvgAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to sum
+    **/
+    _sum?: AccommodationSumAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the minimum value
+    **/
+    _min?: AccommodationMinAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the maximum value
+    **/
+    _max?: AccommodationMaxAggregateInputType;
+};
+export type GetAccommodationAggregateType<T extends AccommodationAggregateArgs> = {
+    [P in keyof T & keyof AggregateAccommodation]: P extends '_count' | 'count' ? T[P] extends true ? number : Prisma.GetScalarType<T[P], AggregateAccommodation[P]> : Prisma.GetScalarType<T[P], AggregateAccommodation[P]>;
+};
+export type AccommodationGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.AccommodationWhereInput;
+    orderBy?: Prisma.AccommodationOrderByWithAggregationInput | Prisma.AccommodationOrderByWithAggregationInput[];
+    by: Prisma.AccommodationScalarFieldEnum[] | Prisma.AccommodationScalarFieldEnum;
+    having?: Prisma.AccommodationScalarWhereWithAggregatesInput;
+    take?: number;
+    skip?: number;
+    _count?: AccommodationCountAggregateInputType | true;
+    _avg?: AccommodationAvgAggregateInputType;
+    _sum?: AccommodationSumAggregateInputType;
+    _min?: AccommodationMinAggregateInputType;
+    _max?: AccommodationMaxAggregateInputType;
+};
+export type AccommodationGroupByOutputType = {
+    id: string;
+    userId: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date;
+    checkOut: Date;
+    adults: number;
+    rooms: number;
+    isActive: boolean;
+    lastCheck: Date | null;
+    lastStatus: $Enums.AvailabilityStatus;
+    lastPrice: string | null;
+    lastPriceAmount: number | null;
+    lastPriceCurrency: string | null;
+    platformId: string | null;
+    platformName: string | null;
+    platformImage: string | null;
+    platformDescription: string | null;
+    addressCountry: string | null;
+    addressRegion: string | null;
+    addressLocality: string | null;
+    postalCode: string | null;
+    streetAddress: string | null;
+    ratingValue: number | null;
+    reviewCount: number | null;
+    latitude: number | null;
+    longitude: number | null;
+    platformMetadata: runtime.JsonValue | null;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: AccommodationCountAggregateOutputType | null;
+    _avg: AccommodationAvgAggregateOutputType | null;
+    _sum: AccommodationSumAggregateOutputType | null;
+    _min: AccommodationMinAggregateOutputType | null;
+    _max: AccommodationMaxAggregateOutputType | null;
+};
+type GetAccommodationGroupByPayload<T extends AccommodationGroupByArgs> = Prisma.PrismaPromise<Array<Prisma.PickEnumerable<AccommodationGroupByOutputType, T['by']> & {
+    [P in ((keyof T) & (keyof AccommodationGroupByOutputType))]: P extends '_count' ? T[P] extends boolean ? number : Prisma.GetScalarType<T[P], AccommodationGroupByOutputType[P]> : Prisma.GetScalarType<T[P], AccommodationGroupByOutputType[P]>;
+}>>;
+export type AccommodationWhereInput = {
+    AND?: Prisma.AccommodationWhereInput | Prisma.AccommodationWhereInput[];
+    OR?: Prisma.AccommodationWhereInput[];
+    NOT?: Prisma.AccommodationWhereInput | Prisma.AccommodationWhereInput[];
+    id?: Prisma.StringFilter<"Accommodation"> | string;
+    userId?: Prisma.StringFilter<"Accommodation"> | string;
+    name?: Prisma.StringFilter<"Accommodation"> | string;
+    platform?: Prisma.EnumPlatformFilter<"Accommodation"> | $Enums.Platform;
+    url?: Prisma.StringFilter<"Accommodation"> | string;
+    checkIn?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    checkOut?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    adults?: Prisma.IntFilter<"Accommodation"> | number;
+    rooms?: Prisma.IntFilter<"Accommodation"> | number;
+    isActive?: Prisma.BoolFilter<"Accommodation"> | boolean;
+    lastCheck?: Prisma.DateTimeNullableFilter<"Accommodation"> | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFilter<"Accommodation"> | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    lastPriceAmount?: Prisma.IntNullableFilter<"Accommodation"> | number | null;
+    lastPriceCurrency?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformId?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformName?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformImage?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformDescription?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressCountry?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressRegion?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressLocality?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    postalCode?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    streetAddress?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    ratingValue?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    reviewCount?: Prisma.IntNullableFilter<"Accommodation"> | number | null;
+    latitude?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    longitude?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    platformMetadata?: Prisma.JsonNullableFilter<"Accommodation">;
+    createdAt?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+    checkLogs?: Prisma.CheckLogListRelationFilter;
+};
+export type AccommodationOrderByWithRelationInput = {
+    id?: Prisma.SortOrder;
+    userId?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    url?: Prisma.SortOrder;
+    checkIn?: Prisma.SortOrder;
+    checkOut?: Prisma.SortOrder;
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    lastCheck?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastStatus?: Prisma.SortOrder;
+    lastPrice?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastPriceCurrency?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformId?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformName?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformImage?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformDescription?: Prisma.SortOrderInput | Prisma.SortOrder;
+    addressCountry?: Prisma.SortOrderInput | Prisma.SortOrder;
+    addressRegion?: Prisma.SortOrderInput | Prisma.SortOrder;
+    addressLocality?: Prisma.SortOrderInput | Prisma.SortOrder;
+    postalCode?: Prisma.SortOrderInput | Prisma.SortOrder;
+    streetAddress?: Prisma.SortOrderInput | Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrderInput | Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrderInput | Prisma.SortOrder;
+    latitude?: Prisma.SortOrderInput | Prisma.SortOrder;
+    longitude?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformMetadata?: Prisma.SortOrderInput | Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    user?: Prisma.UserOrderByWithRelationInput;
+    checkLogs?: Prisma.CheckLogOrderByRelationAggregateInput;
+};
+export type AccommodationWhereUniqueInput = Prisma.AtLeast<{
+    id?: string;
+    AND?: Prisma.AccommodationWhereInput | Prisma.AccommodationWhereInput[];
+    OR?: Prisma.AccommodationWhereInput[];
+    NOT?: Prisma.AccommodationWhereInput | Prisma.AccommodationWhereInput[];
+    userId?: Prisma.StringFilter<"Accommodation"> | string;
+    name?: Prisma.StringFilter<"Accommodation"> | string;
+    platform?: Prisma.EnumPlatformFilter<"Accommodation"> | $Enums.Platform;
+    url?: Prisma.StringFilter<"Accommodation"> | string;
+    checkIn?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    checkOut?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    adults?: Prisma.IntFilter<"Accommodation"> | number;
+    rooms?: Prisma.IntFilter<"Accommodation"> | number;
+    isActive?: Prisma.BoolFilter<"Accommodation"> | boolean;
+    lastCheck?: Prisma.DateTimeNullableFilter<"Accommodation"> | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFilter<"Accommodation"> | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    lastPriceAmount?: Prisma.IntNullableFilter<"Accommodation"> | number | null;
+    lastPriceCurrency?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformId?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformName?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformImage?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformDescription?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressCountry?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressRegion?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressLocality?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    postalCode?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    streetAddress?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    ratingValue?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    reviewCount?: Prisma.IntNullableFilter<"Accommodation"> | number | null;
+    latitude?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    longitude?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    platformMetadata?: Prisma.JsonNullableFilter<"Accommodation">;
+    createdAt?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>;
+    checkLogs?: Prisma.CheckLogListRelationFilter;
+}, "id">;
+export type AccommodationOrderByWithAggregationInput = {
+    id?: Prisma.SortOrder;
+    userId?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    url?: Prisma.SortOrder;
+    checkIn?: Prisma.SortOrder;
+    checkOut?: Prisma.SortOrder;
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    lastCheck?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastStatus?: Prisma.SortOrder;
+    lastPrice?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrderInput | Prisma.SortOrder;
+    lastPriceCurrency?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformId?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformName?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformImage?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformDescription?: Prisma.SortOrderInput | Prisma.SortOrder;
+    addressCountry?: Prisma.SortOrderInput | Prisma.SortOrder;
+    addressRegion?: Prisma.SortOrderInput | Prisma.SortOrder;
+    addressLocality?: Prisma.SortOrderInput | Prisma.SortOrder;
+    postalCode?: Prisma.SortOrderInput | Prisma.SortOrder;
+    streetAddress?: Prisma.SortOrderInput | Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrderInput | Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrderInput | Prisma.SortOrder;
+    latitude?: Prisma.SortOrderInput | Prisma.SortOrder;
+    longitude?: Prisma.SortOrderInput | Prisma.SortOrder;
+    platformMetadata?: Prisma.SortOrderInput | Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    _count?: Prisma.AccommodationCountOrderByAggregateInput;
+    _avg?: Prisma.AccommodationAvgOrderByAggregateInput;
+    _max?: Prisma.AccommodationMaxOrderByAggregateInput;
+    _min?: Prisma.AccommodationMinOrderByAggregateInput;
+    _sum?: Prisma.AccommodationSumOrderByAggregateInput;
+};
+export type AccommodationScalarWhereWithAggregatesInput = {
+    AND?: Prisma.AccommodationScalarWhereWithAggregatesInput | Prisma.AccommodationScalarWhereWithAggregatesInput[];
+    OR?: Prisma.AccommodationScalarWhereWithAggregatesInput[];
+    NOT?: Prisma.AccommodationScalarWhereWithAggregatesInput | Prisma.AccommodationScalarWhereWithAggregatesInput[];
+    id?: Prisma.StringWithAggregatesFilter<"Accommodation"> | string;
+    userId?: Prisma.StringWithAggregatesFilter<"Accommodation"> | string;
+    name?: Prisma.StringWithAggregatesFilter<"Accommodation"> | string;
+    platform?: Prisma.EnumPlatformWithAggregatesFilter<"Accommodation"> | $Enums.Platform;
+    url?: Prisma.StringWithAggregatesFilter<"Accommodation"> | string;
+    checkIn?: Prisma.DateTimeWithAggregatesFilter<"Accommodation"> | Date | string;
+    checkOut?: Prisma.DateTimeWithAggregatesFilter<"Accommodation"> | Date | string;
+    adults?: Prisma.IntWithAggregatesFilter<"Accommodation"> | number;
+    rooms?: Prisma.IntWithAggregatesFilter<"Accommodation"> | number;
+    isActive?: Prisma.BoolWithAggregatesFilter<"Accommodation"> | boolean;
+    lastCheck?: Prisma.DateTimeNullableWithAggregatesFilter<"Accommodation"> | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusWithAggregatesFilter<"Accommodation"> | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    lastPriceAmount?: Prisma.IntNullableWithAggregatesFilter<"Accommodation"> | number | null;
+    lastPriceCurrency?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    platformId?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    platformName?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    platformImage?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    platformDescription?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    addressCountry?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    addressRegion?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    addressLocality?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    postalCode?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    streetAddress?: Prisma.StringNullableWithAggregatesFilter<"Accommodation"> | string | null;
+    ratingValue?: Prisma.FloatNullableWithAggregatesFilter<"Accommodation"> | number | null;
+    reviewCount?: Prisma.IntNullableWithAggregatesFilter<"Accommodation"> | number | null;
+    latitude?: Prisma.FloatNullableWithAggregatesFilter<"Accommodation"> | number | null;
+    longitude?: Prisma.FloatNullableWithAggregatesFilter<"Accommodation"> | number | null;
+    platformMetadata?: Prisma.JsonNullableWithAggregatesFilter<"Accommodation">;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"Accommodation"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Accommodation"> | Date | string;
+};
+export type AccommodationCreateInput = {
+    id?: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    user: Prisma.UserCreateNestedOneWithoutAccommodationsInput;
+    checkLogs?: Prisma.CheckLogCreateNestedManyWithoutAccommodationInput;
+};
+export type AccommodationUncheckedCreateInput = {
+    id?: string;
+    userId: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    checkLogs?: Prisma.CheckLogUncheckedCreateNestedManyWithoutAccommodationInput;
+};
+export type AccommodationUpdateInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    user?: Prisma.UserUpdateOneRequiredWithoutAccommodationsNestedInput;
+    checkLogs?: Prisma.CheckLogUpdateManyWithoutAccommodationNestedInput;
+};
+export type AccommodationUncheckedUpdateInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    userId?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkLogs?: Prisma.CheckLogUncheckedUpdateManyWithoutAccommodationNestedInput;
+};
+export type AccommodationCreateManyInput = {
+    id?: string;
+    userId: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type AccommodationUpdateManyMutationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type AccommodationUncheckedUpdateManyInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    userId?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type AccommodationListRelationFilter = {
+    every?: Prisma.AccommodationWhereInput;
+    some?: Prisma.AccommodationWhereInput;
+    none?: Prisma.AccommodationWhereInput;
+};
+export type AccommodationOrderByRelationAggregateInput = {
+    _count?: Prisma.SortOrder;
+};
+export type AccommodationCountOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    userId?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    url?: Prisma.SortOrder;
+    checkIn?: Prisma.SortOrder;
+    checkOut?: Prisma.SortOrder;
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    lastCheck?: Prisma.SortOrder;
+    lastStatus?: Prisma.SortOrder;
+    lastPrice?: Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrder;
+    lastPriceCurrency?: Prisma.SortOrder;
+    platformId?: Prisma.SortOrder;
+    platformName?: Prisma.SortOrder;
+    platformImage?: Prisma.SortOrder;
+    platformDescription?: Prisma.SortOrder;
+    addressCountry?: Prisma.SortOrder;
+    addressRegion?: Prisma.SortOrder;
+    addressLocality?: Prisma.SortOrder;
+    postalCode?: Prisma.SortOrder;
+    streetAddress?: Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrder;
+    latitude?: Prisma.SortOrder;
+    longitude?: Prisma.SortOrder;
+    platformMetadata?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type AccommodationAvgOrderByAggregateInput = {
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrder;
+    latitude?: Prisma.SortOrder;
+    longitude?: Prisma.SortOrder;
+};
+export type AccommodationMaxOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    userId?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    url?: Prisma.SortOrder;
+    checkIn?: Prisma.SortOrder;
+    checkOut?: Prisma.SortOrder;
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    lastCheck?: Prisma.SortOrder;
+    lastStatus?: Prisma.SortOrder;
+    lastPrice?: Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrder;
+    lastPriceCurrency?: Prisma.SortOrder;
+    platformId?: Prisma.SortOrder;
+    platformName?: Prisma.SortOrder;
+    platformImage?: Prisma.SortOrder;
+    platformDescription?: Prisma.SortOrder;
+    addressCountry?: Prisma.SortOrder;
+    addressRegion?: Prisma.SortOrder;
+    addressLocality?: Prisma.SortOrder;
+    postalCode?: Prisma.SortOrder;
+    streetAddress?: Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrder;
+    latitude?: Prisma.SortOrder;
+    longitude?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type AccommodationMinOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    userId?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    platform?: Prisma.SortOrder;
+    url?: Prisma.SortOrder;
+    checkIn?: Prisma.SortOrder;
+    checkOut?: Prisma.SortOrder;
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    isActive?: Prisma.SortOrder;
+    lastCheck?: Prisma.SortOrder;
+    lastStatus?: Prisma.SortOrder;
+    lastPrice?: Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrder;
+    lastPriceCurrency?: Prisma.SortOrder;
+    platformId?: Prisma.SortOrder;
+    platformName?: Prisma.SortOrder;
+    platformImage?: Prisma.SortOrder;
+    platformDescription?: Prisma.SortOrder;
+    addressCountry?: Prisma.SortOrder;
+    addressRegion?: Prisma.SortOrder;
+    addressLocality?: Prisma.SortOrder;
+    postalCode?: Prisma.SortOrder;
+    streetAddress?: Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrder;
+    latitude?: Prisma.SortOrder;
+    longitude?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type AccommodationSumOrderByAggregateInput = {
+    adults?: Prisma.SortOrder;
+    rooms?: Prisma.SortOrder;
+    lastPriceAmount?: Prisma.SortOrder;
+    ratingValue?: Prisma.SortOrder;
+    reviewCount?: Prisma.SortOrder;
+    latitude?: Prisma.SortOrder;
+    longitude?: Prisma.SortOrder;
+};
+export type AccommodationScalarRelationFilter = {
+    is?: Prisma.AccommodationWhereInput;
+    isNot?: Prisma.AccommodationWhereInput;
+};
+export type AccommodationCreateNestedManyWithoutUserInput = {
+    create?: Prisma.XOR<Prisma.AccommodationCreateWithoutUserInput, Prisma.AccommodationUncheckedCreateWithoutUserInput> | Prisma.AccommodationCreateWithoutUserInput[] | Prisma.AccommodationUncheckedCreateWithoutUserInput[];
+    connectOrCreate?: Prisma.AccommodationCreateOrConnectWithoutUserInput | Prisma.AccommodationCreateOrConnectWithoutUserInput[];
+    createMany?: Prisma.AccommodationCreateManyUserInputEnvelope;
+    connect?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+};
+export type AccommodationUncheckedCreateNestedManyWithoutUserInput = {
+    create?: Prisma.XOR<Prisma.AccommodationCreateWithoutUserInput, Prisma.AccommodationUncheckedCreateWithoutUserInput> | Prisma.AccommodationCreateWithoutUserInput[] | Prisma.AccommodationUncheckedCreateWithoutUserInput[];
+    connectOrCreate?: Prisma.AccommodationCreateOrConnectWithoutUserInput | Prisma.AccommodationCreateOrConnectWithoutUserInput[];
+    createMany?: Prisma.AccommodationCreateManyUserInputEnvelope;
+    connect?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+};
+export type AccommodationUpdateManyWithoutUserNestedInput = {
+    create?: Prisma.XOR<Prisma.AccommodationCreateWithoutUserInput, Prisma.AccommodationUncheckedCreateWithoutUserInput> | Prisma.AccommodationCreateWithoutUserInput[] | Prisma.AccommodationUncheckedCreateWithoutUserInput[];
+    connectOrCreate?: Prisma.AccommodationCreateOrConnectWithoutUserInput | Prisma.AccommodationCreateOrConnectWithoutUserInput[];
+    upsert?: Prisma.AccommodationUpsertWithWhereUniqueWithoutUserInput | Prisma.AccommodationUpsertWithWhereUniqueWithoutUserInput[];
+    createMany?: Prisma.AccommodationCreateManyUserInputEnvelope;
+    set?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    disconnect?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    delete?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    connect?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    update?: Prisma.AccommodationUpdateWithWhereUniqueWithoutUserInput | Prisma.AccommodationUpdateWithWhereUniqueWithoutUserInput[];
+    updateMany?: Prisma.AccommodationUpdateManyWithWhereWithoutUserInput | Prisma.AccommodationUpdateManyWithWhereWithoutUserInput[];
+    deleteMany?: Prisma.AccommodationScalarWhereInput | Prisma.AccommodationScalarWhereInput[];
+};
+export type AccommodationUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: Prisma.XOR<Prisma.AccommodationCreateWithoutUserInput, Prisma.AccommodationUncheckedCreateWithoutUserInput> | Prisma.AccommodationCreateWithoutUserInput[] | Prisma.AccommodationUncheckedCreateWithoutUserInput[];
+    connectOrCreate?: Prisma.AccommodationCreateOrConnectWithoutUserInput | Prisma.AccommodationCreateOrConnectWithoutUserInput[];
+    upsert?: Prisma.AccommodationUpsertWithWhereUniqueWithoutUserInput | Prisma.AccommodationUpsertWithWhereUniqueWithoutUserInput[];
+    createMany?: Prisma.AccommodationCreateManyUserInputEnvelope;
+    set?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    disconnect?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    delete?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    connect?: Prisma.AccommodationWhereUniqueInput | Prisma.AccommodationWhereUniqueInput[];
+    update?: Prisma.AccommodationUpdateWithWhereUniqueWithoutUserInput | Prisma.AccommodationUpdateWithWhereUniqueWithoutUserInput[];
+    updateMany?: Prisma.AccommodationUpdateManyWithWhereWithoutUserInput | Prisma.AccommodationUpdateManyWithWhereWithoutUserInput[];
+    deleteMany?: Prisma.AccommodationScalarWhereInput | Prisma.AccommodationScalarWhereInput[];
+};
+export type EnumPlatformFieldUpdateOperationsInput = {
+    set?: $Enums.Platform;
+};
+export type IntFieldUpdateOperationsInput = {
+    set?: number;
+    increment?: number;
+    decrement?: number;
+    multiply?: number;
+    divide?: number;
+};
+export type BoolFieldUpdateOperationsInput = {
+    set?: boolean;
+};
+export type EnumAvailabilityStatusFieldUpdateOperationsInput = {
+    set?: $Enums.AvailabilityStatus;
+};
+export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null;
+    increment?: number;
+    decrement?: number;
+    multiply?: number;
+    divide?: number;
+};
+export type AccommodationCreateNestedOneWithoutCheckLogsInput = {
+    create?: Prisma.XOR<Prisma.AccommodationCreateWithoutCheckLogsInput, Prisma.AccommodationUncheckedCreateWithoutCheckLogsInput>;
+    connectOrCreate?: Prisma.AccommodationCreateOrConnectWithoutCheckLogsInput;
+    connect?: Prisma.AccommodationWhereUniqueInput;
+};
+export type AccommodationUpdateOneRequiredWithoutCheckLogsNestedInput = {
+    create?: Prisma.XOR<Prisma.AccommodationCreateWithoutCheckLogsInput, Prisma.AccommodationUncheckedCreateWithoutCheckLogsInput>;
+    connectOrCreate?: Prisma.AccommodationCreateOrConnectWithoutCheckLogsInput;
+    upsert?: Prisma.AccommodationUpsertWithoutCheckLogsInput;
+    connect?: Prisma.AccommodationWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.AccommodationUpdateToOneWithWhereWithoutCheckLogsInput, Prisma.AccommodationUpdateWithoutCheckLogsInput>, Prisma.AccommodationUncheckedUpdateWithoutCheckLogsInput>;
+};
+export type AccommodationCreateWithoutUserInput = {
+    id?: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    checkLogs?: Prisma.CheckLogCreateNestedManyWithoutAccommodationInput;
+};
+export type AccommodationUncheckedCreateWithoutUserInput = {
+    id?: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    checkLogs?: Prisma.CheckLogUncheckedCreateNestedManyWithoutAccommodationInput;
+};
+export type AccommodationCreateOrConnectWithoutUserInput = {
+    where: Prisma.AccommodationWhereUniqueInput;
+    create: Prisma.XOR<Prisma.AccommodationCreateWithoutUserInput, Prisma.AccommodationUncheckedCreateWithoutUserInput>;
+};
+export type AccommodationCreateManyUserInputEnvelope = {
+    data: Prisma.AccommodationCreateManyUserInput | Prisma.AccommodationCreateManyUserInput[];
+    skipDuplicates?: boolean;
+};
+export type AccommodationUpsertWithWhereUniqueWithoutUserInput = {
+    where: Prisma.AccommodationWhereUniqueInput;
+    update: Prisma.XOR<Prisma.AccommodationUpdateWithoutUserInput, Prisma.AccommodationUncheckedUpdateWithoutUserInput>;
+    create: Prisma.XOR<Prisma.AccommodationCreateWithoutUserInput, Prisma.AccommodationUncheckedCreateWithoutUserInput>;
+};
+export type AccommodationUpdateWithWhereUniqueWithoutUserInput = {
+    where: Prisma.AccommodationWhereUniqueInput;
+    data: Prisma.XOR<Prisma.AccommodationUpdateWithoutUserInput, Prisma.AccommodationUncheckedUpdateWithoutUserInput>;
+};
+export type AccommodationUpdateManyWithWhereWithoutUserInput = {
+    where: Prisma.AccommodationScalarWhereInput;
+    data: Prisma.XOR<Prisma.AccommodationUpdateManyMutationInput, Prisma.AccommodationUncheckedUpdateManyWithoutUserInput>;
+};
+export type AccommodationScalarWhereInput = {
+    AND?: Prisma.AccommodationScalarWhereInput | Prisma.AccommodationScalarWhereInput[];
+    OR?: Prisma.AccommodationScalarWhereInput[];
+    NOT?: Prisma.AccommodationScalarWhereInput | Prisma.AccommodationScalarWhereInput[];
+    id?: Prisma.StringFilter<"Accommodation"> | string;
+    userId?: Prisma.StringFilter<"Accommodation"> | string;
+    name?: Prisma.StringFilter<"Accommodation"> | string;
+    platform?: Prisma.EnumPlatformFilter<"Accommodation"> | $Enums.Platform;
+    url?: Prisma.StringFilter<"Accommodation"> | string;
+    checkIn?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    checkOut?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    adults?: Prisma.IntFilter<"Accommodation"> | number;
+    rooms?: Prisma.IntFilter<"Accommodation"> | number;
+    isActive?: Prisma.BoolFilter<"Accommodation"> | boolean;
+    lastCheck?: Prisma.DateTimeNullableFilter<"Accommodation"> | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFilter<"Accommodation"> | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    lastPriceAmount?: Prisma.IntNullableFilter<"Accommodation"> | number | null;
+    lastPriceCurrency?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformId?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformName?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformImage?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    platformDescription?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressCountry?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressRegion?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    addressLocality?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    postalCode?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    streetAddress?: Prisma.StringNullableFilter<"Accommodation"> | string | null;
+    ratingValue?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    reviewCount?: Prisma.IntNullableFilter<"Accommodation"> | number | null;
+    latitude?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    longitude?: Prisma.FloatNullableFilter<"Accommodation"> | number | null;
+    platformMetadata?: Prisma.JsonNullableFilter<"Accommodation">;
+    createdAt?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Accommodation"> | Date | string;
+};
+export type AccommodationCreateWithoutCheckLogsInput = {
+    id?: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    user: Prisma.UserCreateNestedOneWithoutAccommodationsInput;
+};
+export type AccommodationUncheckedCreateWithoutCheckLogsInput = {
+    id?: string;
+    userId: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type AccommodationCreateOrConnectWithoutCheckLogsInput = {
+    where: Prisma.AccommodationWhereUniqueInput;
+    create: Prisma.XOR<Prisma.AccommodationCreateWithoutCheckLogsInput, Prisma.AccommodationUncheckedCreateWithoutCheckLogsInput>;
+};
+export type AccommodationUpsertWithoutCheckLogsInput = {
+    update: Prisma.XOR<Prisma.AccommodationUpdateWithoutCheckLogsInput, Prisma.AccommodationUncheckedUpdateWithoutCheckLogsInput>;
+    create: Prisma.XOR<Prisma.AccommodationCreateWithoutCheckLogsInput, Prisma.AccommodationUncheckedCreateWithoutCheckLogsInput>;
+    where?: Prisma.AccommodationWhereInput;
+};
+export type AccommodationUpdateToOneWithWhereWithoutCheckLogsInput = {
+    where?: Prisma.AccommodationWhereInput;
+    data: Prisma.XOR<Prisma.AccommodationUpdateWithoutCheckLogsInput, Prisma.AccommodationUncheckedUpdateWithoutCheckLogsInput>;
+};
+export type AccommodationUpdateWithoutCheckLogsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    user?: Prisma.UserUpdateOneRequiredWithoutAccommodationsNestedInput;
+};
+export type AccommodationUncheckedUpdateWithoutCheckLogsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    userId?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type AccommodationCreateManyUserInput = {
+    id?: string;
+    name: string;
+    platform: $Enums.Platform;
+    url: string;
+    checkIn: Date | string;
+    checkOut: Date | string;
+    adults?: number;
+    rooms?: number;
+    isActive?: boolean;
+    lastCheck?: Date | string | null;
+    lastStatus?: $Enums.AvailabilityStatus;
+    lastPrice?: string | null;
+    lastPriceAmount?: number | null;
+    lastPriceCurrency?: string | null;
+    platformId?: string | null;
+    platformName?: string | null;
+    platformImage?: string | null;
+    platformDescription?: string | null;
+    addressCountry?: string | null;
+    addressRegion?: string | null;
+    addressLocality?: string | null;
+    postalCode?: string | null;
+    streetAddress?: string | null;
+    ratingValue?: number | null;
+    reviewCount?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type AccommodationUpdateWithoutUserInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkLogs?: Prisma.CheckLogUpdateManyWithoutAccommodationNestedInput;
+};
+export type AccommodationUncheckedUpdateWithoutUserInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkLogs?: Prisma.CheckLogUncheckedUpdateManyWithoutAccommodationNestedInput;
+};
+export type AccommodationUncheckedUpdateManyWithoutUserInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    platform?: Prisma.EnumPlatformFieldUpdateOperationsInput | $Enums.Platform;
+    url?: Prisma.StringFieldUpdateOperationsInput | string;
+    checkIn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    checkOut?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    adults?: Prisma.IntFieldUpdateOperationsInput | number;
+    rooms?: Prisma.IntFieldUpdateOperationsInput | number;
+    isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean;
+    lastCheck?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    lastStatus?: Prisma.EnumAvailabilityStatusFieldUpdateOperationsInput | $Enums.AvailabilityStatus;
+    lastPrice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    lastPriceAmount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    lastPriceCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformImage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    platformDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressRegion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    addressLocality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    postalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    streetAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    ratingValue?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    reviewCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+    latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null;
+    platformMetadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+/**
+ * Count Type AccommodationCountOutputType
+ */
+export type AccommodationCountOutputType = {
+    checkLogs: number;
+};
+export type AccommodationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    checkLogs?: boolean | AccommodationCountOutputTypeCountCheckLogsArgs;
+};
+/**
+ * AccommodationCountOutputType without action
+ */
+export type AccommodationCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccommodationCountOutputType
+     */
+    select?: Prisma.AccommodationCountOutputTypeSelect<ExtArgs> | null;
+};
+/**
+ * AccommodationCountOutputType without action
+ */
+export type AccommodationCountOutputTypeCountCheckLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.CheckLogWhereInput;
+};
+export type AccommodationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    userId?: boolean;
+    name?: boolean;
+    platform?: boolean;
+    url?: boolean;
+    checkIn?: boolean;
+    checkOut?: boolean;
+    adults?: boolean;
+    rooms?: boolean;
+    isActive?: boolean;
+    lastCheck?: boolean;
+    lastStatus?: boolean;
+    lastPrice?: boolean;
+    lastPriceAmount?: boolean;
+    lastPriceCurrency?: boolean;
+    platformId?: boolean;
+    platformName?: boolean;
+    platformImage?: boolean;
+    platformDescription?: boolean;
+    addressCountry?: boolean;
+    addressRegion?: boolean;
+    addressLocality?: boolean;
+    postalCode?: boolean;
+    streetAddress?: boolean;
+    ratingValue?: boolean;
+    reviewCount?: boolean;
+    latitude?: boolean;
+    longitude?: boolean;
+    platformMetadata?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    checkLogs?: boolean | Prisma.Accommodation$checkLogsArgs<ExtArgs>;
+    _count?: boolean | Prisma.AccommodationCountOutputTypeDefaultArgs<ExtArgs>;
+}, ExtArgs["result"]["accommodation"]>;
+export type AccommodationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    userId?: boolean;
+    name?: boolean;
+    platform?: boolean;
+    url?: boolean;
+    checkIn?: boolean;
+    checkOut?: boolean;
+    adults?: boolean;
+    rooms?: boolean;
+    isActive?: boolean;
+    lastCheck?: boolean;
+    lastStatus?: boolean;
+    lastPrice?: boolean;
+    lastPriceAmount?: boolean;
+    lastPriceCurrency?: boolean;
+    platformId?: boolean;
+    platformName?: boolean;
+    platformImage?: boolean;
+    platformDescription?: boolean;
+    addressCountry?: boolean;
+    addressRegion?: boolean;
+    addressLocality?: boolean;
+    postalCode?: boolean;
+    streetAddress?: boolean;
+    ratingValue?: boolean;
+    reviewCount?: boolean;
+    latitude?: boolean;
+    longitude?: boolean;
+    platformMetadata?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+}, ExtArgs["result"]["accommodation"]>;
+export type AccommodationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    userId?: boolean;
+    name?: boolean;
+    platform?: boolean;
+    url?: boolean;
+    checkIn?: boolean;
+    checkOut?: boolean;
+    adults?: boolean;
+    rooms?: boolean;
+    isActive?: boolean;
+    lastCheck?: boolean;
+    lastStatus?: boolean;
+    lastPrice?: boolean;
+    lastPriceAmount?: boolean;
+    lastPriceCurrency?: boolean;
+    platformId?: boolean;
+    platformName?: boolean;
+    platformImage?: boolean;
+    platformDescription?: boolean;
+    addressCountry?: boolean;
+    addressRegion?: boolean;
+    addressLocality?: boolean;
+    postalCode?: boolean;
+    streetAddress?: boolean;
+    ratingValue?: boolean;
+    reviewCount?: boolean;
+    latitude?: boolean;
+    longitude?: boolean;
+    platformMetadata?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+}, ExtArgs["result"]["accommodation"]>;
+export type AccommodationSelectScalar = {
+    id?: boolean;
+    userId?: boolean;
+    name?: boolean;
+    platform?: boolean;
+    url?: boolean;
+    checkIn?: boolean;
+    checkOut?: boolean;
+    adults?: boolean;
+    rooms?: boolean;
+    isActive?: boolean;
+    lastCheck?: boolean;
+    lastStatus?: boolean;
+    lastPrice?: boolean;
+    lastPriceAmount?: boolean;
+    lastPriceCurrency?: boolean;
+    platformId?: boolean;
+    platformName?: boolean;
+    platformImage?: boolean;
+    platformDescription?: boolean;
+    addressCountry?: boolean;
+    addressRegion?: boolean;
+    addressLocality?: boolean;
+    postalCode?: boolean;
+    streetAddress?: boolean;
+    ratingValue?: boolean;
+    reviewCount?: boolean;
+    latitude?: boolean;
+    longitude?: boolean;
+    platformMetadata?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+};
+export type AccommodationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "name" | "platform" | "url" | "checkIn" | "checkOut" | "adults" | "rooms" | "isActive" | "lastCheck" | "lastStatus" | "lastPrice" | "lastPriceAmount" | "lastPriceCurrency" | "platformId" | "platformName" | "platformImage" | "platformDescription" | "addressCountry" | "addressRegion" | "addressLocality" | "postalCode" | "streetAddress" | "ratingValue" | "reviewCount" | "latitude" | "longitude" | "platformMetadata" | "createdAt" | "updatedAt", ExtArgs["result"]["accommodation"]>;
+export type AccommodationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+    checkLogs?: boolean | Prisma.Accommodation$checkLogsArgs<ExtArgs>;
+    _count?: boolean | Prisma.AccommodationCountOutputTypeDefaultArgs<ExtArgs>;
+};
+export type AccommodationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+};
+export type AccommodationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    user?: boolean | Prisma.UserDefaultArgs<ExtArgs>;
+};
+export type $AccommodationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    name: "Accommodation";
+    objects: {
+        user: Prisma.$UserPayload<ExtArgs>;
+        checkLogs: Prisma.$CheckLogPayload<ExtArgs>[];
+    };
+    scalars: runtime.Types.Extensions.GetPayloadResult<{
+        id: string;
+        userId: string;
+        name: string;
+        platform: $Enums.Platform;
+        url: string;
+        checkIn: Date;
+        checkOut: Date;
+        adults: number;
+        rooms: number;
+        isActive: boolean;
+        lastCheck: Date | null;
+        lastStatus: $Enums.AvailabilityStatus;
+        lastPrice: string | null;
+        lastPriceAmount: number | null;
+        lastPriceCurrency: string | null;
+        platformId: string | null;
+        platformName: string | null;
+        platformImage: string | null;
+        platformDescription: string | null;
+        addressCountry: string | null;
+        addressRegion: string | null;
+        addressLocality: string | null;
+        postalCode: string | null;
+        streetAddress: string | null;
+        ratingValue: number | null;
+        reviewCount: number | null;
+        latitude: number | null;
+        longitude: number | null;
+        platformMetadata: runtime.JsonValue | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }, ExtArgs["result"]["accommodation"]>;
+    composites: {};
+};
+export type AccommodationGetPayload<S extends boolean | null | undefined | AccommodationDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$AccommodationPayload, S>;
+export type AccommodationCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = Omit<AccommodationFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: AccommodationCountAggregateInputType | true;
+};
+export interface AccommodationDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: {
+        types: Prisma.TypeMap<ExtArgs>['model']['Accommodation'];
+        meta: {
+            name: 'Accommodation';
+        };
+    };
+    /**
+     * Find zero or one Accommodation that matches the filter.
+     * @param {AccommodationFindUniqueArgs} args - Arguments to find a Accommodation
+     * @example
+     * // Get one Accommodation
+     * const accommodation = await prisma.accommodation.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AccommodationFindUniqueArgs>(args: Prisma.SelectSubset<T, AccommodationFindUniqueArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find one Accommodation that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AccommodationFindUniqueOrThrowArgs} args - Arguments to find a Accommodation
+     * @example
+     * // Get one Accommodation
+     * const accommodation = await prisma.accommodation.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AccommodationFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, AccommodationFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find the first Accommodation that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationFindFirstArgs} args - Arguments to find a Accommodation
+     * @example
+     * // Get one Accommodation
+     * const accommodation = await prisma.accommodation.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AccommodationFindFirstArgs>(args?: Prisma.SelectSubset<T, AccommodationFindFirstArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find the first Accommodation that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationFindFirstOrThrowArgs} args - Arguments to find a Accommodation
+     * @example
+     * // Get one Accommodation
+     * const accommodation = await prisma.accommodation.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AccommodationFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, AccommodationFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find zero or more Accommodations that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Accommodations
+     * const accommodations = await prisma.accommodation.findMany()
+     *
+     * // Get first 10 Accommodations
+     * const accommodations = await prisma.accommodation.findMany({ take: 10 })
+     *
+     * // Only select the `id`
+     * const accommodationWithIdOnly = await prisma.accommodation.findMany({ select: { id: true } })
+     *
+     */
+    findMany<T extends AccommodationFindManyArgs>(args?: Prisma.SelectSubset<T, AccommodationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>;
+    /**
+     * Create a Accommodation.
+     * @param {AccommodationCreateArgs} args - Arguments to create a Accommodation.
+     * @example
+     * // Create one Accommodation
+     * const Accommodation = await prisma.accommodation.create({
+     *   data: {
+     *     // ... data to create a Accommodation
+     *   }
+     * })
+     *
+     */
+    create<T extends AccommodationCreateArgs>(args: Prisma.SelectSubset<T, AccommodationCreateArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Create many Accommodations.
+     * @param {AccommodationCreateManyArgs} args - Arguments to create many Accommodations.
+     * @example
+     * // Create many Accommodations
+     * const accommodation = await prisma.accommodation.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     */
+    createMany<T extends AccommodationCreateManyArgs>(args?: Prisma.SelectSubset<T, AccommodationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Create many Accommodations and returns the data saved in the database.
+     * @param {AccommodationCreateManyAndReturnArgs} args - Arguments to create many Accommodations.
+     * @example
+     * // Create many Accommodations
+     * const accommodation = await prisma.accommodation.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Create many Accommodations and only return the `id`
+     * const accommodationWithIdOnly = await prisma.accommodation.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    createManyAndReturn<T extends AccommodationCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, AccommodationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>;
+    /**
+     * Delete a Accommodation.
+     * @param {AccommodationDeleteArgs} args - Arguments to delete one Accommodation.
+     * @example
+     * // Delete one Accommodation
+     * const Accommodation = await prisma.accommodation.delete({
+     *   where: {
+     *     // ... filter to delete one Accommodation
+     *   }
+     * })
+     *
+     */
+    delete<T extends AccommodationDeleteArgs>(args: Prisma.SelectSubset<T, AccommodationDeleteArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Update one Accommodation.
+     * @param {AccommodationUpdateArgs} args - Arguments to update one Accommodation.
+     * @example
+     * // Update one Accommodation
+     * const accommodation = await prisma.accommodation.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    update<T extends AccommodationUpdateArgs>(args: Prisma.SelectSubset<T, AccommodationUpdateArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Delete zero or more Accommodations.
+     * @param {AccommodationDeleteManyArgs} args - Arguments to filter Accommodations to delete.
+     * @example
+     * // Delete a few Accommodations
+     * const { count } = await prisma.accommodation.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     *
+     */
+    deleteMany<T extends AccommodationDeleteManyArgs>(args?: Prisma.SelectSubset<T, AccommodationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Update zero or more Accommodations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Accommodations
+     * const accommodation = await prisma.accommodation.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    updateMany<T extends AccommodationUpdateManyArgs>(args: Prisma.SelectSubset<T, AccommodationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Update zero or more Accommodations and returns the data updated in the database.
+     * @param {AccommodationUpdateManyAndReturnArgs} args - Arguments to update many Accommodations.
+     * @example
+     * // Update many Accommodations
+     * const accommodation = await prisma.accommodation.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Update zero or more Accommodations and only return the `id`
+     * const accommodationWithIdOnly = await prisma.accommodation.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    updateManyAndReturn<T extends AccommodationUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, AccommodationUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>;
+    /**
+     * Create or update one Accommodation.
+     * @param {AccommodationUpsertArgs} args - Arguments to update or create a Accommodation.
+     * @example
+     * // Update or create a Accommodation
+     * const accommodation = await prisma.accommodation.upsert({
+     *   create: {
+     *     // ... data to create a Accommodation
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Accommodation we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AccommodationUpsertArgs>(args: Prisma.SelectSubset<T, AccommodationUpsertArgs<ExtArgs>>): Prisma.Prisma__AccommodationClient<runtime.Types.Result.GetResult<Prisma.$AccommodationPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Count the number of Accommodations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationCountArgs} args - Arguments to filter Accommodations to count.
+     * @example
+     * // Count the number of Accommodations
+     * const count = await prisma.accommodation.count({
+     *   where: {
+     *     // ... the filter for the Accommodations we want to count
+     *   }
+     * })
+    **/
+    count<T extends AccommodationCountArgs>(args?: Prisma.Subset<T, AccommodationCountArgs>): Prisma.PrismaPromise<T extends runtime.Types.Utils.Record<'select', any> ? T['select'] extends true ? number : Prisma.GetScalarType<T['select'], AccommodationCountAggregateOutputType> : number>;
+    /**
+     * Allows you to perform aggregations operations on a Accommodation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AccommodationAggregateArgs>(args: Prisma.Subset<T, AccommodationAggregateArgs>): Prisma.PrismaPromise<GetAccommodationAggregateType<T>>;
+    /**
+     * Group by Accommodation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccommodationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     *
+    **/
+    groupBy<T extends AccommodationGroupByArgs, HasSelectOrTake extends Prisma.Or<Prisma.Extends<'skip', Prisma.Keys<T>>, Prisma.Extends<'take', Prisma.Keys<T>>>, OrderByArg extends Prisma.True extends HasSelectOrTake ? {
+        orderBy: AccommodationGroupByArgs['orderBy'];
+    } : {
+        orderBy?: AccommodationGroupByArgs['orderBy'];
+    }, OrderFields extends Prisma.ExcludeUnderscoreKeys<Prisma.Keys<Prisma.MaybeTupleToUnion<T['orderBy']>>>, ByFields extends Prisma.MaybeTupleToUnion<T['by']>, ByValid extends Prisma.Has<ByFields, OrderFields>, HavingFields extends Prisma.GetHavingFields<T['having']>, HavingValid extends Prisma.Has<ByFields, HavingFields>, ByEmpty extends T['by'] extends never[] ? Prisma.True : Prisma.False, InputErrors extends ByEmpty extends Prisma.True ? `Error: "by" must not be empty.` : HavingValid extends Prisma.False ? {
+        [P in HavingFields]: P extends ByFields ? never : P extends string ? `Error: Field "${P}" used in "having" needs to be provided in "by".` : [
+            Error,
+            'Field ',
+            P,
+            ` in "having" needs to be provided in "by"`
+        ];
+    }[HavingFields] : 'take' extends Prisma.Keys<T> ? 'orderBy' extends Prisma.Keys<T> ? ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields] : 'Error: If you provide "take", you also need to provide "orderBy"' : 'skip' extends Prisma.Keys<T> ? 'orderBy' extends Prisma.Keys<T> ? ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields] : 'Error: If you provide "skip", you also need to provide "orderBy"' : ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields]>(args: Prisma.SubsetIntersection<T, AccommodationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAccommodationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
+    /**
+     * Fields of the Accommodation model
+     */
+    readonly fields: AccommodationFieldRefs;
+}
+/**
+ * The delegate class that acts as a "Promise-like" for Accommodation.
+ * Why is this prefixed with `Prisma__`?
+ * Because we want to prevent naming conflicts as mentioned in
+ * https://github.com/prisma/prisma-client-js/issues/707
+ */
+export interface Prisma__AccommodationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise";
+    user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
+    checkLogs<T extends Prisma.Accommodation$checkLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Accommodation$checkLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CheckLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): runtime.Types.Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
+}
+/**
+ * Fields of the Accommodation model
+ */
+export interface AccommodationFieldRefs {
+    readonly id: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly userId: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly name: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly platform: Prisma.FieldRef<"Accommodation", 'Platform'>;
+    readonly url: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly checkIn: Prisma.FieldRef<"Accommodation", 'DateTime'>;
+    readonly checkOut: Prisma.FieldRef<"Accommodation", 'DateTime'>;
+    readonly adults: Prisma.FieldRef<"Accommodation", 'Int'>;
+    readonly rooms: Prisma.FieldRef<"Accommodation", 'Int'>;
+    readonly isActive: Prisma.FieldRef<"Accommodation", 'Boolean'>;
+    readonly lastCheck: Prisma.FieldRef<"Accommodation", 'DateTime'>;
+    readonly lastStatus: Prisma.FieldRef<"Accommodation", 'AvailabilityStatus'>;
+    readonly lastPrice: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly lastPriceAmount: Prisma.FieldRef<"Accommodation", 'Int'>;
+    readonly lastPriceCurrency: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly platformId: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly platformName: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly platformImage: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly platformDescription: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly addressCountry: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly addressRegion: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly addressLocality: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly postalCode: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly streetAddress: Prisma.FieldRef<"Accommodation", 'String'>;
+    readonly ratingValue: Prisma.FieldRef<"Accommodation", 'Float'>;
+    readonly reviewCount: Prisma.FieldRef<"Accommodation", 'Int'>;
+    readonly latitude: Prisma.FieldRef<"Accommodation", 'Float'>;
+    readonly longitude: Prisma.FieldRef<"Accommodation", 'Float'>;
+    readonly platformMetadata: Prisma.FieldRef<"Accommodation", 'Json'>;
+    readonly createdAt: Prisma.FieldRef<"Accommodation", 'DateTime'>;
+    readonly updatedAt: Prisma.FieldRef<"Accommodation", 'DateTime'>;
+}
+/**
+ * Accommodation findUnique
+ */
+export type AccommodationFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * Filter, which Accommodation to fetch.
+     */
+    where: Prisma.AccommodationWhereUniqueInput;
+};
+/**
+ * Accommodation findUniqueOrThrow
+ */
+export type AccommodationFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * Filter, which Accommodation to fetch.
+     */
+    where: Prisma.AccommodationWhereUniqueInput;
+};
+/**
+ * Accommodation findFirst
+ */
+export type AccommodationFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * Filter, which Accommodation to fetch.
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Accommodations to fetch.
+     */
+    orderBy?: Prisma.AccommodationOrderByWithRelationInput | Prisma.AccommodationOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for Accommodations.
+     */
+    cursor?: Prisma.AccommodationWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Accommodations from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Accommodations.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of Accommodations.
+     */
+    distinct?: Prisma.AccommodationScalarFieldEnum | Prisma.AccommodationScalarFieldEnum[];
+};
+/**
+ * Accommodation findFirstOrThrow
+ */
+export type AccommodationFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * Filter, which Accommodation to fetch.
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Accommodations to fetch.
+     */
+    orderBy?: Prisma.AccommodationOrderByWithRelationInput | Prisma.AccommodationOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for Accommodations.
+     */
+    cursor?: Prisma.AccommodationWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Accommodations from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Accommodations.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of Accommodations.
+     */
+    distinct?: Prisma.AccommodationScalarFieldEnum | Prisma.AccommodationScalarFieldEnum[];
+};
+/**
+ * Accommodation findMany
+ */
+export type AccommodationFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * Filter, which Accommodations to fetch.
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Accommodations to fetch.
+     */
+    orderBy?: Prisma.AccommodationOrderByWithRelationInput | Prisma.AccommodationOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for listing Accommodations.
+     */
+    cursor?: Prisma.AccommodationWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Accommodations from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Accommodations.
+     */
+    skip?: number;
+    distinct?: Prisma.AccommodationScalarFieldEnum | Prisma.AccommodationScalarFieldEnum[];
+};
+/**
+ * Accommodation create
+ */
+export type AccommodationCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * The data needed to create a Accommodation.
+     */
+    data: Prisma.XOR<Prisma.AccommodationCreateInput, Prisma.AccommodationUncheckedCreateInput>;
+};
+/**
+ * Accommodation createMany
+ */
+export type AccommodationCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Accommodations.
+     */
+    data: Prisma.AccommodationCreateManyInput | Prisma.AccommodationCreateManyInput[];
+    skipDuplicates?: boolean;
+};
+/**
+ * Accommodation createManyAndReturn
+ */
+export type AccommodationCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelectCreateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * The data used to create many Accommodations.
+     */
+    data: Prisma.AccommodationCreateManyInput | Prisma.AccommodationCreateManyInput[];
+    skipDuplicates?: boolean;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationIncludeCreateManyAndReturn<ExtArgs> | null;
+};
+/**
+ * Accommodation update
+ */
+export type AccommodationUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * The data needed to update a Accommodation.
+     */
+    data: Prisma.XOR<Prisma.AccommodationUpdateInput, Prisma.AccommodationUncheckedUpdateInput>;
+    /**
+     * Choose, which Accommodation to update.
+     */
+    where: Prisma.AccommodationWhereUniqueInput;
+};
+/**
+ * Accommodation updateMany
+ */
+export type AccommodationUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Accommodations.
+     */
+    data: Prisma.XOR<Prisma.AccommodationUpdateManyMutationInput, Prisma.AccommodationUncheckedUpdateManyInput>;
+    /**
+     * Filter which Accommodations to update
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * Limit how many Accommodations to update.
+     */
+    limit?: number;
+};
+/**
+ * Accommodation updateManyAndReturn
+ */
+export type AccommodationUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelectUpdateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * The data used to update Accommodations.
+     */
+    data: Prisma.XOR<Prisma.AccommodationUpdateManyMutationInput, Prisma.AccommodationUncheckedUpdateManyInput>;
+    /**
+     * Filter which Accommodations to update
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * Limit how many Accommodations to update.
+     */
+    limit?: number;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationIncludeUpdateManyAndReturn<ExtArgs> | null;
+};
+/**
+ * Accommodation upsert
+ */
+export type AccommodationUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * The filter to search for the Accommodation to update in case it exists.
+     */
+    where: Prisma.AccommodationWhereUniqueInput;
+    /**
+     * In case the Accommodation found by the `where` argument doesn't exist, create a new Accommodation with this data.
+     */
+    create: Prisma.XOR<Prisma.AccommodationCreateInput, Prisma.AccommodationUncheckedCreateInput>;
+    /**
+     * In case the Accommodation was found with the provided `where` argument, update it with this data.
+     */
+    update: Prisma.XOR<Prisma.AccommodationUpdateInput, Prisma.AccommodationUncheckedUpdateInput>;
+};
+/**
+ * Accommodation delete
+ */
+export type AccommodationDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+    /**
+     * Filter which Accommodation to delete.
+     */
+    where: Prisma.AccommodationWhereUniqueInput;
+};
+/**
+ * Accommodation deleteMany
+ */
+export type AccommodationDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Filter which Accommodations to delete
+     */
+    where?: Prisma.AccommodationWhereInput;
+    /**
+     * Limit how many Accommodations to delete.
+     */
+    limit?: number;
+};
+/**
+ * Accommodation.checkLogs
+ */
+export type Accommodation$checkLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CheckLog
+     */
+    select?: Prisma.CheckLogSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the CheckLog
+     */
+    omit?: Prisma.CheckLogOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.CheckLogInclude<ExtArgs> | null;
+    where?: Prisma.CheckLogWhereInput;
+    orderBy?: Prisma.CheckLogOrderByWithRelationInput | Prisma.CheckLogOrderByWithRelationInput[];
+    cursor?: Prisma.CheckLogWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.CheckLogScalarFieldEnum | Prisma.CheckLogScalarFieldEnum[];
+};
+/**
+ * Accommodation without action
+ */
+export type AccommodationDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Accommodation
+     */
+    select?: Prisma.AccommodationSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Accommodation
+     */
+    omit?: Prisma.AccommodationOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.AccommodationInclude<ExtArgs> | null;
+};
+export {};
+//# sourceMappingURL=Accommodation.d.ts.map

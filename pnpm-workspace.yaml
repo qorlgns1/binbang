@@ -1,11 +1,12 @@
 packages:
-  - '.'
+  - "apps/*"
+  - "packages/*"
 
 onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
+  - "@prisma/client"
+  - "@prisma/engines"
   - esbuild
   - prisma
-  - puppeteer
+  - playwright
   - sharp
   - unrs-resolver

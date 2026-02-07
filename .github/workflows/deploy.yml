@@ -50,7 +50,7 @@ jobs:
         id: bake
         uses: docker/bake-action@v6
         with:
-          files: docker-bake.hcl
+          files: docker/docker-bake.hcl
           push: true
         env:
           TAG: ${{ steps.vars.outputs.image_tag }}
@@ -110,9 +110,9 @@ jobs:
               update_env_var DEPLOY_SHA "$DEPLOY_SHA"
               update_env_var DEPLOYED_AT "$DEPLOYED_AT"
 
-              docker compose -f docker-compose.production.yml --env-file .env.production pull
-              docker compose -f docker-compose.production.yml --env-file .env.production up -d
+              docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
+              docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
             else
-              docker compose -p accommodation-monitor-dev -f docker-compose.develop.yml --env-file .env.develop pull
-              docker compose -p accommodation-monitor-dev -f docker-compose.develop.yml --env-file .env.develop up -d
+              docker compose -p accommodation-monitor-dev -f docker/docker-compose.develop.yml --env-file .env.develop pull
+              docker compose -p accommodation-monitor-dev -f docker/docker-compose.develop.yml --env-file .env.develop up -d
             fi

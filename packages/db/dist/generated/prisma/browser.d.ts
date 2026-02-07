@@ -1,0 +1,105 @@
+import * as Prisma from './internal/prismaNamespaceBrowser';
+export { Prisma };
+export * as $Enums from './enums';
+export * from './enums';
+/**
+ * Model Account
+ *
+ */
+export type Account = Prisma.AccountModel;
+/**
+ * Model Session
+ *
+ */
+export type Session = Prisma.SessionModel;
+/**
+ * Model User
+ *
+ */
+export type User = Prisma.UserModel;
+/**
+ * Model VerificationToken
+ *
+ */
+export type VerificationToken = Prisma.VerificationTokenModel;
+/**
+ * Model Accommodation
+ *
+ */
+export type Accommodation = Prisma.AccommodationModel;
+/**
+ * Model CheckCycle
+ *
+ */
+export type CheckCycle = Prisma.CheckCycleModel;
+/**
+ * Model CheckLog
+ *
+ */
+export type CheckLog = Prisma.CheckLogModel;
+/**
+ * Model WorkerHeartbeat
+ *
+ */
+export type WorkerHeartbeat = Prisma.WorkerHeartbeatModel;
+/**
+ * Model HeartbeatHistory
+ *
+ */
+export type HeartbeatHistory = Prisma.HeartbeatHistoryModel;
+/**
+ * Model SettingsChangeLog
+ *
+ */
+export type SettingsChangeLog = Prisma.SettingsChangeLogModel;
+/**
+ * Model SystemSettings
+ *
+ */
+export type SystemSettings = Prisma.SystemSettingsModel;
+/**
+ * Model Plan
+ *
+ */
+export type Plan = Prisma.PlanModel;
+/**
+ * Model PlanQuota
+ *
+ */
+export type PlanQuota = Prisma.PlanQuotaModel;
+/**
+ * Model Role
+ *
+ */
+export type Role = Prisma.RoleModel;
+/**
+ * Model Permission
+ *
+ */
+export type Permission = Prisma.PermissionModel;
+/**
+ * Model AuditLog
+ *
+ */
+export type AuditLog = Prisma.AuditLogModel;
+/**
+ * Model Subscription
+ *
+ */
+export type Subscription = Prisma.SubscriptionModel;
+/**
+ * Model PlatformSelector
+ *
+ */
+export type PlatformSelector = Prisma.PlatformSelectorModel;
+/**
+ * Model PlatformPattern
+ *
+ */
+export type PlatformPattern = Prisma.PlatformPatternModel;
+/**
+ * Model SelectorChangeLog
+ *
+ */
+export type SelectorChangeLog = Prisma.SelectorChangeLogModel;
+//# sourceMappingURL=browser.d.ts.map

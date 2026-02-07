@@ -10,7 +10,17 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   // 무시할 파일/폴더
-  globalIgnores(['.next/', 'out/', 'build/', 'dist/', 'node_modules/', '*.config.js', '*.config.mjs', 'next-env.d.ts']),
+  globalIgnores([
+    '**/node_modules/',
+    '**/.next/',
+    '**/out/',
+    '**/build/',
+    '**/dist/',
+    '**/generated/',
+    '*.config.js',
+    '*.config.mjs',
+    '**/next-env.d.ts',
+  ]),
 
   // 기본 JS 규칙
   eslint.configs.recommended,
