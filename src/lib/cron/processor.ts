@@ -1,10 +1,12 @@
 import type { AvailabilityStatus } from '@/generated/prisma/client';
 import { checkAccommodation } from '@/lib/checkers';
+import { updateHeartbeat } from '@/lib/heartbeat';
 import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
+import { loadSettings } from '@/lib/settings';
 import type { AccommodationWithUser } from '@/types/accommodation';
 
-import { CRON_CONFIG } from './config';
+import { getCronConfig } from './config';
 import { createLimiter } from './limiter';
 import { determineStatus, shouldSendAvailabilityNotification } from './statusUtils';
 
@@ -178,10 +180,18 @@ export async function checkAllAccommodations(): Promise<void> {
   isRunning = true;
   const startTime = Date.now();
 
+  // 사이클 시작 시 DB에서 동적 설정 갱신 (타임아웃, 재시도 등)
+  await loadSettings().catch((err) => console.warn('⚠️ 설정 갱신 실패, 이전 캐시 사용:', err));
+
+  const config = getCronConfig();
+
   console.log('\n========================================');
   console.log(`🕐 모니터링 시작: ${new Date().toLocaleString('ko-KR')}`);
-  console.log(`⚙️  동시 처리: ${CRON_CONFIG.concurrency}개`);
+  console.log(`⚙️  동시 처리: ${config.concurrency}개`);
   console.log('========================================');
+
+  // Heartbeat: 사이클 시작
+  await updateHeartbeat(true);
 
   try {
     const accommodations = await getActiveAccommodations();
@@ -190,10 +200,10 @@ export async function checkAllAccommodations(): Promise<void> {
 
     if (accommodations.length === 0) {
       console.log('체크할 숙소가 없습니다.\n');
-      return; // finally에서 isRunning = false 처리됨
+      return;
     }
 
-    const limit = createLimiter(CRON_CONFIG.concurrency);
+    const limit = createLimiter(config.concurrency);
 
     await Promise.all(accommodations.map((accommodation) => limit(() => processAccommodation(accommodation))));
 
@@ -203,5 +213,8 @@ export async function checkAllAccommodations(): Promise<void> {
     console.error('모니터링 중 오류 발생:', error);
   } finally {
     isRunning = false;
+
+    // Heartbeat: 사이클 종료
+    await updateHeartbeat(false);
   }
 }

@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 /**
  * 환경변수 검증 유틸리티
  * 앱 시작 시 필수 환경변수가 설정되어 있는지 확인

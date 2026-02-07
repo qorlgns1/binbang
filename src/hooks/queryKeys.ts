@@ -10,3 +10,19 @@ export const logKeys = {
   all: ['logs'] as const,
   recent: () => [...logKeys.all, 'recent'] as const,
 };
+
+export const adminKeys = {
+  all: ['admin'] as const,
+  monitoring: () => [...adminKeys.all, 'monitoring'] as const,
+  summary: () => [...adminKeys.monitoring(), 'summary'] as const,
+  logs: (filters?: Record<string, string>) => [...adminKeys.monitoring(), 'logs', filters ?? {}] as const,
+  users: (filters?: Record<string, string>) => [...adminKeys.all, 'users', filters ?? {}] as const,
+  settings: () => [...adminKeys.all, 'settings'] as const,
+  settingsHistory: (filters?: Record<string, string>) => [...adminKeys.settings(), 'history', filters ?? {}] as const,
+};
+
+export const heartbeatKeys = {
+  all: ['heartbeat'] as const,
+  status: () => [...heartbeatKeys.all, 'status'] as const,
+  history: () => [...heartbeatKeys.all, 'history'] as const,
+};
