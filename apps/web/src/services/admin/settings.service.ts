@@ -62,7 +62,9 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
     orderBy: [{ category: 'asc' }, { key: 'asc' }],
   });
 
-  const settingMap = new Map(allSettings.map((s) => [s.key, s]));
+  const settingMap = new Map(
+    allSettings.map((s: (typeof allSettings)[0]): [string, (typeof allSettings)[0]] => [s.key, s]),
+  );
 
   // 키 존재 여부 및 타입 검증
   for (const update of updates) {
@@ -79,20 +81,21 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
   }
 
   // 실제로 값이 바뀐 항목만 필터
-  const actualChanges = updates.filter((u) => {
+  const actualChanges = updates.filter((u: (typeof updates)[0]): boolean => {
     const existing = settingMap.get(u.key);
-    return existing && existing.value !== u.value;
+    return !!existing && existing.value !== u.value;
   });
 
   // 설정 업데이트 + 변경 로그를 하나의 트랜잭션으로 처리
   const txOps = [
-    ...actualChanges.map((u) =>
-      prisma.systemSettings.update({
-        where: { key: u.key },
-        data: { value: u.value },
-      }),
+    ...actualChanges.map(
+      (u: (typeof actualChanges)[0]): ReturnType<typeof prisma.systemSettings.update> =>
+        prisma.systemSettings.update({
+          where: { key: u.key },
+          data: { value: u.value },
+        }),
     ),
-    ...actualChanges.map((change) => {
+    ...actualChanges.map((change: (typeof actualChanges)[0]): ReturnType<typeof prisma.settingsChangeLog.create> => {
       const existing = settingMap.get(change.key);
       return prisma.settingsChangeLog.create({
         data: {
@@ -122,7 +125,9 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
   }
 
   return {
-    settings: allSettings.map((s) => toSettingItem(settingMap.get(s.key) ?? s)),
+    settings: allSettings.map(
+      (s: (typeof allSettings)[0]): SystemSettingItem => toSettingItem(settingMap.get(s.key) ?? s),
+    ),
   };
 }
 
@@ -165,14 +170,25 @@ export async function getSettingsHistory(input: GetSettingsHistoryInput): Promis
   const items = hasMore ? logs.slice(0, limit) : logs;
 
   return {
-    logs: items.map((log) => ({
-      id: log.id,
-      settingKey: log.settingKey,
-      oldValue: log.oldValue,
-      newValue: log.newValue,
-      createdAt: log.createdAt.toISOString(),
-      changedBy: { id: log.changedBy.id, name: log.changedBy.name },
-    })),
+    logs: items.map(
+      (
+        log,
+      ): {
+        id: string;
+        settingKey: string;
+        oldValue: string;
+        newValue: string;
+        createdAt: string;
+        changedBy: { id: string; name: string | null };
+      } => ({
+        id: log.id,
+        settingKey: log.settingKey,
+        oldValue: log.oldValue,
+        newValue: log.newValue,
+        createdAt: log.createdAt.toISOString(),
+        changedBy: { id: log.changedBy.id, name: log.changedBy.name },
+      }),
+    ),
     nextCursor: hasMore ? items[items.length - 1].id : null,
   };
 }

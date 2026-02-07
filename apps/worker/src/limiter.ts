@@ -1,4 +1,4 @@
-export function createLimiter(concurrency: number) {
+export function createLimiter(concurrency: number): <T>(fn: () => Promise<T>) => Promise<T> {
   let running = 0;
   const queue: (() => void)[] = [];
 
@@ -11,7 +11,7 @@ export function createLimiter(concurrency: number) {
   };
 
   return async <T>(fn: () => Promise<T>): Promise<T> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject): void => {
       const run = async (): Promise<void> => {
         try {
           const result = await fn();

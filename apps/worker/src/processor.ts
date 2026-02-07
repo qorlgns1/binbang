@@ -268,7 +268,7 @@ export async function checkAllAccommodations(): Promise<void> {
   const startTime = Date.now();
 
   // 사이클 시작 시 DB에서 동적 설정 갱신 (타임아웃, 재시도 등)
-  await loadSettings().catch((err) => console.warn('Settings refresh failed, using cache:', err));
+  await loadSettings().catch((err): void => console.warn('Settings refresh failed, using cache:', err));
 
   const config = getCronConfig();
   const settings = getSettings();
@@ -309,11 +309,14 @@ export async function checkAllAccommodations(): Promise<void> {
     const limit = createLimiter(config.concurrency);
 
     const results = await Promise.all(
-      accommodations.map((accommodation) => limit(() => processAccommodation(accommodation, cycleId as string))),
+      accommodations.map(
+        (accommodation): Promise<{ success: boolean }> =>
+          limit((): Promise<{ success: boolean }> => processAccommodation(accommodation, cycleId as string)),
+      ),
     );
 
     const durationMs = Date.now() - startTime;
-    const successCount = results.filter((r) => r.success).length;
+    const successCount = results.filter((r): boolean => r.success).length;
     const errorCount = results.length - successCount;
 
     // CheckCycle 완료 업데이트

@@ -99,12 +99,12 @@ export async function getUsers(input: GetUsersInput): Promise<AdminUsersResponse
 
   return {
     users: items.map(
-      (user): AdminUserInfo => ({
+      (user: (typeof items)[0]): AdminUserInfo => ({
         id: user.id,
         name: user.name,
         email: user.email,
         image: user.image,
-        roles: user.roles.map((r) => r.name),
+        roles: user.roles.map((r: { name: string }): string => r.name),
         planName: user.plan?.name ?? null,
         createdAt: user.createdAt.toISOString(),
         _count: user._count,
@@ -188,13 +188,13 @@ export async function updateUserRoles(input: UpdateUserRolesInput): Promise<Upda
     throw new Error('User not found');
   }
 
-  const oldRoles = oldUser.roles.map((r) => r.name);
+  const oldRoles = oldUser.roles.map((r: { name: string }): string => r.name);
 
   const user = await prisma.user.update({
     where: { id: userId },
     data: {
       roles: {
-        set: roles.map((name) => ({ name })),
+        set: roles.map((name: string): { name: string } => ({ name })),
       },
     },
     select: {
@@ -227,7 +227,7 @@ export async function updateUserRoles(input: UpdateUserRolesInput): Promise<Upda
     name: user.name,
     email: user.email,
     image: user.image,
-    roles: user.roles.map((r) => r.name),
+    roles: user.roles.map((r: { name: string }): string => r.name),
     planName: user.plan?.name ?? null,
     createdAt: user.createdAt.toISOString(),
     _count: user._count,
@@ -291,7 +291,7 @@ export async function updateUserPlan(input: UpdateUserPlanInput): Promise<Update
     name: user.name,
     email: user.email,
     image: user.image,
-    roles: user.roles.map((r) => r.name),
+    roles: user.roles.map((r: { name: string }): string => r.name),
     planName: user.plan?.name ?? null,
     createdAt: user.createdAt.toISOString(),
     _count: user._count,
@@ -438,7 +438,7 @@ export async function getUserActivity(input: GetUserActivityInput): Promise<User
     }
   }
 
-  activities.sort((a, b) => {
+  activities.sort((a: UserActivityItem, b: UserActivityItem): number => {
     const dateCompare = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     if (dateCompare !== 0) return dateCompare;
     return b.id.localeCompare(a.id);

@@ -27,7 +27,7 @@ const mockPrismaSession = {
   user: mockPrismaUser,
 };
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@/lib/prisma', (): object => ({
   default: {
     user: {
       findUnique: vi.fn(),
@@ -41,8 +41,8 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-vi.mock('@next-auth/prisma-adapter', () => ({
-  PrismaAdapter: vi.fn(() => ({
+vi.mock('@next-auth/prisma-adapter', (): object => ({
+  PrismaAdapter: vi.fn((): object => ({
     createUser: vi.fn(),
     getUser: vi.fn(),
     getUserByEmail: vi.fn(),
@@ -60,13 +60,13 @@ vi.mock('@next-auth/prisma-adapter', () => ({
   })),
 }));
 
-describe('auth adapter overrides', () => {
-  beforeEach(() => {
+describe('auth adapter overrides', (): void => {
+  beforeEach((): void => {
     vi.clearAllMocks();
   });
 
-  describe('getSessionAndUser', () => {
-    it('세션 조회 시 roles와 plan이 포함되어야 함', async () => {
+  describe('getSessionAndUser', (): void => {
+    it('세션 조회 시 roles와 plan이 포함되어야 함', async (): Promise<void> => {
       const prisma = await import('@/lib/prisma');
       vi.mocked(prisma.default.session.findUnique).mockResolvedValue(mockPrismaSession as never);
 
@@ -82,7 +82,7 @@ describe('auth adapter overrides', () => {
       expect(result?.user.plan).toEqual({ name: 'PRO' });
     });
 
-    it('세션이 없으면 null 반환', async () => {
+    it('세션이 없으면 null 반환', async (): Promise<void> => {
       const prisma = await import('@/lib/prisma');
       vi.mocked(prisma.default.session.findUnique).mockResolvedValue(null);
 
@@ -93,8 +93,8 @@ describe('auth adapter overrides', () => {
     });
   });
 
-  describe('getUser', () => {
-    it('유저 조회 시 roles와 plan이 포함되어야 함', async () => {
+  describe('getUser', (): void => {
+    it('유저 조회 시 roles와 plan이 포함되어야 함', async (): Promise<void> => {
       const prisma = await import('@/lib/prisma');
       vi.mocked(prisma.default.user.findUnique).mockResolvedValue(mockPrismaUser as never);
 
@@ -108,8 +108,8 @@ describe('auth adapter overrides', () => {
   });
 });
 
-describe('session callback', () => {
-  it('session.user에 roles 배열과 planName이 추가되어야 함', async () => {
+describe('session callback', (): void => {
+  it('session.user에 roles 배열과 planName이 추가되어야 함', async (): Promise<void> => {
     const { authOptions } = await import('@/lib/auth');
 
     const mockSession = {
@@ -142,7 +142,7 @@ describe('session callback', () => {
     expect(result?.user).toHaveProperty('planName', 'PRO');
   });
 
-  it('roles가 없는 유저는 빈 배열로 처리', async () => {
+  it('roles가 없는 유저는 빈 배열로 처리', async (): Promise<void> => {
     const { authOptions } = await import('@/lib/auth');
 
     const mockSession = {
@@ -173,15 +173,15 @@ describe('session callback', () => {
   });
 });
 
-describe('RBAC integration', () => {
-  it('ADMIN 역할이 있는 유저는 isAdmin 체크 통과', async () => {
+describe('RBAC integration', (): void => {
+  it('ADMIN 역할이 있는 유저는 isAdmin 체크 통과', async (): Promise<void> => {
     const { isAdmin } = await import('@/lib/rbac');
 
     expect(isAdmin(['USER', 'ADMIN'])).toBe(true);
     expect(isAdmin(['ADMIN'])).toBe(true);
   });
 
-  it('ADMIN 역할이 없는 유저는 isAdmin 체크 실패', async () => {
+  it('ADMIN 역할이 없는 유저는 isAdmin 체크 실패', async (): Promise<void> => {
     const { isAdmin } = await import('@/lib/rbac');
 
     expect(isAdmin(['USER'])).toBe(false);

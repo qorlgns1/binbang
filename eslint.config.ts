@@ -68,6 +68,17 @@ export default defineConfig(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSEnumDeclaration',
+          message: 'TypeScript enum은 금지입니다. union type + const object 패턴을 사용하세요.',
+        },
+        {
+          selector: 'SwitchCase[test=null]',
+          message: 'switch의 default는 금지입니다. exhaustive switch를 사용하세요.',
+        },
+      ],
 
       // console.log 허용
       'no-console': 'off',
@@ -84,6 +95,23 @@ export default defineConfig(
           ],
         },
       ],
+    },
+  },
+  {
+    files: ['**/*.ts'],
+    rules: {
+      // 모든 함수 return type 명시 (tsx 제외로 컴포넌트 규칙 충돌 방지)
+      '@typescript-eslint/explicit-function-return-type': [
+        'error',
+        {
+          allowExpressions: false,
+          allowHigherOrderFunctions: false,
+          allowTypedFunctionExpressions: false,
+        },
+      ],
+
+      // export 함수/모듈 경계도 타입을 강제하고 싶으면(선택):
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
     },
   },
 

@@ -102,28 +102,30 @@ export async function getAuditLogs(input: GetAuditLogsInput): Promise<AuditLogsR
   }
 
   return {
-    logs: logs.map((log) => ({
-      id: log.id,
-      actorId: log.actorId,
-      actor: log.actor
-        ? { id: log.actor.id, name: log.actor.name, email: log.actor.email, image: log.actor.image }
-        : null,
-      targetId: log.targetId,
-      targetUser: log.targetUser
-        ? {
-            id: log.targetUser.id,
-            name: log.targetUser.name,
-            email: log.targetUser.email,
-            image: log.targetUser.image,
-          }
-        : null,
-      entityType: log.entityType,
-      action: log.action,
-      oldValue: log.oldValue,
-      newValue: log.newValue,
-      ipAddress: log.ipAddress,
-      createdAt: log.createdAt.toISOString(),
-    })),
+    logs: logs.map(
+      (log): AuditLogEntry => ({
+        id: log.id,
+        actorId: log.actorId,
+        actor: log.actor
+          ? { id: log.actor.id, name: log.actor.name, email: log.actor.email, image: log.actor.image }
+          : null,
+        targetId: log.targetId,
+        targetUser: log.targetUser
+          ? {
+              id: log.targetUser.id,
+              name: log.targetUser.name,
+              email: log.targetUser.email,
+              image: log.targetUser.image,
+            }
+          : null,
+        entityType: log.entityType,
+        action: log.action,
+        oldValue: log.oldValue,
+        newValue: log.newValue,
+        ipAddress: log.ipAddress,
+        createdAt: log.createdAt.toISOString(),
+      }),
+    ),
     nextCursor,
     ...(total !== undefined && { total }),
   };

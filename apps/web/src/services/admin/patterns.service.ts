@@ -105,39 +105,54 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
   }
 
   // 생성
-  const pattern = await prisma.$transaction(async (tx) => {
-    const created = await tx.platformPattern.create({
-      data: {
-        platform: body.platform,
-        patternType: body.patternType,
-        pattern: body.pattern,
-        locale: body.locale ?? 'ko',
-        priority: body.priority ?? 0,
-        createdById,
-      },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-      },
-    });
-
-    // 변경 로그 기록
-    await tx.selectorChangeLog.create({
-      data: {
-        entityType: 'PlatformPattern',
-        entityId: created.id,
-        action: 'create',
-        newValue: JSON.stringify({
+  const pattern = await prisma.$transaction(
+    async (
+      tx,
+    ): Promise<{
+      id: string;
+      platform: Platform;
+      patternType: PatternType;
+      pattern: string;
+      locale: string;
+      isActive: boolean;
+      priority: number;
+      createdBy: { id: string; name: string | null } | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }> => {
+      const created = await tx.platformPattern.create({
+        data: {
           platform: body.platform,
           patternType: body.patternType,
           pattern: body.pattern,
           locale: body.locale ?? 'ko',
-        }),
-        changedById: createdById,
-      },
-    });
+          priority: body.priority ?? 0,
+          createdById,
+        },
+        include: {
+          createdBy: { select: { id: true, name: true } },
+        },
+      });
 
-    return created;
-  });
+      // 변경 로그 기록
+      await tx.selectorChangeLog.create({
+        data: {
+          entityType: 'PlatformPattern',
+          entityId: created.id,
+          action: 'create',
+          newValue: JSON.stringify({
+            platform: body.platform,
+            patternType: body.patternType,
+            pattern: body.pattern,
+            locale: body.locale ?? 'ko',
+          }),
+          changedById: createdById,
+        },
+      });
+
+      return created;
+    },
+  );
 
   return toPatternItem(pattern);
 }
@@ -175,37 +190,52 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
   }
 
   // 업데이트
-  const pattern = await prisma.$transaction(async (tx) => {
-    const updated = await tx.platformPattern.update({
-      where: { id },
-      data: {
-        ...(body.pattern !== undefined && { pattern: body.pattern }),
-        ...(body.isActive !== undefined && { isActive: body.isActive }),
-        ...(body.priority !== undefined && { priority: body.priority }),
-        ...(body.locale !== undefined && { locale: body.locale }),
-      },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-      },
-    });
-
-    // 각 변경에 대해 로그 생성
-    for (const change of changes) {
-      await tx.selectorChangeLog.create({
+  const pattern = await prisma.$transaction(
+    async (
+      tx,
+    ): Promise<{
+      id: string;
+      platform: Platform;
+      patternType: PatternType;
+      pattern: string;
+      locale: string;
+      isActive: boolean;
+      priority: number;
+      createdBy: { id: string; name: string | null } | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }> => {
+      const updated = await tx.platformPattern.update({
+        where: { id },
         data: {
-          entityType: 'PlatformPattern',
-          entityId: id,
-          action: change.field === 'isActive' ? 'toggle' : 'update',
-          field: change.field,
-          oldValue: change.oldValue,
-          newValue: change.newValue,
-          changedById: updatedById,
+          ...(body.pattern !== undefined && { pattern: body.pattern }),
+          ...(body.isActive !== undefined && { isActive: body.isActive }),
+          ...(body.priority !== undefined && { priority: body.priority }),
+          ...(body.locale !== undefined && { locale: body.locale }),
+        },
+        include: {
+          createdBy: { select: { id: true, name: true } },
         },
       });
-    }
 
-    return updated;
-  });
+      // 각 변경에 대해 로그 생성
+      for (const change of changes) {
+        await tx.selectorChangeLog.create({
+          data: {
+            entityType: 'PlatformPattern',
+            entityId: id,
+            action: change.field === 'isActive' ? 'toggle' : 'update',
+            field: change.field,
+            oldValue: change.oldValue,
+            newValue: change.newValue,
+            changedById: updatedById,
+          },
+        });
+      }
+
+      return updated;
+    },
+  );
 
   return toPatternItem(pattern);
 }
@@ -221,7 +251,7 @@ export async function deletePattern(input: DeletePatternInput): Promise<void> {
     throw new Error('Pattern not found');
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx): Promise<void> => {
     // 변경 로그 기록
     await tx.selectorChangeLog.create({
       data: {

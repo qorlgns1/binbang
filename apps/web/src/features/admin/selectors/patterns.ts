@@ -121,7 +121,7 @@ async function deletePattern(id: string): Promise<DeleteResponse> {
 export function usePatternsQuery(filters: PatternFilters = {}): UsePatternsQueryResult {
   return useQuery({
     queryKey: adminKeys.patternList(filtersToRecord(filters)),
-    queryFn: () => fetchPatterns(filters),
+    queryFn: (): Promise<PlatformPatternsResponse> => fetchPatterns(filters),
   });
 }
 
@@ -130,7 +130,7 @@ export function useCreatePatternMutation(): UseCreatePatternMutationResult {
 
   return useMutation({
     mutationFn: createPattern,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.patterns() });
     },
   });
@@ -141,7 +141,7 @@ export function useUpdatePatternMutation(): UseUpdatePatternMutationResult {
 
   return useMutation({
     mutationFn: updatePattern,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.patterns() });
     },
   });
@@ -152,7 +152,7 @@ export function useDeletePatternMutation(): UseDeletePatternMutationResult {
 
   return useMutation({
     mutationFn: deletePattern,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.patterns() });
     },
   });

@@ -83,7 +83,7 @@ export function getPlatformSelectors(platform: Platform): PlatformSelectorCache 
 
   const result = cached ?? getHardcodedFallback(platform);
 
-  loadPlatformSelectors(platform).catch((err) => {
+  loadPlatformSelectors(platform).catch((err): void => {
     console.warn(`[selectors] Failed to load selectors for ${platform}:`, err);
   });
 
@@ -131,8 +131,8 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
 
     const patterns: PlatformSelectorCache['patterns'] = hasPatterns
       ? {
-          available: dbPatterns.filter((p) => p.patternType === 'AVAILABLE').map((p) => p.pattern),
-          unavailable: dbPatterns.filter((p) => p.patternType === 'UNAVAILABLE').map((p) => p.pattern),
+          available: dbPatterns.filter((p): boolean => p.patternType === 'AVAILABLE').map((p): string => p.pattern),
+          unavailable: dbPatterns.filter((p): boolean => p.patternType === 'UNAVAILABLE').map((p): string => p.pattern),
         }
       : fallback.patterns;
 

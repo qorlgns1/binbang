@@ -105,7 +105,7 @@ export function useCreateAccommodationMutation(): UseCreateAccommodationMutation
 
   return useMutation({
     mutationFn: createAccommodation,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.quota() });
     },
@@ -117,7 +117,7 @@ export function useUpdateAccommodationMutation(): UseUpdateAccommodationMutation
 
   return useMutation({
     mutationFn: updateAccommodation,
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data: Accommodation, variables: UpdateAccommodationVariables): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: accommodationKeys.lists() });
     },
@@ -129,7 +129,7 @@ export function useDeleteAccommodationMutation(): UseDeleteAccommodationMutation
 
   return useMutation({
     mutationFn: deleteAccommodation,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.all });
     },
   });
@@ -140,7 +140,7 @@ export function useToggleActiveMutation(): UseToggleActiveMutationResult {
 
   return useMutation({
     mutationFn: toggleActive,
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data: Accommodation, variables: ToggleActiveVariables): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: accommodationKeys.lists() });
     },

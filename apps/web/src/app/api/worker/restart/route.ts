@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 import { authOptions } from '@/lib/auth';
 
-export async function POST(_request: Request) {
+export async function POST(_request: Request): Promise<Response> {
   try {
     const session = await getServerSession(authOptions);
 
@@ -34,8 +34,8 @@ export async function POST(_request: Request) {
 
       if (isDockerEnvironment) {
         // Docker 환경: docker-compose로 재시작
-        return new Promise<NextResponse>((resolve) => {
-          exec('docker-compose restart worker', (error: Error | null, stdout: string, _stderr: string) => {
+        return new Promise<NextResponse>((resolve: (value: NextResponse) => void): void => {
+          exec('docker-compose restart worker', (error: Error | null, stdout: string, _stderr: string): void => {
             if (error) {
               resolve(
                 NextResponse.json(
@@ -60,7 +60,7 @@ export async function POST(_request: Request) {
         });
       } else {
         // 로컬 환경: pnpm cron으로 재시작
-        return new Promise<NextResponse>((resolve) => {
+        return new Promise<NextResponse>((resolve: (value: NextResponse) => void): void => {
           const workerProcess = spawn('pnpm', ['cron'], {
             stdio: 'pipe',
             detached: true,
@@ -92,7 +92,7 @@ export async function POST(_request: Request) {
     if (!isDockerEnvironment) {
       // 로컬 환경에서는 프로세스 매니저가 없으므로 직접 재시작
       // Worker가 exit(1)하는 1초 후에 새 프로세스 시작
-      setTimeout(() => {
+      setTimeout((): void => {
         const workerProcess = spawn('pnpm', ['cron'], {
           stdio: 'ignore',
           detached: true,

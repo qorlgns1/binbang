@@ -20,7 +20,7 @@ export async function getUserRoleNames(userId: string): Promise<string[]> {
     where: { id: userId },
     select: { roles: { select: { name: true } } },
   });
-  return user?.roles.map((r) => r.name) ?? [];
+  return user?.roles.map((r): string => r.name) ?? [];
 }
 
 export async function getUserPermissions(userId: string): Promise<string[]> {

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { checkRateLimit, cleanupStore, getClientIp, getRateLimit } from '@/lib/rateLimit';
 
-export function middleware(request: NextRequest) {
+export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   const limit = getRateLimit(pathname);

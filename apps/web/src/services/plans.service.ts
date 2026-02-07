@@ -38,7 +38,7 @@ export async function getPublicPlans(): Promise<PublicPlanItem[]> {
     orderBy: { price: 'asc' },
   });
 
-  return plans.map((plan) => {
+  return plans.map((plan): PublicPlanItem => {
     const quotaMap: Record<string, number> = {};
     for (const quota of plan.quotas) {
       quotaMap[quota.key] = quota.value;

@@ -74,9 +74,10 @@ export function useMonitoringLogsInfiniteQuery(filters: LogsFilterParams): UseMo
 
   return useInfiniteQuery({
     queryKey: adminKeys.logs(filterKey),
-    queryFn: ({ pageParam }) => fetchLogs(filters, pageParam as string | undefined),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }): Promise<MonitoringLogsResponse> =>
+      fetchLogs(filters, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage: MonitoringLogsResponse): string | undefined => lastPage.nextCursor ?? undefined,
     refetchInterval: 30_000,
   });
 }

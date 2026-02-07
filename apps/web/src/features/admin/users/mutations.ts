@@ -65,7 +65,7 @@ export function useUpdateUserRoleMutation(): UseUpdateUserRoleMutationResult {
 
   return useMutation({
     mutationFn: updateUserRoles,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users() });
     },
   });
@@ -76,7 +76,7 @@ export function useUpdateUserPlanMutation(): UseUpdateUserPlanMutationResult {
 
   return useMutation({
     mutationFn: updateUserPlan,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users() });
     },
   });
