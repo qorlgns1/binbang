@@ -60,10 +60,13 @@ jobs:
 
       - name: Extract digests
         id: digests
+        env:
+          METADATA: ${{ steps.bake.outputs.metadata }}
         run: |
-          METADATA='${{ steps.bake.outputs.metadata }}'
-          echo "web_digest=$(echo "$METADATA" | jq -r '.web."containerimage.digest"')" >> "$GITHUB_OUTPUT"
-          echo "worker_digest=$(echo "$METADATA" | jq -r '.worker."containerimage.digest"')" >> "$GITHUB_OUTPUT"
+          web_digest=$(jq -r '.web["containerimage.digest"]' <<<"$METADATA")
+          worker_digest=$(jq -r '.worker["containerimage.digest"]' <<<"$METADATA")
+          echo "web_digest=$web_digest" >> "$GITHUB_OUTPUT"
+          echo "worker_digest=$worker_digest" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy to OCI
