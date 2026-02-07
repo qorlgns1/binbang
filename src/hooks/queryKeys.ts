@@ -4,6 +4,8 @@ export const accommodationKeys = {
   details: () => [...accommodationKeys.all, 'detail'] as const,
   detail: (id: string) => [...accommodationKeys.all, 'detail', id] as const,
   logs: (id: string) => [...accommodationKeys.all, 'detail', id, 'logs'] as const,
+  prices: (id: string, filters?: Record<string, string>) =>
+    [...accommodationKeys.all, 'detail', id, 'prices', filters ?? {}] as const,
 };
 
 export const logKeys = {

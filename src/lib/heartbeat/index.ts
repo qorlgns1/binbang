@@ -120,7 +120,7 @@ async function sendAlert(title: string, description: string): Promise<void> {
   try {
     const admins = await prisma.user.findMany({
       where: {
-        role: 'ADMIN',
+        roles: { some: { name: 'ADMIN' } },
         kakaoAccessToken: { not: null },
       },
       select: { id: true, name: true, email: true },

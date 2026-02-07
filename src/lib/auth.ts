@@ -6,8 +6,23 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 
 import prisma from '@/lib/prisma';
 
+const baseAdapter = PrismaAdapter(prisma);
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: {
+    ...baseAdapter,
+    async getUser(id: string) {
+      const user = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          roles: { select: { name: true } },
+          plan: { select: { name: true } },
+        },
+      });
+      if (!user) return null;
+      return user as typeof user & { email: string };
+    },
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
@@ -53,7 +68,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, user }) {
       if (session.user && user) {
         session.user.id = user.id;
-        session.user.role = user.role;
+        session.user.roles = (user.roles ?? []).map((r: { name: string }) => r.name);
+        session.user.planName = user.plan?.name ?? null;
       }
       return session;
     },

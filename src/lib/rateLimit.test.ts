@@ -12,14 +12,14 @@ describe('getRateLimit', () => {
     expect(getRateLimit('/api/health')).toBeNull();
   });
 
-  it('/api/auth/* 경로는 분당 10회', () => {
-    expect(getRateLimit('/api/auth/signin')).toBe(10);
-    expect(getRateLimit('/api/auth/callback/kakao')).toBe(10);
+  it('/api/auth/* 경로는 분당 30회', () => {
+    expect(getRateLimit('/api/auth/signin')).toBe(30);
+    expect(getRateLimit('/api/auth/callback/kakao')).toBe(30);
   });
 
-  it('/api/* 기본 경로는 분당 60회', () => {
-    expect(getRateLimit('/api/accommodations')).toBe(60);
-    expect(getRateLimit('/api/users/me')).toBe(60);
+  it('/api/* 기본 경로는 분당 120회', () => {
+    expect(getRateLimit('/api/accommodations')).toBe(120);
+    expect(getRateLimit('/api/users/me')).toBe(120);
   });
 
   it('API 외 경로는 제한 없음', () => {

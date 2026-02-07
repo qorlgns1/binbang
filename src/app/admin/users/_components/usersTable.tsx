@@ -16,11 +16,27 @@ import type { AdminUserInfo } from '@/types/admin';
 
 import { RoleChangeDialog } from './roleChangeDialog';
 
-function RoleBadge({ role }: { role: AdminUserInfo['role'] }) {
-  return role === 'ADMIN' ? (
-    <Badge className='bg-status-warning text-status-warning-foreground'>Admin</Badge>
-  ) : (
-    <Badge variant='secondary'>User</Badge>
+function RoleBadges({ roles }: { roles: string[] }) {
+  return (
+    <div className='flex gap-1'>
+      {roles.map((role) =>
+        role === 'ADMIN' ? (
+          <Badge
+            key={role}
+            className='bg-status-warning text-status-warning-foreground'
+          >
+            Admin
+          </Badge>
+        ) : (
+          <Badge
+            key={role}
+            variant='secondary'
+          >
+            User
+          </Badge>
+        ),
+      )}
+    </div>
   );
 }
 
@@ -96,7 +112,7 @@ export function UsersTable({ filters }: UsersTableProps) {
                   </TableCell>
                   <TableCell className='text-sm text-muted-foreground'>{user.email ?? '-'}</TableCell>
                   <TableCell>
-                    <RoleBadge role={user.role} />
+                    <RoleBadges roles={user.roles} />
                   </TableCell>
                   <TableCell className='text-sm'>{user._count.accommodations}</TableCell>
                   <TableCell className='text-xs text-muted-foreground'>

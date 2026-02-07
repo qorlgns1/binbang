@@ -7,11 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  USER
-  ADMIN
-}
-
 // NextAuth.js 필수 모델
 model Account {
   id                String  @id @default(cuid())
@@ -47,18 +42,26 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(USER)
+  password      String?   // 이메일 로그인용 (OAuth 유저는 null)
   // 카카오톡 알림용 토큰
   kakaoAccessToken  String? @db.Text
   kakaoRefreshToken String? @db.Text
   kakaoTokenExpiry  DateTime?
-  
+
+  // RBAC
+  planId String?
+  plan   Plan?  @relation(fields: [planId], references: [id], onDelete: SetNull)
+  roles  Role[]
+
   // 관계
-  accounts          Account[]
-  sessions          Session[]
+  accounts           Account[]
+  sessions           Session[]
   accommodations     Accommodation[]
   checkLogs          CheckLog[]
   settingsChangeLogs SettingsChangeLog[]
+  auditLogs          AuditLog[]       @relation("AuditLogActor")
+  auditLogsAsTarget  AuditLog[]       @relation("AuditLogTarget")
+  subscriptions      Subscription[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -88,7 +91,9 @@ model Accommodation {
   isActive  Boolean  @default(true)  // 모니터링 활성화 여부
   lastCheck DateTime?                // 마지막 체크 시간
   lastStatus AvailabilityStatus @default(UNKNOWN) // 마지막 상태
-  lastPrice String?                  // 마지막 확인된 가격
+  lastPrice         String?           // 마지막 확인된 가격 (raw 문자열)
+  lastPriceAmount   Int?              // 파싱된 숫자 (최소 단위: 원/센트)
+  lastPriceCurrency String?           // 통화 코드 (KRW, USD, EUR, GBP, CHF)
 
   checkLogs CheckLog[]
 
@@ -130,9 +135,16 @@ model CheckLog {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   status          AvailabilityStatus
-  price           String?
+  price           String?             // raw 문자열 (예: "₩150,000")
+  priceAmount     Int?                // 파싱된 숫자 (최소 단위: 원/센트)
+  priceCurrency   String?             // 통화 코드 (KRW, USD, EUR, GBP, CHF)
   errorMessage    String?
   notificationSent Boolean @default(false)
+
+  // 체크 시점의 예약 일정 (일정 변경 시 가격 추이 구분용)
+  checkIn         DateTime?
+  checkOut        DateTime?
+  pricePerNight   Int?                // 1박당 가격 (priceAmount / 숙박일수)
 
   cycleId         String?
   cycle           CheckCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
@@ -145,6 +157,7 @@ model CheckLog {
   @@index([accommodationId])
   @@index([createdAt])
   @@index([cycleId])
+  @@index([accommodationId, checkIn, checkOut])
 }
 
 model WorkerHeartbeat {
@@ -209,4 +222,103 @@ model SystemSettings {
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+}
+
+// ── RBAC ──
+
+enum QuotaKey {
+  MAX_ACCOMMODATIONS
+  CHECK_INTERVAL_MIN
+}
+
+model Plan {
+  id            String         @id @default(cuid())
+  name          String         @unique   // "FREE", "PRO", "BIZ"
+  description   String?
+  price         Int            @default(0)
+  interval      String         @default("month")
+  roles         Role[]
+  quotas        PlanQuota[]
+  users         User[]
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model PlanQuota {
+  id     String   @id @default(cuid())
+  planId String
+  plan   Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  key    QuotaKey
+  value  Int
+
+  @@unique([planId, key])
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique   // "USER", "ADMIN"
+  description String?
+  permissions Permission[]
+  users       User[]
+  plans       Plan[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String   @unique   // "admin:access", "accommodation:create"
+  description String?
+  roles       Role[]
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetId   String
+  targetUser User?    @relation("AuditLogTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  entityType String   // "User", "Role", "Plan"
+  action     String   // "role.assign", "plan.change"
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+// ── Subscription (결제 이력) ──
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  canceledAt           DateTime?
+  cancelReason         String?
+  paymentProvider      String?            // "stripe", "toss", etc.
+  externalSubscriptionId String?          // 외부 결제 시스템 ID
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([currentPeriodEnd])
 }

@@ -1,5 +1,6 @@
 import type { AvailabilityStatus } from '@/generated/prisma/client';
 import { checkAccommodation } from '@/lib/checkers';
+import { parsePrice } from '@/lib/checkers/priceParser';
 import { updateHeartbeat } from '@/lib/heartbeat';
 import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
@@ -8,7 +9,7 @@ import type { AccommodationWithUser } from '@/types/accommodation';
 
 import { getCronConfig } from './config';
 import { createLimiter } from './limiter';
-import { determineStatus, shouldSendAvailabilityNotification } from './statusUtils';
+import { determineStatus, isSameStayDates, nightsBetween, shouldSendAvailabilityNotification } from './statusUtils';
 
 // ============================================
 // 상태 관리
@@ -94,14 +95,23 @@ async function saveCheckLog(
     previousStatus: AvailabilityStatus | null;
   },
 ): Promise<void> {
+  const parsed = parsePrice(result.price);
+  const nights = nightsBetween(accommodation.checkIn, accommodation.checkOut);
+  const pricePerNight = parsed ? Math.round(parsed.amount / nights) : null;
+
   await prisma.checkLog.create({
     data: {
       accommodationId: accommodation.id,
       userId: accommodation.user.id,
       status,
       price: result.price,
+      priceAmount: parsed?.amount ?? null,
+      priceCurrency: parsed?.currency ?? null,
       errorMessage: result.error,
       notificationSent: false,
+      checkIn: accommodation.checkIn,
+      checkOut: accommodation.checkOut,
+      pricePerNight,
       cycleId: extra.cycleId,
       durationMs: extra.durationMs,
       retryCount: extra.retryCount,
@@ -118,9 +128,29 @@ async function sendNotificationIfNeeded(
   status: AvailabilityStatus,
   result: { price: string | null; checkUrl: string },
 ): Promise<void> {
+  // 일정이 변경된 경우 lastStatus를 무효화하여 새 일정의 첫 체크로 취급
+  let effectiveLastStatus = accommodation.lastStatus;
+
+  const lastLog = await prisma.checkLog.findFirst({
+    where: { accommodationId: accommodation.id, checkIn: { not: null } },
+    orderBy: { createdAt: 'desc' },
+    select: { checkIn: true, checkOut: true },
+    skip: 1, // 방금 생성한 로그를 건너뜀
+  });
+
+  if (lastLog?.checkIn && lastLog?.checkOut) {
+    const datesChanged = !isSameStayDates(
+      { checkIn: accommodation.checkIn, checkOut: accommodation.checkOut },
+      { checkIn: lastLog.checkIn, checkOut: lastLog.checkOut },
+    );
+    if (datesChanged) {
+      effectiveLastStatus = null;
+    }
+  }
+
   const shouldNotify = shouldSendAvailabilityNotification(
     status,
-    accommodation.lastStatus,
+    effectiveLastStatus,
     Boolean(accommodation.user.kakaoAccessToken),
   );
 
@@ -158,12 +188,16 @@ async function updateAccommodationStatus(
   status: AvailabilityStatus,
   price: string | null,
 ): Promise<void> {
+  const parsed = parsePrice(price);
+
   await prisma.accommodation.update({
     where: { id: accommodationId },
     data: {
       lastCheck: new Date(),
       lastStatus: status,
       lastPrice: price,
+      lastPriceAmount: parsed?.amount ?? null,
+      lastPriceCurrency: parsed?.currency ?? null,
     },
   });
 }

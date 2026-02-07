@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +16,8 @@ import {
 import { useUpdateUserRole } from '@/hooks/useUpdateUserRole';
 import type { AdminUserInfo } from '@/types/admin';
 
+const AVAILABLE_ROLES = ['USER', 'ADMIN'] as const;
+
 interface RoleChangeDialogProps {
   user: AdminUserInfo | null;
   onClose: () => void;
@@ -20,22 +25,38 @@ interface RoleChangeDialogProps {
 
 export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
   const mutation = useUpdateUserRole();
-  const newRole = user?.role === 'ADMIN' ? 'USER' : 'ADMIN';
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  if (user && !initialized) {
+    setSelectedRoles([...user.roles]);
+    setInitialized(true);
+  }
 
   function handleClose() {
     mutation.reset();
+    setInitialized(false);
+    setSelectedRoles([]);
     onClose();
   }
 
+  function handleToggle(role: string, checked: boolean) {
+    setSelectedRoles((prev) => (checked ? [...prev, role] : prev.filter((r) => r !== role)));
+  }
+
   function handleConfirm() {
-    if (!user) return;
+    if (!user || selectedRoles.length === 0) return;
     mutation.mutate(
-      { id: user.id, role: newRole },
+      { id: user.id, roles: selectedRoles },
       {
         onSuccess: () => handleClose(),
       },
     );
   }
+
+  const hasChanged = user
+    ? JSON.stringify([...user.roles].sort()) !== JSON.stringify([...selectedRoles].sort())
+    : false;
 
   return (
     <Dialog
@@ -54,15 +75,32 @@ export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
         </DialogHeader>
 
         {user && (
-          <div className='flex items-center justify-center gap-4 py-2'>
-            <div className='text-center'>
-              <div className='text-xs text-muted-foreground mb-1'>현재</div>
-              <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>{user.role}</Badge>
+          <div className='space-y-3 py-2'>
+            <div className='text-sm text-muted-foreground'>현재 역할</div>
+            <div className='flex gap-1'>
+              {user.roles.map((role) => (
+                <Badge
+                  key={role}
+                  variant={role === 'ADMIN' ? 'default' : 'secondary'}
+                >
+                  {role}
+                </Badge>
+              ))}
             </div>
-            <span className='text-muted-foreground'>→</span>
-            <div className='text-center'>
-              <div className='text-xs text-muted-foreground mb-1'>변경</div>
-              <Badge variant={newRole === 'ADMIN' ? 'default' : 'secondary'}>{newRole}</Badge>
+            <div className='text-sm text-muted-foreground pt-2'>변경할 역할</div>
+            <div className='space-y-2'>
+              {AVAILABLE_ROLES.map((role) => (
+                <label
+                  key={role}
+                  className='flex items-center gap-2 cursor-pointer'
+                >
+                  <Checkbox
+                    checked={selectedRoles.includes(role)}
+                    onCheckedChange={(checked) => handleToggle(role, !!checked)}
+                  />
+                  <span className='text-sm'>{role}</span>
+                </label>
+              ))}
             </div>
           </div>
         )}
@@ -81,7 +119,7 @@ export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || selectedRoles.length === 0 || !hasChanged}
           >
             {mutation.isPending ? '변경 중...' : '확인'}
           </Button>

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { determineStatus, shouldSendAvailabilityNotification } from '@/lib/cron/statusUtils';
+import {
+  determineStatus,
+  isSameStayDates,
+  nightsBetween,
+  shouldSendAvailabilityNotification,
+} from '@/lib/cron/statusUtils';
 
 describe('determineStatus', () => {
   it('에러 있으면 ERROR', () => {
@@ -43,5 +48,78 @@ describe('shouldSendAvailabilityNotification', () => {
 
   it('ERROR 상태면 전송 안 함', () => {
     expect(shouldSendAvailabilityNotification('ERROR', 'UNAVAILABLE', true)).toBe(false);
+  });
+});
+
+describe('nightsBetween', () => {
+  it('1박 (연속 날짜)', () => {
+    expect(nightsBetween(new Date('2026-08-19'), new Date('2026-08-20'))).toBe(1);
+  });
+
+  it('3박', () => {
+    expect(nightsBetween(new Date('2026-08-19'), new Date('2026-08-22'))).toBe(3);
+  });
+
+  it('시/분/초 차이 무시 (같은 날짜면 1박)', () => {
+    expect(nightsBetween(new Date('2026-08-19T10:00:00Z'), new Date('2026-08-20T22:00:00Z'))).toBe(1);
+  });
+
+  it('checkIn === checkOut 이면 최소 1 반환 (0 나누기 방지)', () => {
+    expect(nightsBetween(new Date('2026-08-19'), new Date('2026-08-19'))).toBe(1);
+  });
+
+  it('월 경계를 넘는 경우', () => {
+    expect(nightsBetween(new Date('2026-08-30'), new Date('2026-09-02'))).toBe(3);
+  });
+
+  it('연도 경계를 넘는 경우', () => {
+    expect(nightsBetween(new Date('2026-12-30'), new Date('2027-01-02'))).toBe(3);
+  });
+});
+
+describe('isSameStayDates', () => {
+  it('같은 일정이면 true', () => {
+    expect(
+      isSameStayDates(
+        { checkIn: new Date('2026-08-19'), checkOut: new Date('2026-08-22') },
+        { checkIn: new Date('2026-08-19'), checkOut: new Date('2026-08-22') },
+      ),
+    ).toBe(true);
+  });
+
+  it('시/분/초가 달라도 연/월/일이 같으면 true', () => {
+    expect(
+      isSameStayDates(
+        { checkIn: new Date('2026-08-19T00:00:00Z'), checkOut: new Date('2026-08-22T00:00:00Z') },
+        { checkIn: new Date('2026-08-19T15:30:00Z'), checkOut: new Date('2026-08-22T12:00:00Z') },
+      ),
+    ).toBe(true);
+  });
+
+  it('체크인만 다르면 false', () => {
+    expect(
+      isSameStayDates(
+        { checkIn: new Date('2026-08-19'), checkOut: new Date('2026-08-22') },
+        { checkIn: new Date('2026-08-20'), checkOut: new Date('2026-08-22') },
+      ),
+    ).toBe(false);
+  });
+
+  it('체크아웃만 다르면 false', () => {
+    expect(
+      isSameStayDates(
+        { checkIn: new Date('2026-08-19'), checkOut: new Date('2026-08-22') },
+        { checkIn: new Date('2026-08-19'), checkOut: new Date('2026-08-23') },
+      ),
+    ).toBe(false);
+  });
+
+  it('둘 다 다르면 false', () => {
+    expect(
+      isSameStayDates(
+        { checkIn: new Date('2026-08-19'), checkOut: new Date('2026-08-22') },
+        { checkIn: new Date('2026-09-01'), checkOut: new Date('2026-09-05') },
+      ),
+    ).toBe(false);
   });
 });

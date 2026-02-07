@@ -57,6 +57,41 @@ export interface UpdateAccommodationInput {
   isActive?: boolean;
 }
 
+export interface PriceDataPoint {
+  createdAt: string;
+  priceAmount: number;
+  priceCurrency: string;
+  pricePerNight: number | null;
+  movingAvg: number | null;
+  isLegacy: boolean;
+}
+
+export interface PerNightStats {
+  min: number;
+  minDate: string;
+  max: number;
+  maxDate: string;
+  avg: number;
+  current: number | null;
+}
+
+export interface PriceStats {
+  min: number;
+  minDate: string;
+  max: number;
+  maxDate: string;
+  avg: number;
+  current: number | null;
+  currentCurrency: string | null;
+  count: number;
+  perNight: PerNightStats | null;
+}
+
+export interface PriceHistoryResponse {
+  prices: PriceDataPoint[];
+  stats: PriceStats | null;
+}
+
 /** Cron processor용 - Prisma select 결과 (Date 사용) */
 export interface AccommodationWithUser {
   id: string;

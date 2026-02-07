@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.UserWhereInput = {};
 
     if (role) {
-      where.role = role;
+      where.roles = { some: { name: role } };
     }
 
     if (search) {
@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
         name: true,
         email: true,
         image: true,
-        role: true,
+        roles: { select: { name: true } },
+        plan: { select: { name: true } },
         createdAt: true,
         _count: {
           select: {
@@ -76,7 +77,8 @@ export async function GET(request: NextRequest) {
           name: user.name,
           email: user.email,
           image: user.image,
-          role: user.role,
+          roles: user.roles.map((r) => r.name),
+          planName: user.plan?.name ?? null,
           createdAt: user.createdAt.toISOString(),
           _count: user._count,
         }),

@@ -6,11 +6,11 @@ import type { AdminUserInfo } from '@/types/admin';
 
 import { adminKeys } from './queryKeys';
 
-async function updateUserRole({ id, role }: { id: string; role: 'USER' | 'ADMIN' }): Promise<AdminUserInfo> {
-  const res = await fetch(`/api/admin/users/${id}/role`, {
+async function updateUserRoles({ id, roles }: { id: string; roles: string[] }): Promise<AdminUserInfo> {
+  const res = await fetch(`/api/admin/users/${id}/roles`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify({ roles }),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -23,7 +23,7 @@ export function useUpdateUserRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateUserRole,
+    mutationFn: updateUserRoles,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users() });
     },

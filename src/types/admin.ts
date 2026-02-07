@@ -68,7 +68,8 @@ export interface AdminUserInfo {
   name: string | null;
   email: string | null;
   image: string | null;
-  role: 'USER' | 'ADMIN';
+  roles: string[];
+  planName: string | null;
   createdAt: string;
   _count: { accommodations: number };
 }

@@ -63,6 +63,8 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 
 ## 로컬 개발
 
+RBAC/플랜/감사로그 변경사항 로컬 검증은 `docs/rbac-local-testing.md`를 참고하세요.
+
 ### 방법 1: DB만 Docker + 네이티브 실행 (권장)
 
 Docker 전체 실행이 느릴 경우, **DB만 Docker로 실행**하고 Next.js는 네이티브로 실행합니다.

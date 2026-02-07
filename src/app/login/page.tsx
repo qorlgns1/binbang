@@ -1,26 +1,121 @@
 'use client';
 
-import { Suspense } from 'react';
+import { type FormEvent, Suspense, useState } from 'react';
 
 import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
-// useSearchParams를 사용하는 컴포넌트는 반드시 Suspense 안에 있어야 함
 function LoginForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleCredentialsLogin(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/credentials-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || '로그인에 실패했습니다');
+        return;
+      }
+
+      router.push(callbackUrl);
+      router.refresh();
+    } catch {
+      setError('서버 오류가 발생했습니다');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className='w-full max-w-md'>
       <Card className='shadow-xl'>
         <CardHeader className='text-center'>
           <CardTitle className='text-2xl'>로그인</CardTitle>
-          <CardDescription>소셜 계정으로 간편하게 로그인하세요</CardDescription>
+          <CardDescription>이메일 또는 소셜 계정으로 로그인하세요</CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
+          {error && (
+            <Alert variant='destructive'>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form
+            onSubmit={handleCredentialsLogin}
+            className='space-y-3'
+          >
+            <div className='space-y-1.5'>
+              <Label htmlFor='email'>이메일</Label>
+              <Input
+                id='email'
+                type='email'
+                placeholder='name@example.com'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete='email'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <Label htmlFor='password'>비밀번호</Label>
+              <Input
+                id='password'
+                type='password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete='current-password'
+              />
+            </div>
+            <Button
+              type='submit'
+              className='w-full'
+              disabled={loading}
+            >
+              {loading ? '로그인 중...' : '로그인'}
+            </Button>
+          </form>
+
+          <p className='text-center text-sm text-muted-foreground'>
+            계정이 없으신가요?{' '}
+            <Link
+              href='/signup'
+              className='text-foreground underline underline-offset-4 hover:text-foreground/80'
+            >
+              회원가입
+            </Link>
+          </p>
+
+          <div className='relative flex items-center gap-3'>
+            <Separator className='flex-1' />
+            <span className='text-xs text-muted-foreground'>또는</span>
+            <Separator className='flex-1' />
+          </div>
+
           {/* 카카오 로그인 */}
           <Button
             onClick={() => signIn('kakao', { callbackUrl })}
@@ -77,7 +172,6 @@ function LoginForm() {
   );
 }
 
-// 로딩 폴백
 function LoginFormFallback() {
   return (
     <div className='w-full max-w-md'>
@@ -89,13 +183,13 @@ function LoginFormFallback() {
         <CardContent className='space-y-4'>
           <div className='w-full h-12 bg-muted rounded-lg animate-pulse' />
           <div className='w-full h-12 bg-muted rounded-lg animate-pulse' />
+          <div className='w-full h-12 bg-muted rounded-lg animate-pulse' />
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// 메인 페이지 - Suspense로 LoginForm을 감싸서 export
 export default function LoginPage() {
   return (
     <main className='min-h-screen flex items-center justify-center p-8 bg-muted/40'>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -322,7 +322,87 @@ export function SettingsManager() {
       })}
 
       <Separator />
+      <PriceBackfill />
+      <Separator />
       <SettingsHistory />
     </div>
+  );
+}
+
+// ============================================
+// 가격 백필 섹션
+// ============================================
+
+interface BackfillResult {
+  checkLogs: { updated: number; skipped: number };
+  accommodations: { updated: number; total: number };
+}
+
+function PriceBackfill() {
+  const [isPending, setIsPending] = useState(false);
+  const [result, setResult] = useState<BackfillResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleBackfill = useCallback(async () => {
+    setIsPending(true);
+    setResult(null);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/admin/backfill/prices', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? '백필 실패');
+      }
+      const data: BackfillResult = await res.json();
+      setResult(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '알 수 없는 오류');
+    } finally {
+      setIsPending(false);
+    }
+  }, []);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>데이터 관리</CardTitle>
+      </CardHeader>
+      <CardContent className='space-y-4'>
+        <div className='flex items-center justify-between'>
+          <div>
+            <p className='text-sm font-medium'>가격 데이터 백필</p>
+            <p className='text-xs text-muted-foreground'>
+              기존 CheckLog/Accommodation의 가격 문자열을 파싱하여 숫자·통화 필드를 채웁니다.
+            </p>
+          </div>
+          <Button
+            variant='outline'
+            onClick={handleBackfill}
+            disabled={isPending}
+          >
+            {isPending ? '처리 중...' : '실행'}
+          </Button>
+        </div>
+
+        {result && (
+          <Alert>
+            <AlertTitle>백필 완료</AlertTitle>
+            <AlertDescription>
+              CheckLog: {result.checkLogs.updated}건 업데이트, {result.checkLogs.skipped}건 스킵
+              <br />
+              Accommodation: {result.accommodations.updated}/{result.accommodations.total}건 업데이트
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && (
+          <Alert variant='destructive'>
+            <AlertTitle>오류</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import type { PageParams } from '@/types/api';
 
+import { PriceTrendSection } from './_components/priceTrendSection';
 import { DeleteButton, ToggleActiveButton } from './actions';
 import { CheckLogList } from './checkLogList';
 
@@ -131,6 +132,11 @@ export default async function AccommodationDetailPage({ params }: PageParams) {
             </div>
           </CardContent>
         </Card>
+
+        {/* 가격 분석 */}
+        <div className='mb-8'>
+          <PriceTrendSection accommodationId={accommodation.id} />
+        </div>
 
         {/* 체크 로그 */}
         <CheckLogList accommodationId={accommodation.id} />
