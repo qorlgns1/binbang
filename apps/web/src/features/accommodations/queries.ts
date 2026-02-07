@@ -82,11 +82,11 @@ export function useAccommodationQuery(id: string): UseAccommodationQueryResult {
 
   return useQuery({
     queryKey: accommodationKeys.detail(id),
-    queryFn: () => fetchAccommodation(id),
+    queryFn: (): Promise<Accommodation> => fetchAccommodation(id),
     enabled: !!id,
-    placeholderData: () => {
+    placeholderData: (): Accommodation | undefined => {
       const list = queryClient.getQueryData<Accommodation[]>(accommodationKeys.lists());
-      return list?.find((a) => a.id === id);
+      return list?.find((a: Accommodation): boolean => a.id === id);
     },
   });
 }
@@ -103,9 +103,9 @@ export function useAccommodationsQuery(): UseAccommodationsQueryResult {
 export function useCheckLogsInfiniteQuery(accommodationId: string): UseCheckLogsInfiniteQueryResult {
   return useInfiniteQuery({
     queryKey: accommodationKeys.logs(accommodationId),
-    queryFn: ({ pageParam }) => fetchCheckLogs(accommodationId, pageParam),
+    queryFn: ({ pageParam }): Promise<CheckLogsPage> => fetchCheckLogs(accommodationId, pageParam),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage): string | undefined => lastPage.nextCursor ?? undefined,
     enabled: !!accommodationId,
   });
 }
@@ -120,6 +120,6 @@ export function usePriceHistoryQuery(
 
   return useQuery({
     queryKey: accommodationKeys.prices(accommodationId, filterKey),
-    queryFn: () => fetchPriceHistory(accommodationId, filters),
+    queryFn: (): Promise<PriceHistoryResponse> => fetchPriceHistory(accommodationId, filters),
   });
 }

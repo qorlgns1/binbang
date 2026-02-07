@@ -79,7 +79,7 @@ export function useThroughputSummaryQuery(filters: SummaryFilterParams = {}): Us
 
   return useQuery({
     queryKey: adminKeys.throughputSummary(filterKey),
-    queryFn: () => fetchSummary(filters),
+    queryFn: (): Promise<ThroughputSummary> => fetchSummary(filters),
     refetchInterval: 30_000,
   });
 }
@@ -91,7 +91,7 @@ export function useThroughputHistoryQuery(filters: HistoryFilterParams = {}): Us
 
   return useQuery({
     queryKey: adminKeys.throughputHistory(filterKey),
-    queryFn: () => fetchHistory(filters),
+    queryFn: (): Promise<ThroughputHistoryResponse> => fetchHistory(filters),
     refetchInterval: 30_000,
   });
 }
@@ -103,7 +103,7 @@ export function useThroughputComparisonQuery(filters: ComparisonFilterParams): U
 
   return useQuery({
     queryKey: adminKeys.throughputComparison(filterKey),
-    queryFn: () => fetchComparison(filters),
+    queryFn: (): Promise<ThroughputComparisonResponse> => fetchComparison(filters),
     refetchInterval: 60_000,
   });
 }

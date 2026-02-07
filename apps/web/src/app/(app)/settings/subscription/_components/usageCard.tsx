@@ -14,9 +14,9 @@ interface Props {
   isError: boolean;
 }
 
-function CardSkeleton() {
+function CardSkeleton(): React.ReactElement {
   return (
-    <Card>
+    <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
       <CardHeader>
         <Skeleton className='h-5 w-24' />
         <Skeleton className='h-4 w-32' />
@@ -30,14 +30,14 @@ function CardSkeleton() {
   );
 }
 
-export function UsageCard({ quotas, usage, isLoading, isError }: Props) {
+export function UsageCard({ quotas, usage, isLoading, isError }: Props): React.ReactElement {
   if (isLoading) {
     return <CardSkeleton />;
   }
 
   if (isError || !quotas || !usage) {
     return (
-      <Card>
+      <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
         <CardContent className='pt-6'>
           <div className='text-center text-muted-foreground py-4'>사용량 정보를 불러올 수 없습니다.</div>
         </CardContent>
@@ -50,13 +50,13 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props) {
   const isAtLimit = usage.accommodations >= quotas.maxAccommodations;
 
   return (
-    <Card>
+    <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
-          <Home className='size-5' />
+          <Home className='size-5 text-primary' />
           사용량
         </CardTitle>
-        <CardDescription>현재 리소스 사용 현황</CardDescription>
+        <CardDescription>지금 불을 밝히고 있는 곳</CardDescription>
       </CardHeader>
       <CardContent className='space-y-6'>
         <div className='space-y-3'>
@@ -74,11 +74,13 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props) {
             value={usagePercent}
             className={`h-2 ${isAtLimit ? '[&>div]:bg-destructive' : isNearLimit ? '[&>div]:bg-status-warning' : ''}`}
           />
-          {isAtLimit && <p className='text-xs text-destructive'>숙소 한도에 도달했습니다.</p>}
+          {isAtLimit && (
+            <p className='text-xs text-destructive'>숙소 한도에 도달했습니다. 플랜 업그레이드를 고려해보세요.</p>
+          )}
           {isNearLimit && !isAtLimit && <p className='text-xs text-status-warning'>숙소 한도에 거의 도달했습니다.</p>}
         </div>
 
-        <div className='flex items-center gap-3 p-3 rounded-lg bg-muted'>
+        <div className='flex items-center gap-3 p-3 rounded-lg bg-muted/50'>
           <Clock className='size-5 text-muted-foreground' />
           <div>
             <p className='text-sm font-medium'>체크 주기</p>

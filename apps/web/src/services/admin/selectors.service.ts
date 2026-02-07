@@ -122,44 +122,62 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
   }
 
   // 생성
-  const selector = await prisma.$transaction(async (tx) => {
-    const created = await tx.platformSelector.create({
-      data: {
-        platform: body.platform,
-        category: body.category,
-        name: body.name,
-        selector: body.selector,
-        extractorCode: body.extractorCode,
-        priority: body.priority ?? 0,
-        description: body.description,
-        createdById,
-        updatedById: createdById,
-      },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        updatedBy: { select: { id: true, name: true } },
-      },
-    });
-
-    // 변경 로그 기록
-    await tx.selectorChangeLog.create({
-      data: {
-        entityType: 'PlatformSelector',
-        entityId: created.id,
-        action: 'create',
-        newValue: JSON.stringify({
+  const selector = await prisma.$transaction(
+    async (
+      tx,
+    ): Promise<{
+      id: string;
+      platform: Platform;
+      category: SelectorCategory;
+      name: string;
+      selector: string;
+      extractorCode: string | null;
+      priority: number;
+      isActive: boolean;
+      description: string | null;
+      createdBy: { id: string; name: string | null } | null;
+      updatedBy: { id: string; name: string | null } | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }> => {
+      const created = await tx.platformSelector.create({
+        data: {
           platform: body.platform,
           category: body.category,
           name: body.name,
           selector: body.selector,
+          extractorCode: body.extractorCode,
           priority: body.priority ?? 0,
-        }),
-        changedById: createdById,
-      },
-    });
+          description: body.description,
+          createdById,
+          updatedById: createdById,
+        },
+        include: {
+          createdBy: { select: { id: true, name: true } },
+          updatedBy: { select: { id: true, name: true } },
+        },
+      });
 
-    return created;
-  });
+      // 변경 로그 기록
+      await tx.selectorChangeLog.create({
+        data: {
+          entityType: 'PlatformSelector',
+          entityId: created.id,
+          action: 'create',
+          newValue: JSON.stringify({
+            platform: body.platform,
+            category: body.category,
+            name: body.name,
+            selector: body.selector,
+            priority: body.priority ?? 0,
+          }),
+          changedById: createdById,
+        },
+      });
+
+      return created;
+    },
+  );
 
   return toSelectorItem(selector);
 }
@@ -177,45 +195,63 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
   }
 
   // 업데이트
-  const selector = await prisma.$transaction(async (tx) => {
-    const updated = await tx.platformSelector.update({
-      where: { id },
-      data: {
-        ...(body.selector !== undefined && { selector: body.selector }),
-        ...(body.extractorCode !== undefined && { extractorCode: body.extractorCode }),
-        ...(body.priority !== undefined && { priority: body.priority }),
-        ...(body.isActive !== undefined && { isActive: body.isActive }),
-        ...(body.description !== undefined && { description: body.description }),
-        updatedById,
-      },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        updatedBy: { select: { id: true, name: true } },
-      },
-    });
+  const selector = await prisma.$transaction(
+    async (
+      tx,
+    ): Promise<{
+      id: string;
+      platform: Platform;
+      category: SelectorCategory;
+      name: string;
+      selector: string;
+      extractorCode: string | null;
+      priority: number;
+      isActive: boolean;
+      description: string | null;
+      createdBy: { id: string; name: string | null } | null;
+      updatedBy: { id: string; name: string | null } | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }> => {
+      const updated = await tx.platformSelector.update({
+        where: { id },
+        data: {
+          ...(body.selector !== undefined && { selector: body.selector }),
+          ...(body.extractorCode !== undefined && { extractorCode: body.extractorCode }),
+          ...(body.priority !== undefined && { priority: body.priority }),
+          ...(body.isActive !== undefined && { isActive: body.isActive }),
+          ...(body.description !== undefined && { description: body.description }),
+          updatedById,
+        },
+        include: {
+          createdBy: { select: { id: true, name: true } },
+          updatedBy: { select: { id: true, name: true } },
+        },
+      });
 
-    // 변경 로그 기록
-    await tx.selectorChangeLog.create({
-      data: {
-        entityType: 'PlatformSelector',
-        entityId: id,
-        action: 'update',
-        oldValue: JSON.stringify({
-          selector: existing.selector,
-          priority: existing.priority,
-          isActive: existing.isActive,
-        }),
-        newValue: JSON.stringify({
-          selector: updated.selector,
-          priority: updated.priority,
-          isActive: updated.isActive,
-        }),
-        changedById: updatedById,
-      },
-    });
+      // 변경 로그 기록
+      await tx.selectorChangeLog.create({
+        data: {
+          entityType: 'PlatformSelector',
+          entityId: id,
+          action: 'update',
+          oldValue: JSON.stringify({
+            selector: existing.selector,
+            priority: existing.priority,
+            isActive: existing.isActive,
+          }),
+          newValue: JSON.stringify({
+            selector: updated.selector,
+            priority: updated.priority,
+            isActive: updated.isActive,
+          }),
+          changedById: updatedById,
+        },
+      });
 
-    return updated;
-  });
+      return updated;
+    },
+  );
 
   return toSelectorItem(selector);
 }
@@ -231,7 +267,7 @@ export async function deleteSelector(input: DeleteSelectorInput): Promise<void> 
     throw new Error('Selector not found');
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx): Promise<void> => {
     await tx.platformSelector.delete({
       where: { id },
     });
@@ -298,17 +334,31 @@ export async function getSelectorHistory(input: GetSelectorHistoryInput): Promis
   const items = hasMore ? logs.slice(0, -1) : logs;
 
   return {
-    logs: items.map((log) => ({
-      id: log.id,
-      entityType: log.entityType as 'PlatformSelector' | 'PlatformPattern',
-      entityId: log.entityId,
-      action: log.action as 'create' | 'update' | 'delete' | 'toggle',
-      field: log.field,
-      oldValue: log.oldValue,
-      newValue: log.newValue,
-      changedBy: log.changedBy,
-      createdAt: log.createdAt.toISOString(),
-    })),
+    logs: items.map(
+      (
+        log,
+      ): {
+        id: string;
+        entityType: 'PlatformSelector' | 'PlatformPattern';
+        entityId: string;
+        action: 'create' | 'update' | 'delete' | 'toggle';
+        field: string | null;
+        oldValue: string | null;
+        newValue: string | null;
+        changedBy: { id: string; name: string | null };
+        createdAt: string;
+      } => ({
+        id: log.id,
+        entityType: log.entityType as 'PlatformSelector' | 'PlatformPattern',
+        entityId: log.entityId,
+        action: log.action as 'create' | 'update' | 'delete' | 'toggle',
+        field: log.field,
+        oldValue: log.oldValue,
+        newValue: log.newValue,
+        changedBy: log.changedBy,
+        createdAt: log.createdAt.toISOString(),
+      }),
+    ),
     nextCursor: hasMore ? items[items.length - 1].id : null,
   };
 }

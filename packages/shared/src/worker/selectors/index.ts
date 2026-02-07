@@ -407,7 +407,7 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
 
     return newCache;
   } catch (err) {
-    console.error(`[selectors] Failed to load from DB for ${platform}:`, err);
+    console.error('[selectors] Failed to load from DB for %s:', platform, err);
 
     // DB 실패 시 fallback 반환
     const fallback = getHardcodedFallback(platform);

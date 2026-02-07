@@ -124,7 +124,7 @@ export function useCreateSelectorMutation(): UseCreateSelectorMutationResult {
 
   return useMutation({
     mutationFn: createSelector,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.selectors() });
     },
   });
@@ -135,7 +135,7 @@ export function useUpdateSelectorMutation(): UseUpdateSelectorMutationResult {
 
   return useMutation({
     mutationFn: updateSelector,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.selectors() });
     },
   });
@@ -146,7 +146,7 @@ export function useDeleteSelectorMutation(): UseDeleteSelectorMutationResult {
 
   return useMutation({
     mutationFn: deleteSelector,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.selectors() });
     },
   });
@@ -157,7 +157,7 @@ export function useInvalidateSelectorCacheMutation(): UseInvalidateSelectorCache
 
   return useMutation({
     mutationFn: invalidateCache,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.selectors() });
     },
   });
@@ -168,7 +168,7 @@ export function useUpdateTestableAttributesMutation(): UseUpdateTestableAttribut
 
   return useMutation({
     mutationFn: updateTestableAttributes,
-    onSuccess: (data) => {
+    onSuccess: (data: string[]): void => {
       queryClient.setQueryData(adminKeys.testableAttributes(), data);
     },
   });

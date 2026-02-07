@@ -26,9 +26,9 @@ const STATUS_CONFIG: Record<
   [SubscriptionStatus.EXPIRED]: { label: '만료됨', variant: 'outline' },
 };
 
-function CardSkeleton() {
+function CardSkeleton(): React.ReactElement {
   return (
-    <Card>
+    <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
       <CardHeader>
         <Skeleton className='h-5 w-24' />
         <Skeleton className='h-4 w-32' />
@@ -41,7 +41,7 @@ function CardSkeleton() {
   );
 }
 
-export function BillingCard({ subscription, isLoading }: Props) {
+export function BillingCard({ subscription, isLoading }: Props): React.ReactElement {
   if (isLoading) {
     return <CardSkeleton />;
   }
@@ -51,11 +51,11 @@ export function BillingCard({ subscription, isLoading }: Props) {
   const isCanceled = subscription.canceledAt !== null;
 
   return (
-    <Card>
+    <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
       <CardHeader>
         <div className='flex items-center justify-between'>
           <CardTitle className='flex items-center gap-2'>
-            <CreditCard className='size-5' />
+            <CreditCard className='size-5 text-primary' />
             결제 정보
           </CardTitle>
           <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
@@ -85,7 +85,7 @@ export function BillingCard({ subscription, isLoading }: Props) {
           </div>
 
           {isCanceled && subscription.canceledAt && (
-            <div className='flex items-start gap-3 p-3 rounded-lg bg-muted'>
+            <div className='flex items-start gap-3 p-3 rounded-lg bg-muted/50'>
               <AlertCircle className='size-5 text-muted-foreground flex-shrink-0 mt-0.5' />
               <div>
                 <p className='text-sm font-medium'>구독이 취소되었습니다</p>

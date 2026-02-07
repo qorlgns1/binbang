@@ -65,7 +65,9 @@ export async function getThroughputSummary(input: GetThroughputSummaryInput): Pr
     }),
   ]);
 
-  const errorCount = statusGroups.filter((g) => g.status === 'ERROR').reduce((sum, g) => sum + g._count, 0);
+  const errorCount = statusGroups
+    .filter((g: (typeof statusGroups)[0]): boolean => g.status === 'ERROR')
+    .reduce((sum: number, g: (typeof statusGroups)[0]): number => sum + g._count, 0);
   const successCount = totalChecks - errorCount;
   const successRate = totalChecks > 0 ? Math.round((successCount / totalChecks) * 10000) / 100 : 0;
 
@@ -82,7 +84,7 @@ export async function getThroughputSummary(input: GetThroughputSummaryInput): Pr
   });
 
   if (completedCycles.length > 0) {
-    const totalThroughput = completedCycles.reduce((sum, c) => {
+    const totalThroughput = completedCycles.reduce((sum: number, c: (typeof completedCycles)[0]): number => {
       const perMin = (c.totalCount / (c.durationMs as number)) * 60_000;
       return sum + perMin;
     }, 0);
@@ -142,14 +144,16 @@ export async function getThroughputHistory(input: GetThroughputHistoryInput): Pr
   }
 
   const buckets: ThroughputBucket[] = Array.from(bucketMap.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([key, val]) => ({
-      bucketStart: new Date(key).toISOString(),
-      totalChecks: val.total,
-      successCount: val.success,
-      errorCount: val.error,
-      throughputPerMin: Math.round((val.total / bucketMinutes) * 100) / 100,
-    }));
+    .sort(([a]: [number, unknown], [b]: [number, unknown]): number => a - b)
+    .map(
+      ([key, val]: [number, { total: number; success: number; error: number }]): ThroughputBucket => ({
+        bucketStart: new Date(key).toISOString(),
+        totalChecks: val.total,
+        successCount: val.success,
+        errorCount: val.error,
+        throughputPerMin: Math.round((val.total / bucketMinutes) * 100) / 100,
+      }),
+    );
 
   return {
     buckets,
@@ -194,7 +198,7 @@ export async function getThroughputCompare(input: GetThroughputCompareInput): Pr
 
   return {
     compareBy,
-    groups: rawGroups.map((g): ThroughputComparisonGroup => {
+    groups: rawGroups.map((g: (typeof rawGroups)[0]): ThroughputComparisonGroup => {
       const avgTotal = g._avg.totalCount ?? 0;
       const avgSuccess = g._avg.successCount ?? 0;
       const avgDuration = g._avg.durationMs ?? 0;

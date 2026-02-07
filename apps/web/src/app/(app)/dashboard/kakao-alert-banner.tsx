@@ -7,7 +7,7 @@ import { signIn, signOut } from 'next-auth/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
-export function KakaoAlertBanner() {
+export function KakaoAlertBanner(): React.ReactElement | null {
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (!isExpanded) {
@@ -15,29 +15,29 @@ export function KakaoAlertBanner() {
       <Button
         variant='link'
         onClick={() => setIsExpanded(true)}
-        className='mb-4 px-0 text-sm text-caution-foreground'
+        className='mb-6 h-auto px-0 text-sm text-muted-foreground hover:text-foreground'
       >
-        ⚠️ 카카오톡 알림 설정 안내 보기
+        카카오톡 알림 설정 안내 보기
       </Button>
     );
   }
 
-  const handleKakaoLogin = async () => {
-    // 현재 세션을 로그아웃하고 카카오로 다시 로그인
+  const handleKakaoLogin = async (): Promise<void> => {
     await signOut({ redirect: false });
     await signIn('kakao', { callbackUrl: '/dashboard' });
   };
 
   return (
-    <Alert className='mb-6 border-caution-border bg-caution text-caution-foreground'>
+    <Alert className='mb-6 border-primary/30 bg-card/90 backdrop-blur'>
       <div className='flex items-start justify-between gap-4'>
         <div className='flex gap-3'>
-          <span className='text-2xl'>⚠️</span>
+          <div className='flex size-10 items-center justify-center rounded-full bg-primary/10'>
+            <span className='text-xl'>💡</span>
+          </div>
           <div>
-            <AlertTitle className='text-caution-foreground'>카카오톡 알림을 받을 수 없습니다</AlertTitle>
-            <AlertDescription className='text-caution-foreground/80'>
-              현재 Google 계정으로 로그인되어 있습니다. 숙소 예약 가능 알림을 카카오톡으로 받으려면 카카오 계정으로
-              로그인해주세요.
+            <AlertTitle className='text-foreground'>카카오톡으로 빈방 소식 받기</AlertTitle>
+            <AlertDescription className='text-muted-foreground'>
+              카카오 계정으로 로그인하면 숙소 예약 가능 시 즉시 카카오톡 알림을 받을 수 있습니다.
             </AlertDescription>
             <Button
               onClick={handleKakaoLogin}

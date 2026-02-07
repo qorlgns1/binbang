@@ -12,55 +12,54 @@ const SLOT_MINUTES = 1;
 export function HeartbeatTimeline() {
   const { data: history, isLoading } = useHeartbeatHistory();
 
-  const timelineData = useMemo(() => {
+  const timelineData = useMemo((): Array<{
+    minute: number;
+    startTime: Date;
+    status: string;
+    isProcessing: boolean;
+    uptime?: number | null;
+  }> => {
     if (!history || history.length === 0) return [];
 
     const now = new Date();
     const twoHoursAgo = new Date(now.getTime() - SLOT_COUNT * SLOT_MINUTES * 60 * 1000);
 
-    return Array.from({ length: SLOT_COUNT }, (_, i) => {
-      const slotStart = new Date(twoHoursAgo.getTime() + i * SLOT_MINUTES * 60 * 1000);
-      const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60 * 1000);
+    return Array.from(
+      { length: SLOT_COUNT },
+      (_, i): { minute: number; startTime: Date; status: string; isProcessing: boolean; uptime?: number | null } => {
+        const slotStart = new Date(twoHoursAgo.getTime() + i * SLOT_MINUTES * 60 * 1000);
+        const slotEnd = new Date(slotStart.getTime() + SLOT_MINUTES * 60 * 1000);
 
-      const slotHistory = history.filter((item) => {
-        const itemTime = new Date(item.timestamp);
-        return itemTime >= slotStart && itemTime < slotEnd;
-      });
+        const slotHistory = history.filter((item): boolean => {
+          const itemTime = new Date(item.timestamp);
+          return itemTime >= slotStart && itemTime < slotEnd;
+        });
 
-      const latestStatus = slotHistory[slotHistory.length - 1];
+        const latestStatus = slotHistory[slotHistory.length - 1];
 
-      return {
-        minute: i,
-        startTime: slotStart,
-        status: latestStatus?.status || 'unknown',
-        isProcessing: latestStatus?.isProcessing || false,
-        uptime: latestStatus?.uptime,
-      };
-    });
+        return {
+          minute: i,
+          startTime: slotStart,
+          status: latestStatus?.status || 'unknown',
+          isProcessing: latestStatus?.isProcessing || false,
+          uptime: latestStatus?.uptime,
+        };
+      },
+    );
   }, [history]);
 
-  const getStatusColor = (status: string, isProcessing: boolean) => {
+  const getStatusColor = (status: string, isProcessing: boolean): string => {
     if (isProcessing) return 'bg-status-warning';
-    switch (status) {
-      case 'healthy':
-        return 'bg-status-success';
-      case 'unhealthy':
-        return 'bg-status-error';
-      default:
-        return 'bg-muted';
-    }
+    if (status === 'healthy') return 'bg-status-success';
+    if (status === 'unhealthy') return 'bg-status-error';
+    return 'bg-muted';
   };
 
-  const getStatusLabel = (status: string, isProcessing: boolean) => {
+  const getStatusLabel = (status: string, isProcessing: boolean): string => {
     if (isProcessing) return '처리 중';
-    switch (status) {
-      case 'healthy':
-        return '정상';
-      case 'unhealthy':
-        return '비정상';
-      default:
-        return '알 수 없음';
-    }
+    if (status === 'healthy') return '정상';
+    if (status === 'unhealthy') return '비정상';
+    return '알 수 없음';
   };
 
   if (isLoading) {
@@ -83,12 +82,14 @@ export function HeartbeatTimeline() {
           <Badge variant='outline'>데이터 없음</Badge>
         </div>
         <div className='flex gap-0.5 h-6'>
-          {Array.from({ length: SLOT_COUNT }).map((_, i) => (
-            <div
-              key={i}
-              className='flex-1 h-full bg-muted rounded-sm'
-            />
-          ))}
+          {Array.from({ length: SLOT_COUNT }).map(
+            (_, i): React.ReactElement => (
+              <div
+                key={i}
+                className='flex-1 h-full bg-muted rounded-sm'
+              />
+            ),
+          )}
         </div>
       </div>
     );
@@ -104,13 +105,15 @@ export function HeartbeatTimeline() {
       </div>
 
       <div className='flex gap-0.5 h-6'>
-        {timelineData.map((slot) => (
-          <div
-            key={slot.minute}
-            className={`flex-1 h-full rounded-sm ${getStatusColor(slot.status, slot.isProcessing)} ${slot.minute === lastSlotIndex ? 'ring-2 ring-ring ring-offset-1' : ''} hover:opacity-80 cursor-pointer`}
-            title={`${slot.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${getStatusLabel(slot.status, slot.isProcessing)}${slot.uptime ? ` (실행시간: ${Math.floor(slot.uptime / 60)}분)` : ''}`}
-          />
-        ))}
+        {timelineData.map(
+          (slot): React.ReactElement => (
+            <div
+              key={slot.minute}
+              className={`flex-1 h-full rounded-sm ${getStatusColor(slot.status, slot.isProcessing)} ${slot.minute === lastSlotIndex ? 'ring-2 ring-ring ring-offset-1' : ''} hover:opacity-80 cursor-pointer`}
+              title={`${slot.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} - ${getStatusLabel(slot.status, slot.isProcessing)}${slot.uptime ? ` (실행시간: ${Math.floor(slot.uptime / 60)}분)` : ''}`}
+            />
+          ),
+        )}
       </div>
 
       <div className='flex items-center justify-center gap-4 text-xs'>

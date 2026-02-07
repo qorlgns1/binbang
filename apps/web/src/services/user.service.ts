@@ -63,8 +63,8 @@ export async function getUserQuota(userId: string): Promise<UserQuotaResponse | 
     return null;
   }
 
-  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
-  const checkIntervalMin = user.plan?.quotas.find((q) => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
+  const maxAccommodations = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
+  const checkIntervalMin = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
 
   return {
     planName: user.plan?.name ?? 'FREE',
@@ -115,8 +115,8 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
     return null;
   }
 
-  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
-  const checkIntervalMin = user.plan?.quotas.find((q) => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
+  const maxAccommodations = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
+  const checkIntervalMin = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
   const activeSubscription = user.subscriptions[0] ?? null;
 
   return {

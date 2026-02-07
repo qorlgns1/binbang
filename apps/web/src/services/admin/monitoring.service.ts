@@ -78,8 +78,10 @@ export async function getMonitoringSummary(): Promise<MonitoringSummary> {
     where: { createdAt: { gte: oneHourAgo }, status: 'ERROR' },
   });
 
-  const totalChecks = checkStats24h.reduce((sum, g) => sum + g._count.status, 0);
-  const errorChecks = checkStats24h.filter((g) => g.status === 'ERROR').reduce((sum, g) => sum + g._count.status, 0);
+  const totalChecks = checkStats24h.reduce((sum, g): number => sum + g._count.status, 0);
+  const errorChecks = checkStats24h
+    .filter((g): boolean => g.status === 'ERROR')
+    .reduce((sum, g): number => sum + g._count.status, 0);
   const successChecks = totalChecks - errorChecks;
 
   return {

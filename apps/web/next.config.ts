@@ -23,6 +23,16 @@ const nextConfig: NextConfig = {
     'puppeteer-extra-plugin',
     'puppeteer-extra-plugin-stealth',
   ],
+
+  // External images (landing page)
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

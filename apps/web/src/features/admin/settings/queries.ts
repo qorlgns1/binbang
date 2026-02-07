@@ -76,8 +76,9 @@ export function useSettingsHistoryInfiniteQuery(filters: HistoryFilterParams): U
 
   return useInfiniteQuery({
     queryKey: adminKeys.settingsHistory(filterKey),
-    queryFn: ({ pageParam }) => fetchSettingsHistory(filters, pageParam as string | undefined),
+    queryFn: ({ pageParam }): Promise<SettingsChangeLogsResponse> =>
+      fetchSettingsHistory(filters, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage): string | undefined => lastPage.nextCursor ?? undefined,
   });
 }

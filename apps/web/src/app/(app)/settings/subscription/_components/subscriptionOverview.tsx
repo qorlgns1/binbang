@@ -6,14 +6,14 @@ import { BillingCard } from './billingCard';
 import { CurrentPlanCard } from './currentPlanCard';
 import { UsageCard } from './usageCard';
 
-export function SubscriptionOverview() {
+export function SubscriptionOverview(): React.ReactElement {
   const { data, isLoading, isError } = useUserSubscription();
 
   return (
     <div className='space-y-6'>
       <div>
-        <h2 className='text-2xl font-bold'>구독 정보</h2>
-        <p className='text-muted-foreground mt-1'>현재 플랜과 사용량을 확인하세요</p>
+        <h2 className='text-2xl font-semibold text-foreground'>구독 정보</h2>
+        <p className='text-muted-foreground mt-1'>필요한 만큼만, 편안하게 이용하세요</p>
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>

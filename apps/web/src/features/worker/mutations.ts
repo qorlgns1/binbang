@@ -48,7 +48,7 @@ export function useRestartWorkerMutation(): UseRestartWorkerMutationResult {
 
   const mutation = useMutation({
     mutationFn: restartWorkerFn,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: heartbeatKeys.status() });
     },
   });

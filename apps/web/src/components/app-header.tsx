@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { Home, LogOut, Menu, Settings, User } from 'lucide-react';
+import { Home, LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -23,9 +23,27 @@ interface AppHeaderProps {
   isAdmin?: boolean;
 }
 
-export function AppHeader({ userName, isAdmin }: AppHeaderProps) {
+export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [isDark, setIsDark] = useState<boolean | null>(null);
+
+  // 초기 테마 로드
+  useEffect(() => {
+    const initialDark = document.documentElement.classList.contains('dark');
+    setIsDark(initialDark);
+  }, []);
+
+  // 테마 적용
+  useEffect(() => {
+    if (isDark === null) return;
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('binbang-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  const toggleTheme = (): void => {
+    setIsDark((prev) => !(prev ?? document.documentElement.classList.contains('dark')));
+  };
 
   return (
     <header className='bg-background/80 backdrop-blur-sm border-b sticky top-0 z-40'>
@@ -34,9 +52,12 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps) {
         <div className='flex items-center gap-6'>
           <Link
             href='/dashboard'
-            className='text-xl font-bold'
+            className='flex items-center gap-2'
           >
-            숙소 모니터
+            <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
+              <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
+            </span>
+            <span className='text-sm font-semibold tracking-wide text-foreground md:text-base'>빈방어때</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -74,6 +95,15 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps) {
 
         {/* 우측: 데스크톱 유저 정보 */}
         <div className='hidden md:flex items-center gap-4'>
+          <button
+            type='button'
+            onClick={toggleTheme}
+            aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
+            className='flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary'
+          >
+            {isDark ? <Sun className='size-3.5' /> : <Moon className='size-3.5' />}
+            {isDark ? 'Light' : 'Dark'}
+          </button>
           <span className='text-sm text-muted-foreground'>{userName}</span>
           <Button
             variant='ghost'
@@ -160,7 +190,15 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps) {
               </nav>
 
               {/* 하단 액션 */}
-              <div className='border-t pt-4'>
+              <div className='border-t pt-4 space-y-2'>
+                <button
+                  type='button'
+                  onClick={toggleTheme}
+                  className='flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+                >
+                  {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
+                  {isDark ? '라이트 모드' : '다크 모드'}
+                </button>
                 <Button
                   variant='ghost'
                   className='w-full justify-start text-destructive hover:text-destructive'

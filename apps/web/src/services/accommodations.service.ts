@@ -273,7 +273,7 @@ export async function getAccommodationPriceHistory(input: GetPriceHistoryInput):
   logs.reverse();
 
   // 이동평균 계산 + 데이터 포인트 생성
-  const prices: PriceDataPoint[] = logs.map((log, idx) => {
+  const prices: PriceDataPoint[] = logs.map((log, idx): PriceDataPoint => {
     const currentTime = log.createdAt.getTime();
     const windowStart = currentTime - MOVING_AVG_WINDOW_MS;
 
@@ -315,7 +315,7 @@ export async function getAccommodationPriceHistory(input: GetPriceHistoryInput):
   }
 
   // 박당 가격 통계
-  const perNightPrices = prices.filter((p) => p.pricePerNight != null);
+  const perNightPrices = prices.filter((p): boolean => p.pricePerNight != null);
   let perNight: PriceStats['perNight'] = null;
 
   if (perNightPrices.length > 0) {

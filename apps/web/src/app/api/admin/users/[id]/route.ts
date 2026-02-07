@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       email: result.user.email,
       image: result.user.image,
       createdAt: result.user.createdAt,
-      roles: result.user.roles.map((r) => r.name),
+      roles: result.user.roles.map((r: { name: string }): string => r.name),
       planName: result.user.plan?.name ?? null,
       _count: result.user._count,
     });

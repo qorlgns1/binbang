@@ -77,7 +77,7 @@ export function useCreatePlanMutation(): UseCreatePlanMutationResult {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createPlan,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.plans() });
     },
   });
@@ -87,7 +87,7 @@ export function useUpdatePlanMutation(): UseUpdatePlanMutationResult {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updatePlan,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.plans() });
     },
   });
@@ -97,7 +97,7 @@ export function useDeletePlanMutation(): UseDeletePlanMutationResult {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deletePlan,
-    onSuccess: () => {
+    onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.plans() });
     },
   });

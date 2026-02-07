@@ -88,16 +88,16 @@ export function useUsersInfiniteQuery(filters: UsersFilterParams): UseUsersInfin
 
   return useInfiniteQuery({
     queryKey: adminKeys.users(filterKey),
-    queryFn: ({ pageParam }) => fetchUsers(filters, pageParam as string | undefined),
+    queryFn: ({ pageParam }): Promise<AdminUsersResponse> => fetchUsers(filters, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage): string | undefined => lastPage.nextCursor ?? undefined,
   });
 }
 
 export function useUserDetailQuery(id: string): UseUserDetailQueryResult {
   return useQuery({
     queryKey: adminKeys.userDetail(id),
-    queryFn: () => fetchUserDetail(id),
+    queryFn: (): Promise<AdminUserInfo> => fetchUserDetail(id),
     enabled: !!id,
   });
 }
@@ -108,9 +108,9 @@ export function useUserActivityInfiniteQuery(
 ): UseUserActivityInfiniteQueryResult {
   return useInfiniteQuery({
     queryKey: adminKeys.userActivity(userId, filters as Record<string, string>),
-    queryFn: ({ pageParam }) => fetchUserActivity({ userId, pageParam, filters }),
+    queryFn: ({ pageParam }): Promise<UserActivityResponse> => fetchUserActivity({ userId, pageParam, filters }),
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage): string | null => lastPage.nextCursor,
     enabled: !!userId,
   });
 }

@@ -5,13 +5,14 @@ import { type FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function SignupPage() {
+export default function SignupPage(): React.ReactElement {
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -55,12 +56,17 @@ export default function SignupPage() {
   }
 
   return (
-    <main className='flex-1 flex items-center justify-center p-8'>
-      <div className='w-full max-w-md'>
-        <Card className='shadow-xl'>
+    <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
+      <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
+        <AuthBrandPanel
+          ctaLabel='로그인으로 이동'
+          ctaHref='/login'
+        />
+
+        <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
             <CardTitle className='text-2xl'>회원가입</CardTitle>
-            <CardDescription>이메일로 계정을 만드세요</CardDescription>
+            <CardDescription>빈방 알림을 받을 계정을 만들어 주세요</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
             {error && (
@@ -83,6 +89,7 @@ export default function SignupPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   autoComplete='name'
+                  className='bg-background/80'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -95,6 +102,7 @@ export default function SignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete='email'
+                  className='bg-background/80'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -108,6 +116,7 @@ export default function SignupPage() {
                   required
                   minLength={8}
                   autoComplete='new-password'
+                  className='bg-background/80'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -120,11 +129,12 @@ export default function SignupPage() {
                   required
                   minLength={8}
                   autoComplete='new-password'
+                  className='bg-background/80'
                 />
               </div>
               <Button
                 type='submit'
-                className='w-full'
+                className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
                 disabled={loading}
               >
                 {loading ? '가입 중...' : '회원가입'}
@@ -135,13 +145,13 @@ export default function SignupPage() {
               이미 계정이 있으신가요?{' '}
               <Link
                 href='/login'
-                className='text-foreground underline underline-offset-4 hover:text-foreground/80'
+                className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
                 로그인
               </Link>
             </p>
 
-            <div className='text-center pt-2'>
+            <div className='text-center pt-1'>
               <Link
                 href='/pricing'
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'

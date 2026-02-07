@@ -51,12 +51,12 @@ async function main(): Promise<void> {
         schedule: config.schedule,
       },
     })
-    .catch((error) => {
+    .catch((error): void => {
       console.error('Error starting worker heartbeat:', error);
     });
 
   // 5. 초기 실행 (딜레이 후)
-  setTimeout(() => {
+  setTimeout((): void => {
     checkAllAccommodations();
   }, config.startupDelay);
 
@@ -80,7 +80,9 @@ async function main(): Promise<void> {
 
       const startWait = Date.now();
       while (isProcessing() && Date.now() - startWait < config.shutdownTimeoutMs) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve): void => {
+          setTimeout(resolve, 1000);
+        });
       }
 
       if (isProcessing()) {
@@ -104,7 +106,7 @@ async function main(): Promise<void> {
   process.on('SIGTERM', gracefulShutdown);
 }
 
-main().catch((error) => {
+main().catch((error): void => {
   console.error('Worker start failed:', error);
   process.exit(1);
 });
@@ -112,7 +114,7 @@ main().catch((error) => {
 // ============================================
 // HTTP Control Server
 // ============================================
-const server = createServer((req, res) => {
+const server = createServer((req, res): void => {
   // CORS 헤더
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -128,7 +130,7 @@ const server = createServer((req, res) => {
     console.log('Worker restart requested');
 
     // 1초 후 종료하여 Docker가 재시작하도록 함
-    setTimeout(() => {
+    setTimeout((): void => {
       console.log('Worker restarting...');
       process.exit(1);
     }, 1000);
@@ -159,10 +161,10 @@ const server = createServer((req, res) => {
   // 셀렉터 캐시 무효화 엔드포인트
   if (req.url === '/cache/invalidate' && req.method === 'POST') {
     let body = '';
-    req.on('data', (chunk) => {
+    req.on('data', (chunk): void => {
       body += chunk.toString();
     });
-    req.on('end', async () => {
+    req.on('end', async (): Promise<void> => {
       try {
         const { platform } = body ? JSON.parse(body) : {};
 
@@ -204,10 +206,10 @@ const server = createServer((req, res) => {
   // 셀렉터 테스트 엔드포인트
   if (req.url === '/test' && req.method === 'POST') {
     let body = '';
-    req.on('data', (chunk) => {
+    req.on('data', (chunk): void => {
       body += chunk.toString();
     });
-    req.on('end', async () => {
+    req.on('end', async (): Promise<void> => {
       try {
         const { url, platform, checkIn, checkOut, adults } = JSON.parse(body);
 
@@ -278,7 +280,7 @@ const server = createServer((req, res) => {
 });
 
 const PORT = process.env.WORKER_CONTROL_PORT || 3500;
-server.listen(PORT, () => {
+server.listen(PORT, (): void => {
   console.log(`Worker Control Server listening on port ${PORT}`);
 });
 
@@ -289,7 +291,7 @@ let lastHeartbeatUpdateAt = 0;
 const HEARTBEAT_MIN_INTERVAL_MS = 60_000; // 1분
 
 // 20초마다 하트비트 업데이트 (스마트 로직)
-setInterval(async () => {
+setInterval(async (): Promise<void> => {
   try {
     const now = Date.now();
     const elapsed = now - lastHeartbeatUpdateAt;

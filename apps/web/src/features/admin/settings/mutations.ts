@@ -45,7 +45,7 @@ export function useUpdateSystemSettingsMutation(): UseUpdateSystemSettingsMutati
 
   return useMutation({
     mutationFn: updateSettings,
-    onSuccess: (data) => {
+    onSuccess: (data: SystemSettingsResponse): void => {
       queryClient.setQueryData(adminKeys.settings(), data);
       queryClient.invalidateQueries({ queryKey: adminKeys.settingsHistory() });
     },

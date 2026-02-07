@@ -43,12 +43,14 @@ export async function getRecentLogs(userId: string, limit: number = 10): Promise
   });
 
   return {
-    logs: logs.map((log) => ({
-      id: log.id,
-      status: log.status,
-      price: log.price,
-      createdAt: log.createdAt.toISOString(),
-      accommodation: log.accommodation,
-    })),
+    logs: logs.map(
+      (log): RecentLogItem => ({
+        id: log.id,
+        status: log.status,
+        price: log.price,
+        createdAt: log.createdAt.toISOString(),
+        accommodation: log.accommodation,
+      }),
+    ),
   };
 }

@@ -147,7 +147,7 @@ async function fetchTestableAttributes(): Promise<string[]> {
   if (!res.ok) throw new Error('Failed to fetch settings');
 
   const data = await res.json();
-  const setting = data.settings.find((s: { key: string }) => s.key === SETTING_KEY);
+  const setting = data.settings.find((s: { key: string }): boolean => s.key === SETTING_KEY);
 
   if (!setting) return ['data-testid', 'data-test-id', 'data-selenium', 'data-element-name'];
 
@@ -165,14 +165,14 @@ async function fetchTestableAttributes(): Promise<string[]> {
 export function useSelectorsQuery(filters: SelectorFilters = {}): UseSelectorsQueryResult {
   return useQuery({
     queryKey: adminKeys.selectorList(selectorFiltersToRecord(filters)),
-    queryFn: () => fetchSelectors(filters),
+    queryFn: (): Promise<PlatformSelectorsResponse> => fetchSelectors(filters),
   });
 }
 
 export function useSelectorHistoryQuery(filters: SelectorChangeLogsFilter = {}): UseSelectorHistoryQueryResult {
   return useQuery({
     queryKey: adminKeys.selectorHistory(historyFiltersToRecord(filters)),
-    queryFn: () => fetchSelectorHistory(filters),
+    queryFn: (): Promise<SelectorChangeLogsResponse> => fetchSelectorHistory(filters),
   });
 }
 
@@ -182,7 +182,7 @@ export function useSelectorTestQuery(input: SelectorTestInput | null): UseSelect
 
   const query = useQuery<SelectorTestResult>({
     queryKey: adminKeys.selectorTestResult(submittedInput),
-    queryFn: () => runSelectorTest(submittedInput as SelectorTestInput),
+    queryFn: (): Promise<SelectorTestResult> => runSelectorTest(submittedInput as SelectorTestInput),
     enabled: !!submittedInput,
     staleTime: 30 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

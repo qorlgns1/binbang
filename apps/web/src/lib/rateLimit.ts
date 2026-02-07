@@ -43,7 +43,7 @@ export function checkRateLimit(ip: string, limit: number): RateLimitResult {
     store.set(ip, entry);
   }
 
-  entry.timestamps = entry.timestamps.filter((t) => t > windowStart);
+  entry.timestamps = entry.timestamps.filter((t): boolean => t > windowStart);
   entry.lastAccess = now;
 
   if (entry.timestamps.length >= limit) {

@@ -80,8 +80,9 @@ async function fetchAuditLogs({
 export function useAuditLogsInfiniteQuery(filters: AuditLogsFilters = {}): UseAuditLogsInfiniteQueryResult {
   return useInfiniteQuery({
     queryKey: adminKeys.auditLogs(filters as Record<string, string>),
-    queryFn: ({ pageParam }) => fetchAuditLogs({ pageParam, filters }),
+    queryFn: ({ pageParam }: { pageParam: string | null }): Promise<AuditLogsResponse> =>
+      fetchAuditLogs({ pageParam, filters }),
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: AuditLogsResponse): string | null => lastPage.nextCursor,
   });
 }
