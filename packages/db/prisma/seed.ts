@@ -1,7 +1,7 @@
 /**
  * 개발 환경용 전체 시드 스크립트
  *
- * 운영 시드(seed-production.ts) + 테스트 데이터를 포함합니다:
+ * 운영 시드(seed-base.ts) + 테스트 데이터를 포함합니다:
  * - Production: RBAC, System Settings, Selectors/Patterns
  * - Development: 테스트 유저, 숙소, 체크 로그, 하트비트 등
  *
@@ -26,7 +26,7 @@ import {
   SEED_WORKER_HEARTBEAT,
   type SeedUserKey,
 } from './constants';
-import { seedProduction } from './seed-production';
+import { seedBase } from './seed-base';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL ?? '',
@@ -44,7 +44,7 @@ async function main() {
   console.log('🌱 Seeding database (full)...\n');
 
   // ── 1. Production 시드 먼저 실행 ──
-  await seedProduction();
+  await seedBase();
   console.log('');
 
   // ── 2. 개발용 테스트 데이터 ──

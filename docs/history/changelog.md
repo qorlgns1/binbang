@@ -21,7 +21,7 @@ pnpm db:seed               # 전체 시드 (테스트 데이터 포함)
 
 # 운영 환경
 pnpm db:migrate:deploy     # 마이그레이션 배포
-pnpm --filter @workspace/db db:seed-production    # 운영용 시드 (RBAC, 설정, 셀렉터/패턴만)
+pnpm --filter @workspace/db db:seed:base    # 운영용 시드 (RBAC, 설정, 셀렉터/패턴만)
 ```
 
 ### 카테고리별 셀렉터

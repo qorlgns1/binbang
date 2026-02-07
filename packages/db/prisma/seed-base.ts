@@ -1,12 +1,12 @@
 /**
- * 운영 환경용 시드 스크립트
+ * 베이스 시드 스크립트
  *
- * 운영 환경에서 필수로 실행해야 하는 데이터만 포함합니다:
+ * 운영/개발 서버 공통으로 필요한 베이스 데이터만 포함합니다:
  * - RBAC: Roles, Permissions, Plans, PlanQuotas
  * - System Settings
  * - Platform Selectors & Patterns
  *
- * 실행: pnpm db:seed:production
+ * 실행: pnpm db:seed:deploy (root) 또는 pnpm --filter @workspace/db db:seed:base
  */
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
@@ -30,7 +30,7 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
-export async function seedProduction() {
+export async function seedBase() {
   console.log('🌱 Seeding production data...');
 
   // ── RBAC: Roles ──
@@ -172,7 +172,7 @@ export async function seedProduction() {
 
 // 직접 실행 시
 if (import.meta.url === `file://${process.argv[1]}`) {
-  seedProduction()
+  seedBase()
     .catch((e) => {
       console.error('❌ Production seeding failed:', e);
       process.exit(1);

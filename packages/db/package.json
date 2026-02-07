@@ -21,8 +21,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed && prisma db seed-production",
-    "db:seed-production": "prisma db seed-production",
+    "db:seed": "prisma db seed",
+    "db:seed:base": "tsx prisma/seed-base.ts",
     "db:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf generated node_modules"
