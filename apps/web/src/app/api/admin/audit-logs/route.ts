@@ -1,0 +1,36 @@
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
+import { requireAdmin } from '@/lib/admin';
+import { getAuditLogs } from '@/services/admin/audit-logs.service';
+
+export async function GET(request: NextRequest): Promise<Response> {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const cursor = searchParams.get('cursor') ?? undefined;
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') ?? '20', 10), 1), 100);
+    const action = searchParams.get('action') ?? undefined;
+    const entityType = searchParams.get('entityType') ?? undefined;
+    const from = searchParams.get('from') ?? undefined;
+    const to = searchParams.get('to') ?? undefined;
+
+    const response = await getAuditLogs({
+      action,
+      entityType,
+      from,
+      to,
+      cursor,
+      limit,
+    });
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Admin audit logs fetch error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

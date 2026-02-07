@@ -48,3 +48,6 @@ prisma/*.db-journal
 src/generated/
 
 .pnpm-store
+.turbo
+packages/*/dist/
+apps/*/dist/

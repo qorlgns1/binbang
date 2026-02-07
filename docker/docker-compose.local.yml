@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: binbang-db-local
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-accommodation_monitor}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/web.Dockerfile
+    container_name: binbang-web-local
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    env_file:
+      - ../.env
+      - ../apps/web/.env.local
+    environment:
+      NODE_ENV: local
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/worker.Dockerfile
+    container_name: binbang-worker-local
+    restart: unless-stopped
+    ports:
+      - '3500:3500'
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: local
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

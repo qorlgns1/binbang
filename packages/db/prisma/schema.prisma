@@ -1,0 +1,429 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// NextAuth.js 필수 모델
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  refresh_token_expires_in Int?    // 카카오 OAuth용 추가
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // 이메일 로그인용 (OAuth 유저는 null)
+  // 카카오톡 알림용 토큰
+  kakaoAccessToken  String? @db.Text
+  kakaoRefreshToken String? @db.Text
+  kakaoTokenExpiry  DateTime?
+
+  // RBAC
+  planId String?
+  plan   Plan?  @relation(fields: [planId], references: [id], onDelete: SetNull)
+  roles  Role[]
+
+  // 관계
+  accounts           Account[]
+  sessions           Session[]
+  accommodations     Accommodation[]
+  checkLogs          CheckLog[]
+  settingsChangeLogs SettingsChangeLog[]
+  auditLogs          AuditLog[]       @relation("AuditLogActor")
+  auditLogsAsTarget  AuditLog[]       @relation("AuditLogTarget")
+  subscriptions      Subscription[]
+
+  // Selector 관리
+  createdSelectors     PlatformSelector[]  @relation("SelectorCreatedBy")
+  updatedSelectors     PlatformSelector[]  @relation("SelectorUpdatedBy")
+  createdPatterns      PlatformPattern[]   @relation("PatternCreatedBy")
+  selectorChangeLogs   SelectorChangeLog[] @relation("SelectorChangeLogBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// 숙소 모델
+model Accommodation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String              // 숙소 이름 (사용자 지정)
+  platform  Platform            // airbnb, agoda
+  url       String              // 숙소 URL
+  checkIn   DateTime            // 체크인 날짜
+  checkOut  DateTime            // 체크아웃 날짜
+  adults    Int      @default(2) // 인원 수
+  rooms     Int      @default(1) // 객실 수
+
+  isActive  Boolean  @default(true)  // 모니터링 활성화 여부
+  lastCheck DateTime?                // 마지막 체크 시간
+  lastStatus AvailabilityStatus @default(UNKNOWN) // 마지막 상태
+  lastPrice         String?           // 마지막 확인된 가격 (raw 문자열)
+  lastPriceAmount   Int?              // 파싱된 숫자 (최소 단위: 원/센트)
+  lastPriceCurrency String?           // 통화 코드 (KRW, USD, EUR, GBP, CHF)
+
+  // === JSON-LD 메타데이터 (플랫폼에서 추출) ===
+  platformId          String?   // 플랫폼별 고유 ID (Airbnb room ID, Agoda hotel slug)
+  platformName        String?   // 플랫폼에서 가져온 숙소명
+  platformImage       String?   // 대표 이미지 URL
+  platformDescription String?   @db.Text // 숙소 설명 (긴 텍스트)
+
+  // 주소 정보
+  addressCountry      String?   // 국가
+  addressRegion       String?   // 지역 (도/주)
+  addressLocality     String?   // 세부 지역 (구/시)
+  postalCode          String?   // 우편번호
+  streetAddress       String?   // 상세 주소
+
+  // 평점 정보
+  ratingValue         Float?    // 평점 (1-10)
+  reviewCount         Int?      // 리뷰 수
+
+  // 위치 좌표
+  latitude            Float?    // 위도
+  longitude           Float?    // 경도
+
+  // 기타 메타데이터 (전체 JSON-LD 또는 추가 정보)
+  platformMetadata    Json?     // 전체 JSON-LD 데이터
+
+  checkLogs CheckLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+// 모니터링 사이클
+model CheckCycle {
+  id              String    @id @default(cuid())
+  startedAt       DateTime
+  completedAt     DateTime?
+  durationMs      Int?
+  totalCount      Int       @default(0)
+  successCount    Int       @default(0)
+  errorCount      Int       @default(0)
+  concurrency     Int
+  browserPoolSize Int
+  navigationTimeoutMs Int
+  contentWaitMs   Int
+  maxRetries      Int
+  createdAt       DateTime  @default(now())
+
+  checkLogs       CheckLog[]
+
+  @@index([startedAt])
+  @@index([concurrency, browserPoolSize])
+}
+
+// 체크 로그
+model CheckLog {
+  id              String   @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status          AvailabilityStatus
+  price           String?             // raw 문자열 (예: "₩150,000")
+  priceAmount     Int?                // 파싱된 숫자 (최소 단위: 원/센트)
+  priceCurrency   String?             // 통화 코드 (KRW, USD, EUR, GBP, CHF)
+  errorMessage    String?
+  notificationSent Boolean @default(false)
+
+  // 체크 시점의 예약 일정 (일정 변경 시 가격 추이 구분용)
+  checkIn         DateTime?
+  checkOut        DateTime?
+  pricePerNight   Int?                // 1박당 가격 (priceAmount / 숙박일수)
+
+  cycleId         String?
+  cycle           CheckCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  durationMs      Int?
+  retryCount      Int       @default(0)
+  previousStatus  AvailabilityStatus?
+
+  createdAt       DateTime @default(now())
+
+  @@index([accommodationId])
+  @@index([createdAt])
+  @@index([cycleId])
+  @@index([accommodationId, checkIn, checkOut])
+}
+
+model WorkerHeartbeat {
+  id                    String   @id @default("singleton")
+  startedAt             DateTime @default(now())
+  lastHeartbeatAt       DateTime @default(now())
+  isProcessing          Boolean  @default(false)
+  schedule              String   @default("*/30 * * * *")
+  accommodationsChecked Int      @default(0)
+  lastCycleErrors       Int      @default(0)
+  lastCycleDurationMs   Int?
+  updatedAt             DateTime @updatedAt
+  history               HeartbeatHistory[]
+}
+
+model HeartbeatHistory {
+  id          Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  status      String   // 'healthy', 'unhealthy', 'processing'
+  isProcessing Boolean  @default(false)
+  uptime      Float?   // 실행 시간 (초)
+  workerId    String   @default("singleton")
+  worker      WorkerHeartbeat @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@index([workerId])
+}
+
+enum Platform {
+  AIRBNB
+  AGODA
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  ERROR
+  UNKNOWN
+}
+
+// 설정 변경 감사 로그
+model SettingsChangeLog {
+  id          String   @id @default(cuid())
+  settingKey  String
+  oldValue    String
+  newValue    String
+  changedById String
+  changedBy   User     @relation(fields: [changedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([settingKey])
+  @@index([createdAt])
+}
+
+// 운영 설정 (KV 방식)
+model SystemSettings {
+  key         String   @id            // 설정 키 (예: "worker.cronSchedule")
+  value       String                  // 문자열로 저장
+  type        String   @default("string") // string | int | boolean
+  category    String                  // worker | browser | checker | monitoring | notification | seo
+  description String?                 // 관리자 UI 표시용 설명
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+// ── RBAC ──
+
+enum QuotaKey {
+  MAX_ACCOMMODATIONS
+  CHECK_INTERVAL_MIN
+}
+
+model Plan {
+  id            String         @id @default(cuid())
+  name          String         @unique   // "FREE", "PRO", "BIZ"
+  description   String?
+  price         Int            @default(0)
+  interval      String         @default("month")
+  roles         Role[]
+  quotas        PlanQuota[]
+  users         User[]
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model PlanQuota {
+  id     String   @id @default(cuid())
+  planId String
+  plan   Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  key    QuotaKey
+  value  Int
+
+  @@unique([planId, key])
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique   // "USER", "ADMIN"
+  description String?
+  permissions Permission[]
+  users       User[]
+  plans       Plan[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  action      String   @unique   // "admin:access", "accommodation:create"
+  description String?
+  roles       Role[]
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetId   String
+  targetUser User?    @relation("AuditLogTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  entityType String   // "User", "Role", "Plan"
+  action     String   // "role.assign", "plan.change"
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+// ── Subscription (결제 이력) ──
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  canceledAt           DateTime?
+  cancelReason         String?
+  paymentProvider      String?            // "stripe", "toss", etc.
+  externalSubscriptionId String?          // 외부 결제 시스템 ID
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+// ── Dynamic Selector Management ──
+
+enum SelectorCategory {
+  PRICE        // 가격 추출
+  AVAILABILITY // 예약 가능 여부
+  METADATA     // JSON-LD 메타데이터
+  PLATFORM_ID  // 플랫폼 고유 ID
+}
+
+enum PatternType {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+model PlatformSelector {
+  id            String           @id @default(cuid())
+  platform      Platform
+  category      SelectorCategory
+  name          String           // "Total Price Aria Label"
+  selector      String           // "[aria-label*=\"총액\"]"
+  extractorCode String?          @db.Text // 복잡한 추출 로직 (JavaScript 코드)
+  priority      Int              @default(0)
+  isActive      Boolean          @default(true)
+  description   String?
+
+  createdById String?
+  createdBy   User?    @relation("SelectorCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?    @relation("SelectorUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, category, name])
+  @@index([platform, category, isActive])
+  @@index([platform, isActive, priority])
+}
+
+model PlatformPattern {
+  id          String      @id @default(cuid())
+  platform    Platform
+  patternType PatternType
+  pattern     String      // "예약하기"
+  locale      String      @default("ko")
+  isActive    Boolean     @default(true)
+  priority    Int         @default(0)
+
+  createdById String?
+  createdBy   User?    @relation("PatternCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, patternType, pattern])
+  @@index([platform, patternType, isActive])
+}
+
+model SelectorChangeLog {
+  id          String   @id @default(cuid())
+  entityType  String   // "PlatformSelector" | "PlatformPattern"
+  entityId    String
+  action      String   // "create" | "update" | "delete" | "toggle"
+  field       String?  // 변경된 필드 (update 시)
+  oldValue    String?  @db.Text
+  newValue    String?  @db.Text
+  changedById String
+  changedBy   User     @relation("SelectorChangeLogBy", fields: [changedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([changedById])
+  @@index([createdAt])
+}

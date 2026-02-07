@@ -1,0 +1,28 @@
+services:
+  web:
+    image: kihoonbae/binbang:web-develop
+    ports:
+      - '3200:3000'
+    networks:
+      - shared-network
+    env_file:
+      - ../.env.development
+    environment:
+      NODE_ENV: development
+    restart: unless-stopped
+
+  worker:
+    image: kihoonbae/binbang:worker-develop
+    networks:
+      - shared-network
+    env_file:
+      - ../.env.development
+    environment:
+      NODE_ENV: development
+    restart: unless-stopped
+
+networks:
+  shared-network:
+    driver: bridge
+    external: true
+    name: binbang_shared_network

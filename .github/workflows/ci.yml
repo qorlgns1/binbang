@@ -41,8 +41,7 @@ jobs:
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
+      - run: pnpm turbo run lint
       - run: pnpm format:check
-      - run: pnpm test
-      - run: pnpm db:generate
-      - run: pnpm build
+      - run: pnpm turbo run test
+      - run: pnpm turbo run build

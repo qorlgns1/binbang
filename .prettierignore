@@ -3,3 +3,4 @@ node_modules
 dist
 build
 pnpm-lock.yaml
+packages/db/generated

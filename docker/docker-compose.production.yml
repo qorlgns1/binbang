@@ -1,0 +1,26 @@
+services:
+  web:
+    image: kihoonbae/binbang:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
+    ports:
+      - '4000:3000'
+    networks:
+      - shared-network
+    env_file:
+      - ../.env.production
+    restart: unless-stopped
+
+  worker:
+    image: kihoonbae/binbang:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
+    networks:
+      - shared-network
+    expose:
+      - '3500'
+    env_file:
+      - ../.env.production
+    restart: unless-stopped
+
+networks:
+  shared-network:
+    driver: bridge
+    external: true
+    name: binbang_shared_network
