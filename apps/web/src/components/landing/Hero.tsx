@@ -5,15 +5,14 @@ import { ArrowRight, BellRing } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
-import type { LandingCopy } from './landing-data';
 import { StatusDashboard } from './StatusDashboard';
+import type { LandingCopy } from './landing-data';
 
 interface HeroProps {
   copy: LandingCopy;
-  lang: 'ko' | 'en';
 }
 
-export function Hero({ copy, lang }: HeroProps): React.ReactElement {
+export function Hero({ copy }: HeroProps): React.ReactElement {
   return (
     <section className='relative flex min-h-screen flex-col justify-center overflow-hidden px-4 pb-20 pt-28'>
       <div className='absolute inset-0'>
@@ -43,7 +42,9 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
           </span>
         </h1>
 
-        <p className='mt-7 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-xl'>{copy.hero.description}</p>
+        <p className='mt-7 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-xl'>
+          {copy.hero.description}
+        </p>
 
         <div className='mt-10 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center'>
           <Button
@@ -70,10 +71,7 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
         </div>
 
         <div className='mt-16 w-full'>
-          <StatusDashboard
-            lang={lang}
-            copy={copy}
-          />
+          <StatusDashboard copy={copy} />
         </div>
       </div>
     </section>

@@ -6,7 +6,7 @@ import { flushSync } from 'react-dom';
 import { Features } from './Features';
 import { Header } from './Header';
 import { Hero } from './Hero';
-import { TRANSLATIONS, type Lang } from './landing-data';
+import { type Lang, TRANSLATIONS } from './landing-data';
 
 export function LandingPage(): React.ReactElement {
   const [lang, setLang] = useState<Lang>('ko');
@@ -14,16 +14,12 @@ export function LandingPage(): React.ReactElement {
   const copy = TRANSLATIONS[lang];
 
   const handleToggleTheme = (): void => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const docWithTransition = document as Document & {
-      startViewTransition?: (callback: () => void) => void;
-    };
+    const hasReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const supportsViewTransition = 'startViewTransition' in document;
 
-    if (!reduceMotion && typeof docWithTransition.startViewTransition === 'function') {
-      docWithTransition.startViewTransition(() => {
-        flushSync(() => {
-          setIsDark((prev) => !prev);
-        });
+    if (!hasReducedMotion && supportsViewTransition) {
+      (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+        flushSync(() => setIsDark((prev) => !prev));
       });
       return;
     }
@@ -31,23 +27,20 @@ export function LandingPage(): React.ReactElement {
     setIsDark((prev) => !prev);
   };
 
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    document.title =
-      lang === 'ko' ? '빈방어때 | 숙소 빈자리 알림 서비스' : 'Binbang | Vacancy Alert for Your Stay';
-  }, [lang]);
-
+  // 초기 테마 로드
   useEffect(() => {
     const savedTheme = localStorage.getItem('binbang-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldUseDark = savedTheme ? savedTheme === 'dark' : prefersDark;
-    setIsDark(shouldUseDark);
+    setIsDark(savedTheme ? savedTheme === 'dark' : prefersDark);
   }, []);
 
+  // 언어 및 테마 적용
   useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = lang === 'ko' ? '빈방어때 | 숙소 빈자리 알림 서비스' : 'Binbang | Vacancy Alert for Your Stay';
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('binbang-theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
+  }, [lang, isDark]);
 
   return (
     <div className='min-h-screen bg-background text-foreground'>
@@ -60,10 +53,7 @@ export function LandingPage(): React.ReactElement {
       />
 
       <main>
-        <Hero
-          lang={lang}
-          copy={copy}
-        />
+        <Hero copy={copy} />
         <Features copy={copy} />
 
         <section className='border-t border-border bg-secondary px-4 py-20 text-center'>
