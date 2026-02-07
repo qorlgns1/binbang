@@ -41,6 +41,10 @@ interface HeartbeatSettings {
   maxProcessingTimeMs: number;
 }
 
+interface SelectorTestSettings {
+  testableAttributes: string[];
+}
+
 export interface SystemSettingsCache {
   worker: WorkerSettings;
   browser: BrowserSettings;
@@ -48,6 +52,7 @@ export interface SystemSettingsCache {
   monitoring: MonitoringSettings;
   notification: NotificationSettings;
   heartbeat: HeartbeatSettings;
+  selectorTest: SelectorTestSettings;
 }
 
 // ── 기본값 맵 (DB → env → default 순서로 해소) ──
@@ -75,6 +80,10 @@ const DEFAULTS: Record<string, { env?: string; default: string }> = {
   'heartbeat.workerDownCooldownMs': { default: '3600000' },
   'heartbeat.workerStuckCooldownMs': { default: '1800000' },
   'heartbeat.maxProcessingTimeMs': { env: 'MAX_PROCESSING_TIME_MS', default: '3600000' },
+  // Selector Test
+  'selectorTest.testableAttributes': {
+    default: JSON.stringify(['data-testid', 'data-test-id', 'data-selenium', 'data-element-name']),
+  },
 };
 
 // ── 캐시 ──
@@ -101,6 +110,15 @@ function resolveValue(key: string, dbMap: Map<string, string>): string {
 function toInt(value: string, fallback: number): number {
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? fallback : parsed;
+}
+
+function toJsonArray(value: string, fallback: string[]): string[] {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 // ── 캐시 빌드 ──
@@ -143,6 +161,14 @@ function buildCache(dbMap: Map<string, string>): SystemSettingsCache {
       workerDownCooldownMs: toInt(r('heartbeat.workerDownCooldownMs'), 3600000),
       workerStuckCooldownMs: toInt(r('heartbeat.workerStuckCooldownMs'), 1800000),
       maxProcessingTimeMs: toInt(r('heartbeat.maxProcessingTimeMs'), 3600000),
+    },
+    selectorTest: {
+      testableAttributes: toJsonArray(r('selectorTest.testableAttributes'), [
+        'data-testid',
+        'data-test-id',
+        'data-selenium',
+        'data-element-name',
+      ]),
     },
   };
 }

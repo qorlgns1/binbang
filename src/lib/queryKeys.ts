@@ -33,12 +33,26 @@ export const adminKeys = {
     [...adminKeys.throughput(), 'history', filters ?? {}] as const,
   throughputComparison: (filters?: Record<string, string>) =>
     [...adminKeys.throughput(), 'compare', filters ?? {}] as const,
+  // Platform Selectors
+  selectors: () => [...adminKeys.all, 'selectors'] as const,
+  selectorList: (filters?: Record<string, string>) => [...adminKeys.selectors(), 'list', filters ?? {}] as const,
+  patterns: () => [...adminKeys.all, 'patterns'] as const,
+  patternList: (filters?: Record<string, string>) => [...adminKeys.patterns(), 'list', filters ?? {}] as const,
+  selectorHistory: (filters?: Record<string, string>) => [...adminKeys.selectors(), 'history', filters ?? {}] as const,
+  selectorTestResult: (input?: { url: string; checkIn: string; checkOut: string; adults: number } | null) =>
+    [...adminKeys.selectors(), 'testResult', input ?? {}] as const,
+  testableAttributes: () => [...adminKeys.selectors(), 'testableAttributes'] as const,
 };
 
 export const heartbeatKeys = {
   all: ['heartbeat'] as const,
   status: () => [...heartbeatKeys.all, 'status'] as const,
   history: () => [...heartbeatKeys.all, 'history'] as const,
+};
+
+export const planKeys = {
+  all: ['plans'] as const,
+  list: () => [...planKeys.all, 'list'] as const,
 };
 
 export const userKeys = {

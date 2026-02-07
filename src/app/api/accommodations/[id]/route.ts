@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { deleteAccommodation, getAccommodationById, updateAccommodation } from '@/services/accommodations.service';
 import type { RouteParams } from '@/types/api';
 
 const updateAccommodationSchema = z.object({
@@ -24,7 +24,7 @@ const updateAccommodationSchema = z.object({
 });
 
 // GET: 숙소 상세 조회
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<Response> {
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
@@ -32,18 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const accommodation = await prisma.accommodation.findFirst({
-    where: {
-      id,
-      userId: session.user.id,
-    },
-    include: {
-      checkLogs: {
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      },
-    },
-  });
+  const accommodation = await getAccommodationById(id, session.user.id);
 
   if (!accommodation) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -53,7 +42,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // PATCH: 숙소 수정
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, { params }: RouteParams): Promise<Response> {
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
@@ -61,33 +50,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 소유권 확인
-  const existing = await prisma.accommodation.findFirst({
-    where: {
-      id,
-      userId: session.user.id,
-    },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-
   try {
     const body = await request.json();
     const data = updateAccommodationSchema.parse(body);
 
-    const accommodation = await prisma.accommodation.update({
-      where: { id },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.url && { url: data.url }),
-        ...(data.checkIn && { checkIn: new Date(data.checkIn) }),
-        ...(data.checkOut && { checkOut: new Date(data.checkOut) }),
-        ...(data.adults && { adults: data.adults }),
-        ...(typeof data.isActive === 'boolean' && { isActive: data.isActive }),
-      },
+    const accommodation = await updateAccommodation(id, session.user.id, {
+      name: data.name,
+      url: data.url,
+      checkIn: data.checkIn ? new Date(data.checkIn) : undefined,
+      checkOut: data.checkOut ? new Date(data.checkOut) : undefined,
+      adults: data.adults,
+      isActive: data.isActive,
     });
+
+    if (!accommodation) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
     return NextResponse.json(accommodation);
   } catch (error) {
@@ -101,7 +79,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE: 숙소 삭제
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams): Promise<Response> {
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
@@ -109,21 +87,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 소유권 확인
-  const existing = await prisma.accommodation.findFirst({
-    where: {
-      id,
-      userId: session.user.id,
-    },
-  });
+  const deleted = await deleteAccommodation(id, session.user.id);
 
-  if (!existing) {
+  if (!deleted) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-
-  await prisma.accommodation.delete({
-    where: { id },
-  });
 
   return NextResponse.json({ success: true });
 }

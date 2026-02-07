@@ -30,6 +30,7 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 - **처리량 대시보드** – 체크 사이클 기반 처리량 추이/비교/요약 분석
 - **체크 사이클 메트릭** – 사이클별 성공/에러/지속 시간/재시도 집계
 - **API Rate Limiting** – IP 기반 슬라이딩 윈도우 요청 제한
+- **동적 셀렉터 관리** – DB 기반 CSS 셀렉터/패턴 관리, 코드 배포 없이 플랫폼 UI 변경 대응
 - **일관된 디자인 시스템** – shadcn/ui 기반의 모던한 UI
 
 ---
@@ -284,7 +285,8 @@ pnpm db:generate              # Prisma Client 생성
 pnpm db:push                  # 스키마 적용 (개발용)
 pnpm db:migrate               # 마이그레이션 생성 (개발)
 pnpm db:migrate:deploy        # 마이그레이션 적용 (프로덕션)
-pnpm db:seed                  # 시드 데이터 적용
+pnpm db:seed                  # 시드 데이터 적용 (개발용 전체)
+pnpm db:seed:production       # 운영용 시드 (RBAC, 설정, 셀렉터/패턴만)
 pnpm db:studio                # Prisma Studio
 
 # Docker 로컬 환경
@@ -321,6 +323,7 @@ accommodation-monitor/
 │   │   ├── auth.ts             # NextAuth 설정
 │   │   ├── prisma.ts           # Prisma 클라이언트
 │   │   ├── settings.ts         # 시스템 설정 로더 (DB → env → 기본값)
+│   │   ├── selectors.ts        # 동적 셀렉터 캐시 모듈
 │   │   ├── rateLimit.ts        # IP 기반 API Rate Limiting
 │   │   ├── checkers/           # Airbnb, Agoda 체커
 │   │   ├── heartbeat/          # 워커 하트비트 모니터링 및 히스토리
@@ -379,7 +382,50 @@ pnpm vitest --coverage
 
 ## 버전 히스토리
 
-### v2.10.0 – 처리량 대시보드 및 체크 사이클 메트릭 (Latest)
+### v2.11.0 – 동적 셀렉터 관리 시스템 (Latest)
+
+플랫폼 UI 변경에 코드 배포 없이 대응할 수 있는 동적 셀렉터 관리 시스템을 추가했습니다.
+
+- **DB 기반 셀렉터/패턴 관리**: `PlatformSelector`, `PlatformPattern` 모델로 CSS 셀렉터와 텍스트 패턴을 DB에서 관리
+- **동적 Extractor 빌드**: DB 셀렉터 기반으로 JavaScript 추출 함수를 자동 생성
+- **5분 TTL 캐시**: 성능 최적화를 위한 메모리 캐시, Fallback 로직으로 안정성 확보
+- **어드민 UI**: `/admin/selectors`에서 플랫폼별 셀렉터/패턴 CRUD
+- **변경 이력 추적**: `SelectorChangeLog` 모델로 모든 변경 감사 로그 기록
+- **셀렉터 테스트 패널**: URL 입력 시 실시간 셀렉터 테스트 및 결과 미리보기
+- **캐시 무효화 API**: 셀렉터 변경 후 즉시 반영을 위한 수동 캐시 무효화
+
+#### 사용 방법
+
+```bash
+# 개발 환경
+pnpm prisma migrate dev    # 마이그레이션 적용
+pnpm db:seed               # 전체 시드 (테스트 데이터 포함)
+
+# 운영 환경
+pnpm db:migrate:deploy     # 마이그레이션 배포
+pnpm db:seed:production    # 운영용 시드 (RBAC, 설정, 셀렉터/패턴만)
+
+# 어드민에서 셀렉터 관리
+# /admin/selectors 접속
+```
+
+#### 카테고리별 셀렉터
+
+| 카테고리 | 설명 | 예시 |
+|----------|------|------|
+| `PRICE` | 가격 추출 | `[aria-label*="총액"]` |
+| `AVAILABILITY` | 예약 가능/불가 요소 | `[data-element-value="unavailable"]` |
+| `METADATA` | JSON-LD 등 메타데이터 | `script[type="application/ld+json"]` |
+| `PLATFORM_ID` | 플랫폼 고유 ID | URL 패턴 또는 스크립트 |
+
+#### 패턴 타입
+
+| 타입 | 설명 | 예시 |
+|------|------|------|
+| `AVAILABLE` | 예약 가능 텍스트 | "예약하기", "Reserve" |
+| `UNAVAILABLE` | 예약 불가 텍스트 | "날짜 변경", "not available" |
+
+### v2.10.0 – 처리량 대시보드 및 체크 사이클 메트릭
 
 체크 사이클 기준 처리량을 집계/시각화하는 관리 도구를 추가했습니다.
 

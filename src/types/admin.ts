@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, Platform } from '@/generated/prisma/client';
+import type { AvailabilityStatus, PatternType, Platform, SelectorCategory } from '@/generated/prisma/client';
 
 export interface WorkerHealthInfo {
   status: 'healthy' | 'degraded' | 'down';
@@ -156,4 +156,104 @@ export interface ThroughputComparisonGroup {
 export interface ThroughputComparisonResponse {
   compareBy: string;
   groups: ThroughputComparisonGroup[];
+}
+
+// ── Platform Selector Management ──
+
+export interface PlatformSelectorItem {
+  id: string;
+  platform: Platform;
+  category: SelectorCategory;
+  name: string;
+  selector: string;
+  extractorCode: string | null;
+  priority: number;
+  isActive: boolean;
+  description: string | null;
+  createdBy: { id: string; name: string | null } | null;
+  updatedBy: { id: string; name: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformSelectorsResponse {
+  selectors: PlatformSelectorItem[];
+  total: number;
+}
+
+export interface CreateSelectorPayload {
+  platform: Platform;
+  category: SelectorCategory;
+  name: string;
+  selector: string;
+  extractorCode?: string;
+  priority?: number;
+  description?: string;
+}
+
+export interface UpdateSelectorPayload {
+  selector?: string;
+  extractorCode?: string | null;
+  priority?: number;
+  isActive?: boolean;
+  description?: string | null;
+}
+
+export interface PlatformPatternItem {
+  id: string;
+  platform: Platform;
+  patternType: PatternType;
+  pattern: string;
+  locale: string;
+  isActive: boolean;
+  priority: number;
+  createdBy: { id: string; name: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformPatternsResponse {
+  patterns: PlatformPatternItem[];
+  total: number;
+}
+
+export interface CreatePatternPayload {
+  platform: Platform;
+  patternType: PatternType;
+  pattern: string;
+  locale?: string;
+  priority?: number;
+}
+
+export interface UpdatePatternPayload {
+  pattern?: string;
+  isActive?: boolean;
+  priority?: number;
+  locale?: string;
+}
+
+export interface SelectorChangeLogEntry {
+  id: string;
+  entityType: 'PlatformSelector' | 'PlatformPattern';
+  entityId: string;
+  action: 'create' | 'update' | 'delete' | 'toggle';
+  field: string | null;
+  oldValue: string | null;
+  newValue: string | null;
+  changedBy: { id: string; name: string | null };
+  createdAt: string;
+}
+
+export interface SelectorChangeLogsResponse {
+  logs: SelectorChangeLogEntry[];
+  nextCursor: string | null;
+}
+
+export interface SelectorChangeLogsFilter {
+  entityType?: 'PlatformSelector' | 'PlatformPattern';
+  entityId?: string;
+  from?: string;
+  to?: string;
+  cursor?: string;
+  limit?: number;
 }

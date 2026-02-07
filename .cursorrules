@@ -1,0 +1,9 @@
+You are working in a repository with strict coding rules.
+
+Before making any code changes:
+1. Read RULES_SUMMARY.md.
+2. Follow rules.md strictly.
+3. If there is a conflict, rules.md always wins.
+4. If unsure, STOP and ASK.
+
+Violating these rules is not allowed.

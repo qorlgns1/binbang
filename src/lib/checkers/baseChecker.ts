@@ -1,7 +1,7 @@
 import type { Browser, Page } from 'puppeteer';
 
 import { getSettings } from '@/lib/settings';
-import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+import type { AccommodationMetadata, AccommodationToCheck, CheckResult, TestableElement } from '@/types/checker';
 
 import { setupPage } from './browser';
 import { acquireBrowser, releaseBrowser } from './browserPool';
@@ -13,10 +13,30 @@ interface PlatformPatterns {
   unavailable: string[];
 }
 
+export interface ExtractResult {
+  matched: boolean;
+  available: boolean;
+  price: string | null;
+  reason: string | null;
+  metadata?: AccommodationMetadata; // JSON-LD에서 추출한 메타데이터
+  matchedSelectors?: { category: string; name: string; matched: boolean }[];
+  matchedPatterns?: { type: string; pattern: string; matched: boolean }[];
+}
+
+// Page context에서 실행되는 추출 함수 타입
+export type CustomExtractorFn = () => ExtractResult;
+
 interface CheckerConfig {
   patterns: PlatformPatterns;
   buildUrl: (accommodation: AccommodationToCheck) => string;
   scrollDistance?: number;
+  availableSelector?: string;
+  unavailableSelector?: string;
+  priceSelector?: string;
+  // data-* 속성 기반 추출을 위한 커스텀 추출기 (문자열로 전달하여 page.evaluate에서 실행)
+  customExtractor?: string;
+  // 테스트 모드에서 추출할 속성명 목록 (예: ['data-testid', 'data-selenium'])
+  testableAttributes?: string[];
 }
 
 export async function baseCheck(accommodation: AccommodationToCheck, config: CheckerConfig): Promise<CheckResult> {
@@ -68,9 +88,88 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
       const evaluatePatterns = async () => {
         if (!page) throw new Error('Page is not initialized');
         return page.evaluate(
-          (patterns, priceRegex) => {
-            const bodyText = document.body.innerText || '';
+          async (patterns, priceRegex, availableSelector, unavailableSelector, priceSelector, customExtractorCode) => {
+            // 0. 커스텀 추출기가 있으면 먼저 시도
+            if (customExtractorCode) {
+              try {
+                const extractorFn = new Function(`return (${customExtractorCode})()`) as () => {
+                  matched: boolean;
+                  available: boolean;
+                  price: string | null;
+                  reason: string | null;
+                  metadata?: Record<string, unknown>;
+                  matchedSelectors?: { category: string; name: string; matched: boolean }[];
+                  matchedPatterns?: { type: string; pattern: string; matched: boolean }[];
+                };
+                const customResult = extractorFn();
+                if (customResult.matched) {
+                  return customResult;
+                }
+                // matched가 false여도 metadata, matchedSelectors, matchedPatterns는 전달
+                if (customResult.metadata || customResult.matchedSelectors || customResult.matchedPatterns) {
+                  return { ...customResult, matched: false };
+                }
+              } catch (e) {
+                console.warn('Custom extractor failed:', e);
+                // 실패해도 기존 패턴으로 fallback
+              }
+            }
 
+            const bodyText = document.body.innerText || ''; // Fallback body text
+
+            const getTextFromSelector = async (selector: string | undefined) => {
+              if (!selector) return null;
+              const element = document.querySelector(selector);
+              return element ? (element as HTMLElement).innerText : null;
+            };
+
+            // 1. Try selector-based unavailable check
+            if (unavailableSelector) {
+              const unavailableText = await getTextFromSelector(unavailableSelector);
+              if (unavailableText) {
+                for (const pattern of patterns.unavailable) {
+                  if (unavailableText.includes(pattern)) {
+                    return {
+                      matched: true,
+                      available: false,
+                      reason: pattern,
+                      price: null,
+                    };
+                  }
+                }
+              }
+            }
+
+            // 2. Try selector-based available check
+            if (availableSelector) {
+              const availableText = await getTextFromSelector(availableSelector);
+              if (availableText) {
+                for (const pattern of patterns.available) {
+                  if (availableText.includes(pattern)) {
+                    let price: string | null = null;
+                    if (priceSelector) {
+                      const priceElement = document.querySelector(priceSelector);
+                      if (priceElement) {
+                        const priceMatch = (priceElement as HTMLElement).innerText.match(new RegExp(priceRegex));
+                        price = priceMatch ? priceMatch[0] : '가격 확인 필요';
+                      }
+                    } else {
+                      // Fallback to bodyText for price if no specific selector
+                      const priceMatch = bodyText.match(new RegExp(priceRegex));
+                      price = priceMatch ? priceMatch[0] : '가격 확인 필요';
+                    }
+                    return {
+                      matched: true,
+                      available: true,
+                      price: price,
+                      reason: null,
+                    };
+                  }
+                }
+              }
+            }
+
+            // 3. Fallback to bodyText checks if no selector-based match
             // 1. 예약 불가 패턴 확인
             for (const pattern of patterns.unavailable) {
               if (bodyText.includes(pattern)) {
@@ -100,6 +199,10 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
           },
           config.patterns,
           PRICE_PATTERN.source,
+          config.availableSelector,
+          config.unavailableSelector,
+          config.priceSelector,
+          config.customExtractor,
         );
       };
 
@@ -110,6 +213,36 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
         result = await evaluatePatterns();
       }
 
+      // 테스트 모드일 때 testable elements 추출
+      let testableElements: TestableElement[] | undefined;
+      if (config.testableAttributes && config.testableAttributes.length > 0 && page) {
+        testableElements = await page.evaluate((attributes) => {
+          const elements: {
+            attribute: string;
+            value: string;
+            tagName: string;
+            text: string;
+            html: string;
+          }[] = [];
+
+          for (const attr of attributes) {
+            const els = document.querySelectorAll(`[${attr}]`);
+            for (const el of els) {
+              const htmlEl = el as HTMLElement;
+              elements.push({
+                attribute: attr,
+                value: el.getAttribute(attr) || '',
+                tagName: el.tagName.toLowerCase(),
+                text: htmlEl.innerText || '',
+                html: el.outerHTML,
+              });
+            }
+          }
+
+          return elements;
+        }, config.testableAttributes);
+      }
+
       if (!result.matched) {
         return {
           available: false,
@@ -117,6 +250,10 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
           checkUrl,
           error: '패턴 미탐지',
           retryCount: attempt,
+          metadata: result.metadata, // 패턴 미탐지여도 메타데이터는 저장
+          matchedSelectors: result.matchedSelectors,
+          matchedPatterns: result.matchedPatterns,
+          testableElements,
         };
       }
 
@@ -126,6 +263,10 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
         checkUrl,
         error: null,
         retryCount: attempt,
+        metadata: result.metadata,
+        matchedSelectors: result.matchedSelectors,
+        matchedPatterns: result.matchedPatterns,
+        testableElements,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

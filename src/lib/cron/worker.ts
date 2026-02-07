@@ -2,12 +2,19 @@
 // ============================================
 // Worker Control HTTP Server
 // ============================================
+import 'dotenv/config';
+// 반드시 첫 번째 import
+
 import { createServer } from 'http';
 import cron from 'node-cron';
 
+import { checkAgoda } from '@/lib/checkers/agoda';
+import { checkAirbnb } from '@/lib/checkers/airbnb';
 import { closeBrowserPool, initBrowserPool } from '@/lib/checkers/browserPool';
 import { recordHeartbeatHistory, startHeartbeatMonitoring, updateHeartbeat } from '@/lib/heartbeat';
 import prisma from '@/lib/prisma';
+import { invalidateSelectorCache, loadPlatformSelectors } from '@/lib/selectors';
+import { getSettings } from '@/lib/settings';
 
 import { getCronConfig, initCronConfig, logConfig } from './config';
 import { checkAllAccommodations, isProcessing } from './processor';
@@ -142,6 +149,118 @@ const server = createServer((req, res) => {
         isProcessing: isProcessing(),
       }),
     );
+    return;
+  }
+
+  // 셀렉터 캐시 무효화 엔드포인트
+  if (req.url === '/cache/invalidate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+    req.on('end', async () => {
+      try {
+        const { platform } = body ? JSON.parse(body) : {};
+
+        console.log(`🔄 셀렉터 캐시 무효화 요청: ${platform || '전체'}`);
+
+        // 캐시 무효화
+        const invalidated = invalidateSelectorCache(platform);
+
+        // 즉시 DB에서 다시 로드
+        if (platform) {
+          await loadPlatformSelectors(platform, true);
+        } else {
+          await Promise.all([loadPlatformSelectors('AIRBNB', true), loadPlatformSelectors('AGODA', true)]);
+        }
+
+        console.log(`✅ 캐시 무효화 완료: ${invalidated.join(', ') || '없음'}`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: true,
+            invalidated,
+            reloaded: platform ? [platform] : ['AIRBNB', 'AGODA'],
+          }),
+        );
+      } catch (error) {
+        console.error('캐시 무효화 실패:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }),
+        );
+      }
+    });
+    return;
+  }
+
+  // 셀렉터 테스트 엔드포인트
+  if (req.url === '/test' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+    req.on('end', async () => {
+      try {
+        const { url, platform, checkIn, checkOut, adults } = JSON.parse(body);
+
+        if (!url || !platform) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'url and platform are required' }));
+          return;
+        }
+
+        console.log(`🧪 셀렉터 테스트 요청: ${platform} - ${url}`);
+
+        // 테스트용 가상 숙소 객체 생성
+        const testAccommodation = {
+          id: 'test',
+          name: 'Test Accommodation',
+          url,
+          platform,
+          checkIn: checkIn ? new Date(checkIn) : new Date(),
+          checkOut: checkOut ? new Date(checkOut) : new Date(Date.now() + 86400000),
+          adults: adults || 2,
+          rooms: 1,
+        };
+
+        // 테스트 속성 설정 로드
+        const settings = getSettings();
+        const testableAttributes = settings.selectorTest.testableAttributes;
+
+        // 플랫폼에 따라 체커 호출 (testableAttributes 전달)
+        const checker = platform === 'AIRBNB' ? checkAirbnb : checkAgoda;
+        const result = await checker(testAccommodation, { testableAttributes });
+
+        console.log(`🧪 테스트 결과: ${result.available ? '예약 가능' : '예약 불가'} - ${result.price || 'N/A'}`);
+        console.log(`🧪 추출된 testable 요소: ${result.testableElements?.length ?? 0}개`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            available: result.available,
+            price: result.price,
+            error: result.error,
+            metadata: result.metadata,
+            checkUrl: result.checkUrl,
+            matchedSelectors: result.matchedSelectors || [],
+            matchedPatterns: result.matchedPatterns || [],
+            testableElements: result.testableElements || [],
+          }),
+        );
+      } catch (error) {
+        console.error('🧪 테스트 오류:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }),
+        );
+      }
+    });
     return;
   }
 

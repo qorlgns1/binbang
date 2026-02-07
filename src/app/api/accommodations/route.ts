@@ -4,9 +4,8 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { QuotaKey } from '@/generated/prisma/enums';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { checkUserQuota, createAccommodation, getAccommodationsByUserId } from '@/services/accommodations.service';
 
 const createAccommodationSchema = z.object({
   name: z.string().min(1, '이름을 입력해주세요'),
@@ -18,23 +17,20 @@ const createAccommodationSchema = z.object({
 });
 
 // GET: 숙소 목록 조회
-export async function GET() {
+export async function GET(): Promise<Response> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const accommodations = await prisma.accommodation.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: 'desc' },
-  });
+  const accommodations = await getAccommodationsByUserId(session.user.id);
 
   return NextResponse.json(accommodations);
 }
 
 // POST: 숙소 생성
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -43,30 +39,14 @@ export async function POST(request: NextRequest) {
 
   try {
     // Quota 체크
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        plan: {
-          select: {
-            quotas: {
-              where: { key: QuotaKey.MAX_ACCOMMODATIONS },
-              select: { value: true },
-            },
-          },
-        },
-        _count: { select: { accommodations: true } },
-      },
-    });
+    const quota = await checkUserQuota(session.user.id);
 
-    const maxAccommodations = user?.plan?.quotas[0]?.value ?? 5;
-    const currentCount = user?._count.accommodations ?? 0;
-
-    if (currentCount >= maxAccommodations) {
+    if (!quota.allowed) {
       return NextResponse.json(
         {
           error: 'quota_exceeded',
-          message: `숙소 등록 한도(${maxAccommodations}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
-          quota: { max: maxAccommodations, current: currentCount },
+          message: `숙소 등록 한도(${quota.max}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
+          quota: { max: quota.max, current: quota.current },
         },
         { status: 403 },
       );
@@ -83,16 +63,14 @@ export async function POST(request: NextRequest) {
       platform = 'AGODA';
     }
 
-    const accommodation = await prisma.accommodation.create({
-      data: {
-        userId: session.user.id,
-        name: data.name,
-        platform,
-        url: data.url,
-        checkIn: new Date(data.checkIn),
-        checkOut: new Date(data.checkOut),
-        adults: data.adults,
-      },
+    const accommodation = await createAccommodation({
+      userId: session.user.id,
+      name: data.name,
+      platform,
+      url: data.url,
+      checkIn: new Date(data.checkIn),
+      checkOut: new Date(data.checkOut),
+      adults: data.adults,
     });
 
     return NextResponse.json(accommodation, { status: 201 });

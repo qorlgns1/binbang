@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import prisma from '@/lib/prisma';
+import { getUserDetail } from '@/services/admin/users.service';
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -12,35 +12,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   try {
     const { id } = await params;
 
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        createdAt: true,
-        roles: { select: { name: true } },
-        plan: { select: { name: true } },
-        _count: {
-          select: { accommodations: true },
-        },
-      },
-    });
+    const result = await getUserDetail(id);
 
-    if (!user) {
+    if (!result) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다' }, { status: 404 });
     }
 
     return NextResponse.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      createdAt: user.createdAt.toISOString(),
-      roles: user.roles.map((r) => r.name),
-      planName: user.plan?.name ?? null,
-      _count: user._count,
+      id: result.user.id,
+      name: result.user.name,
+      email: result.user.email,
+      image: result.user.image,
+      createdAt: result.user.createdAt,
+      roles: result.user.roles.map((r) => r.name),
+      planName: result.user.plan?.name ?? null,
+      _count: result.user._count,
     });
   } catch (error) {
     console.error('Admin user detail fetch error:', error);

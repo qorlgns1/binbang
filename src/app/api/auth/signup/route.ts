@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
-import { hash } from 'bcryptjs';
 import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
+import { checkEmailExists, createUserWithCredentials } from '@/services/auth.service';
 
 const signupSchema = z.object({
   email: z.string().email('유효한 이메일을 입력해주세요'),
@@ -11,7 +10,7 @@ const signupSchema = z.object({
   name: z.string().min(1, '이름을 입력해주세요'),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   try {
     const body = await request.json();
     const parsed = signupSchema.safeParse(body);
@@ -22,21 +21,12 @@ export async function POST(request: Request) {
 
     const { email, password, name } = parsed.data;
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const exists = await checkEmailExists(email);
+    if (exists) {
       return NextResponse.json({ error: '이미 사용 중인 이메일입니다' }, { status: 409 });
     }
 
-    const hashedPassword = await hash(password, 12);
-
-    await prisma.user.create({
-      data: {
-        email,
-        name,
-        password: hashedPassword,
-        emailVerified: new Date(),
-      },
-    });
+    await createUserWithCredentials({ email, password, name });
 
     return NextResponse.json({ message: '회원가입이 완료되었습니다' }, { status: 201 });
   } catch {

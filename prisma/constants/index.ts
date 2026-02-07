@@ -1,4 +1,4 @@
-import { AvailabilityStatus, Platform } from '@/generated/prisma/enums';
+import { AvailabilityStatus, PatternType, Platform, SelectorCategory } from '@/generated/prisma/enums';
 import { parseAccommodationUrl } from '@/lib/url-parser';
 
 /**
@@ -606,5 +606,286 @@ export const SYSTEM_SETTINGS = [
     category: 'heartbeat',
     description: '워커가 한 작업을 처리하는 최대 허용 시간 (초과 시 "처리 지연" 알림)',
   },
+
+  // ── 셀렉터 테스트 ──
+  {
+    key: 'selectorTest.testableAttributes',
+    value: JSON.stringify(['data-testid', 'data-test-id', 'data-selenium', 'data-element-name']),
+    type: 'json',
+    category: 'selectorTest',
+    description: '테스트 시 추출할 요소의 속성명 (개발자가 테스트용으로 추가한 속성)',
+  },
 ];
+
+// ============================================
+// Platform Selectors
+// ============================================
+
+export interface SeedPlatformSelector {
+  platform: Platform;
+  category: SelectorCategory;
+  name: string;
+  selector: string;
+  extractorCode?: string;
+  priority: number;
+  description?: string;
+}
+
+export interface SeedPlatformPattern {
+  platform: Platform;
+  patternType: PatternType;
+  pattern: string;
+  locale: string;
+  priority: number;
+}
+
+export const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
+  // 가격 추출
+  {
+    platform: Platform.AIRBNB,
+    category: SelectorCategory.PRICE,
+    name: 'Total Price Aria Label',
+    selector: '[aria-label*="총액"]',
+    extractorCode: `
+      const label = el.getAttribute('aria-label') || '';
+      const match = label.match(/총액[^₩$€£]*([₩$€£][\\s]*[\\d,]+)/);
+      return match ? match[1].replace(/\\s/g, '').replace(/,$/g, '') : null;
+    `,
+    priority: 10,
+    description: 'aria-label에서 총액 추출',
+  },
+  {
+    platform: Platform.AIRBNB,
+    category: SelectorCategory.PRICE,
+    name: 'Book It Default',
+    selector: '[data-testid="book-it-default"]',
+    extractorCode: `
+      const text = el.innerText || '';
+      const match = text.match(/[₩$€£][\\s]*[\\d,]+/);
+      return match ? match[0].replace(/\\s/g, '').replace(/,$/g, '') : null;
+    `,
+    priority: 5,
+    description: '예약 위젯에서 가격 추출',
+  },
+  // 메타데이터
+  {
+    platform: Platform.AIRBNB,
+    category: SelectorCategory.METADATA,
+    name: 'JSON-LD VacationRental',
+    selector: 'script[type="application/ld+json"]',
+    extractorCode: `
+      const jsonLd = JSON.parse(el.textContent || '{}');
+      if (jsonLd['@type'] === 'VacationRental' || jsonLd['@type'] === 'Product') {
+        return {
+          name: jsonLd.name,
+          image: Array.isArray(jsonLd.image) ? jsonLd.image[0] : jsonLd.image,
+          description: jsonLd.description?.slice(0, 2000),
+          latitude: jsonLd.latitude,
+          longitude: jsonLd.longitude,
+          ratingValue: jsonLd.aggregateRating?.ratingValue,
+          reviewCount: parseInt(jsonLd.aggregateRating?.ratingCount) || undefined,
+        };
+      }
+      return null;
+    `,
+    priority: 10,
+    description: 'JSON-LD에서 숙소 메타데이터 추출',
+  },
+  // 플랫폼 ID
+  {
+    platform: Platform.AIRBNB,
+    category: SelectorCategory.PLATFORM_ID,
+    name: 'Room ID from URL',
+    selector: 'window.location.pathname',
+    extractorCode: `
+      const match = window.location.pathname.match(/\\/rooms\\/([0-9]+)/);
+      return match ? match[1] : null;
+    `,
+    priority: 10,
+    description: 'URL에서 room ID 추출',
+  },
+];
+
+export const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
+  // 가격 추출
+  {
+    platform: Platform.AGODA,
+    category: SelectorCategory.PRICE,
+    name: 'Price After Tax',
+    selector: '[data-testid="price-after-tax"]',
+    extractorCode: `
+      const text = el.innerText || '';
+      const match = text.match(/[₩$€£][\\s]*[\\d,]+/);
+      return match ? match[0].replace(/\\s/g, '') : null;
+    `,
+    priority: 10,
+    description: '세금 포함 가격 추출',
+  },
+  {
+    platform: Platform.AGODA,
+    category: SelectorCategory.PRICE,
+    name: 'FPC Room Price',
+    selector: '[data-element-name="fpc-room-price"]',
+    extractorCode: `
+      const text = el.innerText || '';
+      const match = text.match(/[₩$€£][\\s]*[\\d,]+/);
+      return match ? match[0].replace(/\\s/g, '') : null;
+    `,
+    priority: 5,
+    description: '세금 전 가격 추출 (fallback)',
+  },
+  // 가용성
+  {
+    platform: Platform.AGODA,
+    category: SelectorCategory.AVAILABILITY,
+    name: 'Available Element',
+    selector: '[data-element-value="available"]',
+    priority: 10,
+    description: '예약 가능 표시 요소',
+  },
+  {
+    platform: Platform.AGODA,
+    category: SelectorCategory.AVAILABILITY,
+    name: 'Unavailable Element',
+    selector: '[data-element-value="unavailable"]',
+    priority: 10,
+    description: '예약 불가 표시 요소',
+  },
+  // 메타데이터
+  {
+    platform: Platform.AGODA,
+    category: SelectorCategory.METADATA,
+    name: 'JSON-LD Hotel',
+    selector: 'script[type="application/ld+json"]',
+    extractorCode: `
+      const jsonLd = JSON.parse(el.textContent || '{}');
+      if (jsonLd['@type'] === 'Hotel') {
+        let latitude, longitude;
+        if (jsonLd.hasMap) {
+          const coordMatch = jsonLd.hasMap.match(/center=([\\d.-]+)%2c([\\d.-]+)/);
+          if (coordMatch) {
+            latitude = parseFloat(coordMatch[1]);
+            longitude = parseFloat(coordMatch[2]);
+          }
+        }
+        return {
+          name: jsonLd.name,
+          image: jsonLd.image,
+          description: jsonLd.description?.slice(0, 2000),
+          addressCountry: jsonLd.address?.addressCountry,
+          addressRegion: jsonLd.address?.addressRegion,
+          addressLocality: jsonLd.address?.addressLocality,
+          postalCode: jsonLd.address?.postalCode,
+          streetAddress: jsonLd.address?.streetAddress,
+          ratingValue: jsonLd.aggregateRating?.ratingValue,
+          reviewCount: jsonLd.aggregateRating?.reviewCount,
+          latitude,
+          longitude,
+        };
+      }
+      return null;
+    `,
+    priority: 10,
+    description: 'JSON-LD에서 호텔 메타데이터 추출',
+  },
+  // 플랫폼 ID
+  {
+    platform: Platform.AGODA,
+    category: SelectorCategory.PLATFORM_ID,
+    name: 'Hotel ID from Scripts',
+    selector: 'script',
+    extractorCode: `
+      for (const script of document.querySelectorAll('script')) {
+        const text = script.textContent || '';
+        const hotelIdMatch = text.match(/hotelId[:\\s]*([0-9]+)/);
+        if (hotelIdMatch) return hotelIdMatch[1];
+        const propertyIdMatch = text.match(/propertyId[:\\s]*([0-9]+)/);
+        if (propertyIdMatch) return propertyIdMatch[1];
+      }
+      return null;
+    `,
+    priority: 10,
+    description: '페이지 스크립트에서 호텔 ID 추출',
+  },
+];
+
+export const SEED_PLATFORM_SELECTORS: SeedPlatformSelector[] = [...SEED_AIRBNB_SELECTORS, ...SEED_AGODA_SELECTORS];
+
+export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
+  // 예약 가능
+  { platform: Platform.AIRBNB, patternType: PatternType.AVAILABLE, pattern: '예약하기', locale: 'ko', priority: 10 },
+  { platform: Platform.AIRBNB, patternType: PatternType.AVAILABLE, pattern: 'Reserve', locale: 'en', priority: 5 },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.AVAILABLE,
+    pattern: '예약 확정 전에는 요금이 청구되지 않습니다',
+    locale: 'ko',
+    priority: 3,
+  },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.AVAILABLE,
+    pattern: "You won't be charged yet",
+    locale: 'en',
+    priority: 3,
+  },
+  // 예약 불가
+  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: '날짜 변경', locale: 'ko', priority: 10 },
+  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: 'Change dates', locale: 'en', priority: 5 },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: '선택하신 날짜는 이용이 불가능합니다',
+    locale: 'ko',
+    priority: 8,
+  },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: 'Those dates are not available',
+    locale: 'en',
+    priority: 5,
+  },
+  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: '이용이 불가능', locale: 'ko', priority: 7 },
+  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: 'not available', locale: 'en', priority: 3 },
+];
+
+export const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
+  // 예약 가능
+  { platform: Platform.AGODA, patternType: PatternType.AVAILABLE, pattern: '지금 예약하기', locale: 'ko', priority: 10 },
+  { platform: Platform.AGODA, patternType: PatternType.AVAILABLE, pattern: 'Book now', locale: 'en', priority: 5 },
+  { platform: Platform.AGODA, patternType: PatternType.AVAILABLE, pattern: '예약 무료 취소 가능', locale: 'ko', priority: 5 },
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.AVAILABLE,
+    pattern: 'Covered by EasyCancel',
+    locale: 'en',
+    priority: 3,
+  },
+  // 예약 불가
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: '죄송합니다. 고객님이 선택한 날짜에 이 숙소의 본 사이트 잔여 객실이 없습니다',
+    locale: 'ko',
+    priority: 10,
+  },
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: 'Sorry, we have no rooms at this property on your dates',
+    locale: 'en',
+    priority: 5,
+  },
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: '날짜를 변경해 이 숙소 재검색하기',
+    locale: 'ko',
+    priority: 8,
+  },
+  { platform: Platform.AGODA, patternType: PatternType.UNAVAILABLE, pattern: 'Change your dates', locale: 'en', priority: 5 },
+];
+
+export const SEED_PLATFORM_PATTERNS: SeedPlatformPattern[] = [...SEED_AIRBNB_PATTERNS, ...SEED_AGODA_PATTERNS];
 

@@ -6,6 +6,7 @@ import { notifyAvailable } from '@/lib/kakao/message';
 import prisma from '@/lib/prisma';
 import { getSettings, loadSettings } from '@/lib/settings';
 import type { AccommodationWithUser } from '@/types/accommodation';
+import type { AccommodationMetadata } from '@/types/checker';
 
 import { getCronConfig } from './config';
 import { createLimiter } from './limiter';
@@ -53,7 +54,7 @@ async function processAccommodation(
       previousStatus: accommodation.lastStatus,
     });
     await sendNotificationIfNeeded(accommodation, status, result);
-    await updateAccommodationStatus(accommodation.id, status, result.price);
+    await updateAccommodationStatus(accommodation.id, status, result.price, result.metadata);
 
     console.log(`  ⏱️  완료 (${durationMs}ms)`);
 
@@ -187,18 +188,40 @@ async function updateAccommodationStatus(
   accommodationId: string,
   status: AvailabilityStatus,
   price: string | null,
+  metadata?: AccommodationMetadata,
 ): Promise<void> {
   const parsed = parsePrice(price);
 
+  // 기본 업데이트 데이터
+  const updateData: Record<string, unknown> = {
+    lastCheck: new Date(),
+    lastStatus: status,
+    lastPrice: price,
+    lastPriceAmount: parsed?.amount ?? null,
+    lastPriceCurrency: parsed?.currency ?? null,
+  };
+
+  // 메타데이터가 있으면 추가 (첫 체크 시 또는 정보 변경 시)
+  if (metadata && Object.keys(metadata).length > 0) {
+    if (metadata.platformId) updateData.platformId = metadata.platformId;
+    if (metadata.platformName) updateData.platformName = metadata.platformName;
+    if (metadata.platformImage) updateData.platformImage = metadata.platformImage;
+    if (metadata.platformDescription) updateData.platformDescription = metadata.platformDescription;
+    if (metadata.addressCountry) updateData.addressCountry = metadata.addressCountry;
+    if (metadata.addressRegion) updateData.addressRegion = metadata.addressRegion;
+    if (metadata.addressLocality) updateData.addressLocality = metadata.addressLocality;
+    if (metadata.postalCode) updateData.postalCode = metadata.postalCode;
+    if (metadata.streetAddress) updateData.streetAddress = metadata.streetAddress;
+    if (metadata.ratingValue !== undefined) updateData.ratingValue = metadata.ratingValue;
+    if (metadata.reviewCount !== undefined) updateData.reviewCount = metadata.reviewCount;
+    if (metadata.latitude !== undefined) updateData.latitude = metadata.latitude;
+    if (metadata.longitude !== undefined) updateData.longitude = metadata.longitude;
+    if (metadata.rawJsonLd) updateData.platformMetadata = metadata.rawJsonLd;
+  }
+
   await prisma.accommodation.update({
     where: { id: accommodationId },
-    data: {
-      lastCheck: new Date(),
-      lastStatus: status,
-      lastPrice: price,
-      lastPriceAmount: parsed?.amount ?? null,
-      lastPriceCurrency: parsed?.currency ?? null,
-    },
+    data: updateData,
   });
 }
 

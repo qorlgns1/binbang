@@ -3,36 +3,17 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { QuotaKey } from '@/generated/prisma/enums';
 import { requireAdmin } from '@/lib/admin';
-import prisma from '@/lib/prisma';
+import { createAdminPlan, getAdminPlans } from '@/services/admin/plans.service';
 
-export async function GET() {
+export async function GET(): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const plans = await prisma.plan.findMany({
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        interval: true,
-        quotas: {
-          select: {
-            key: true,
-            value: true,
-          },
-        },
-        _count: {
-          select: { users: true },
-        },
-      },
-      orderBy: { price: 'asc' },
-    });
+    const plans = await getAdminPlans();
 
     return NextResponse.json(plans);
   } catch (error) {
@@ -50,7 +31,7 @@ const createPlanSchema = z.object({
   checkIntervalMin: z.number().min(1),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -64,40 +45,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
     }
 
-    const { name, description, price, interval, maxAccommodations, checkIntervalMin } = parsed.data;
-
-    // 이름 중복 체크
-    const existing = await prisma.plan.findUnique({ where: { name } });
-    if (existing) {
-      return NextResponse.json({ error: '이미 존재하는 플랜 이름입니다' }, { status: 400 });
-    }
-
-    const plan = await prisma.plan.create({
-      data: {
-        name,
-        description: description ?? null,
-        price,
-        interval,
-        quotas: {
-          create: [
-            { key: QuotaKey.MAX_ACCOMMODATIONS, value: maxAccommodations },
-            { key: QuotaKey.CHECK_INTERVAL_MIN, value: checkIntervalMin },
-          ],
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        interval: true,
-        quotas: { select: { key: true, value: true } },
-        _count: { select: { users: true } },
-      },
-    });
+    const plan = await createAdminPlan(parsed.data);
 
     return NextResponse.json(plan, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Plan name already exists') {
+      return NextResponse.json({ error: '이미 존재하는 플랜 이름입니다' }, { status: 400 });
+    }
     console.error('Admin plan create error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

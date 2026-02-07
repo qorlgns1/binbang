@@ -3,12 +3,12 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { getAccommodationLogs, verifyAccommodationOwnership } from '@/services/accommodations.service';
 import type { RouteParams } from '@/types/api';
 
 const DEFAULT_LIMIT = 20;
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<Response> {
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
@@ -16,12 +16,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const accommodation = await prisma.accommodation.findFirst({
-    where: { id, userId: session.user.id },
-    select: { id: true },
-  });
+  const isOwner = await verifyAccommodationOwnership(id, session.user.id);
 
-  if (!accommodation) {
+  if (!isOwner) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
@@ -29,19 +26,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const cursor = searchParams.get('cursor') ?? undefined;
   const limit = Math.min(Number(searchParams.get('limit')) || DEFAULT_LIMIT, 50);
 
-  const logs = await prisma.checkLog.findMany({
-    where: { accommodationId: id },
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    ...(cursor && {
-      cursor: { id: cursor },
-      skip: 1,
-    }),
+  const result = await getAccommodationLogs({
+    accommodationId: id,
+    cursor,
+    limit,
   });
 
-  const hasMore = logs.length > limit;
-  const items = hasMore ? logs.slice(0, limit) : logs;
-  const nextCursor = hasMore ? items[items.length - 1].id : null;
-
-  return NextResponse.json({ logs: items, nextCursor });
+  return NextResponse.json({ logs: result.logs, nextCursor: result.nextCursor });
 }

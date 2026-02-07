@@ -63,6 +63,12 @@ model User {
   auditLogsAsTarget  AuditLog[]       @relation("AuditLogTarget")
   subscriptions      Subscription[]
 
+  // Selector 관리
+  createdSelectors     PlatformSelector[]  @relation("SelectorCreatedBy")
+  updatedSelectors     PlatformSelector[]  @relation("SelectorUpdatedBy")
+  createdPatterns      PlatformPattern[]   @relation("PatternCreatedBy")
+  selectorChangeLogs   SelectorChangeLog[] @relation("SelectorChangeLogBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -87,6 +93,7 @@ model Accommodation {
   checkIn   DateTime            // 체크인 날짜
   checkOut  DateTime            // 체크아웃 날짜
   adults    Int      @default(2) // 인원 수
+  rooms     Int      @default(1) // 객실 수
 
   isActive  Boolean  @default(true)  // 모니터링 활성화 여부
   lastCheck DateTime?                // 마지막 체크 시간
@@ -94,6 +101,30 @@ model Accommodation {
   lastPrice         String?           // 마지막 확인된 가격 (raw 문자열)
   lastPriceAmount   Int?              // 파싱된 숫자 (최소 단위: 원/센트)
   lastPriceCurrency String?           // 통화 코드 (KRW, USD, EUR, GBP, CHF)
+
+  // === JSON-LD 메타데이터 (플랫폼에서 추출) ===
+  platformId          String?   // 플랫폼별 고유 ID (Airbnb room ID, Agoda hotel slug)
+  platformName        String?   // 플랫폼에서 가져온 숙소명
+  platformImage       String?   // 대표 이미지 URL
+  platformDescription String?   @db.Text // 숙소 설명 (긴 텍스트)
+
+  // 주소 정보
+  addressCountry      String?   // 국가
+  addressRegion       String?   // 지역 (도/주)
+  addressLocality     String?   // 세부 지역 (구/시)
+  postalCode          String?   // 우편번호
+  streetAddress       String?   // 상세 주소
+
+  // 평점 정보
+  ratingValue         Float?    // 평점 (1-10)
+  reviewCount         Int?      // 리뷰 수
+
+  // 위치 좌표
+  latitude            Float?    // 위도
+  longitude           Float?    // 경도
+
+  // 기타 메타데이터 (전체 JSON-LD 또는 추가 정보)
+  platformMetadata    Json?     // 전체 JSON-LD 데이터
 
   checkLogs CheckLog[]
 
@@ -321,4 +352,78 @@ model Subscription {
   @@index([userId])
   @@index([status])
   @@index([currentPeriodEnd])
+}
+
+// ── Dynamic Selector Management ──
+
+enum SelectorCategory {
+  PRICE        // 가격 추출
+  AVAILABILITY // 예약 가능 여부
+  METADATA     // JSON-LD 메타데이터
+  PLATFORM_ID  // 플랫폼 고유 ID
+}
+
+enum PatternType {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+model PlatformSelector {
+  id            String           @id @default(cuid())
+  platform      Platform
+  category      SelectorCategory
+  name          String           // "Total Price Aria Label"
+  selector      String           // "[aria-label*=\"총액\"]"
+  extractorCode String?          @db.Text // 복잡한 추출 로직 (JavaScript 코드)
+  priority      Int              @default(0)
+  isActive      Boolean          @default(true)
+  description   String?
+
+  createdById String?
+  createdBy   User?    @relation("SelectorCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?    @relation("SelectorUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, category, name])
+  @@index([platform, category, isActive])
+  @@index([platform, isActive, priority])
+}
+
+model PlatformPattern {
+  id          String      @id @default(cuid())
+  platform    Platform
+  patternType PatternType
+  pattern     String      // "예약하기"
+  locale      String      @default("ko")
+  isActive    Boolean     @default(true)
+  priority    Int         @default(0)
+
+  createdById String?
+  createdBy   User?    @relation("PatternCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([platform, patternType, pattern])
+  @@index([platform, patternType, isActive])
+}
+
+model SelectorChangeLog {
+  id          String   @id @default(cuid())
+  entityType  String   // "PlatformSelector" | "PlatformPattern"
+  entityId    String
+  action      String   // "create" | "update" | "delete" | "toggle"
+  field       String?  // 변경된 필드 (update 시)
+  oldValue    String?  @db.Text
+  newValue    String?  @db.Text
+  changedById String
+  changedBy   User     @relation("SelectorChangeLogBy", fields: [changedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([changedById])
+  @@index([createdAt])
 }

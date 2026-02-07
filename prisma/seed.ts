@@ -1,8 +1,16 @@
+/**
+ * 개발 환경용 전체 시드 스크립트
+ *
+ * 운영 시드(seed-production.ts) + 테스트 데이터를 포함합니다:
+ * - Production: RBAC, System Settings, Selectors/Patterns
+ * - Development: 테스트 유저, 숙소, 체크 로그, 하트비트 등
+ *
+ * 실행: pnpm db:seed
+ */
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
 
 import { PrismaClient } from '@/generated/prisma/client';
-import type { QuotaKey } from '@/generated/prisma/enums';
 
 import {
   SEED_ACCOUNTS,
@@ -11,18 +19,14 @@ import {
   SEED_CHECK_LOGS,
   SEED_HEARTBEAT_HISTORY,
   SEED_NOW,
-  SEED_PERMISSIONS,
-  SEED_PLANS,
-  SEED_PLAN_QUOTAS,
-  SEED_ROLES,
   SEED_SESSIONS,
   SEED_SETTINGS_CHANGE_LOGS,
   SEED_USERS,
   SEED_VERIFICATION_TOKENS,
   SEED_WORKER_HEARTBEAT,
-  SYSTEM_SETTINGS,
   type SeedUserKey,
 } from './constants';
+import { seedProduction } from './seed-production';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL ?? '',
@@ -37,64 +41,14 @@ function assertUserIds(ids: Partial<Record<SeedUserKey, string>>): asserts ids i
 }
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Seeding database (full)...\n');
 
-  // ── RBAC: Roles ──
-  for (const role of SEED_ROLES) {
-    await prisma.role.upsert({
-      where: { name: role.name },
-      update: { description: role.description },
-      create: { name: role.name, description: role.description },
-    });
-  }
+  // ── 1. Production 시드 먼저 실행 ──
+  await seedProduction();
+  console.log('');
 
-  // ── RBAC: Permissions ──
-  for (const perm of SEED_PERMISSIONS) {
-    await prisma.permission.upsert({
-      where: { action: perm.action },
-      update: {
-        description: perm.description,
-        roles: { set: perm.roles.map((name) => ({ name })) },
-      },
-      create: {
-        action: perm.action,
-        description: perm.description,
-        roles: { connect: perm.roles.map((name) => ({ name })) },
-      },
-    });
-  }
-
-  // ── RBAC: Plans ──
-  for (const plan of SEED_PLANS) {
-    await prisma.plan.upsert({
-      where: { name: plan.name },
-      update: {
-        description: plan.description,
-        price: plan.price,
-        interval: plan.interval,
-        roles: { set: plan.roles.map((name) => ({ name })) },
-      },
-      create: {
-        name: plan.name,
-        description: plan.description,
-        price: plan.price,
-        interval: plan.interval,
-        roles: { connect: plan.roles.map((name) => ({ name })) },
-      },
-    });
-  }
-
-  // ── RBAC: PlanQuotas ──
-  for (const quota of SEED_PLAN_QUOTAS) {
-    const plan = await prisma.plan.findUnique({ where: { name: quota.planName } });
-    if (!plan) continue;
-
-    await prisma.planQuota.upsert({
-      where: { planId_key: { planId: plan.id, key: quota.key as QuotaKey } },
-      update: { value: quota.value },
-      create: { planId: plan.id, key: quota.key as QuotaKey, value: quota.value },
-    });
-  }
+  // ── 2. 개발용 테스트 데이터 ──
+  console.log('🧪 Seeding development data...');
 
   // ── Users ──
   const freePlan = await prisma.plan.findUnique({ where: { name: 'FREE' } });
@@ -122,9 +76,11 @@ async function main() {
 
     userIdByKey[user.key] = upserted.id;
   }
+  console.log(`   ✓ Users: ${SEED_USERS.length}`);
 
   assertUserIds(userIdByKey);
 
+  // ── Accounts ──
   for (const account of SEED_ACCOUNTS) {
     const userId = userIdByKey[account.userKey];
     await prisma.account.upsert({
@@ -162,7 +118,9 @@ async function main() {
       },
     });
   }
+  console.log(`   ✓ Accounts: ${SEED_ACCOUNTS.length}`);
 
+  // ── Sessions ──
   for (const session of SEED_SESSIONS) {
     const userId = userIdByKey[session.userKey];
     await prisma.session.upsert({
@@ -178,7 +136,9 @@ async function main() {
       },
     });
   }
+  console.log(`   ✓ Sessions: ${SEED_SESSIONS.length}`);
 
+  // ── Verification Tokens ──
   for (const token of SEED_VERIFICATION_TOKENS) {
     await prisma.verificationToken.upsert({
       where: { token: token.token },
@@ -189,7 +149,9 @@ async function main() {
       create: token,
     });
   }
+  console.log(`   ✓ VerificationTokens: ${SEED_VERIFICATION_TOKENS.length}`);
 
+  // ── Accommodations ──
   for (const accommodation of SEED_ACCOMMODATIONS) {
     const userId = userIdByKey[accommodation.userKey];
     await prisma.accommodation.upsert({
@@ -227,7 +189,9 @@ async function main() {
       },
     });
   }
+  console.log(`   ✓ Accommodations: ${SEED_ACCOMMODATIONS.length}`);
 
+  // ── Check Cycles ──
   for (const cycle of SEED_CHECK_CYCLES) {
     await prisma.checkCycle.upsert({
       where: { id: cycle.id },
@@ -261,7 +225,9 @@ async function main() {
       },
     });
   }
+  console.log(`   ✓ CheckCycles: ${SEED_CHECK_CYCLES.length}`);
 
+  // ── Check Logs ──
   for (const log of SEED_CHECK_LOGS) {
     const userId = userIdByKey[log.userKey];
     await prisma.checkLog.upsert({
@@ -304,7 +270,9 @@ async function main() {
       },
     });
   }
+  console.log(`   ✓ CheckLogs: ${SEED_CHECK_LOGS.length}`);
 
+  // ── Worker Heartbeat ──
   await prisma.workerHeartbeat.upsert({
     where: { id: SEED_WORKER_HEARTBEAT.id },
     update: {
@@ -318,12 +286,16 @@ async function main() {
     },
     create: SEED_WORKER_HEARTBEAT,
   });
+  console.log(`   ✓ WorkerHeartbeat: 1`);
 
+  // ── Heartbeat History ──
   await prisma.heartbeatHistory.createMany({
     data: SEED_HEARTBEAT_HISTORY,
     skipDuplicates: true,
   });
+  console.log(`   ✓ HeartbeatHistory: ${SEED_HEARTBEAT_HISTORY.length}`);
 
+  // ── Settings Change Logs ──
   for (const change of SEED_SETTINGS_CHANGE_LOGS) {
     const changedById = userIdByKey[change.changedByKey];
     await prisma.settingsChangeLog.upsert({
@@ -344,21 +316,9 @@ async function main() {
       },
     });
   }
+  console.log(`   ✓ SettingsChangeLogs: ${SEED_SETTINGS_CHANGE_LOGS.length}`);
 
-  for (const setting of SYSTEM_SETTINGS) {
-    await prisma.systemSettings.upsert({
-      where: { key: setting.key },
-      update: {
-        value: setting.value,
-        type: setting.type,
-        category: setting.category,
-        description: setting.description,
-      },
-      create: setting,
-    });
-  }
-
-  console.log('✅ Seeding completed!');
+  console.log('\n✅ Full seeding completed!');
 }
 
 main()

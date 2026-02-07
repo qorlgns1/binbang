@@ -1,6 +1,6 @@
 {
   "name": "accommodation-monitor",
-  "version": "2.9.0",
+  "version": "2.11.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
@@ -21,6 +21,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:production": "tsx prisma/seed-production.ts",
     "db:studio": "prisma studio",
     "local:docker": "docker compose -f docker-compose.local.yml"
   },

@@ -1,21 +1,17 @@
 import { NextResponse } from 'next/server';
 
-import { compare } from 'bcryptjs';
-import { randomUUID } from 'crypto';
 import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
+import { createSessionForUser, verifyCredentials } from '@/services/auth.service';
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
-const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30일
-
 const ERROR_MSG = '이메일 또는 비밀번호가 올바르지 않습니다';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   try {
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);
@@ -26,28 +22,13 @@ export async function POST(request: Request) {
 
     const { email, password } = parsed.data;
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user?.password) {
+    const user = await verifyCredentials({ email, password });
+    if (!user) {
       return NextResponse.json({ error: ERROR_MSG }, { status: 401 });
     }
 
-    const valid = await compare(password, user.password);
-    if (!valid) {
-      return NextResponse.json({ error: ERROR_MSG }, { status: 401 });
-    }
+    const { sessionToken, expires } = await createSessionForUser(user.id);
 
-    const sessionToken = randomUUID();
-    const expires = new Date(Date.now() + SESSION_MAX_AGE_MS);
-
-    await prisma.session.create({
-      data: {
-        sessionToken,
-        userId: user.id,
-        expires,
-      },
-    });
-
-    // NextAuth v4: production(https)에서는 __Secure- prefix 사용
     const isSecure = process.env.NEXTAUTH_URL?.startsWith('https') ?? false;
     const cookieName = isSecure ? '__Secure-next-auth.session-token' : 'next-auth.session-token';
 
