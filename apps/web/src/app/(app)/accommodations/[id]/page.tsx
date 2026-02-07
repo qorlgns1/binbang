@@ -2,6 +2,8 @@ import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { ArrowLeft, Calendar, ExternalLink, Users } from 'lucide-react';
+
 import { LocalDateTime } from '@/components/LocalDateTime';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,13 +30,11 @@ const statusText: Record<string, string> = {
   UNKNOWN: '확인 중',
 };
 
-export default async function AccommodationDetailPage({ params }: PageParams) {
+export default async function AccommodationDetailPage({ params }: PageParams): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
-  if (!session?.user?.id) {
-    redirect('/login');
-  }
+  if (!session?.user?.id) redirect('/login');
 
   const accommodation = await prisma.accommodation.findFirst({
     where: {
@@ -43,89 +43,121 @@ export default async function AccommodationDetailPage({ params }: PageParams) {
     },
   });
 
-  if (!accommodation) {
-    notFound();
-  }
+  if (!accommodation) notFound();
 
   return (
-    <main className='max-w-4xl mx-auto px-4 py-8'>
+    <main className='mx-auto max-w-4xl px-4 py-8'>
+      {/* 뒤로 가기 */}
       <div className='mb-6'>
-        <Link
-          href='/dashboard'
-          className='text-sm text-muted-foreground hover:text-foreground'
+        <Button
+          asChild
+          variant='ghost'
+          size='sm'
+          className='gap-2 px-0 text-muted-foreground hover:text-foreground'
         >
-          ← 대시보드로 돌아가기
-        </Link>
+          <Link href='/dashboard'>
+            <ArrowLeft className='size-4' />
+            대시보드로 돌아가기
+          </Link>
+        </Button>
       </div>
-      {/* 숙소 정보 카드 */}
-      <Card className='mb-8 gap-6'>
-        <CardHeader className='flex flex-row items-start justify-between gap-6 space-y-0'>
-          <div>
-            <div className='flex items-center gap-3 mb-2'>
-              <CardTitle className='text-2xl'>{accommodation.name}</CardTitle>
-              <Badge className={statusColors[accommodation.lastStatus] ?? statusColors.UNKNOWN}>
-                {statusText[accommodation.lastStatus] ?? statusText.UNKNOWN}
-              </Badge>
-            </div>
-            <p className='text-muted-foreground'>{accommodation.platform}</p>
-          </div>
-          <div>
-            <div className='flex gap-2'>
-              <Button
-                asChild
-                variant='outline'
-              >
-                <Link href={`/accommodations/${accommodation.id}/edit`}>수정</Link>
-              </Button>
-              <ToggleActiveButton
-                id={accommodation.id}
-                isActive={accommodation.isActive}
-              />
-              <DeleteButton id={accommodation.id} />
-            </div>
-          </div>
-        </CardHeader>
 
-        <CardContent>
-          <div className='grid grid-cols-2 gap-6'>
-            <div>
-              <h3 className='text-sm text-muted-foreground mb-1'>URL</h3>
-              <a
-                href={accommodation.url}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-primary hover:underline break-all'
-              >
-                {accommodation.url}
-              </a>
+      {/* 히어로 섹션 */}
+      <div className='mb-8'>
+        <div className='mb-4 flex flex-wrap items-center gap-3'>
+          <h1 className='text-3xl font-semibold text-foreground'>{accommodation.name}</h1>
+          <Badge className={statusColors[accommodation.lastStatus] ?? statusColors.UNKNOWN}>
+            {statusText[accommodation.lastStatus] ?? statusText.UNKNOWN}
+          </Badge>
+          {!accommodation.isActive && (
+            <Badge
+              variant='secondary'
+              className='border-border'
+            >
+              일시정지
+            </Badge>
+          )}
+        </div>
+        <p className='text-muted-foreground'>{accommodation.platform}</p>
+      </div>
+
+      {/* 액션 버튼 그룹 */}
+      <div className='mb-8 flex flex-wrap gap-3'>
+        <Button
+          asChild
+          className='bg-primary text-primary-foreground hover:bg-primary/90'
+        >
+          <Link href={`/accommodations/${accommodation.id}/edit`}>수정</Link>
+        </Button>
+        <ToggleActiveButton
+          id={accommodation.id}
+          isActive={accommodation.isActive}
+        />
+        <DeleteButton id={accommodation.id} />
+      </div>
+
+      {/* 숙소 정보 카드 */}
+      <Card className='mb-8 border-border/80 bg-card/90 shadow-sm backdrop-blur'>
+        <CardHeader>
+          <CardTitle>숙소 정보</CardTitle>
+        </CardHeader>
+        <CardContent className='grid gap-6 sm:grid-cols-2'>
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <ExternalLink className='size-4' />
+              <span>URL</span>
             </div>
-            <div>
-              <h3 className='text-sm text-muted-foreground mb-1'>인원</h3>
-              <p>{accommodation.adults}명</p>
-            </div>
-            <div>
-              <h3 className='text-sm text-muted-foreground mb-1'>체크인</h3>
-              <p>{accommodation.checkIn.toISOString().split('T')[0]}</p>
-            </div>
-            <div>
-              <h3 className='text-sm text-muted-foreground mb-1'>체크아웃</h3>
-              <p>{accommodation.checkOut.toISOString().split('T')[0]}</p>
-            </div>
-            {accommodation.lastPrice && (
-              <div>
-                <h3 className='text-sm text-muted-foreground mb-1'>마지막 확인 가격</h3>
-                <p className='text-lg font-semibold'>{accommodation.lastPrice}</p>
-              </div>
-            )}
-            {accommodation.lastCheck && (
-              <div>
-                <h3 className='text-sm text-muted-foreground mb-1'>마지막 체크</h3>
-                <p>
-                  <LocalDateTime date={accommodation.lastCheck} />
-                </p>
-              </div>
-            )}
+            <a
+              href={accommodation.url}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='break-all text-sm text-primary transition-colors hover:text-primary/80 hover:underline'
+            >
+              {accommodation.url}
+            </a>
           </div>
+
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <Users className='size-4' />
+              <span>인원</span>
+            </div>
+            <p className='text-sm font-medium text-foreground'>{accommodation.adults}명</p>
+          </div>
+
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <Calendar className='size-4' />
+              <span>체크인</span>
+            </div>
+            <p className='text-sm font-medium text-foreground'>{accommodation.checkIn.toISOString().split('T')[0]}</p>
+          </div>
+
+          <div className='space-y-1'>
+            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <Calendar className='size-4' />
+              <span>체크아웃</span>
+            </div>
+            <p className='text-sm font-medium text-foreground'>
+              {accommodation.checkOut.toISOString().split('T')[0]}
+            </p>
+          </div>
+
+          {accommodation.lastPrice && (
+            <div className='space-y-1'>
+              <div className='text-sm text-muted-foreground'>마지막 확인 가격</div>
+              <p className='text-lg font-semibold text-primary'>{accommodation.lastPrice}</p>
+            </div>
+          )}
+
+          {accommodation.lastCheck && (
+            <div className='space-y-1'>
+              <div className='text-sm text-muted-foreground'>마지막 체크</div>
+              <p className='text-sm font-medium text-foreground'>
+                <LocalDateTime date={accommodation.lastCheck} />
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

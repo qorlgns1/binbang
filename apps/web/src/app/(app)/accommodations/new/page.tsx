@@ -5,16 +5,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { ArrowLeft, CheckCircle, Home } from 'lucide-react';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { QuotaExceededError, useCreateAccommodation } from '@/hooks/useCreateAccommodation';
 import { parseAccommodationUrl } from '@/lib/url-parser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
-export default function NewAccommodationPage() {
+export default function NewAccommodationPage(): React.ReactElement {
   const router = useRouter();
   const createMutation = useCreateAccommodation();
   const [parsedInfo, setParsedInfo] = useState<ParsedAccommodationUrl | null>(null);
@@ -52,7 +54,7 @@ export default function NewAccommodationPage() {
   }, [url]);
 
   // "파싱된 정보로 채우기" 버튼
-  function applyParsedInfo() {
+  function applyParsedInfo(): void {
     if (!parsedInfo) return;
 
     if (parsedInfo.checkIn) setCheckIn(parsedInfo.checkIn);
@@ -61,7 +63,7 @@ export default function NewAccommodationPage() {
     if (parsedInfo.name) setName(parsedInfo.name);
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
 
     // URL에서 플랫폼 자동 감지
@@ -85,18 +87,39 @@ export default function NewAccommodationPage() {
   }
 
   return (
-    <main className='max-w-2xl mx-auto px-4 py-8'>
+    <main className='mx-auto max-w-2xl px-4 py-8'>
+      {/* 뒤로 가기 */}
       <div className='mb-6'>
-        <Link
-          href='/dashboard'
-          className='text-sm text-muted-foreground hover:text-foreground'
+        <Button
+          asChild
+          variant='ghost'
+          size='sm'
+          className='gap-2 px-0 text-muted-foreground hover:text-foreground'
         >
-          ← 대시보드로 돌아가기
-        </Link>
+          <Link href='/dashboard'>
+            <ArrowLeft className='size-4' />
+            대시보드로 돌아가기
+          </Link>
+        </Button>
       </div>
-      <Card className='gap-6'>
+
+      {/* 히어로 섹션 */}
+      <div className='mb-8 text-center'>
+        <div className='mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10'>
+          <Home className='size-8 text-primary' />
+        </div>
+        <h1 className='mb-3 text-3xl font-semibold text-foreground'>숙소 추가</h1>
+        <p className='text-muted-foreground'>
+          빈방 소식을 받을 숙소를 등록하세요.
+          <br />
+          URL만 붙여넣으면 정보가 자동으로 채워집니다.
+        </p>
+      </div>
+
+      <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
         <CardHeader>
-          <CardTitle className='text-2xl'>숙소 추가</CardTitle>
+          <CardTitle>숙소 정보</CardTitle>
+          <CardDescription>모든 필수 항목(*)을 입력해주세요</CardDescription>
         </CardHeader>
         <CardContent>
           {createMutation.error && (
@@ -104,7 +127,9 @@ export default function NewAccommodationPage() {
               variant='destructive'
               className='mb-6'
             >
-              <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
+              <AlertTitle>
+                {createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}
+              </AlertTitle>
               <AlertDescription>
                 <p>{createMutation.error.message}</p>
                 {createMutation.error instanceof QuotaExceededError && (
@@ -137,27 +162,32 @@ export default function NewAccommodationPage() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
+                className='bg-background/80 transition-all focus:bg-background'
               />
               <p className='text-xs text-muted-foreground'>
-                Airbnb 또는 Agoda 숙소 페이지 URL을 붙여넣으세요. 날짜와 인원이 자동으로 입력됩니다.
+                Airbnb 또는 Agoda 숙소 페이지 URL을 붙여넣으세요
               </p>
 
               {/* 파싱 결과 표시 */}
               {parsedInfo?.platform && (
-                <Alert className='border-info-border bg-info text-info-foreground'>
+                <Alert className='border-chart-3/30 bg-chart-3/5 text-foreground'>
                   <div className='flex items-center justify-between gap-4'>
-                    <AlertTitle className='text-sm font-medium text-info-foreground'>
-                      🔍 URL에서 정보를 찾았습니다
-                    </AlertTitle>
+                    <div className='flex items-center gap-2'>
+                      <CheckCircle className='size-4 text-chart-3' />
+                      <AlertTitle className='text-sm font-medium text-foreground'>
+                        URL에서 정보를 찾았습니다
+                      </AlertTitle>
+                    </div>
                     <Button
                       type='button'
                       size='sm'
                       onClick={applyParsedInfo}
+                      className='bg-primary text-primary-foreground hover:bg-primary/90'
                     >
                       모두 적용
                     </Button>
                   </div>
-                  <AlertDescription className='text-xs text-info-foreground/80 space-y-1 mt-2'>
+                  <AlertDescription className='mt-2 space-y-1 text-xs text-muted-foreground'>
                     <p>• 플랫폼: {parsedInfo.platform}</p>
                     {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
                     {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
@@ -179,11 +209,12 @@ export default function NewAccommodationPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder='예: 그린델발트 샬레'
+                className='bg-background/80 transition-all focus:bg-background'
               />
             </div>
 
             {/* 날짜 선택 */}
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <div className='space-y-2'>
                 <Label htmlFor='checkIn'>체크인 *</Label>
                 <Input
@@ -193,6 +224,7 @@ export default function NewAccommodationPage() {
                   required
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
+                  className='bg-background/80 transition-all focus:bg-background'
                 />
               </div>
               <div className='space-y-2'>
@@ -204,6 +236,7 @@ export default function NewAccommodationPage() {
                   required
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
+                  className='bg-background/80 transition-all focus:bg-background'
                 />
               </div>
             </div>
@@ -219,6 +252,7 @@ export default function NewAccommodationPage() {
                 max='20'
                 value={adults}
                 onChange={(e) => setAdults(parseInt(e.target.value) || 2)}
+                className='bg-background/80 transition-all focus:bg-background'
               />
             </div>
 
@@ -227,13 +261,14 @@ export default function NewAccommodationPage() {
               <Button
                 type='submit'
                 disabled={createMutation.isPending}
-                className='flex-1'
+                className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'
               >
                 {createMutation.isPending ? '추가 중...' : '숙소 추가'}
               </Button>
               <Button
                 asChild
                 variant='outline'
+                className='border-border'
               >
                 <Link href='/dashboard'>취소</Link>
               </Button>

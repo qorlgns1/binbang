@@ -1,8 +1,8 @@
 import { SubscriptionOverview } from './_components/subscriptionOverview';
 
-export default function SubscriptionPage() {
+export default function SubscriptionPage(): React.ReactElement {
   return (
-    <main className='max-w-4xl mx-auto px-4 py-8'>
+    <main className='mx-auto max-w-4xl px-4 py-8'>
       <SubscriptionOverview />
     </main>
   );
