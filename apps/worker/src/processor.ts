@@ -1,12 +1,12 @@
-import type { AvailabilityStatus, Accommodation, User } from '@workspace/db';
+import type { Accommodation, AvailabilityStatus, User } from '@workspace/db';
 import { prisma } from '@workspace/db';
-import { parsePrice, type AccommodationMetadata } from '@workspace/shared';
+import { type AccommodationMetadata, parsePrice } from '@workspace/shared';
 import {
   checkAccommodation,
-  updateHeartbeat,
-  notifyAvailable,
   getSettings,
   loadSettings,
+  notifyAvailable,
+  updateHeartbeat,
 } from '@workspace/shared/worker';
 
 import { getCronConfig } from './config';

@@ -4,7 +4,7 @@
  * 플랫폼별 셀렉터/패턴을 DB에서 로드하고 캐싱합니다.
  * 5분 TTL로 캐시하며, DB 실패 시 하드코딩된 fallback을 사용합니다.
  */
-import { prisma, type Platform, type SelectorCategory } from '@workspace/db';
+import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
 
 import { AGODA_PATTERNS, AIRBNB_PATTERNS } from '../../checkers/constants';
 

@@ -411,18 +411,18 @@ pnpm db:seed:production    # 운영용 시드 (RBAC, 설정, 셀렉터/패턴만
 
 #### 카테고리별 셀렉터
 
-| 카테고리 | 설명 | 예시 |
-|----------|------|------|
-| `PRICE` | 가격 추출 | `[aria-label*="총액"]` |
-| `AVAILABILITY` | 예약 가능/불가 요소 | `[data-element-value="unavailable"]` |
-| `METADATA` | JSON-LD 등 메타데이터 | `script[type="application/ld+json"]` |
-| `PLATFORM_ID` | 플랫폼 고유 ID | URL 패턴 또는 스크립트 |
+| 카테고리       | 설명                  | 예시                                 |
+| -------------- | --------------------- | ------------------------------------ |
+| `PRICE`        | 가격 추출             | `[aria-label*="총액"]`               |
+| `AVAILABILITY` | 예약 가능/불가 요소   | `[data-element-value="unavailable"]` |
+| `METADATA`     | JSON-LD 등 메타데이터 | `script[type="application/ld+json"]` |
+| `PLATFORM_ID`  | 플랫폼 고유 ID        | URL 패턴 또는 스크립트               |
 
 #### 패턴 타입
 
-| 타입 | 설명 | 예시 |
-|------|------|------|
-| `AVAILABLE` | 예약 가능 텍스트 | "예약하기", "Reserve" |
+| 타입          | 설명             | 예시                         |
+| ------------- | ---------------- | ---------------------------- |
+| `AVAILABLE`   | 예약 가능 텍스트 | "예약하기", "Reserve"        |
 | `UNAVAILABLE` | 예약 불가 텍스트 | "날짜 변경", "not available" |
 
 ### v2.10.0 – 처리량 대시보드 및 체크 사이클 메트릭

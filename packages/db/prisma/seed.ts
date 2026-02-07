@@ -13,8 +13,8 @@ import 'dotenv/config';
 import { PrismaClient } from '@/generated/prisma/client';
 
 import {
-  SEED_ACCOUNTS,
   SEED_ACCOMMODATIONS,
+  SEED_ACCOUNTS,
   SEED_CHECK_CYCLES,
   SEED_CHECK_LOGS,
   SEED_HEARTBEAT_HISTORY,

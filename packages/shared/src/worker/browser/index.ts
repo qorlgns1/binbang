@@ -1,5 +1,4 @@
 import type { AccommodationToCheck, CheckResult } from '../../types/checker';
-
 import { checkAgoda } from './agoda';
 import { checkAirbnb } from './airbnb';
 

@@ -16,12 +16,7 @@
 export { checkAccommodation } from './browser';
 export { checkAirbnb } from './browser/airbnb';
 export { checkAgoda } from './browser/agoda';
-export {
-  initBrowserPool,
-  closeBrowserPool,
-  acquireBrowser,
-  releaseBrowser,
-} from './browser/browserPool';
+export { initBrowserPool, closeBrowserPool, acquireBrowser, releaseBrowser } from './browser/browserPool';
 
 // Settings
 export { getSettings, loadSettings } from './settings';

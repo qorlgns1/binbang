@@ -1,8 +1,7 @@
-import { getPlatformSelectors } from '../selectors';
-import type { AccommodationToCheck, CheckResult } from '../../types/checker';
-
-import { baseCheck } from './baseChecker';
 import { calculateNights, formatDate } from '../../checkers/utils';
+import type { AccommodationToCheck, CheckResult } from '../../types/checker';
+import { getPlatformSelectors } from '../selectors';
+import { baseCheck } from './baseChecker';
 
 /**
  * Agoda data-* 속성 기반 추출기

@@ -1,12 +1,11 @@
 import type { Browser, Page } from 'puppeteer';
 
-import { getSettings } from '../settings';
-import type { AccommodationMetadata, AccommodationToCheck, CheckResult, TestableElement } from '../../types/checker';
-
-import { setupPage } from './browser';
-import { acquireBrowser, releaseBrowser } from './browserPool';
 import { PRICE_PATTERN } from '../../checkers/constants';
 import { delay, isRetryableError } from '../../checkers/utils';
+import type { AccommodationMetadata, AccommodationToCheck, CheckResult, TestableElement } from '../../types/checker';
+import { getSettings } from '../settings';
+import { setupPage } from './browser';
+import { acquireBrowser, releaseBrowser } from './browserPool';
 
 interface PlatformPatterns {
   available: string[];

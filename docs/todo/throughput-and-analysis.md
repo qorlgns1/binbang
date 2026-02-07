@@ -10,12 +10,12 @@
 
 현재 1시간 필터 시 5분 간격 = 12개 데이터 포인트만 표시되어 차트가 빈약합니다.
 
-| 기간 | 현재 | 변경 후 | 데이터 포인트 |
-|------|------|---------|-------------|
-| ≤1h | 5분 (12개) | **2분** | **30개** |
-| ≤6h | 15분 (24개) | **10분** | **36개** |
-| ≤24h | 30분 (48개) | 30분 (유지) | 48개 |
-| >24h | 180분 (56개) | 180분 (유지) | ≥56개 |
+| 기간 | 현재         | 변경 후      | 데이터 포인트 |
+| ---- | ------------ | ------------ | ------------- |
+| ≤1h  | 5분 (12개)   | **2분**      | **30개**      |
+| ≤6h  | 15분 (24개)  | **10분**     | **36개**      |
+| ≤24h | 30분 (48개)  | 30분 (유지)  | 48개          |
+| >24h | 180분 (56개) | 180분 (유지) | ≥56개         |
 
 **작업 파일**: `src/app/api/admin/throughput/history/route.ts` — `autoBucketMinutes()` 함수 수정
 
@@ -38,16 +38,19 @@
 현재 가격이 문자열(`"₩150,000"`, `"$200.50"`)로만 저장되어 가격 추이 분석이 불가능합니다.
 
 **스키마 변경:**
+
 - CheckLog에 `priceAmount Int?`, `priceCurrency String?`, `priceKRW Int?` 추가
 - Accommodation에 `lastPriceAmount Int?`, `lastPriceCurrency String?`, `lastPriceKRW Int?` 추가
 
 **구현 항목:**
+
 - 가격 파싱 유틸리티: 통화 심볼 → ISO 코드 매핑 + 최소 단위 Int 변환
 - 환율 모듈: `open.er-api.com` (무료, API 키 불필요) + 메모리/DB/하드코딩 fallback 캐시
 - processor.ts 통합: 사이클 시작 시 환율 1회 조회, 체크 저장 시 파싱 + 변환
 - 기존 데이터 백필 스크립트
 
 **작업 파일:**
+
 - `prisma/schema.prisma`
 - `src/lib/checkers/priceParser.ts` (신규)
 - `src/lib/exchangeRate.ts` (신규)
@@ -59,18 +62,21 @@
 기존 CheckLog 데이터를 활용하여 숙소 예약 가능 패턴을 분석하는 대시보드.
 
 **대시보드 구성:**
+
 - Summary 카드 4개: 모니터링 숙소 수, 현재 가용률, 가용 전환 횟수, 평균 가용 간격
 - 타임라인 차트: 시간대별 AVAILABLE/UNAVAILABLE 수 (라인 차트, 1h/6h/24h/7d)
 - 시간대별 패턴 차트: 0~23시별 가용 전환 횟수 (바 차트)
 - 숙소별 테이블: 이름, 플랫폼, 현재 상태, 가용률%, 마지막 가용 시각, 상태 변경 횟수
 
 **API 라우트 (4개):**
+
 - `GET /api/admin/availability/summary`
 - `GET /api/admin/availability/timeline`
 - `GET /api/admin/availability/accommodations`
 - `GET /api/admin/availability/patterns`
 
 **작업 파일:**
+
 - `src/types/admin.ts` — 가용성 타입 추가
 - `src/app/api/admin/availability/` — API 4개 (신규)
 - `src/hooks/queryKeys.ts` — 가용성 query key 추가
@@ -92,6 +98,7 @@
 ### 6. 추가 분석 지표 검토
 
 데이터가 더 쌓인 후 검토할 항목:
+
 - `daysUntilCheckIn`: 체크인까지 남은 일수 기록 → 막판 취소 패턴 분석
 - 알림 후 예약 완료 피드백: 알림 → 예약 전환율 측정
 - 숙소 메타데이터 보강: 지역, 숙소 유형, 최대 수용 인원 → 지역별/유형별 분석

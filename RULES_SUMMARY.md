@@ -1,170 +1,123 @@
-# 🔒 LLM System Prompt (Project Rules Summary)
+# rules-summary.md
 
-You are working in a repository with **strict, mandatory coding rules**.
+## Core
 
-**Before writing or modifying any code, you MUST read and follow `rules.md`.**  
-If any instruction conflicts with `rules.md`, **`rules.md` always takes priority**.  
-If you are unsure, **STOP and ASK instead of guessing**.
-
----
-
-## 1. Core Behavior Rules
-
-- Do **NOT guess** missing requirements, types, or behavior.
-- Do **NOT invent structure, APIs, or logic**.
-- If information is missing:
-  - Add `TODO` with reason **or**
-  - Ask up to 3 clear questions.
-
-- Do **NOT** refactor structure, move files, or create new files unless explicitly requested.
+- This repository is a monorepo with **strict, enforced boundaries**.
+- Boundaries are defined by **package ownership and public APIs**, not conventions.
+- Violations are forbidden.
 
 ---
 
-## 2. Project Structure & Boundaries
+## Monorepo Structure
 
-- **No new files or folders** unless explicitly requested.
-- Always modify existing files first.
-- Folder names: lowercase, kebab-case.
-- Dependency direction is fixed:
+- `apps/web` : Next.js (UI + Route Handlers)
+- `apps/worker` : background workers (cron, automation, jobs)
+- `packages/db` : Prisma schema, migrations, DB client
+- `packages/shared` : shared code with explicit sub-boundaries
 
-  `client → api → service → db
-worker → service → db`
-
-- Client code must never import:
-  - Prisma
-  - DB logic
-  - Node-only modules
+New top-level directories are forbidden.
 
 ---
 
-## 3. TypeScript Rules
+## Public API Rules
 
-- `any` is **forbidden** (including `as any`).
-- Use `unknown` only at boundaries, and narrow immediately.
-- **All functions MUST have explicit return types** (exported or not).
-- Async functions MUST return `Promise<T>`.
-- React components must NOT specify return types.
-- TypeScript `enum` is forbidden → use string unions.
-- `switch` on unions MUST be exhaustive (no `default`).
+- Deep imports into `packages/**/src/**` are forbidden.
+- Only package public entry points may be imported.
 
 ---
 
-## 4. React / Next.js (App Router)
+## Shared Boundaries
 
-- `"use client"` only when required.
-  - MUST include a file-level comment explaining why.
+### `@shared` (universal)
 
-- No `fetch` inside components.
-- Client data access ONLY via TanStack Query hooks.
-- `useEffect` is for side effects only:
-  - No derived state
-  - No empty dependency abuse
-  - No disabling exhaustive-deps
+- Pure, runtime-agnostic code only.
+- No network I/O (`fetch`), no DB, no Node APIs.
+- No browser automation.
+- `Date` / `Intl` usage allowed.
+- No direct `process.env` access.
 
-- Split components if:
-  - ≥3 conditions OR ≥3 states OR ≥150 lines JSX
+### `@shared/worker`
 
-- Event handlers:
-  - Props: `on*`
-  - Internal: `handle*`
+- Worker-only code.
+- Browser automation, cron, job helpers allowed.
+- `apps/web` must never import `@shared/worker`.
 
 ---
 
-## 5. TanStack Query Rules
+## Worker Shared Structure
 
-- `src/app/**` = composition only (no queries/mutations).
-- `src/app/api/**` = Route Handlers only.
-- All queries/mutations MUST be wrapped in custom hooks.
-- Naming:
-  - Query: `useXQuery`
-  - Infinite: `useXInfiniteQuery`
-  - Mutation: `useVerbXMutation`
+`@shared/worker` is split into exactly four categories:
 
-- `queryKeys` are **centralized in `src/lib/queryKeys.ts` only**.
-- Mutations MUST:
-  - use `useMutation`
-  - invalidate or sync cache
+- `browser`
+- `jobs`
+- `runtime`
+- `observability`
 
-- Optimistic updates MUST include rollback.
-- `staleTime/gcTime/retry` follow global policy unless explicitly justified.
+Categories must not be renamed, merged, or extended.
 
----
+### Dependency Rules
 
-## 6. Prisma Rules
+Allowed:
 
-- Prisma Client:
-  - Server / Worker only
-  - Single instance
+- `jobs → runtime`
+- `jobs → observability`
+- `browser → observability`
+- `runtime → observability`
 
-- Route Handlers must NOT call `prisma.*` directly.
-- Queries MUST specify `select`.
-- `include` only with explicit justification.
-- No queries inside loops (N+1 forbidden).
-- Use transactions for logical multi-step operations.
-- Schema/migration changes are forbidden unless explicitly requested.
+Forbidden:
+
+- `browser → jobs`
+- `browser → runtime`
+- `jobs → browser`
+- `observability → domain logic`
 
 ---
 
-## 7. Validation & Data Boundaries
+## Prisma / Database (`@repo/db`)
 
-- Use zod **only at boundaries**:
-  - API input/output
-  - env
-  - external data
+- Prisma schema & migrations live only in `packages/db/prisma`.
+- Prisma Client is imported only via `@repo/db`.
+- Importing `@prisma/client` outside `packages/db` is forbidden.
+- `apps/web` client components must not access DB.
+- `apps/web` server/route handlers and `apps/worker` may access DB.
+- `packages/shared` must not depend on DB.
 
-- No re-validation inside domain logic.
-- `safeParse` by default.
-- Worker inputs are also boundary inputs.
-- Schema/mapper logic should have tests when feasible.
+### Query Rules
 
----
+- Route Handlers must not call `prisma.*` directly.
+- All queries must use `select`.
+- Queries inside loops are forbidden.
+- Transactions are required for multi-step operations.
 
-## 8. Error & Logging Rules
+### Migration Rules
 
-- Separate **user-facing errors** and **log errors**.
-- Never log secrets, tokens, or PII.
-- `warn/error` logs MUST include:
-  - `scope`, `op`, `message`, `cause`, `meta`
-
-- API responses must NOT include stack traces or raw errors.
-- Worker errors must be isolated per job (no global crash).
-- Never swallow errors.
+- `prisma db push` is forbidden.
+- Use `prisma migrate dev`.
+- Deployed migrations must never be edited or deleted.
 
 ---
 
-## 9. Testing Rules
+## Root `package.json`
 
-- Tests are REQUIRED when modifying:
-  - Shared utilities
-  - Schemas
-  - DTO/mappers
-  - Error mapping
-  - `queryKeys`
-
-- UI tests are excluded by default.
-- No real network, DB, or time dependency in tests.
-- If a test is skipped, you MUST explain why and propose an alternative.
+- Root dependencies are **tooling-only**.
+- Runtime libraries are forbidden in root.
+- Runtime deps must live in the owning workspace:
+  - Web → `apps/web`
+  - Worker → `apps/worker`
+  - DB → `packages/db`
+  - Shared → `packages/shared`
 
 ---
 
-## 10. UI Rules (shadcn v3 + Tailwind v4)
+## Enforcement
 
-- UI primitives live ONLY in `src/components/ui/*`.
-- Feature-level UI is allowed, but:
-  - If reusable, propose promotion to `ui/` (do NOT do it).
-
-- Use **Tailwind semantic tokens ONLY**:
-  - `bg-card`, `text-muted-foreground`, etc.
-  - No hardcoded colors.
-
-- Styles are managed in `src/app/globals.css` ONLY.
-- `cn` must be imported from `@/lib/utils`.
-- Radix imports must use `@radix-ui/react-*`.
-- Extend variants/sizes via `cva` only.
+- `apps/worker` contains only entry points and composition.
+- Reused worker logic must move to `@shared/worker`.
+- Boundaries are enforced by imports, not discipline.
 
 ---
 
-## 11. Final Rule
+## Principle
 
-**If you are about to violate any rule above: STOP and ASK.**  
-**Never “just make it work”.**
+Worker runtime and infrastructure will change.  
+Job definitions and domain logic must survive those changes.

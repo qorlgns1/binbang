@@ -1,6 +1,7 @@
 # RBAC UI 기능 구현 TODO
 
 ## 개요
+
 RBAC 시스템(Role, Plan, Permission, AuditLog, Subscription) 기반 UI 기능 구현 계획
 
 ---
@@ -78,9 +79,11 @@ RBAC 시스템(Role, Plan, Permission, AuditLog, Subscription) 기반 UI 기능 
 ## 관련 파일
 
 ### 스키마
+
 - `prisma/schema.prisma`: Plan, PlanQuota, Role, Permission, AuditLog, Subscription
 
 ### API
+
 - `POST /api/admin/users/[id]/roles`: 역할 변경
 - `PATCH /api/admin/users/[id]/plan`: 플랜 변경
 - `GET /api/admin/audit-logs`: 감사 로그 목록
@@ -90,5 +93,6 @@ RBAC 시스템(Role, Plan, Permission, AuditLog, Subscription) 기반 UI 기능 
 - `GET /api/user/subscription`: 구독 정보
 
 ### 유틸
+
 - `src/lib/rbac.ts`: isAdmin() 헬퍼
 - `src/lib/auditLog.ts`: createAuditLog()

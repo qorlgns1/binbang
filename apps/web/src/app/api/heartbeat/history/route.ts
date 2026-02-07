@@ -1,8 +1,9 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@workspace/db';
+
+import { authOptions } from '@/lib/auth';
 
 export interface HeartbeatHistoryItem {
   id: number;

@@ -2,8 +2,7 @@
  * Platform Selector utilities for web app API routes
  * Direct DB access implementation - does not import from @workspace/shared/worker
  */
-
-import { prisma, type Platform, type SelectorCategory } from '@workspace/db';
+import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
 import { AGODA_PATTERNS, AIRBNB_PATTERNS } from '@workspace/shared';
 
 // ============================================

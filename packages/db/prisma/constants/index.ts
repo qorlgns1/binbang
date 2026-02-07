@@ -172,7 +172,13 @@ export const SEED_PLAN_QUOTAS = [
 ] as const;
 
 export const SEED_USERS: SeedUser[] = [
-  { key: 'admin', email: 'admin@example.com', name: '관리자', roleNames: ['USER', 'ADMIN'], passwordHash: SEED_PASSWORD_HASH },
+  {
+    key: 'admin',
+    email: 'admin@example.com',
+    name: '관리자',
+    roleNames: ['USER', 'ADMIN'],
+    passwordHash: SEED_PASSWORD_HASH,
+  },
   { key: 'user', email: 'user@example.com', name: '김철수', roleNames: ['USER'], passwordHash: SEED_PASSWORD_HASH },
 ];
 
@@ -832,7 +838,13 @@ export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
   },
   // 예약 불가
   { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: '날짜 변경', locale: 'ko', priority: 10 },
-  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: 'Change dates', locale: 'en', priority: 5 },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: 'Change dates',
+    locale: 'en',
+    priority: 5,
+  },
   {
     platform: Platform.AIRBNB,
     patternType: PatternType.UNAVAILABLE,
@@ -847,15 +859,39 @@ export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
     locale: 'en',
     priority: 5,
   },
-  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: '이용이 불가능', locale: 'ko', priority: 7 },
-  { platform: Platform.AIRBNB, patternType: PatternType.UNAVAILABLE, pattern: 'not available', locale: 'en', priority: 3 },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: '이용이 불가능',
+    locale: 'ko',
+    priority: 7,
+  },
+  {
+    platform: Platform.AIRBNB,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: 'not available',
+    locale: 'en',
+    priority: 3,
+  },
 ];
 
 export const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
   // 예약 가능
-  { platform: Platform.AGODA, patternType: PatternType.AVAILABLE, pattern: '지금 예약하기', locale: 'ko', priority: 10 },
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.AVAILABLE,
+    pattern: '지금 예약하기',
+    locale: 'ko',
+    priority: 10,
+  },
   { platform: Platform.AGODA, patternType: PatternType.AVAILABLE, pattern: 'Book now', locale: 'en', priority: 5 },
-  { platform: Platform.AGODA, patternType: PatternType.AVAILABLE, pattern: '예약 무료 취소 가능', locale: 'ko', priority: 5 },
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.AVAILABLE,
+    pattern: '예약 무료 취소 가능',
+    locale: 'ko',
+    priority: 5,
+  },
   {
     platform: Platform.AGODA,
     patternType: PatternType.AVAILABLE,
@@ -885,8 +921,13 @@ export const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
     locale: 'ko',
     priority: 8,
   },
-  { platform: Platform.AGODA, patternType: PatternType.UNAVAILABLE, pattern: 'Change your dates', locale: 'en', priority: 5 },
+  {
+    platform: Platform.AGODA,
+    patternType: PatternType.UNAVAILABLE,
+    pattern: 'Change your dates',
+    locale: 'en',
+    priority: 5,
+  },
 ];
 
 export const SEED_PLATFORM_PATTERNS: SeedPlatformPattern[] = [...SEED_AIRBNB_PATTERNS, ...SEED_AGODA_PATTERNS];
-

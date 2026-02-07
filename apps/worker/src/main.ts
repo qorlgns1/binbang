@@ -1,23 +1,21 @@
 // Worker Entry Point
 // ============================================
-import 'dotenv/config';
-
-import { createServer } from 'http';
-import cron from 'node-cron';
-
 import { prisma } from '@workspace/db';
 import {
-  checkAirbnb,
   checkAgoda,
+  checkAirbnb,
   closeBrowserPool,
+  getSettings,
   initBrowserPool,
-  updateHeartbeat,
-  recordHeartbeatHistory,
-  startHeartbeatMonitoring,
   invalidateSelectorCache,
   loadPlatformSelectors,
-  getSettings,
+  recordHeartbeatHistory,
+  startHeartbeatMonitoring,
+  updateHeartbeat,
 } from '@workspace/shared/worker';
+import 'dotenv/config';
+import { createServer } from 'http';
+import cron from 'node-cron';
 
 import { getCronConfig, initCronConfig, logConfig } from './config';
 import { checkAllAccommodations, isProcessing } from './processor';

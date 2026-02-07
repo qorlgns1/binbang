@@ -1,4 +1,4 @@
-import { validateWorkerEnv, loadSettings } from '@workspace/shared/worker';
+import { loadSettings, validateWorkerEnv } from '@workspace/shared/worker';
 
 interface CronConfig {
   schedule: string;

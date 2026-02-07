@@ -113,6 +113,6 @@ jobs:
               docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
               docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
             else
-              docker compose -p accommodation-monitor-dev -f docker/docker-compose.develop.yml --env-file .env.develop pull
-              docker compose -p accommodation-monitor-dev -f docker/docker-compose.develop.yml --env-file .env.develop up -d
+              docker compose -p accommodation-monitor-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
+              docker compose -p accommodation-monitor-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d
             fi
