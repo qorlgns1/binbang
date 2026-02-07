@@ -83,9 +83,7 @@ export default async function PricingPage(): Promise<React.ReactElement> {
         <main className='py-16'>
           {/* 타이틀 */}
           <div className='mb-16 text-center'>
-            <h2 className='mb-4 text-3xl font-semibold text-foreground md:text-4xl'>
-              나에게 맞는 플랜을 선택하세요
-            </h2>
+            <h2 className='mb-4 text-3xl font-semibold text-foreground md:text-4xl'>나에게 맞는 플랜을 선택하세요</h2>
             <p className='mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground'>
               복잡함은 저희가 처리할게요.
               <br />

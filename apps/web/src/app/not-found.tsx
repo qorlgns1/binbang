@@ -26,9 +26,7 @@ export default function NotFound(): React.ReactElement {
 
           {/* Error Message */}
           <h1 className='mb-4 text-6xl font-bold text-foreground'>404</h1>
-          <h2 className='mb-4 text-2xl font-semibold text-foreground md:text-3xl'>
-            길을 잃으셨나요?
-          </h2>
+          <h2 className='mb-4 text-2xl font-semibold text-foreground md:text-3xl'>길을 잃으셨나요?</h2>
           <p className='mb-8 max-w-md text-lg text-muted-foreground'>
             빈방어때가 안내해드릴게요.
             <br />

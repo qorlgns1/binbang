@@ -11,7 +11,6 @@ interface StatusDashboardProps {
 }
 
 export function StatusDashboard({ copy }: StatusDashboardProps): React.ReactElement {
-
   return (
     <section
       id='status'

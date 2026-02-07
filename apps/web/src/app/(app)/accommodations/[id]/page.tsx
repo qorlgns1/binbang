@@ -138,9 +138,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
               <Calendar className='size-4' />
               <span>체크아웃</span>
             </div>
-            <p className='text-sm font-medium text-foreground'>
-              {accommodation.checkOut.toISOString().split('T')[0]}
-            </p>
+            <p className='text-sm font-medium text-foreground'>{accommodation.checkOut.toISOString().split('T')[0]}</p>
           </div>
 
           {accommodation.lastPrice && (

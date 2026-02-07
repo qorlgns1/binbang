@@ -74,7 +74,9 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props): React.R
             value={usagePercent}
             className={`h-2 ${isAtLimit ? '[&>div]:bg-destructive' : isNearLimit ? '[&>div]:bg-status-warning' : ''}`}
           />
-          {isAtLimit && <p className='text-xs text-destructive'>숙소 한도에 도달했습니다. 플랜 업그레이드를 고려해보세요.</p>}
+          {isAtLimit && (
+            <p className='text-xs text-destructive'>숙소 한도에 도달했습니다. 플랜 업그레이드를 고려해보세요.</p>
+          )}
           {isNearLimit && !isAtLimit && <p className='text-xs text-status-warning'>숙소 한도에 거의 도달했습니다.</p>}
         </div>
 

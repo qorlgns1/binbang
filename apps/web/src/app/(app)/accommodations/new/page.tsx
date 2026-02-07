@@ -127,9 +127,7 @@ export default function NewAccommodationPage(): React.ReactElement {
               variant='destructive'
               className='mb-6'
             >
-              <AlertTitle>
-                {createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}
-              </AlertTitle>
+              <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
               <AlertDescription>
                 <p>{createMutation.error.message}</p>
                 {createMutation.error instanceof QuotaExceededError && (
@@ -164,9 +162,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
                 className='bg-background/80 transition-all focus:bg-background'
               />
-              <p className='text-xs text-muted-foreground'>
-                Airbnb 또는 Agoda 숙소 페이지 URL을 붙여넣으세요
-              </p>
+              <p className='text-xs text-muted-foreground'>Airbnb 또는 Agoda 숙소 페이지 URL을 붙여넣으세요</p>
 
               {/* 파싱 결과 표시 */}
               {parsedInfo?.platform && (
@@ -174,9 +170,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                   <div className='flex items-center justify-between gap-4'>
                     <div className='flex items-center gap-2'>
                       <CheckCircle className='size-4 text-chart-3' />
-                      <AlertTitle className='text-sm font-medium text-foreground'>
-                        URL에서 정보를 찾았습니다
-                      </AlertTitle>
+                      <AlertTitle className='text-sm font-medium text-foreground'>URL에서 정보를 찾았습니다</AlertTitle>
                     </div>
                     <Button
                       type='button'

@@ -42,9 +42,7 @@ export function DashboardContent(): React.ReactElement {
       <section className='mb-10'>
         <div className='flex items-start justify-between'>
           <div>
-            <h1 className='text-3xl font-semibold text-foreground md:text-4xl'>
-              {greeting}
-            </h1>
+            <h1 className='text-3xl font-semibold text-foreground md:text-4xl'>{greeting}</h1>
             <p className='mt-2 text-lg text-muted-foreground'>
               {activeCount > 0
                 ? `오늘도 빈방어때가 ${activeCount}곳의 불을 밝혀두었습니다.`
@@ -180,9 +178,7 @@ export function DashboardContent(): React.ReactElement {
         {logsLoading ? (
           <CardContent className='p-12 text-center text-muted-foreground'>불러오는 중...</CardContent>
         ) : recentLogs.length === 0 ? (
-          <CardContent className='p-12 text-center text-muted-foreground'>
-            아직 발견한 빈방 소식이 없습니다
-          </CardContent>
+          <CardContent className='p-12 text-center text-muted-foreground'>아직 발견한 빈방 소식이 없습니다</CardContent>
         ) : (
           <div className='divide-y'>
             {recentLogs.map((log) => (
