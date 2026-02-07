@@ -60,8 +60,12 @@ COPY . .
 ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV DATABASE_URL=${DATABASE_URL}
 
-# Generate Prisma client only (no TypeScript build)
+# Generate Prisma client
 RUN pnpm turbo run db:generate --filter=@workspace/db
+
+# Build workspace libraries consumed by worker runtime.
+# Without dist outputs, package exports resolve to missing files in container.
+RUN pnpm turbo run build --filter=@workspace/db --filter=@workspace/shared
 
 # ============================================
 # Runner (tsx for TypeScript execution)
