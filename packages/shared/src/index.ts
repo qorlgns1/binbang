@@ -1,45 +1,40 @@
+/**
+ * @shared - Universal shared code
+ *
+ * This module contains runtime-agnostic code that can be used by both web and worker.
+ *
+ * ALLOWED:
+ * - Types, interfaces, DTOs
+ * - Pure utilities with no side effects
+ * - Constants, enums, mappings
+ * - Formatting and parsing utilities
+ *
+ * FORBIDDEN:
+ * - Network I/O (fetch, axios)
+ * - Database access (Prisma)
+ * - Node built-in modules (fs, path)
+ * - Browser automation (puppeteer)
+ * - Direct process.env access
+ */
+
 // Types
 export * from './types';
 
-// Checkers
-export { checkAccommodation } from './checkers';
-export { checkAirbnb } from './checkers/airbnb';
-export { checkAgoda } from './checkers/agoda';
+// URL Parser (pure)
+export { parseAccommodationUrl } from './url-parser';
+
+// Checker utilities (pure)
 export { parsePrice } from './checkers/priceParser';
 export type { ParsedPrice } from './checkers/priceParser';
-export {
-  initBrowserPool,
-  closeBrowserPool,
-  acquireBrowser,
-  releaseBrowser,
-} from './checkers/browserPool';
 export {
   isRetryableError,
   formatDate,
   delay,
   calculateNights,
 } from './checkers/utils';
-
-// Settings
-export { getSettings, loadSettings } from './settings';
-export { validateWorkerEnv, validateWebEnv, getEnv, getEnvNumber } from './settings/env';
-
-// Selectors
 export {
-  loadPlatformSelectors,
-  getPlatformSelectors,
-  invalidateSelectorCache,
-} from './selectors';
-
-// Kakao
-export { notifyAvailable, sendKakaoMessage } from './kakao/message';
-
-// Heartbeat
-export {
-  updateHeartbeat,
-  startHeartbeatMonitoring,
-  stopHeartbeatMonitoring,
-  recordHeartbeatHistory,
-  getHeartbeatHistory,
-} from './heartbeat';
-export type { HeartbeatHistoryItem } from './heartbeat';
+  AGODA_PATTERNS,
+  AIRBNB_PATTERNS,
+  PRICE_PATTERN,
+  RETRYABLE_ERRORS,
+} from './checkers/constants';

@@ -1,5 +1,6 @@
 import { AvailabilityStatus, PatternType, Platform, SelectorCategory } from '@/generated/prisma/enums';
-import { parseAccommodationUrl } from '@/lib/url-parser';
+
+import { parseAccommodationUrl } from './url-parser';
 
 /**
  * Seed data should be:

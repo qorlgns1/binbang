@@ -1,4 +1,4 @@
-import { parsePrice } from '@/lib/checkers/priceParser';
+import { parsePrice } from '@workspace/shared/checkers';
 import prisma from '@/lib/prisma';
 
 // ============================================================================

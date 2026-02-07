@@ -2,9 +2,39 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getHeartbeatHistory } from '@/lib/heartbeat';
+import { prisma } from '@workspace/db';
 
-export async function GET() {
+export interface HeartbeatHistoryItem {
+  id: number;
+  timestamp: Date;
+  status: 'healthy' | 'unhealthy' | 'processing';
+  isProcessing: boolean;
+  uptime?: number | null;
+  workerId: string;
+}
+
+async function getHeartbeatHistory(hours: number = 24): Promise<HeartbeatHistoryItem[]> {
+  try {
+    const since = new Date();
+    since.setHours(since.getHours() - hours);
+
+    return (await prisma.heartbeatHistory.findMany({
+      where: {
+        timestamp: {
+          gte: since,
+        },
+      },
+      orderBy: {
+        timestamp: 'asc',
+      },
+    })) as HeartbeatHistoryItem[];
+  } catch (error) {
+    console.error('Heartbeat history fetch failed:', error);
+    return [];
+  }
+}
+
+export async function GET(): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.roles || !session.user.roles.includes('ADMIN')) {

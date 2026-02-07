@@ -1,23 +1,23 @@
-import type { AccommodationToCheck, CheckResult } from '../types/checker';
+/**
+ * Universal checker utilities
+ *
+ * Pure utilities that can be used by both web and worker.
+ * No browser automation, DB access, or network I/O.
+ */
 
-import { checkAgoda } from './agoda';
-import { checkAirbnb } from './airbnb';
+export { parsePrice } from './priceParser';
+export type { ParsedPrice } from './priceParser';
 
-export type { AccommodationToCheck, CheckResult };
+export {
+  isRetryableError,
+  formatDate,
+  delay,
+  calculateNights,
+} from './utils';
 
-export async function checkAccommodation(accommodation: AccommodationToCheck): Promise<CheckResult> {
-  switch (accommodation.platform) {
-    case 'AIRBNB':
-      return checkAirbnb(accommodation);
-    case 'AGODA':
-      return checkAgoda(accommodation);
-    default:
-      return {
-        available: false,
-        price: null,
-        checkUrl: accommodation.url,
-        error: `Unknown platform: ${accommodation.platform}`,
-        retryCount: 0,
-      };
-  }
-}
+export {
+  AGODA_PATTERNS,
+  AIRBNB_PATTERNS,
+  PRICE_PATTERN,
+  RETRYABLE_ERRORS,
+} from './constants';

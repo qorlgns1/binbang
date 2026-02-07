@@ -6,30 +6,32 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
     },
     "./types": {
       "types": "./src/types/index.ts",
-      "default": "./src/types/index.ts"
+      "development": "./src/types/index.ts",
+      "default": "./dist/types/index.js"
     },
     "./checkers": {
       "types": "./src/checkers/index.ts",
-      "default": "./src/checkers/index.ts"
+      "development": "./src/checkers/index.ts",
+      "default": "./dist/checkers/index.js"
     },
-    "./settings": {
-      "types": "./src/settings/index.ts",
-      "default": "./src/settings/index.ts"
+    "./url-parser": {
+      "types": "./src/url-parser.ts",
+      "development": "./src/url-parser.ts",
+      "default": "./dist/url-parser.js"
     },
-    "./selectors": {
-      "types": "./src/selectors/index.ts",
-      "default": "./src/selectors/index.ts"
-    },
-    "./kakao": {
-      "types": "./src/kakao/message.ts",
-      "default": "./src/kakao/message.ts"
+    "./worker": {
+      "types": "./src/worker/index.ts",
+      "development": "./src/worker/index.ts",
+      "default": "./dist/worker/index.js"
     }
   },
   "scripts": {
+    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "rm -rf dist node_modules"

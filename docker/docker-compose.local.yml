@@ -23,15 +23,11 @@ services:
     container_name: accommodation-monitor-web-local
     ports:
       - '${WEB_PORT:-3000}:3000'
+    env_file:
+      - ../.env
+      - ../apps/web/.env.local
     environment:
-      NODE_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-local_secret_key}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
-      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      NODE_ENV: local
     depends_on:
       db:
         condition: service_healthy
@@ -44,11 +40,11 @@ services:
     restart: unless-stopped
     ports:
       - '3500:3500'
+    env_file:
+      - ../.env
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@${DB_HOST:-db}:5432/${DB_NAME:-accommodation_monitor}
-      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
-      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      NODE_ENV: local
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
     depends_on:
       db:
         condition: service_healthy

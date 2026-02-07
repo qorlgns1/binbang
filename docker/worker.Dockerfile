@@ -47,7 +47,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # ============================================
-# Builder
+# Builder (Prisma generate only)
 # ============================================
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
@@ -56,33 +56,32 @@ COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_module
 COPY --from=deps /app/apps/worker/node_modules ./apps/worker/node_modules
 COPY . .
 
-ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
+# Prisma generate requires DATABASE_URL at build time (for schema validation only)
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DATABASE_URL=${DATABASE_URL}
 
-RUN pnpm turbo run build --filter=@workspace/worker
+# Generate Prisma client only (no TypeScript build)
+RUN pnpm turbo run db:generate --filter=@workspace/db
 
 # ============================================
-# Runner
+# Runner (tsx for TypeScript execution)
 # ============================================
 FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV=production
 
-# Copy built worker
-COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
-COPY --from=builder /app/apps/worker/package.json ./apps/worker/
-
-# Copy packages
-COPY --from=builder /app/packages/db ./packages/db
-COPY --from=builder /app/packages/shared ./packages/shared
-
-# Copy root config
+# Copy everything from builder (source + node_modules + generated)
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/pnpm-lock.yaml ./
+COPY --from=builder /app/tsconfig.base.json ./
 
-# Install production dependencies only
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+# Copy packages with node_modules and source
+COPY --from=builder /app/packages/db ./packages/db
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/apps/worker ./apps/worker
+
+# Copy root node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3500
-CMD ["node", "apps/worker/dist/main.js"]
+CMD ["pnpm", "--filter=@workspace/worker", "exec", "tsx", "src/main.ts"]

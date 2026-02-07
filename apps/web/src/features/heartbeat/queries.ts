@@ -6,12 +6,20 @@
 
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
-import type { HeartbeatHistoryItem } from '@/lib/heartbeat';
 import { heartbeatKeys } from '@/lib/queryKeys';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+export interface HeartbeatHistoryItem {
+  id: number;
+  timestamp: Date;
+  status: 'healthy' | 'unhealthy' | 'processing';
+  isProcessing: boolean;
+  uptime?: number | null;
+  workerId: string;
+}
 
 export interface HeartbeatStatus {
   status: 'healthy' | 'unhealthy' | 'error';

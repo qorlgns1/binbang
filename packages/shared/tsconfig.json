@@ -8,6 +8,8 @@
     "declaration": true,
     "declarationMap": true,
     "noEmit": false,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "paths": {
       "@workspace/db": ["../db/src"]
     }

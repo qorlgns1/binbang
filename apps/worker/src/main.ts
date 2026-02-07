@@ -17,7 +17,7 @@ import {
   invalidateSelectorCache,
   loadPlatformSelectors,
   getSettings,
-} from '@workspace/shared';
+} from '@workspace/shared/worker';
 
 import { getCronConfig, initCronConfig, logConfig } from './config';
 import { checkAllAccommodations, isProcessing } from './processor';

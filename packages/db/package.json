@@ -6,19 +6,23 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "development": "./src/index.ts",
+      "default": "./dist/src/index.js"
     },
     "./client": {
       "types": "./src/client.ts",
-      "default": "./src/client.ts"
+      "development": "./src/client.ts",
+      "default": "./dist/src/client.js"
     }
   },
   "scripts": {
+    "build": "tsc",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed",
+    "db:seed": "prisma db seed && prisma db seed-production",
+    "db:seed-production": "prisma db seed-production",
     "db:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf generated node_modules"
@@ -31,6 +35,7 @@
   "devDependencies": {
     "@types/node": "^24.10.9",
     "@types/pg": "^8.11.11",
+    "dotenv": "^17.2.3",
     "prisma": "^7.3.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
