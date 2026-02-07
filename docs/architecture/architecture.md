@@ -14,7 +14,7 @@
 ## 모노레포 구조
 
 ```text
-accommodation-monitor/
+binbang/
 ├── .github/
 │   └── workflows/                 # CI/CD 워크플로우
 ├── apps/

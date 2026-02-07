@@ -1,6 +1,6 @@
 services:
   web:
-    image: kihoonbae/accommodation-monitor:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
+    image: kihoonbae/binbang:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
     ports:
       - '4000:3000'
     networks:
@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
+    image: kihoonbae/binbang:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
     networks:
       - shared-network
     expose:
@@ -23,4 +23,4 @@ networks:
   shared-network:
     driver: bridge
     external: true
-    name: accommodation_monitor_shared_network
+    name: binbang_shared_network

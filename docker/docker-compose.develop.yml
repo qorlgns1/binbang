@@ -1,6 +1,6 @@
 services:
   web:
-    image: kihoonbae/accommodation-monitor:web-develop
+    image: kihoonbae/binbang:web-develop
     ports:
       - '3200:3000'
     networks:
@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: kihoonbae/accommodation-monitor:worker-develop
+    image: kihoonbae/binbang:worker-develop
     networks:
       - shared-network
     env_file:
@@ -25,4 +25,4 @@ networks:
   shared-network:
     driver: bridge
     external: true
-    name: accommodation_monitor_shared_network
+    name: binbang_shared_network

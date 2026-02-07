@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: accommodation-monitor-db-local
+    container_name: binbang-db-local
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -20,7 +20,7 @@ services:
     build:
       context: ..
       dockerfile: docker/web.Dockerfile
-    container_name: accommodation-monitor-web-local
+    container_name: binbang-web-local
     ports:
       - '${WEB_PORT:-3000}:3000'
     env_file:
@@ -36,7 +36,7 @@ services:
     build:
       context: ..
       dockerfile: docker/worker.Dockerfile
-    container_name: accommodation-monitor-worker-local
+    container_name: binbang-worker-local
     restart: unless-stopped
     ports:
       - '3500:3500'

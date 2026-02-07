@@ -188,7 +188,7 @@ This separation ensures that architectural intent remains clear while constraint
 
 ## 1. 목표 구조 (Tree)
 
-accommodation-monitor/
+binbang/
 ├── apps/
 │ ├── web/
 │ │ ├── src/

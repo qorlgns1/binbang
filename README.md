@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8.svg)](https://tailwindcss.com/)
-[![CI](https://github.com/qorlgns1/accommodation-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/accommodation-monitor/actions/workflows/ci.yml)
+[![CI](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml)
 
 Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내주는 웹 애플리케이션입니다
 
@@ -90,7 +90,7 @@ pnpm local:docker up -d --build
 
 ## Contributing
 
-- 버그 리포트나 기능 제안은 [Issues](https://github.com/qorlgns1/accommodation-monitor/issues)에 등록해주세요
+- 버그 리포트나 기능 제안은 [Issues](https://github.com/qorlgns1/binbang/issues)에 등록해주세요
 - PR 전에 관련 이슈가 있는지 확인해주세요
 
 ---

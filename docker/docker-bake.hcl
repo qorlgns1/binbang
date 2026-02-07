@@ -28,7 +28,7 @@ target "_common" {
 target "web" {
   inherits   = ["_common"]
   dockerfile = "docker/web.Dockerfile"
-  tags       = ["kihoonbae/accommodation-monitor:web-${TAG}"]
+  tags       = ["kihoonbae/binbang:web-${TAG}"]
   args = {
     NEXT_PUBLIC_GA_MEASUREMENT_ID        = NEXT_PUBLIC_GA_MEASUREMENT_ID
     NEXT_PUBLIC_NAVER_SITE_VERIFICATION  = NEXT_PUBLIC_NAVER_SITE_VERIFICATION
@@ -39,5 +39,5 @@ target "web" {
 target "worker" {
   inherits   = ["_common"]
   dockerfile = "docker/worker.Dockerfile"
-  tags       = ["kihoonbae/accommodation-monitor:worker-${TAG}"]
+  tags       = ["kihoonbae/binbang:worker-${TAG}"]
 }
