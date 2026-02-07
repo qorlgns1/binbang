@@ -3,6 +3,8 @@ services:
     image: kihoonbae/accommodation-monitor:web-${IMAGE_TAG}@${IMAGE_WEB_DIGEST}
     ports:
       - '4000:3000'
+    networks:
+      - shared-network
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
@@ -17,6 +19,8 @@ services:
 
   worker:
     image: kihoonbae/accommodation-monitor:worker-${IMAGE_TAG}@${IMAGE_WORKER_DIGEST}
+    networks:
+      - shared-network
     expose:
       - '3500'
     environment:
@@ -26,9 +30,9 @@ services:
     restart: unless-stopped
     volumes:
       - /etc/ssl/rds/global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
+
+networks:
+  shared-network:
+    driver: bridge
+    external: true
+    name: accommodation_monitor_shared_network

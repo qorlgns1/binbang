@@ -17,6 +17,7 @@ export async function checkAccommodation(accommodation: AccommodationToCheck): P
         price: null,
         checkUrl: accommodation.url,
         error: `Unknown platform: ${accommodation.platform}`,
+        retryCount: 0,
       };
   }
 }

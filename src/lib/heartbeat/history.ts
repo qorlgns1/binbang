@@ -24,7 +24,7 @@ export async function recordHeartbeatHistory(
       },
     });
 
-    // 24시간 이전 데이터 자동 정리 (t2.micro 메모리 관리)
+    // 24시간 이전 데이터 자동 정리 (운영 인스턴스 메모리 관리)
     const oneDayAgo = new Date();
     oneDayAgo.setHours(oneDayAgo.getHours() - 24);
 

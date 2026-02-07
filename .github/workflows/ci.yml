@@ -46,6 +46,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm test
+      - run: pnpm db:generate
       - run: pnpm build
 
   call-publish-dev:

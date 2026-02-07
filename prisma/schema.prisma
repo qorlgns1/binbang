@@ -99,6 +99,28 @@ model Accommodation {
   @@index([isActive])
 }
 
+// 모니터링 사이클
+model CheckCycle {
+  id              String    @id @default(cuid())
+  startedAt       DateTime
+  completedAt     DateTime?
+  durationMs      Int?
+  totalCount      Int       @default(0)
+  successCount    Int       @default(0)
+  errorCount      Int       @default(0)
+  concurrency     Int
+  browserPoolSize Int
+  navigationTimeoutMs Int
+  contentWaitMs   Int
+  maxRetries      Int
+  createdAt       DateTime  @default(now())
+
+  checkLogs       CheckLog[]
+
+  @@index([startedAt])
+  @@index([concurrency, browserPoolSize])
+}
+
 // 체크 로그
 model CheckLog {
   id              String   @id @default(cuid())
@@ -112,10 +134,17 @@ model CheckLog {
   errorMessage    String?
   notificationSent Boolean @default(false)
 
+  cycleId         String?
+  cycle           CheckCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  durationMs      Int?
+  retryCount      Int       @default(0)
+  previousStatus  AvailabilityStatus?
+
   createdAt       DateTime @default(now())
 
   @@index([accommodationId])
   @@index([createdAt])
+  @@index([cycleId])
 }
 
 model WorkerHeartbeat {

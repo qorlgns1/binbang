@@ -1,7 +1,10 @@
 import type { Browser, Page } from 'puppeteer';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
 import { getSettings } from '@/lib/settings';
+
+puppeteer.use(StealthPlugin());
 
 const DEFAULT_BLOCKED_RESOURCE_TYPES = ['image', 'media', 'font'];
 
@@ -43,9 +46,6 @@ export async function setupPage(page: Page): Promise<void> {
   const blockedResourceTypes = blockRaw ? parseBlockedResourceTypes(blockRaw) : new Set(DEFAULT_BLOCKED_RESOURCE_TYPES);
   const navigationTimeoutMs = settings.browser.navigationTimeoutMs;
 
-  await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-  );
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setExtraHTTPHeaders({
     'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -61,10 +61,6 @@ export async function setupPage(page: Page): Promise<void> {
       request.continue();
     });
   }
-
-  await page.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-  });
 
   page.setDefaultTimeout(navigationTimeoutMs);
   page.setDefaultNavigationTimeout(navigationTimeoutMs);

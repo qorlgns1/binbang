@@ -9,7 +9,7 @@
 
 모든 코드 변경, 리팩토링, 기능 제안은 아래 우선순위를 **반드시** 따른다.
 
-1. **운영 안정성** (t2.micro에서 프로세스가 죽지 않는 것)
+1. **운영 안정성** (운영 환경에서 프로세스가 죽지 않는 것)
 2. **메모리 / CPU 사용량 최소화**
 3. **데이터 정합성**
    - 중복 체크 방지
@@ -27,21 +27,21 @@
 
 - production 환경에서 `docker compose`에 `build:` 사용 ❌  
   → **항상 image + digest 고정**
-- production에서 멀티 브라우저 풀, 동시성 증가 제안 ❌
-- t2.micro 기준에서 메모리 사용량 증가를 전제로 한 설계 ❌
 
 ### Worker / Puppeteer
 
-- `BROWSER_POOL_SIZE`, `WORKER_CONCURRENCY` 증가 제안 ❌
 - 새 Chromium 인스턴스를 매 작업마다 생성 ❌
 - 페이지/브라우저 close 누락 ❌
 
 ### Prisma / DB
 
 - `src/generated/**` 파일 직접 수정 ❌
-- Prisma import 경로 혼용 ❌  
+- Prisma import 경로 혼용 ❌
   (`@prisma/client` 사용 금지, `@/generated/prisma/client`만 허용)
 - DB 연결 보안 하향 (`sslmode=require`, `prefer` 등) 제안 ❌
+- `prisma db push` 사용 ❌ → **`prisma migrate dev`만 사용**
+- 이미 배포된 migration 파일 수정/삭제 ❌
+- migration SQL 직접 작성 ❌ → `migrate dev`로 자동 생성
 
 ### 보안
 
@@ -96,6 +96,13 @@
 - 페이지: `src/app/admin/heartbeat/page.tsx`
 - 타임라인: `src/app/admin/heartbeat/_components/HeartbeatTimeline.tsx`
 
+### 처리량(Throughput) 모니터링
+
+- API: `src/app/api/admin/throughput/summary/route.ts`, `src/app/api/admin/throughput/history/route.ts`, `src/app/api/admin/throughput/compare/route.ts`
+- Hooks: `src/hooks/useThroughputSummary.ts`, `src/hooks/useThroughputHistory.ts`, `src/hooks/useThroughputComparison.ts`
+- Query Keys: `src/hooks/queryKeys.ts` (adminKeys.throughput*)
+- 페이지/UI: `src/app/admin/throughput/page.tsx`, `src/app/admin/throughput/_components/*`
+
 ### 알림
 
 - 카카오 메시지: `src/lib/kakao/*`
@@ -104,6 +111,38 @@
 
 - Prisma Client: `src/lib/prisma.ts`
 - Schema: `prisma/schema.prisma`
+- Migrations: `prisma/migrations/`
+- 설정: `prisma.config.ts`
+- 체크 사이클: `CheckCycle` 모델 + `CheckLog` 확장 필드 (cycleId, durationMs, retryCount, previousStatus)
+
+### Prisma Migrate 워크플로우
+
+스키마 변경은 **반드시 `prisma migrate dev`로 마이그레이션을 생성**하고, 서버에서는 worker 시작 시 `prisma migrate deploy`가 자동 실행된다.
+
+**로컬 개발 (마이그레이션 생성)**
+
+```bash
+# 1. prisma/schema.prisma 수정
+# 2. 마이그레이션 생성 + 로컬 DB 적용
+pnpm prisma migrate dev --name 변경내용
+
+# SQL만 생성하고 적용은 나중에 하려면
+pnpm prisma migrate dev --name 변경내용 --create-only
+# → SQL 확인/수정 후
+pnpm prisma migrate dev
+```
+
+**서버 배포 (자동)**
+
+- Worker Dockerfile CMD: `pnpm db:migrate:deploy && pnpm cron`
+- 컨테이너 시작 시 새 마이그레이션만 자동 적용, 이미 적용된 것은 skip
+
+**규칙**
+
+- `prisma/migrations/` 폴더는 **반드시 git에 커밋**한다
+- 이미 적용된(서버에 배포된) migration 파일은 **수정/삭제 금지**
+- `db push`는 **사용하지 않는다** (migrate와 혼용 금지)
+- migration SQL 파일을 직접 작성하지 않는다 (`migrate dev`로 생성)
 
 ### Rate Limiting / 미들웨어
 
@@ -189,8 +228,6 @@ pnpm dlx shadcn@latest add <component> --overwrite
 - 필수 규칙:
   - image + digest 고정
   - CA 번들 마운트 필수
-  - Worker 메모리 제한 엄수
-  - 동시성/풀 크기 변경 금지
   - 워커 제어 포트는 `expose`만 사용 (`ports` 금지)
 
 ---
@@ -212,21 +249,6 @@ pnpm dlx shadcn@latest add <component> --overwrite
 
 ---
 
-### Worker 메모리 급증 / 프로세스 종료
-
-점검 포인트:
-
-- 브라우저/페이지 close 누락 여부
-- 브라우저 풀 재사용 여부
-- 리소스 차단 설정 유지 여부
-- 장시간 실행 시 메모리 누수 가능성
-
-원칙:
-
-- **브라우저 1개**
-- **동시 처리 1개**
-- 필요 시 재시작은 허용, 확장은 불가
-
 ---
 
 ## 🧪 변경 시 검증 기준
@@ -235,8 +257,6 @@ pnpm dlx shadcn@latest add <component> --overwrite
 
 - 체크 결과 로직 동일 (패턴 탐지 결과 변경 ❌)
 - 중복 알림 발생 ❌
-- Worker 쿼리 수 증가 ❌
-- 메모리 사용량 증가 ❌
 
 권장 검증 명령:
 

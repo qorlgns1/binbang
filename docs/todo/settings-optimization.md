@@ -10,12 +10,12 @@
 
 현재 API에서 음수만 차단하고 **상한 검증이 없어** 관리자 실수로 운영이 중단될 수 있습니다.
 
-| 설정 | 위험한 값 | 결과 |
-| --- | --- | --- |
-| `worker.concurrency` | `100` | t2.micro 메모리 폭주 |
-| `worker.browserPoolSize` | `10` | OOM kill |
-| `browser.navigationTimeoutMs` | `0` | 즉시 타임아웃, 모든 체크 실패 |
-| `worker.cronSchedule` | `*/1 * * * *` (1분) | 과부하 |
+| 설정                          | 위험한 값           | 결과                             |
+| ----------------------------- | ------------------- | -------------------------------- |
+| `worker.concurrency`          | `100`               | 무료/저사양 인스턴스 메모리 폭주 |
+| `worker.browserPoolSize`      | `10`                | OOM kill                         |
+| `browser.navigationTimeoutMs` | `0`                 | 즉시 타임아웃, 모든 체크 실패    |
+| `worker.cronSchedule`         | `*/1 * * * *` (1분) | 과부하                           |
 
 **작업 내용**: `src/app/api/admin/settings/route.ts`의 PATCH 핸들러에 키별 `min`/`max` 범위 검증 추가
 
