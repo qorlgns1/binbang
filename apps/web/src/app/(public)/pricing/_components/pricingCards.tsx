@@ -16,12 +16,12 @@ function formatPrice(price: number): string {
   return `₩${price.toLocaleString()}`;
 }
 
-function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: boolean }) {
+function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: boolean }): React.ReactElement {
   const isPopular = plan.name === 'PRO';
 
   return (
     <Card
-      className={`relative flex flex-col overflow-visible gap-3 ${
+      className={`relative flex flex-col gap-3 overflow-visible border-border/80 bg-card/90 shadow-sm backdrop-blur transition-all hover:shadow-md ${
         isPopular ? 'border-primary shadow-lg lg:scale-105' : ''
       } ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}
     >
@@ -86,15 +86,14 @@ function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: bool
           </Button>
         ) : plan.price === 0 ? (
           <Button
-            className='w-full'
-            variant='outline'
+            className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
             asChild
           >
             <Link href='/signup'>무료로 시작하기</Link>
           </Button>
         ) : (
           <Button
-            className='w-full'
+            className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
             asChild
           >
             <Link href={`mailto:rlgns0610@gmail.com?subject=${plan.name} 플랜 업그레이드 문의`}>업그레이드 문의</Link>
@@ -105,7 +104,7 @@ function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: bool
   );
 }
 
-function PricingCardsSkeleton() {
+function PricingCardsSkeleton(): React.ReactElement {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto'>
       {[1, 2, 3].map((i) => (
@@ -137,7 +136,7 @@ function PricingCardsSkeleton() {
   );
 }
 
-export function PricingCards() {
+export function PricingCards(): React.ReactElement {
   const { data: plans, isLoading, isError } = usePlans();
   const { data: userQuota } = useUserQuota();
 
