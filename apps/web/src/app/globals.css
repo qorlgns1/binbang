@@ -1,11 +1,3 @@
-/**
- * globals.css
- * 
- * Tailwind v4 + shadcn-ui v3 스타일 기반
- * OKLCH 색상 공간 사용으로 perceptual uniformity 확보
- * semantic 토큰 중심으로 유지보수성 강화
- */
-
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -13,6 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  /* ... (기존 변수 매핑 유지) ... */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -39,7 +32,6 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* Sidebar 관련 커스텀 토큰 (필요 시 확장) */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -49,161 +41,120 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* 상태 뱃지 토큰 */
-  --color-status-success: var(--status-success);
-  --color-status-success-foreground: var(--status-success-foreground);
-  --color-status-error: var(--status-error);
-  --color-status-error-foreground: var(--status-error-foreground);
-  --color-status-warning: var(--status-warning);
-  --color-status-warning-foreground: var(--status-warning-foreground);
-  --color-status-neutral: var(--status-neutral);
-  --color-status-neutral-foreground: var(--status-neutral-foreground);
+  /* Brand Specific Colors */
+  --color-brand-navy: var(--brand-navy); /* Deep Night Navy */
+  --color-brand-amber: var(--brand-amber); /* Lighthouse Light */
 
-  /* Info / Caution 알림 토큰 */
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-  --color-info-border: var(--info-border);
-  --color-caution: var(--caution);
-  --color-caution-foreground: var(--caution-foreground);
-  --color-caution-border: var(--caution-border);
-
-  /* Radius 변형 (shadcn 기본 + 확장) */
-  --radius: 0.625rem;
+  /* Radius (조금 더 둥글게 - 따뜻한 느낌) */
+  --radius: 0.75rem;
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.25rem);
-  --radius-2xl: calc(var(--radius) + 0.5rem);
 }
 
+/* Brand Palette (Lighthouse Theme)
+  - Night Sea: #071326 / #0D1B2F / #16263D
+  - Mist: #EAF1F8 / #9FB1C7
+  - Lighthouse Amber: #F4B400 / #FFD166
+*/
+
 :root {
-  --background: oklch(99.9% 0.002 0);
-  --foreground: oklch(14% 0.03 260);
+  /* Light mode: neutral for admin/product screens */
+  --background: #f8fbff;
+  --foreground: #1a2a40;
 
-  --card: oklch(99.5% 0.005 0);
-  --card-foreground: oklch(14% 0.03 260);
+  --card: #ffffff;
+  --card-foreground: #1a2a40;
 
-  --popover: oklch(99.5% 0.005 0);
-  --popover-foreground: oklch(14% 0.03 260);
+  --popover: #ffffff;
+  --popover-foreground: #1a2a40;
 
-  --primary: oklch(65% 0.18 250); /* 생기있는 청보라 계열 */
-  --primary-foreground: oklch(98% 0.01 0);
+  --primary: #f4b400;
+  --primary-foreground: #1a2233;
 
-  --secondary: oklch(96% 0.008 0);
-  --secondary-foreground: oklch(20% 0.02 260);
+  --secondary: #eef3f9;
+  --secondary-foreground: #22324a;
 
-  --muted: oklch(96% 0.008 250);
-  --muted-foreground: oklch(55% 0.03 260);
+  --muted: #eef3f9;
+  --muted-foreground: #5e6f86;
 
-  --accent: oklch(96% 0.02 200); /* 살짝 청록 느낌 */
-  --accent-foreground: oklch(20% 0.02 260);
+  --accent: #fff3d4;
+  --accent-foreground: #1f3048;
 
-  --destructive: oklch(58% 0.22 25); /* 경고/삭제용 레드 */
-  --destructive-foreground: oklch(98% 0.01 0);
+  --destructive: #e86a5d;
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(92% 0.01 0);
-  --input: oklch(92% 0.01 0);
-  --ring: oklch(70% 0.15 250);
+  --border: #d6e0ec;
+  --input: #d6e0ec;
+  --ring: #f4b400;
 
-  --chart-1: oklch(80% 0.12 220); /* 차트 색상 다양화 */
-  --chart-2: oklch(70% 0.15 180);
-  --chart-3: oklch(62% 0.18 140);
-  --chart-4: oklch(55% 0.16 60);
-  --chart-5: oklch(48% 0.14 300);
+  --chart-1: #f4b400;
+  --chart-2: #29415f;
+  --chart-3: #2fbf71;
+  --chart-4: #38bdf8;
+  --chart-5: #e86a5d;
 
-  /* 상태 뱃지 */
-  --status-success: oklch(95.3% 0.051 163);
-  --status-success-foreground: oklch(52.7% 0.126 162);
-  --status-error: oklch(94.2% 0.027 13);
-  --status-error-foreground: oklch(50.5% 0.162 16);
-  --status-warning: oklch(96.2% 0.059 95);
-  --status-warning-foreground: oklch(55.5% 0.123 66);
-  --status-neutral: oklch(96.8% 0.005 265);
-  --status-neutral-foreground: oklch(44.6% 0.025 265);
+  --sidebar: #f3f8ff;
+  --sidebar-foreground: #1e2f47;
+  --sidebar-primary: #f4b400;
+  --sidebar-primary-foreground: #1a2233;
+  --sidebar-accent: #fff3d4;
+  --sidebar-accent-foreground: #22324a;
+  --sidebar-border: #d6e0ec;
+  --sidebar-ring: #f4b400;
 
-  /* Info 알림 (파싱 결과 등) */
-  --info: oklch(97% 0.014 255);
-  --info-foreground: oklch(42.4% 0.178 266);
-  --info-border: oklch(88.2% 0.059 254);
-
-  /* Caution 알림 (카카오 배너 등) */
-  --caution: oklch(98.7% 0.026 102);
-  --caution-foreground: oklch(47.6% 0.106 61);
-  --caution-border: oklch(94.5% 0.097 100);
-
-  /* Sidebar (기존 유지하면서 chroma 보강) */
-  --sidebar: oklch(99% 0.003 0);
-  --sidebar-foreground: oklch(14% 0.03 260);
-  --sidebar-primary: oklch(65% 0.18 250);
-  --sidebar-primary-foreground: oklch(98% 0.01 0);
-  --sidebar-accent: oklch(96% 0.008 250);
-  --sidebar-accent-foreground: oklch(20% 0.02 260);
-  --sidebar-border: oklch(92% 0.01 0);
-  --sidebar-ring: oklch(70% 0.15 250);
+  --brand-navy: #071326;
+  --brand-amber: #f4b400;
 }
 
 .dark {
-  --background: oklch(12% 0.02 260);
-  --foreground: oklch(98% 0.01 0);
+  /* Dark mode: main lighthouse identity */
+  --background: #071326;
+  --foreground: #eaf1f8;
 
-  --card: oklch(18% 0.03 260);
-  --card-foreground: oklch(98% 0.01 0);
+  --card: #16263d;
+  --card-foreground: #eaf1f8;
 
-  --popover: oklch(18% 0.03 260);
-  --popover-foreground: oklch(98% 0.01 0);
+  --popover: #16263d;
+  --popover-foreground: #eaf1f8;
 
-  --primary: oklch(72% 0.16 250); /* dark에서도 생기 유지 */
-  --primary-foreground: oklch(12% 0.02 260);
+  --primary: #f4b400;
+  --primary-foreground: #1a2233;
 
-  --secondary: oklch(26% 0.03 260);
-  --secondary-foreground: oklch(98% 0.01 0);
+  --secondary: #0d1b2f;
+  --secondary-foreground: #eaf1f8;
 
-  --muted: oklch(26% 0.03 260);
-  --muted-foreground: oklch(70% 0.04 260);
+  --muted: #0d1b2f;
+  --muted-foreground: #9fb1c7;
 
-  --accent: oklch(37% 0.04 200);
-  --accent-foreground: oklch(98% 0.01 0);
+  --accent: #22324a;
+  --accent-foreground: #eaf1f8;
 
-  --destructive: oklch(70% 0.19 22);
-  --destructive-foreground: oklch(98% 0.01 0);
+  --destructive: #e86a5d;
+  --destructive-foreground: #fff2f0;
 
-  --border: oklch(92% 0.01 0 / 0.15);
-  --input: oklch(92% 0.01 0 / 0.2);
-  --ring: oklch(55% 0.12 250);
+  --border: #25364f;
+  --input: #25364f;
+  --ring: #ffd166;
 
-  --chart-1: oklch(80% 0.12 220);
-  --chart-2: oklch(70% 0.15 180);
-  --chart-3: oklch(62% 0.18 140);
-  --chart-4: oklch(55% 0.16 60);
-  --chart-5: oklch(48% 0.14 300);
+  --chart-1: #f4b400;
+  --chart-2: #9fb1c7;
+  --chart-3: #2fbf71;
+  --chart-4: #38bdf8;
+  --chart-5: #e86a5d;
 
-  /* 상태 뱃지 dark */
-  --status-success: oklch(25% 0.04 163);
-  --status-success-foreground: oklch(75% 0.12 162);
-  --status-error: oklch(25% 0.03 13);
-  --status-error-foreground: oklch(75% 0.14 16);
-  --status-warning: oklch(25% 0.04 95);
-  --status-warning-foreground: oklch(75% 0.1 66);
-  --status-neutral: oklch(25% 0.005 265);
-  --status-neutral-foreground: oklch(70% 0.02 265);
+  --sidebar: #0d1b2f;
+  --sidebar-foreground: #eaf1f8;
+  --sidebar-primary: #f4b400;
+  --sidebar-primary-foreground: #1a2233;
+  --sidebar-accent: #16263d;
+  --sidebar-accent-foreground: #eaf1f8;
+  --sidebar-border: #25364f;
+  --sidebar-ring: #ffd166;
 
-  /* Info / Caution dark */
-  --info: oklch(22% 0.03 255);
-  --info-foreground: oklch(78% 0.12 254);
-  --info-border: oklch(30% 0.05 254);
-  --caution: oklch(22% 0.03 102);
-  --caution-foreground: oklch(78% 0.08 61);
-  --caution-border: oklch(30% 0.06 100);
-
-  /* Sidebar dark */
-  --sidebar: oklch(18% 0.03 260);
-  --sidebar-foreground: oklch(98% 0.01 0);
-  --sidebar-primary: oklch(72% 0.16 250);
-  --sidebar-primary-foreground: oklch(12% 0.02 260);
-  --sidebar-accent: oklch(26% 0.03 260);
-  --sidebar-accent-foreground: oklch(98% 0.01 0);
-  --sidebar-border: oklch(92% 0.01 0 / 0.15);
-  --sidebar-ring: oklch(55% 0.12 250);
+  --brand-navy: #071326;
+  --brand-amber: #f4b400;
 }
 
 @layer base {
@@ -212,15 +163,38 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    margin: 0;
     font-feature-settings:
       'liga' 1,
       'calt' 1;
   }
 }
 
-/* 추가적인 글로벌 스타일 (필요 시 확장) */
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 600ms;
+    animation-timing-function: ease-in-out;
+  }
+}
+
 @layer utilities {
+  /* 등대 불빛 효과 (Glow) */
+  .lighthouse-glow {
+    box-shadow: 0 0 15px -3px oklch(78% 0.17 85 / 0.4);
+  }
+
+  /* 카드 글래스모피즘 (Glassmorphism) */
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-md border border-white/10;
+  }
+
+  /* 스크롤바 숨기기 */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
