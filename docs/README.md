@@ -10,6 +10,7 @@
   - `local-development.md`: 로컬 개발/환경변수/명령
   - `deployment.md`: CI/CD 및 운영 배포 절차
   - `rbac-local-testing.md`: RBAC 기능 로컬 검증 가이드
+  - `worker-bullmq-runtime-flow.md`: 워커(BullMQ/Playwright) 실행 흐름 상세
 - `docs/history/`
   - `changelog.md`: 버전 변경 이력
   - `develop-work-units.md`: `main..develop` 작업 단위 재구성 기록

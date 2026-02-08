@@ -126,6 +126,15 @@ export default defineConfig(
     },
   },
 
+  // 테스트 파일에서는 return type 강제 해제
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+    },
+  },
+
   // apps/web는 @shared/worker 임포트 금지 (rules.md 3.2)
   {
     files: ['apps/web/**/*.{ts,tsx}'],

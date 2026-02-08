@@ -22,7 +22,7 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
   - Prisma 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
   - monorepo 경계 규칙(`rules.md`, `RULES_SUMMARY.md`) 기반으로 유지보수성 확보
 - **Technical Decisions**:
-  - 브라우저 풀 기반 워커로 스크래핑 성능/안정성 개선
+  - BullMQ(Redis) 기반 잡 큐 + Playwright 브라우저 풀로 스크래핑 성능/안정성 개선
   - 플랫폼 셀렉터를 DB에서 동적으로 관리해 UI 변경 대응 비용 절감
   - GitHub Actions + Docker로 빌드/배포 자동화 및 재현 가능한 운영 환경 구성
 - **Outcomes**:
@@ -72,7 +72,7 @@ pnpm install
 cp .env.example .env
 cp apps/web/.env.example apps/web/.env.local
 
-pnpm local:docker up -d db
+pnpm local:docker up -d db redis
 pnpm db:migrate
 
 pnpm dev:web
@@ -117,7 +117,8 @@ pnpm local:docker up -d --build
 
 ## Acknowledgments
 
-- [Puppeteer](https://pptr.dev/) - 웹 스크래핑
+- [Playwright](https://playwright.dev/) - 브라우저 자동화
+- [BullMQ](https://docs.bullmq.io/) - Redis 기반 잡 큐
 - [Next.js](https://nextjs.org/) - React 프레임워크
 - [Prisma](https://www.prisma.io/) - ORM
 - [NextAuth.js](https://next-auth.js.org/) - 인증

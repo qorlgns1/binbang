@@ -1,10 +1,10 @@
-import type { Browser, Page } from 'puppeteer';
+import type { Browser, Page } from 'playwright';
 
-import { PRICE_PATTERN } from '../../checkers/constants';
-import { delay, isRetryableError } from '../../checkers/utils';
-import type { AccommodationMetadata, AccommodationToCheck, CheckResult, TestableElement } from '../../types/checker';
-import { getSettings } from '../settings';
-import { setupPage } from './browser';
+import { PRICE_PATTERN } from '@/checkers/constants';
+import { delay, isRetryableError } from '@/checkers/utils';
+import type { AccommodationMetadata, AccommodationToCheck, CheckResult, TestableElement } from '@/types/checker';
+
+import { type PageSetupConfig, setupPage } from './browser';
 import { acquireBrowser, releaseBrowser } from './browserPool';
 
 interface PlatformPatterns {
@@ -38,13 +38,29 @@ interface CheckerConfig {
   testableAttributes?: string[];
 }
 
-export async function baseCheck(accommodation: AccommodationToCheck, config: CheckerConfig): Promise<CheckResult> {
-  const settings = getSettings();
-  const MAX_RETRIES = settings.checker.maxRetries;
-  const NAVIGATION_TIMEOUT_MS = settings.browser.navigationTimeoutMs;
-  const CONTENT_WAIT_MS = settings.browser.contentWaitMs;
-  const PATTERN_RETRY_MS = settings.browser.patternRetryMs;
-  const RETRY_DELAY_MS = settings.checker.retryDelayMs;
+export interface CheckerRuntimeConfig {
+  maxRetries: number;
+  navigationTimeoutMs: number;
+  contentWaitMs: number;
+  patternRetryMs: number;
+  retryDelayMs: number;
+  blockResourceTypes: string;
+}
+
+export async function baseCheck(
+  accommodation: AccommodationToCheck,
+  config: CheckerConfig,
+  runtimeConfig: CheckerRuntimeConfig,
+): Promise<CheckResult> {
+  const MAX_RETRIES = runtimeConfig.maxRetries;
+  const NAVIGATION_TIMEOUT_MS = runtimeConfig.navigationTimeoutMs;
+  const CONTENT_WAIT_MS = runtimeConfig.contentWaitMs;
+  const PATTERN_RETRY_MS = runtimeConfig.patternRetryMs;
+  const RETRY_DELAY_MS = runtimeConfig.retryDelayMs;
+  const pageSetupConfig: PageSetupConfig = {
+    navigationTimeoutMs: runtimeConfig.navigationTimeoutMs,
+    blockResourceTypes: runtimeConfig.blockResourceTypes,
+  };
   const checkUrl = config.buildUrl(accommodation);
   let lastError: string | null = null;
 
@@ -56,7 +72,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
     try {
       browser = await acquireBrowser();
       page = await browser.newPage();
-      await setupPage(page);
+      await setupPage(page, pageSetupConfig);
 
       console.log(`    🔍 접속 중... ${checkUrl}`);
 
@@ -67,27 +83,34 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
 
       // 스크롤하여 콘텐츠 로드
       const scrollDistance = config.scrollDistance ?? 1000;
-      await page.evaluate((distance) => window.scrollBy(0, distance), scrollDistance);
+      await page.evaluate((distance): void => window.scrollBy(0, distance), scrollDistance);
 
       // 예약 버튼 또는 불가 메시지가 나타날 때까지 대기
       const allPatterns = [...config.patterns.available, ...config.patterns.unavailable];
       try {
         await page.waitForFunction(
-          (patterns) => {
+          (patterns): boolean => {
             const text = document.body.innerText || '';
-            return patterns.some((p) => text.includes(p));
+            return patterns.some((p): boolean => text.includes(p));
           },
-          { timeout: CONTENT_WAIT_MS },
           allPatterns,
+          { timeout: CONTENT_WAIT_MS },
         );
       } catch {
         // 타임아웃 시 그냥 진행
       }
 
-      const evaluatePatterns = async () => {
+      const evaluatePatterns = async (): Promise<ExtractResult> => {
         if (!page) throw new Error('Page is not initialized');
         return page.evaluate(
-          async (patterns, priceRegex, availableSelector, unavailableSelector, priceSelector, customExtractorCode) => {
+          async ({
+            patterns,
+            priceRegex,
+            availableSelector,
+            unavailableSelector,
+            priceSelector,
+            customExtractorCode,
+          }): Promise<ExtractResult> => {
             // 0. 커스텀 추출기가 있으면 먼저 시도
             if (customExtractorCode) {
               try {
@@ -116,7 +139,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
 
             const bodyText = document.body.innerText || ''; // Fallback body text
 
-            const getTextFromSelector = async (selector: string | undefined) => {
+            const getTextFromSelector = async (selector: string | undefined): Promise<string | null> => {
               if (!selector) return null;
               const element = document.querySelector(selector);
               return element ? (element as HTMLElement).innerText : null;
@@ -196,12 +219,14 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
 
             return { matched: false, available: false, reason: null, price: null };
           },
-          config.patterns,
-          PRICE_PATTERN.source,
-          config.availableSelector,
-          config.unavailableSelector,
-          config.priceSelector,
-          config.customExtractor,
+          {
+            patterns: config.patterns,
+            priceRegex: PRICE_PATTERN.source,
+            availableSelector: config.availableSelector,
+            unavailableSelector: config.unavailableSelector,
+            priceSelector: config.priceSelector,
+            customExtractorCode: config.customExtractor,
+          },
         );
       };
 
@@ -215,7 +240,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
       // 테스트 모드일 때 testable elements 추출
       let testableElements: TestableElement[] | undefined;
       if (config.testableAttributes && config.testableAttributes.length > 0 && page) {
-        testableElements = await page.evaluate((attributes) => {
+        testableElements = await page.evaluate((attributes): TestableElement[] => {
           const elements: {
             attribute: string;
             value: string;
@@ -284,7 +309,7 @@ export async function baseCheck(accommodation: AccommodationToCheck, config: Che
         };
       }
     } finally {
-      if (page) await page.close().catch(() => {});
+      if (page) await page.close().catch((): void => {});
       if (browser) await releaseBrowser(browser);
     }
 

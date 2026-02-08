@@ -1,7 +1,9 @@
-import { formatDate } from '../../checkers/utils';
-import type { AccommodationToCheck, CheckResult } from '../../types/checker';
-import { getPlatformSelectors } from '../selectors';
+import { formatDate } from '@/checkers/utils';
+import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+
+import type { CheckerRuntimeConfig } from './baseChecker';
 import { baseCheck } from './baseChecker';
+import { getPlatformSelectors } from './selectors';
 
 /**
  * Airbnb data-testid 및 JSON-LD 기반 추출기
@@ -128,6 +130,7 @@ const AIRBNB_DATA_EXTRACTOR = `function() {
 
 export interface CheckAirbnbOptions {
   testableAttributes?: string[];
+  runtimeConfig?: CheckerRuntimeConfig;
 }
 
 export async function checkAirbnb(
@@ -137,16 +140,24 @@ export async function checkAirbnb(
   // DB에서 동적 셀렉터/패턴 로드 (캐시된 값 사용, 실패 시 fallback)
   const selectorCache = getPlatformSelectors('AIRBNB');
 
-  return baseCheck(accommodation, {
-    patterns: selectorCache.patterns,
-    scrollDistance: 800,
-    // DB에서 빌드된 extractor가 있으면 사용, 없으면 하드코딩된 fallback
-    customExtractor: selectorCache.extractorCode || AIRBNB_DATA_EXTRACTOR,
-    testableAttributes: options?.testableAttributes,
-    buildUrl: ({ url, checkIn, checkOut, adults }) => {
-      // URL에서 기존 쿼리 파라미터 제거
-      const baseUrl = url.split('?')[0];
-      return `${baseUrl}?check_in=${formatDate(checkIn)}&check_out=${formatDate(checkOut)}&adults=${adults}`;
+  if (!options?.runtimeConfig) {
+    throw new Error('runtimeConfig is required for checkAirbnb');
+  }
+
+  return baseCheck(
+    accommodation,
+    {
+      patterns: selectorCache.patterns,
+      scrollDistance: 800,
+      // DB에서 빌드된 extractor가 있으면 사용, 없으면 하드코딩된 fallback
+      customExtractor: selectorCache.extractorCode || AIRBNB_DATA_EXTRACTOR,
+      testableAttributes: options?.testableAttributes,
+      buildUrl: ({ url, checkIn, checkOut, adults }): string => {
+        // URL에서 기존 쿼리 파라미터 제거
+        const baseUrl = url.split('?')[0];
+        return `${baseUrl}?check_in=${formatDate(checkIn)}&check_out=${formatDate(checkOut)}&adults=${adults}`;
+      },
     },
-  });
+    options.runtimeConfig,
+  );
 }

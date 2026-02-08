@@ -6,7 +6,7 @@
  */
 import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
 
-import { AGODA_PATTERNS, AIRBNB_PATTERNS } from '../../checkers/constants';
+import { AGODA_PATTERNS, AIRBNB_PATTERNS } from '@/checkers/constants';
 
 // ============================================
 // Types
@@ -97,7 +97,7 @@ export function buildExtractorCode(_platform: Platform, selectorCache: PlatformS
 
   // 가격 추출 코드 생성
   const priceExtractors = selectors.price
-    .map((s) => {
+    .map((s): string => {
       if (s.extractorCode) {
         return `
       // ${s.name}
@@ -131,7 +131,7 @@ export function buildExtractorCode(_platform: Platform, selectorCache: PlatformS
 
   // 메타데이터 추출 코드 생성
   const metadataExtractors = selectors.metadata
-    .map((s) => {
+    .map((s): string => {
       if (s.extractorCode) {
         return `
       // ${s.name}
@@ -155,7 +155,7 @@ export function buildExtractorCode(_platform: Platform, selectorCache: PlatformS
 
   // 플랫폼 ID 추출 코드 생성
   const platformIdExtractors = selectors.platformId
-    .map((s) => {
+    .map((s): string => {
       if (s.extractorCode) {
         return `
       // ${s.name}
@@ -175,7 +175,7 @@ export function buildExtractorCode(_platform: Platform, selectorCache: PlatformS
 
   // 가용성 셀렉터 추출
   const availabilityChecks = selectors.availability
-    .map((s) => {
+    .map((s): string => {
       const isUnavailable = s.name.toLowerCase().includes('unavailable');
       return `
       // ${s.name}
@@ -326,7 +326,7 @@ export function getPlatformSelectors(platform: Platform): PlatformSelectorCache 
   const result = cached ?? getHardcodedFallback(platform);
 
   // 비동기로 DB 갱신 시도
-  loadPlatformSelectors(platform).catch((err) => {
+  loadPlatformSelectors(platform).catch((err): void => {
     console.warn(`[selectors] Failed to load selectors for ${platform}:`, err);
   });
 
@@ -381,8 +381,8 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
 
     const patterns: PlatformSelectorCache['patterns'] = hasPatterns
       ? {
-          available: dbPatterns.filter((p) => p.patternType === 'AVAILABLE').map((p) => p.pattern),
-          unavailable: dbPatterns.filter((p) => p.patternType === 'UNAVAILABLE').map((p) => p.pattern),
+          available: dbPatterns.filter((p): boolean => p.patternType === 'AVAILABLE').map((p): string => p.pattern),
+          unavailable: dbPatterns.filter((p): boolean => p.patternType === 'UNAVAILABLE').map((p): string => p.pattern),
         }
       : fallback.patterns;
 
@@ -449,7 +449,7 @@ export function invalidateSelectorCache(platform?: Platform): Platform[] {
 export async function preloadSelectorCache(): Promise<void> {
   const platforms: Platform[] = ['AIRBNB', 'AGODA'];
 
-  await Promise.all(platforms.map((p) => loadPlatformSelectors(p, true)));
+  await Promise.all(platforms.map((p): Promise<PlatformSelectorCache> => loadPlatformSelectors(p, true)));
 
   console.log(`[selectors] Preloaded cache for all platforms`);
 }

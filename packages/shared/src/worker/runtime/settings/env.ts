@@ -17,7 +17,7 @@ const WEB_REQUIRED_ENV_VARS = [
   'KAKAO_CLIENT_SECRET',
 ] as const;
 
-const WORKER_REQUIRED_ENV_VARS = ['DATABASE_URL'] as const;
+const WORKER_REQUIRED_ENV_VARS = ['DATABASE_URL', 'REDIS_URL'] as const;
 
 /**
  * 웹 앱용 환경변수 검증
@@ -37,12 +37,12 @@ export function validateWorkerEnv(): void {
  * 공통 검증 로직
  */
 function validateEnvVars(keys: readonly string[], context: string): void {
-  const missing = keys.filter((key) => !process.env[key]);
+  const missing = keys.filter((key): boolean => !process.env[key]);
 
   if (missing.length > 0) {
     throw new Error(
       `❌ ${context} 필수 환경변수가 설정되지 않았습니다:\n` +
-        missing.map((key) => `   - ${key}`).join('\n') +
+        missing.map((key): string => `   - ${key}`).join('\n') +
         `\n\n.env 파일을 확인하세요.`,
     );
   }

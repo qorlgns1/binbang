@@ -6,12 +6,14 @@
 - pnpm 10.28.0+
 - Docker / Docker Compose
 - PostgreSQL (로컬은 Docker로 실행 가능)
+- Redis 6.2+ (로컬은 Docker로 실행 가능, BullMQ 큐에 필요)
 - 카카오 개발자 앱
 - 구글 OAuth 클라이언트 (선택)
 
 ## 로컬 개발
 
 RBAC/플랜/감사로그 변경사항 로컬 검증은 `docs/guides/rbac-local-testing.md`를 참고하세요.
+워커 큐/체크 처리의 내부 동작은 `docs/guides/worker-bullmq-runtime-flow.md`를 참고하세요.
 
 ### 방법 1: DB만 Docker + 앱 네이티브 실행 (권장)
 
@@ -24,27 +26,29 @@ cp .env.example .env
 cp apps/web/.env.example apps/web/.env.local
 # .env / apps/web/.env.local 값 채우기
 
-# 3) DB만 실행
-pnpm local:docker up -d db
+# 3) DB + Redis 실행
+pnpm local:docker up -d db redis
 
 # 4) 마이그레이션 반영
 pnpm db:migrate
 
 # 5) 개발 서버 실행
 pnpm dev:web     # http://localhost:3000
-pnpm dev:worker  # 별도 터미널
+pnpm dev:worker  # 별도 터미널 (REDIS_URL 필요)
 ```
 
-#### DATABASE_URL 설정 (중요)
+#### DATABASE_URL / REDIS_URL 설정 (중요)
 
-`.env` 파일에서 `DATABASE_URL`을 **localhost**로 설정해야 합니다.
+`.env` 파일에서 `DATABASE_URL`과 `REDIS_URL`을 **localhost**로 설정해야 합니다.
 
 ```bash
 # Docker Compose 내부용 (사용하지 마세요)
 # DATABASE_URL=postgresql://postgres:postgres@db:5432/accommodation_monitor
+# REDIS_URL=redis://redis:6379
 
 # 로컬 네이티브 실행용 (이것을 사용하세요)
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor
+REDIS_URL=redis://localhost:6379
 ```
 
 ### 방법 2: Docker로 전체 실행 (web + worker + db)
@@ -65,6 +69,7 @@ pnpm db:migrate
 | 변수                  | 설명                                       |
 | --------------------- | ------------------------------------------ |
 | `DATABASE_URL`        | PostgreSQL 연결 문자열                     |
+| `REDIS_URL`           | Redis 연결 문자열 (워커 BullMQ 큐에 필요)  |
 | `NEXTAUTH_URL`        | 서비스 URL                                 |
 | `NEXTAUTH_SECRET`     | 세션 암호화 키 (`openssl rand -base64 32`) |
 | `KAKAO_CLIENT_ID`     | 카카오 REST API 키                         |
@@ -90,6 +95,7 @@ pnpm db:migrate
 | 변수                  | 설명                                | 기본값 |
 | --------------------- | ----------------------------------- | ------ |
 | `WORKER_CONTROL_PORT` | 워커 내부 HTTP 서버 포트            | 3500   |
+| `REDIS_PORT`          | Docker Redis 외부 포트 (로컬)       | 6379   |
 | `PRISMA_LOG_LEVEL`    | Prisma 로그 레벨 (query/warn/error) | warn   |
 
 ### Worker / 브라우저 / 체커 설정

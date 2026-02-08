@@ -34,7 +34,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "clean": "rm -rf dist node_modules"
+    "clean": "rm -rf dist node_modules",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
@@ -47,18 +48,18 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "puppeteer": "^24.0.0",
-    "puppeteer-extra": "^3.0.0",
-    "puppeteer-extra-plugin-stealth": "^2.0.0"
+    "playwright": "^1.58.0",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.0.0"
   },
   "peerDependenciesMeta": {
-    "puppeteer": {
+    "playwright": {
       "optional": true
     },
-    "puppeteer-extra": {
+    "bullmq": {
       "optional": true
     },
-    "puppeteer-extra-plugin-stealth": {
+    "ioredis": {
       "optional": true
     }
   }

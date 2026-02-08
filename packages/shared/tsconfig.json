@@ -4,6 +4,7 @@
     "lib": ["ES2023", "dom", "dom.iterable"],
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
@@ -11,6 +12,7 @@
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "paths": {
+      "@/*": ["src/*"],
       "@workspace/db": ["../db/src"]
     }
   },
