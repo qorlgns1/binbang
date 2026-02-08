@@ -20,6 +20,7 @@ export default defineConfig(
     '*.config.js',
     '*.config.mjs',
     '**/next-env.d.ts',
+    'docs/',
   ]),
 
   // 기본 JS 규칙
