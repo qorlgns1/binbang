@@ -1,5 +1,5 @@
-import { formatDate } from '@/checkers/utils';
 import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+import { buildAccommodationUrl } from '@/url-builder';
 
 import type { CheckerRuntimeConfig } from './baseChecker';
 import { baseCheck } from './baseChecker';
@@ -152,11 +152,7 @@ export async function checkAirbnb(
       // DB에서 빌드된 extractor가 있으면 사용, 없으면 하드코딩된 fallback
       customExtractor: selectorCache.extractorCode || AIRBNB_DATA_EXTRACTOR,
       testableAttributes: options?.testableAttributes,
-      buildUrl: ({ url, checkIn, checkOut, adults }): string => {
-        // URL에서 기존 쿼리 파라미터 제거
-        const baseUrl = url.split('?')[0];
-        return `${baseUrl}?check_in=${formatDate(checkIn)}&check_out=${formatDate(checkOut)}&adults=${adults}`;
-      },
+      buildUrl: buildAccommodationUrl,
     },
     options.runtimeConfig,
   );

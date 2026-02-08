@@ -103,6 +103,8 @@ export async function seedBase() {
         type: setting.type,
         category: setting.category,
         description: setting.description,
+        minValue: setting.minValue,
+        maxValue: setting.maxValue,
       },
       create: setting,
     });

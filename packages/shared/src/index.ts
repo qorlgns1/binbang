@@ -20,8 +20,9 @@
 // Types
 export * from './types';
 
-// URL Parser (pure)
+// URL Parser / Builder (pure)
 export { parseAccommodationUrl } from './url-parser';
+export { buildAccommodationUrl } from './url-builder';
 
 // Checker utilities (pure)
 export { parsePrice } from './checkers/priceParser';

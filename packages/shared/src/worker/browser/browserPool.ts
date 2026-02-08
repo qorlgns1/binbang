@@ -9,6 +9,7 @@ type Waiter = {
 
 interface PoolState {
   poolSize: number;
+  acquireTimeoutMs: number;
   launchConfig: BrowserLaunchConfig;
   browsers: Set<Browser>;
   idle: Browser[];
@@ -19,6 +20,7 @@ interface PoolState {
 
 export interface BrowserPoolConfig {
   poolSize: number;
+  acquireTimeoutMs?: number;
   launchConfig: BrowserLaunchConfig;
 }
 
@@ -31,6 +33,7 @@ export function initBrowserPool(config: BrowserPoolConfig): void {
   if (state) return;
   state = {
     poolSize: Math.max(1, config.poolSize),
+    acquireTimeoutMs: config.acquireTimeoutMs ?? 30_000,
     launchConfig: config.launchConfig,
     browsers: new Set(),
     idle: [],
@@ -113,7 +116,27 @@ export async function acquireBrowser(): Promise<Browser> {
   }
 
   return new Promise((resolve, reject): void => {
-    s.waiters.push({ resolve, reject });
+    const waiter: Waiter = { resolve, reject };
+
+    const timer = setTimeout((): void => {
+      const idx = s.waiters.indexOf(waiter);
+      if (idx !== -1) s.waiters.splice(idx, 1);
+      reject(new Error(`Browser acquire timeout after ${s.acquireTimeoutMs}ms`));
+    }, s.acquireTimeoutMs);
+
+    const originalResolve = waiter.resolve;
+    waiter.resolve = (browser: Browser): void => {
+      clearTimeout(timer);
+      originalResolve(browser);
+    };
+
+    const originalReject = waiter.reject;
+    waiter.reject = (error: Error): void => {
+      clearTimeout(timer);
+      originalReject(error);
+    };
+
+    s.waiters.push(waiter);
   });
 }
 

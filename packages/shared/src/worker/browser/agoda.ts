@@ -1,5 +1,5 @@
-import { calculateNights, formatDate } from '@/checkers/utils';
 import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+import { buildAccommodationUrl } from '@/url-builder';
 
 import type { CheckerRuntimeConfig } from './baseChecker';
 import { baseCheck } from './baseChecker';
@@ -177,12 +177,7 @@ export async function checkAgoda(
       // DB에서 빌드된 extractor가 있으면 사용, 없으면 하드코딩된 fallback
       customExtractor: selectorCache.extractorCode || AGODA_DATA_EXTRACTOR,
       testableAttributes: options?.testableAttributes,
-      buildUrl: ({ url, checkIn, checkOut, adults, rooms }): string => {
-        const baseUrl = url.split('?')[0];
-        const nights = calculateNights(checkIn, checkOut);
-        const roomCount = rooms ?? 1;
-        return `${baseUrl}?checkIn=${formatDate(checkIn)}&los=${nights}&adults=${adults}&rooms=${roomCount}&cid=1890020`;
-      },
+      buildUrl: buildAccommodationUrl,
     },
     options.runtimeConfig,
   );
