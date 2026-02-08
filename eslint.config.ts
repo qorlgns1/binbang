@@ -16,11 +16,18 @@ export default defineConfig(
     '**/out/',
     '**/build/',
     '**/dist/',
+    '**/coverage/',
+    '**/.turbo/',
+    '**/.cache/',
     '**/generated/',
+    'packages/db/generated',
+    '**/.env',
+    '**/.env.*',
     '*.config.js',
     '*.config.mjs',
     '**/next-env.d.ts',
     'docs/',
+    'pnpm-lock.yaml',
   ]),
 
   // 기본 JS 규칙
