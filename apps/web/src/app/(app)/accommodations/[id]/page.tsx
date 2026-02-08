@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { buildAccommodationUrl } from '@workspace/shared';
 import { ArrowLeft, Calendar, ExternalLink, Users } from 'lucide-react';
 
 import { LocalDateTime } from '@/components/LocalDateTime';
@@ -117,12 +118,12 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
               <span>URL</span>
             </div>
             <a
-              href={accommodation.url}
+              href={buildAccommodationUrl(accommodation)}
               target='_blank'
               rel='noopener noreferrer'
               className='break-all text-sm text-primary transition-colors hover:text-primary/80 hover:underline'
             >
-              {accommodation.url}
+              {buildAccommodationUrl(accommodation)}
             </a>
           </div>
 
