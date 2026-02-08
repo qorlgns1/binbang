@@ -1,7 +1,7 @@
 import { prisma } from '@workspace/db';
 
-import { sendKakaoMessage } from '../kakao/message';
-import { getSettings } from '../settings';
+import { sendKakaoMessage } from '@/worker/observability/kakao/message';
+import { getSettings } from '@/worker/runtime/settings';
 
 export { recordHeartbeatHistory, getHeartbeatHistory } from './history';
 export type { HeartbeatHistoryItem } from './history';
@@ -121,14 +121,15 @@ async function sendAlert(title: string, description: string): Promise<void> {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
     await Promise.all(
-      admins.map((admin) =>
-        sendKakaoMessage({
-          userId: admin.id,
-          title: `System Alert: ${title}`,
-          description: `${description}\n\nAdmin: ${admin.name || admin.email}\nTime: ${new Date().toISOString()}`,
-          buttonText: 'Dashboard',
-          buttonUrl: `${baseUrl}/dashboard`,
-        }),
+      admins.map(
+        (admin): Promise<boolean> =>
+          sendKakaoMessage({
+            userId: admin.id,
+            title: `System Alert: ${title}`,
+            description: `${description}\n\nAdmin: ${admin.name || admin.email}\nTime: ${new Date().toISOString()}`,
+            buttonText: 'Dashboard',
+            buttonUrl: `${baseUrl}/dashboard`,
+          }),
       ),
     );
 

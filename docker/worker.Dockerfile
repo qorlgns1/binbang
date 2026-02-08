@@ -1,43 +1,18 @@
 # syntax=docker/dockerfile:1.6
 
 # ============================================
-# Base (with Chromium for Puppeteer)
+# Base (Playwright with Chromium)
 # ============================================
-FROM node:24-slim AS base
+FROM mcr.microsoft.com/playwright:v1.58.2-noble AS base
 WORKDIR /app
 
 RUN corepack enable
-
-RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    openssl \
-    chromium \
-    fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
-  && rm -rf /var/lib/apt/lists/*
-
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # ============================================
 # Dependencies
 # ============================================
 FROM base AS deps
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/

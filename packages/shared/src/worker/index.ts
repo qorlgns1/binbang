@@ -4,43 +4,55 @@
  * This module contains code that should only be used by apps/worker.
  * apps/web MUST NOT import from this module.
  *
- * Includes:
- * - Browser automation (puppeteer)
- * - Settings (DB + process.env access)
- * - Heartbeat monitoring (DB access)
- * - Platform selectors (DB access)
- * - Kakao messaging (network I/O)
+ * Organized into four domains (rules.md §4):
+ * - browser/       Browser automation (execution only)
+ * - jobs/          Job type definitions
+ * - runtime/       Execution strategy, settings, queues
+ * - observability/ Heartbeat, notifications, logging
  */
 
 // Browser automation
 export { checkAccommodation } from './browser';
+export type { CheckAccommodationOptions, CheckerRuntimeConfig } from './browser';
+export type { BrowserLaunchConfig, PageSetupConfig, BrowserPoolConfig } from './browser';
 export { checkAirbnb } from './browser/airbnb';
 export { checkAgoda } from './browser/agoda';
 export { initBrowserPool, closeBrowserPool, acquireBrowser, releaseBrowser } from './browser/browserPool';
 
-// Settings
-export { getSettings, loadSettings } from './settings';
-export { validateWorkerEnv, validateWebEnv, getEnv, getEnvNumber } from './settings/env';
-export type { SystemSettingsCache } from './settings';
+// Runtime — Settings
+export { getSettings, loadSettings } from './runtime/settings';
+export { validateWorkerEnv, validateWebEnv, getEnv, getEnvNumber } from './runtime/settings/env';
+export type { SystemSettingsCache } from './runtime/settings';
 
-// Heartbeat
+// Runtime — Redis & Queue
+export { createRedisConnection } from './runtime/connection';
+export { createCycleQueue, createCheckQueue, QUEUE_NAMES } from './runtime/queues';
+export { createCycleWorker, createCheckWorker } from './runtime/workers';
+export type { CreateWorkerOptions } from './runtime/workers';
+export { setupRepeatableJobs, removeRepeatableJobs } from './runtime/scheduler';
+export type { Queue, Worker, Job } from 'bullmq';
+
+// Jobs
+export type { CycleJobPayload, CheckJobPayload } from './jobs';
+
+// Observability — Heartbeat
 export {
   updateHeartbeat,
   startHeartbeatMonitoring,
   stopHeartbeatMonitoring,
   recordHeartbeatHistory,
   getHeartbeatHistory,
-} from './heartbeat';
-export type { HeartbeatHistoryItem } from './heartbeat';
+} from './observability/heartbeat';
+export type { HeartbeatHistoryItem } from './observability/heartbeat';
 
-// Selectors
+// Browser — Selectors
 export {
   loadPlatformSelectors,
   getPlatformSelectors,
   invalidateSelectorCache,
   preloadSelectorCache,
-} from './selectors';
-export type { PlatformSelectorCache, SelectorConfig } from './selectors';
+} from './browser/selectors';
+export type { PlatformSelectorCache, SelectorConfig } from './browser/selectors';
 
-// Kakao
-export { notifyAvailable, sendKakaoMessage } from './kakao/message';
+// Observability — Kakao
+export { notifyAvailable, sendKakaoMessage } from './observability/kakao/message';

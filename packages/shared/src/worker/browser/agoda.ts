@@ -1,7 +1,9 @@
-import { calculateNights, formatDate } from '../../checkers/utils';
-import type { AccommodationToCheck, CheckResult } from '../../types/checker';
-import { getPlatformSelectors } from '../selectors';
+import { calculateNights, formatDate } from '@/checkers/utils';
+import type { AccommodationToCheck, CheckResult } from '@/types/checker';
+
+import type { CheckerRuntimeConfig } from './baseChecker';
 import { baseCheck } from './baseChecker';
+import { getPlatformSelectors } from './selectors';
 
 /**
  * Agoda data-* 속성 기반 추출기
@@ -153,6 +155,7 @@ const AGODA_DATA_EXTRACTOR = `function() {
 
 export interface CheckAgodaOptions {
   testableAttributes?: string[];
+  runtimeConfig?: CheckerRuntimeConfig;
 }
 
 export async function checkAgoda(
@@ -162,17 +165,25 @@ export async function checkAgoda(
   // DB에서 동적 셀렉터/패턴 로드 (캐시된 값 사용, 실패 시 fallback)
   const selectorCache = getPlatformSelectors('AGODA');
 
-  return baseCheck(accommodation, {
-    patterns: selectorCache.patterns,
-    scrollDistance: 2000,
-    // DB에서 빌드된 extractor가 있으면 사용, 없으면 하드코딩된 fallback
-    customExtractor: selectorCache.extractorCode || AGODA_DATA_EXTRACTOR,
-    testableAttributes: options?.testableAttributes,
-    buildUrl: ({ url, checkIn, checkOut, adults, rooms }) => {
-      const baseUrl = url.split('?')[0];
-      const nights = calculateNights(checkIn, checkOut);
-      const roomCount = rooms ?? 1;
-      return `${baseUrl}?checkIn=${formatDate(checkIn)}&los=${nights}&adults=${adults}&rooms=${roomCount}&cid=1890020`;
+  if (!options?.runtimeConfig) {
+    throw new Error('runtimeConfig is required for checkAgoda');
+  }
+
+  return baseCheck(
+    accommodation,
+    {
+      patterns: selectorCache.patterns,
+      scrollDistance: 2000,
+      // DB에서 빌드된 extractor가 있으면 사용, 없으면 하드코딩된 fallback
+      customExtractor: selectorCache.extractorCode || AGODA_DATA_EXTRACTOR,
+      testableAttributes: options?.testableAttributes,
+      buildUrl: ({ url, checkIn, checkOut, adults, rooms }): string => {
+        const baseUrl = url.split('?')[0];
+        const nights = calculateNights(checkIn, checkOut);
+        const roomCount = rooms ?? 1;
+        return `${baseUrl}?checkIn=${formatDate(checkIn)}&los=${nights}&adults=${adults}&rooms=${roomCount}&cid=1890020`;
+      },
     },
-  });
+    options.runtimeConfig,
+  );
 }

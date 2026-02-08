@@ -20,6 +20,7 @@ export default defineConfig(
     '*.config.js',
     '*.config.mjs',
     '**/next-env.d.ts',
+    'docs/',
   ]),
 
   // 기본 JS 규칙
@@ -123,6 +124,15 @@ export default defineConfig(
 
       // export 함수/모듈 경계도 타입을 강제하고 싶으면(선택):
       '@typescript-eslint/explicit-module-boundary-types': 'error',
+    },
+  },
+
+  // 테스트 파일에서는 return type 강제 해제
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
 

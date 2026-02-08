@@ -1,6 +1,7 @@
-import { loadSettings, validateWorkerEnv } from '@workspace/shared/worker';
+import { getEnv, loadSettings, validateWorkerEnv } from '@workspace/shared/worker';
 
-interface CronConfig {
+interface WorkerConfig {
+  redisUrl: string;
   schedule: string;
   concurrency: number;
   browserPoolSize: number;
@@ -8,19 +9,20 @@ interface CronConfig {
   shutdownTimeoutMs: number;
 }
 
-let cronConfig: CronConfig | null = null;
+let workerConfig: WorkerConfig | null = null;
 
 /**
  * DB에서 설정을 읽어 워커 설정을 초기화한다.
  * 워커 시작 시 1회 호출.
  */
-export async function initCronConfig(): Promise<void> {
+export async function initConfig(): Promise<void> {
   validateWorkerEnv();
   const settings = await loadSettings();
 
   const concurrency = Math.min(settings.worker.concurrency, settings.worker.browserPoolSize);
 
-  cronConfig = {
+  workerConfig = {
+    redisUrl: getEnv('REDIS_URL'),
     schedule: settings.worker.cronSchedule,
     concurrency,
     browserPoolSize: settings.worker.browserPoolSize,
@@ -29,18 +31,29 @@ export async function initCronConfig(): Promise<void> {
   };
 }
 
-export function getCronConfig(): CronConfig {
-  if (!cronConfig) {
-    throw new Error('CRON_CONFIG not initialized. Call initCronConfig() first.');
+export function getConfig(): WorkerConfig {
+  if (!workerConfig) {
+    throw new Error('Worker config not initialized. Call initConfig() first.');
   }
-  return cronConfig;
+  return workerConfig;
+}
+
+function maskRedisUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.password) parsed.password = '***';
+    return parsed.toString();
+  } catch {
+    return '(invalid URL)';
+  }
 }
 
 export function logConfig(): void {
-  const config = getCronConfig();
+  const config = getConfig();
   console.log('Worker configuration:');
   console.log(`   - Schedule: ${config.schedule}`);
   console.log(`   - Concurrency: ${config.concurrency}`);
   console.log(`   - Browser pool: ${config.browserPoolSize}`);
   console.log(`   - Startup delay: ${config.startupDelay}ms`);
+  console.log(`   - Redis: ${maskRedisUrl(config.redisUrl)}`);
 }

@@ -16,6 +16,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory-policy noeviction
+    container_name: binbang-redis-local
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   web:
     build:
       context: ..
@@ -28,6 +42,8 @@ services:
       - ../apps/web/.env.local
     environment:
       NODE_ENV: local
+      # Use Docker service DNS inside containers; .env usually points to localhost for host-native dev.
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
     depends_on:
       db:
         condition: service_healthy
@@ -44,10 +60,14 @@ services:
       - ../.env
     environment:
       NODE_ENV: local
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  redis_data:

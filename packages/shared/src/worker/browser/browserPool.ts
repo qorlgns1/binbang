@@ -1,6 +1,6 @@
-import type { Browser } from 'puppeteer';
+import type { Browser } from 'playwright';
 
-import { createBrowser } from './browser';
+import { type BrowserLaunchConfig, createBrowser } from './browser';
 
 type Waiter = {
   resolve: (browser: Browser) => void;
@@ -9,6 +9,7 @@ type Waiter = {
 
 interface PoolState {
   poolSize: number;
+  launchConfig: BrowserLaunchConfig;
   browsers: Set<Browser>;
   idle: Browser[];
   waiters: Waiter[];
@@ -16,15 +17,21 @@ interface PoolState {
   shuttingDown: boolean;
 }
 
+export interface BrowserPoolConfig {
+  poolSize: number;
+  launchConfig: BrowserLaunchConfig;
+}
+
 let state: PoolState | null = null;
 
 /**
  * 브라우저 풀 초기화. 워커 시작 시 1회 호출.
  */
-export function initBrowserPool(poolSize: number): void {
+export function initBrowserPool(config: BrowserPoolConfig): void {
   if (state) return;
   state = {
-    poolSize: Math.max(1, poolSize),
+    poolSize: Math.max(1, config.poolSize),
+    launchConfig: config.launchConfig,
     browsers: new Set(),
     idle: [],
     waiters: [],
@@ -47,12 +54,12 @@ async function destroyBrowser(browser: Browser): Promise<void> {
   if (s.browsers.has(browser)) {
     s.browsers.delete(browser);
   }
-  await browser.close().catch(() => {});
+  await browser.close().catch((): void => {});
 }
 
 async function createAndRegisterBrowser(): Promise<Browser> {
   const s = getState();
-  const browser = await createBrowser();
+  const browser = await createBrowser(s.launchConfig);
   s.browsers.add(browser);
   return browser;
 }
@@ -105,7 +112,7 @@ export async function acquireBrowser(): Promise<Browser> {
     }
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject): void => {
     s.waiters.push({ resolve, reject });
   });
 }
@@ -147,5 +154,5 @@ export async function closeBrowserPool(): Promise<void> {
     }
   }
 
-  await Promise.all(browsers.map((browser) => browser.close().catch(() => {})));
+  await Promise.all(browsers.map((browser): Promise<void> => browser.close().catch((): void => {})));
 }

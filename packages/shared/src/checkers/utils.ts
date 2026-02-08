@@ -7,7 +7,7 @@ export function isRetryableError(errorMessage: string): boolean {
   if (errorMessage.includes('Runtime.callFunctionOn timed out')) {
     return false;
   }
-  return RETRYABLE_ERRORS.some((pattern) => errorMessage.includes(pattern));
+  return RETRYABLE_ERRORS.some((pattern): boolean => errorMessage.includes(pattern));
 }
 
 export function formatDate(date: Date): string {
@@ -15,7 +15,9 @@ export function formatDate(date: Date): string {
 }
 
 export function delay(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((r): void => {
+    setTimeout(r, ms);
+  });
 }
 
 export function calculateNights(checkIn: Date, checkOut: Date): number {

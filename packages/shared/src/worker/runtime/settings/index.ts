@@ -187,7 +187,7 @@ export async function loadSettings(force = false): Promise<SystemSettingsCache> 
 
   try {
     const rows = await prisma.systemSettings.findMany();
-    const dbMap = new Map(rows.map((r) => [r.key, r.value]));
+    const dbMap = new Map(rows.map((r): [string, string] => [r.key, r.value]));
     cache = buildCache(dbMap);
     lastLoadedAt = Date.now();
   } catch (error) {

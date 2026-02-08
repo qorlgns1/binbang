@@ -1,10 +1,13 @@
-import type { Browser, Page } from 'puppeteer';
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { type Browser, type Page, chromium } from 'playwright';
 
-import { getSettings } from '../settings';
+export interface BrowserLaunchConfig {
+  protocolTimeoutMs: number;
+}
 
-puppeteer.use(StealthPlugin());
+export interface PageSetupConfig {
+  navigationTimeoutMs: number;
+  blockResourceTypes: string;
+}
 
 const DEFAULT_BLOCKED_RESOURCE_TYPES = ['image', 'media', 'font'];
 
@@ -16,52 +19,45 @@ function parseBlockedResourceTypes(raw: string): Set<string> {
   return new Set(
     normalized
       .split(',')
-      .map((entry) => entry.trim())
+      .map((entry): string => entry.trim())
       .filter(Boolean),
   );
 }
 
-export async function createBrowser(): Promise<Browser> {
-  const settings = getSettings();
-  return puppeteer.launch({
+export async function createBrowser(config: BrowserLaunchConfig): Promise<Browser> {
+  return chromium.launch({
     headless: true,
-    protocolTimeout: settings.browser.protocolTimeoutMs,
+    timeout: config.protocolTimeoutMs,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-accelerated-2d-canvas',
       '--disable-gpu',
-      '--window-size=1920,1080',
-      '--disable-blink-features=AutomationControlled',
-      '--disable-infobars',
     ],
-    timeout: 60000,
   });
 }
 
-export async function setupPage(page: Page): Promise<void> {
-  const settings = getSettings();
-  const blockRaw = settings.checker.blockResourceTypes;
-  const blockedResourceTypes = blockRaw ? parseBlockedResourceTypes(blockRaw) : new Set(DEFAULT_BLOCKED_RESOURCE_TYPES);
-  const navigationTimeoutMs = settings.browser.navigationTimeoutMs;
+export async function setupPage(page: Page, config: PageSetupConfig): Promise<void> {
+  const blockedResourceTypes = config.blockResourceTypes
+    ? parseBlockedResourceTypes(config.blockResourceTypes)
+    : new Set(DEFAULT_BLOCKED_RESOURCE_TYPES);
 
-  await page.setViewport({ width: 1920, height: 1080 });
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.setExtraHTTPHeaders({
     'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
   });
 
   if (blockedResourceTypes.size > 0) {
-    await page.setRequestInterception(true);
-    page.on('request', (request) => {
-      if (blockedResourceTypes.has(request.resourceType())) {
-        request.abort();
-        return;
+    await page.route('**/*', async (route): Promise<void> => {
+      if (blockedResourceTypes.has(route.request().resourceType())) {
+        await route.abort();
+      } else {
+        await route.continue();
       }
-      request.continue();
     });
   }
 
-  page.setDefaultTimeout(navigationTimeoutMs);
-  page.setDefaultNavigationTimeout(navigationTimeoutMs);
+  page.setDefaultTimeout(config.navigationTimeoutMs);
+  page.setDefaultNavigationTimeout(config.navigationTimeoutMs);
 }

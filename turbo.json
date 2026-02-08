@@ -7,7 +7,7 @@
     ".env.development",
     ".env.production"
   ],
-  "globalPassThroughEnv": ["DATABASE_URL"],
+  "globalPassThroughEnv": ["DATABASE_URL", "REDIS_URL"],
   "tasks": {
     "db:generate": {
       "cache": false,
