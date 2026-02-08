@@ -4,6 +4,8 @@
  */
 'use client';
 
+import { useMemo } from 'react';
+
 import {
   type InfiniteData,
   type UseInfiniteQueryResult,
@@ -69,10 +71,13 @@ export function useSystemSettingsQuery(): UseSystemSettingsQueryResult {
 }
 
 export function useSettingsHistoryInfiniteQuery(filters: HistoryFilterParams): UseSettingsHistoryInfiniteQueryResult {
-  const filterKey: Record<string, string> = {};
-  if (filters.settingKey) filterKey.settingKey = filters.settingKey;
-  if (filters.from) filterKey.from = filters.from;
-  if (filters.to) filterKey.to = filters.to;
+  const filterKey = useMemo((): Record<string, string> => {
+    const key: Record<string, string> = {};
+    if (filters.settingKey) key.settingKey = filters.settingKey;
+    if (filters.from) key.from = filters.from;
+    if (filters.to) key.to = filters.to;
+    return key;
+  }, [filters.settingKey, filters.from, filters.to]);
 
   return useInfiniteQuery({
     queryKey: adminKeys.settingsHistory(filterKey),

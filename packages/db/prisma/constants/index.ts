@@ -462,6 +462,8 @@ export const SYSTEM_SETTINGS = [
     type: 'string',
     category: 'worker',
     description: '숙소 가격을 확인하는 주기 (분 단위)',
+    minValue: null,
+    maxValue: null,
   },
   {
     key: 'worker.concurrency',
@@ -469,6 +471,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'worker',
     description: '한 번에 동시에 확인하는 숙소 수 (서버 부하 방지를 위해 1 권장)',
+    minValue: '1',
+    maxValue: '20',
   },
   {
     key: 'worker.browserPoolSize',
@@ -476,6 +480,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'worker',
     description: '동시에 열어두는 브라우저 수 (서버 부하 방지를 위해 1 권장)',
+    minValue: '1',
+    maxValue: '10',
   },
   {
     key: 'worker.startupDelayMs',
@@ -483,6 +489,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'worker',
     description: '서버 시작 후 첫 가격 확인까지 대기하는 시간',
+    minValue: '0',
+    maxValue: '300000',
   },
   {
     key: 'worker.shutdownTimeoutMs',
@@ -490,6 +498,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'worker',
     description: '서버 종료 시 진행 중인 작업이 끝나길 기다리는 최대 시간',
+    minValue: '5000',
+    maxValue: '600000',
   },
 
   // ── 브라우저 타임아웃 ──
@@ -499,6 +509,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'browser',
     description: '숙소 페이지가 열릴 때까지 기다리는 최대 시간',
+    minValue: '5000',
+    maxValue: '120000',
   },
   {
     key: 'browser.contentWaitMs',
@@ -506,6 +518,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'browser',
     description: '페이지 내 가격/상태 정보가 표시될 때까지 기다리는 시간',
+    minValue: '1000',
+    maxValue: '60000',
   },
   {
     key: 'browser.patternRetryMs',
@@ -513,6 +527,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'browser',
     description: '가격 정보를 찾지 못했을 때 다시 확인하기까지 대기 시간',
+    minValue: '0',
+    maxValue: '30000',
   },
   {
     key: 'browser.protocolTimeoutMs',
@@ -520,6 +536,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'browser',
     description: '브라우저와의 통신이 응답 없을 때 포기하는 최대 시간',
+    minValue: '10000',
+    maxValue: '300000',
   },
 
   // ── 체크 동작 ──
@@ -529,6 +547,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'checker',
     description: '숙소 페이지 접속에 실패했을 때 다시 시도하는 최대 횟수',
+    minValue: '0',
+    maxValue: '10',
   },
   {
     key: 'checker.retryDelayMs',
@@ -536,6 +556,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'checker',
     description: '재시도 사이에 쉬는 시간',
+    minValue: '0',
+    maxValue: '30000',
   },
   {
     key: 'checker.blockResourceTypes',
@@ -543,6 +565,8 @@ export const SYSTEM_SETTINGS = [
     type: 'string',
     category: 'checker',
     description: '속도 향상을 위해 불러오지 않는 항목 (image,media,font 등, off 입력 시 모두 불러옴)',
+    minValue: null,
+    maxValue: null,
   },
 
   // ── 모니터링 임계값 ──
@@ -552,6 +576,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'monitoring',
     description: '마지막 작업 후 이 시간 안에 응답이 있으면 "정상" 상태로 표시',
+    minValue: '60000',
+    maxValue: '86400000',
   },
   {
     key: 'monitoring.workerDegradedThresholdMs',
@@ -559,6 +585,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'monitoring',
     description: '마지막 작업 후 이 시간이 지나면 "주의" 상태로 표시 (초과 시 "중단")',
+    minValue: '60000',
+    maxValue: '86400000',
   },
 
   // ── 알림 ──
@@ -568,6 +596,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'notification',
     description: '카카오 알림 인증이 만료되기 전 미리 갱신하는 여유 시간',
+    minValue: '60000',
+    maxValue: '3600000',
   },
 
   // ── 하트비트 모니터링 ──
@@ -577,6 +607,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'heartbeat',
     description: '워커가 살아있음을 알리는 하트비트 업데이트 간격',
+    minValue: '10000',
+    maxValue: '600000',
   },
   {
     key: 'heartbeat.missedThreshold',
@@ -584,6 +616,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'heartbeat',
     description: '알림 발송 전 놓쳐도 되는 하트비트 횟수 (이 횟수 이상 놓치면 알림)',
+    minValue: '1',
+    maxValue: '10',
   },
   {
     key: 'heartbeat.checkIntervalMs',
@@ -591,6 +625,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'heartbeat',
     description: '워커 상태를 확인하는 간격',
+    minValue: '10000',
+    maxValue: '600000',
   },
   {
     key: 'heartbeat.workerDownCooldownMs',
@@ -598,6 +634,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'heartbeat',
     description: '워커 다운 알림 후 다음 알림까지 기다리는 시간 (중복 알림 방지)',
+    minValue: '60000',
+    maxValue: '86400000',
   },
   {
     key: 'heartbeat.workerStuckCooldownMs',
@@ -605,6 +643,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'heartbeat',
     description: '워커 처리 지연 알림 후 다음 알림까지 기다리는 시간',
+    minValue: '60000',
+    maxValue: '86400000',
   },
   {
     key: 'heartbeat.maxProcessingTimeMs',
@@ -612,6 +652,8 @@ export const SYSTEM_SETTINGS = [
     type: 'int',
     category: 'heartbeat',
     description: '워커가 한 작업을 처리하는 최대 허용 시간 (초과 시 "처리 지연" 알림)',
+    minValue: '60000',
+    maxValue: '7200000',
   },
 
   // ── 셀렉터 테스트 ──
@@ -621,6 +663,8 @@ export const SYSTEM_SETTINGS = [
     type: 'json',
     category: 'selectorTest',
     description: '테스트 시 추출할 요소의 속성명 (개발자가 테스트용으로 추가한 속성)',
+    minValue: null,
+    maxValue: null,
   },
 ];
 

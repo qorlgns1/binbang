@@ -250,6 +250,8 @@ model SystemSettings {
   type        String   @default("string") // string | int | boolean
   category    String                  // worker | browser | checker | monitoring | notification | seo
   description String?                 // 관리자 UI 표시용 설명
+  minValue    String?                 // 최솟값 (int 타입 설정용)
+  maxValue    String?                 // 최댓값 (int 타입 설정용)
   updatedAt   DateTime @updatedAt
 
   @@index([category])

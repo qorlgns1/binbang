@@ -11,6 +11,8 @@ const settingsUpdateSchema = z.object({
       z.object({
         key: z.string().min(1),
         value: z.string(),
+        minValue: z.string().optional(),
+        maxValue: z.string().optional(),
       }),
     )
     .min(1),
@@ -53,10 +55,10 @@ export async function PATCH(request: Request): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Unknown setting key:')) {
+    if (error instanceof Error && error.message.startsWith('Setting "')) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    if (error instanceof Error && error.message.includes('Valid non-negative integer required')) {
+    if (error instanceof Error && error.message.startsWith('Unknown setting key:')) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

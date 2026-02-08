@@ -86,6 +86,8 @@ export interface SystemSettingItem {
   type: string;
   category: string;
   description: string | null;
+  minValue: string | null;
+  maxValue: string | null;
   updatedAt: string;
 }
 
@@ -94,7 +96,7 @@ export interface SystemSettingsResponse {
 }
 
 export interface SystemSettingsUpdatePayload {
-  settings: { key: string; value: string }[];
+  settings: { key: string; value: string; minValue?: string; maxValue?: string }[];
 }
 
 export interface SettingsChangeLogEntry {
