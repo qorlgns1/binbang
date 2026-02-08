@@ -20,12 +20,6 @@ import { SettingsHistory } from './settingsHistory';
 
 type TimeUnit = 'ms' | 's' | 'min';
 
-function getBestUnit(ms: number): TimeUnit {
-  if (ms > 0 && ms % 60000 === 0) return 'min';
-  if (ms > 0 && ms % 1000 === 0) return 's';
-  return 'ms';
-}
-
 function msToDisplay(ms: number, unit: TimeUnit): number {
   if (unit === 'min') return ms / 60000;
   if (unit === 's') return ms / 1000;
@@ -53,12 +47,28 @@ function isMsSetting(key: string): boolean {
   return key.endsWith('Ms');
 }
 
-function computeUnits(originalValues: Record<string, string>): Record<string, TimeUnit> {
+function computeUnits(
+  originalValues: Record<string, string>,
+  minVals: Record<string, string>,
+  maxVals: Record<string, string>,
+): Record<string, TimeUnit> {
   const units: Record<string, TimeUnit> = {};
   for (const [key, val] of Object.entries(originalValues)) {
     if (isMsSetting(key)) {
-      const num = Number(val);
-      units[key] = isNaN(num) ? 'ms' : getBestUnit(num);
+      const allNums = [val, minVals[key], maxVals[key]]
+        .filter((v): v is string => v !== undefined && v !== '')
+        .map(Number)
+        .filter((n) => !isNaN(n) && n > 0);
+
+      if (allNums.length === 0) {
+        units[key] = 'ms';
+      } else if (allNums.every((n) => n % 60000 === 0)) {
+        units[key] = 'min';
+      } else if (allNums.every((n) => n % 1000 === 0)) {
+        units[key] = 's';
+      } else {
+        units[key] = 'ms';
+      }
     }
   }
   return units;
@@ -119,7 +129,7 @@ export function SettingsManager() {
   // 서버 데이터 변경 시 편집 상태 동기화
   useEffect(() => {
     setValues(originalValues);
-    setUnits(computeUnits(originalValues));
+    setUnits(computeUnits(originalValues, originalMinValues, originalMaxValues));
     setMinValues({ ...originalMinValues });
     setMaxValues({ ...originalMaxValues });
     setLimitEditKeys(new Set());
@@ -222,7 +232,7 @@ export function SettingsManager() {
 
   const handleReset = () => {
     setValues({ ...originalValues });
-    setUnits(computeUnits(originalValues));
+    setUnits(computeUnits(originalValues, originalMinValues, originalMaxValues));
     setMinValues({ ...originalMinValues });
     setMaxValues({ ...originalMaxValues });
     setLimitEditKeys(new Set());
