@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
-    "axios": "^1.13.4",
+    "axios": "^1.13.5",
     "dotenv": "^17.2.3"
   },
   "devDependencies": {
