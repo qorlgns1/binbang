@@ -1,22 +1,16 @@
 import Image from 'next/image';
-import Link from 'next/link';
 
-import { ArrowRight, BellRing } from 'lucide-react';
+import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 
-import { Button } from '@/components/ui/button';
-import { trackPrimaryCTAClicked, trackSecondaryCTAClicked } from '@/lib/analytics/landing-tracker';
-import { smoothScrollTo } from '@/lib/utils/scroll';
-
-import { StatusDashboard } from './StatusDashboard';
-import type { Lang, LandingCopy } from './landing-data';
+import { CTAButtons } from './CTAButtons';
+import { StatusDashboardSlot } from './StatusDashboardSlot';
 
 interface HeroProps {
   copy: LandingCopy;
-  lang?: Lang;
-  theme?: string;
+  lang: Lang;
 }
 
-export function Hero({ copy, lang = 'ko', theme = 'light' }: HeroProps): React.ReactElement {
+export function Hero({ copy, lang }: HeroProps): React.ReactElement {
   return (
     <section className='relative flex min-h-screen flex-col justify-center overflow-hidden px-4 pb-20 pt-28'>
       <div className='absolute inset-0'>
@@ -69,37 +63,13 @@ export function Hero({ copy, lang = 'ko', theme = 'light' }: HeroProps): React.R
 
         <p className='mt-7 max-w-3xl text-base leading-[26px] text-muted-foreground'>{copy.hero.description}</p>
 
-        <div className='mt-10 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center'>
-          <Button
-            asChild
-            size='lg'
-            className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'
-          >
-            <Link
-              href='/signup'
-              onClick={() => trackPrimaryCTAClicked(lang, theme)}
-            >
-              <BellRing className='mr-2 size-5' />
-              {copy.hero.cta}
-            </Link>
-          </Button>
-          <Button
-            size='lg'
-            variant='outline'
-            className='landing-secondary-cta border-border bg-card/60 text-foreground hover:border-primary/60 hover:bg-accent'
-            onClick={(e) => {
-              e.preventDefault();
-              trackSecondaryCTAClicked(lang, theme);
-              smoothScrollTo('features');
-            }}
-          >
-            {copy.hero.secondaryCta}
-            <ArrowRight className='ml-2 size-4' />
-          </Button>
-        </div>
+        <CTAButtons
+          copy={copy}
+          lang={lang}
+        />
 
         <div className='mt-16 w-full'>
-          <StatusDashboard
+          <StatusDashboardSlot
             copy={copy}
             lang={lang}
           />

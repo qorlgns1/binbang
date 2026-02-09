@@ -1,9 +1,14 @@
 import type { NextConfig } from 'next';
 
+import bundleAnalyzer from '@next/bundle-analyzer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -33,6 +38,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'radix-ui', '@workspace/shared', '@workspace/db'],
+  },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

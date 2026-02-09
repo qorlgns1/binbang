@@ -1,21 +1,18 @@
 import Link from 'next/link';
 
-import { Globe, Menu, Moon, Sun } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 
-import type { LandingCopy, Lang } from './landing-data';
+import { LangToggle } from './LangToggle';
+import { MobileMenu } from './MobileMenu';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   lang: Lang;
-  onToggleLang: () => void;
-  isDark: boolean;
-  onToggleTheme: () => void;
   copy: LandingCopy;
 }
 
-export function Header({ lang, onToggleLang, isDark, onToggleTheme, copy }: HeaderProps): React.ReactElement {
+export function Header({ lang, copy }: HeaderProps): React.ReactElement {
   return (
     <header className='fixed inset-x-0 top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur'>
       <div className='mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4'>
@@ -49,24 +46,8 @@ export function Header({ lang, onToggleLang, isDark, onToggleTheme, copy }: Head
             {copy.nav.pricing}
           </Link>
 
-          <button
-            type='button'
-            onClick={onToggleLang}
-            className='flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary'
-          >
-            <Globe className='size-3.5' />
-            {lang === 'ko' ? 'EN' : 'KR'}
-          </button>
-
-          <button
-            type='button'
-            onClick={onToggleTheme}
-            aria-label={lang === 'ko' ? '다크 모드 전환' : 'Toggle dark mode'}
-            className='flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary'
-          >
-            {isDark ? <Sun className='size-3.5' /> : <Moon className='size-3.5' />}
-            {isDark ? 'Light' : 'Dark'}
-          </button>
+          <LangToggle currentLang={lang} />
+          <ThemeToggle lang={lang} />
 
           <Button
             asChild
@@ -78,60 +59,15 @@ export function Header({ lang, onToggleLang, isDark, onToggleTheme, copy }: Head
         </nav>
 
         <div className='flex items-center gap-2 md:hidden'>
-          <button
-            type='button'
-            onClick={onToggleTheme}
-            aria-label={lang === 'ko' ? '다크 모드 전환' : 'Toggle dark mode'}
-            className='rounded-md px-2 py-1 text-xs font-medium text-foreground'
-          >
-            {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
-          </button>
-          <button
-            type='button'
-            onClick={onToggleLang}
-            className='rounded-md px-2 py-1 text-xs font-medium text-foreground'
-          >
-            {lang === 'ko' ? 'EN' : 'KR'}
-          </button>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='text-foreground hover:bg-accent'
-              >
-                <Menu className='size-5' />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className='border-border bg-background text-foreground'>
-              <div className='mt-10 flex flex-col gap-4'>
-                <a
-                  href='#features'
-                  className='text-base text-foreground'
-                >
-                  {copy.nav.features}
-                </a>
-                <a
-                  href='#status'
-                  className='text-base text-foreground'
-                >
-                  {copy.nav.status}
-                </a>
-                <Link
-                  href='/pricing'
-                  className='text-base text-foreground'
-                >
-                  {copy.nav.pricing}
-                </Link>
-                <Button
-                  asChild
-                  className='mt-2 bg-primary text-primary-foreground hover:bg-primary/90'
-                >
-                  <Link href='/login'>{copy.nav.login}</Link>
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <ThemeToggle
+            lang={lang}
+            variant='mobile'
+          />
+          <LangToggle
+            currentLang={lang}
+            variant='mobile'
+          />
+          <MobileMenu copy={copy} />
         </div>
       </div>
     </header>

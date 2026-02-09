@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 import { Anchor, Target, Zap } from 'lucide-react';
 
-import type { LandingCopy } from './landing-data';
+import type { LandingCopy } from '@/lib/i18n/landing';
 
 interface FeaturesProps {
   copy: LandingCopy;
@@ -76,7 +76,7 @@ export function Features({ copy }: FeaturesProps): React.ReactElement {
               <p className='mt-2 text-sm font-medium italic text-primary/80'>{item.subtitle}</p>
               <p className='mt-4 leading-relaxed text-muted-foreground'>{item.description}</p>
               <p className='mt-auto text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100'>
-                Learn more
+                {copy.features.learnMore}
               </p>
             </div>
           </article>

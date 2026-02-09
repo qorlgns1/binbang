@@ -1,12 +1,12 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 
 import { Activity, Wifi } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-
-import type { Lang, LandingCopy } from './landing-data';
-import { MOCK_LOGS, MOCK_SYSTEM_STATUS } from './landing-data';
+import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 
 interface StatusDashboardProps {
   copy: LandingCopy;
@@ -21,6 +21,12 @@ interface LogEntry {
   location: string;
   timestamp: number;
 }
+
+export const MOCK_SYSTEM_STATUS = {
+  activeMonitors: 3421,
+  uptime: '99.99%',
+  avgResponseTime: '42ms',
+};
 
 function getRelativeTime(timestamp: number, lang: Lang): string {
   const now = Date.now();
@@ -48,9 +54,9 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
     const INITIAL_LOG_COUNT = 6;
     const LOG_AGE_INTERVAL_MS = 15000; // 15초 간격
     const NEW_LOG_INTERVAL_MS = 4000; // 4초마다 새 로그 추가
-    const TIME_UPDATE_INTERVAL_MS = 1000; // 1초마다 시간 업데이트
+    const TIME_UPDATE_INTERVAL_MS = 5000; // 5초마다 시간 업데이트
 
-    const logData = MOCK_LOGS[lang];
+    const logData = copy.mockLogs;
     const now = Date.now();
     const initialLogs = logData.slice(0, INITIAL_LOG_COUNT).map((log, i, arr) => ({
       ...log,
@@ -81,7 +87,7 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
       clearInterval(timeInterval);
       clearInterval(logInterval);
     };
-  }, [lang]);
+  }, [lang, copy.mockLogs]);
   // Error state (FR-012, CHK-009)
   if (isError) {
     return (
@@ -103,7 +109,7 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
               onClick={onRetry}
               className='mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90'
             >
-              다시 시도
+              {copy.trust.retry}
             </button>
           )}
         </Card>
