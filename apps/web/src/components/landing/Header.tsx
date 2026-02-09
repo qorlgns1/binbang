@@ -32,19 +32,19 @@ export function Header({ lang, onToggleLang, isDark, onToggleTheme, copy }: Head
         <nav className='hidden items-center gap-6 md:flex'>
           <a
             href='#features'
-            className='text-sm text-muted-foreground transition-colors hover:text-primary'
+            className='landing-header-link text-sm text-muted-foreground hover:text-primary'
           >
             {copy.nav.features}
           </a>
           <a
             href='#status'
-            className='text-sm text-muted-foreground transition-colors hover:text-primary'
+            className='landing-header-link text-sm text-muted-foreground hover:text-primary'
           >
             {copy.nav.status}
           </a>
           <Link
             href='/pricing'
-            className='text-sm text-muted-foreground transition-colors hover:text-primary'
+            className='landing-header-link text-sm text-muted-foreground hover:text-primary'
           >
             {copy.nav.pricing}
           </Link>

@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 
+import {
+  setupScrollDepthTracking,
+  trackClosingCTAClicked,
+  trackLandingViewed,
+  trackLocaleToggled,
+  trackThemeToggled,
+} from '@/lib/analytics/landing-tracker';
+
 import { Features } from './Features';
 import { Header } from './Header';
 import { Hero } from './Hero';
@@ -21,10 +29,19 @@ export function LandingPage(): React.ReactElement {
       (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
         flushSync(() => setIsDark((prev) => !prev));
       });
-      return;
+    } else {
+      setIsDark((prev) => !prev);
     }
 
-    setIsDark((prev) => !prev);
+    // TR-011: Theme toggle tracking
+    trackThemeToggled(lang, isDark ? 'light' : 'dark');
+  };
+
+  const handleToggleLang = (): void => {
+    const newLang = lang === 'ko' ? 'en' : 'ko';
+    setLang(newLang);
+    // TR-011: Locale toggle tracking
+    trackLocaleToggled(newLang, isDark ? 'dark' : 'light');
   };
 
   // 초기 테마 로드
@@ -42,18 +59,33 @@ export function LandingPage(): React.ReactElement {
     localStorage.setItem('binbang-theme', isDark ? 'dark' : 'light');
   }, [lang, isDark]);
 
+  // TR-005: Landing viewed tracking (once per session)
+  useEffect(() => {
+    trackLandingViewed(lang, isDark ? 'dark' : 'light');
+  }, [lang, isDark]);
+
+  // TR-006: Scroll depth tracking
+  useEffect(() => {
+    const cleanup = setupScrollDepthTracking(lang, isDark ? 'dark' : 'light');
+    return cleanup;
+  }, [lang, isDark]);
+
   return (
     <div className='min-h-screen bg-background text-foreground'>
       <Header
         lang={lang}
-        onToggleLang={() => setLang((prev) => (prev === 'ko' ? 'en' : 'ko'))}
+        onToggleLang={handleToggleLang}
         isDark={isDark}
         onToggleTheme={handleToggleTheme}
         copy={copy}
       />
 
       <main>
-        <Hero copy={copy} />
+        <Hero
+          copy={copy}
+          lang={lang}
+          theme={isDark ? 'dark' : 'light'}
+        />
         <Features copy={copy} />
 
         <section className='border-t border-border bg-secondary px-4 py-20 text-center'>
@@ -63,6 +95,7 @@ export function LandingPage(): React.ReactElement {
             <a
               href='/signup'
               className='mt-10 inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
+              onClick={() => trackClosingCTAClicked(lang, isDark ? 'dark' : 'light')}
             >
               {copy.footer.cta}
             </a>

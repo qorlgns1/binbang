@@ -1,34 +1,134 @@
+import { useEffect, useState } from 'react';
+
 import { Activity, Wifi } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
-import type { LandingCopy } from './landing-data';
+import type { Lang, LandingCopy } from './landing-data';
 import { MOCK_LOGS, MOCK_SYSTEM_STATUS } from './landing-data';
 
 interface StatusDashboardProps {
   copy: LandingCopy;
+  lang?: Lang;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
-export function StatusDashboard({ copy }: StatusDashboardProps): React.ReactElement {
+interface LogEntry {
+  id: number;
+  message: string;
+  location: string;
+  timestamp: number;
+}
+
+function getRelativeTime(timestamp: number, lang: Lang): string {
+  const now = Date.now();
+  const diff = Math.floor((now - timestamp) / 1000); // seconds
+
+  if (lang === 'ko') {
+    if (diff < 10) return '방금';
+    if (diff < 60) return `${diff}초 전`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+    return `${Math.floor(diff / 3600)}시간 전`;
+  } else {
+    if (diff < 10) return 'just now';
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return `${Math.floor(diff / 3600)}h ago`;
+  }
+}
+
+export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusDashboardProps): React.ReactElement {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [newestLogId, setNewestLogId] = useState<number | null>(null);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const INITIAL_LOG_COUNT = 6;
+    const LOG_AGE_INTERVAL_MS = 15000; // 15초 간격
+    const NEW_LOG_INTERVAL_MS = 4000; // 4초마다 새 로그 추가
+    const TIME_UPDATE_INTERVAL_MS = 1000; // 1초마다 시간 업데이트
+
+    const logData = MOCK_LOGS[lang];
+    const now = Date.now();
+    const initialLogs = logData.slice(0, INITIAL_LOG_COUNT).map((log, i, arr) => ({
+      ...log,
+      timestamp: now - (arr.length - i) * LOG_AGE_INTERVAL_MS,
+    }));
+    setLogs(initialLogs);
+
+    // Force re-render every second to update relative times
+    const timeInterval = setInterval(() => forceUpdate((n) => n + 1), TIME_UPDATE_INTERVAL_MS);
+
+    // Add new log every 4 seconds
+    let currentIndex = INITIAL_LOG_COUNT;
+    const logInterval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % logData.length;
+      const newTimestamp = Date.now();
+      const newLog: LogEntry = {
+        ...logData[currentIndex],
+        id: newTimestamp,
+        timestamp: newTimestamp,
+      };
+
+      setNewestLogId(newTimestamp);
+      setTimeout(() => setNewestLogId(null), 600);
+      setLogs((prev) => [...prev.slice(1), newLog]);
+    }, NEW_LOG_INTERVAL_MS);
+
+    return () => {
+      clearInterval(timeInterval);
+      clearInterval(logInterval);
+    };
+  }, [lang]);
+  // Error state (FR-012, CHK-009)
+  if (isError) {
+    return (
+      <section
+        id='status'
+        className='mx-auto w-full max-w-5xl'
+      >
+        <div className='mb-4 flex items-center justify-between'>
+          <h3 className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary md:text-sm'>
+            <Activity className='size-4' />
+            {copy.trust.title}
+          </h3>
+        </div>
+        <Card className='border-border bg-card p-8 text-center'>
+          <p className='text-base font-semibold text-foreground'>{copy.trust.errorMessage}</p>
+          {onRetry && (
+            <button
+              type='button'
+              onClick={onRetry}
+              className='mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90'
+            >
+              다시 시도
+            </button>
+          )}
+        </Card>
+      </section>
+    );
+  }
+
   return (
     <section
       id='status'
       className='mx-auto w-full max-w-5xl'
     >
-      <div className='mb-4 flex items-center justify-between'>
+      <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
         <h3 className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary md:text-sm'>
           <Activity className='size-4 animate-pulse' />
           {copy.trust.title}
         </h3>
-        <Badge className='border border-primary/35 bg-primary/10 text-primary'>
+        <Badge className='border border-primary/35 bg-primary/10 text-xs text-primary'>
           <span className='mr-2 size-2 rounded-full bg-chart-3 animate-pulse' />
           {copy.trust.operational}
         </Badge>
       </div>
 
-      <div className='grid gap-4 md:grid-cols-3'>
-        <Card className='border-border bg-card/60 p-5 text-foreground'>
+      <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+        <Card className='border-border bg-card/60 p-5 text-foreground sm:col-span-2 lg:col-span-1'>
           <p className='text-xs uppercase tracking-wider text-muted-foreground'>{copy.trust.uptime}</p>
           <p className='mt-1 text-2xl font-semibold'>{MOCK_SYSTEM_STATUS.uptime}</p>
 
@@ -43,22 +143,39 @@ export function StatusDashboard({ copy }: StatusDashboardProps): React.ReactElem
           </div>
         </Card>
 
-        <Card className='relative overflow-hidden border-border bg-secondary p-4 font-mono text-xs md:col-span-2'>
+        <Card className='relative overflow-hidden border-border bg-secondary p-4 font-mono text-xs sm:col-span-2 lg:col-span-2'>
           <div className='absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent' />
-          <div className='space-y-3'>
-            {MOCK_LOGS.map((log, i) => (
-              <div
-                key={log.id}
-                className={`flex gap-3 ${i === 0 ? 'text-foreground' : 'text-muted-foreground'}`}
-              >
-                <span className='min-w-14 opacity-70'>{log.time}</span>
-                <span>
-                  <span className='mr-2 text-primary/70'>[{log.location}]</span>
-                  {log.message}
-                </span>
-              </div>
-            ))}
-          </div>
+          {logs.length === 0 ? (
+            <div className='flex h-44 items-center justify-center'>
+              <p className='text-sm text-muted-foreground'>{copy.trust.emptyLogs}</p>
+            </div>
+          ) : (
+            <div
+              className='space-y-3 transition-all duration-400'
+              style={{ transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
+            >
+              {logs.map((log, i) => {
+                const isNew = log.timestamp === newestLogId;
+                const isLatest = i === logs.length - 1;
+                return (
+                  <div
+                    key={log.timestamp}
+                    className={`flex gap-3 transition-all duration-400 ${isLatest ? 'text-foreground' : 'text-muted-foreground'}`}
+                    style={{
+                      transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                      animation: isNew ? 'landing-log-slideup 600ms cubic-bezier(0.22, 1, 0.36, 1)' : undefined,
+                    }}
+                  >
+                    <span className='min-w-14 shrink-0 opacity-70'>{getRelativeTime(log.timestamp, lang)}</span>
+                    <span className='text-left min-w-0 flex-1'>
+                      <span className='mr-2 text-primary/70'>[{log.location}]</span>
+                      <span className='wrap-break-word'>{log.message}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Card>
       </div>
     </section>
