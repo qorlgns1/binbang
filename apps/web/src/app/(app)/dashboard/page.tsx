@@ -43,6 +43,7 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
             <SectionSkeleton variant='kpi' />
             <SectionSkeleton variant='action' />
             <SectionSkeleton variant='board' />
+            <SectionSkeleton variant='events' />
           </div>
         }
       >
