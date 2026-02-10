@@ -1,4 +1,7 @@
-import crypto from 'crypto';
+/**
+ * Landing Page Analytics Tracker
+ * Implements TR-001~012 from landing-page-llm-spec.md
+ */
 
 type LandingEvent =
   | 'landing_viewed'
@@ -37,7 +40,7 @@ const sentEvents = new Set<string>();
  */
 function getSessionId(): string {
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${crypto.randomUUID()}`;
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
   return sessionId;
 }
