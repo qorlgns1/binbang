@@ -29,15 +29,13 @@ export function LandingTracker({ lang }: LandingTrackerProps): null {
     const dark = savedTheme ? savedTheme === 'dark' : prefersDark;
 
     setIsDark(dark);
+    isDarkRef.current = dark;
     document.documentElement.classList.toggle('dark', dark);
+
+    // 테마 결정 후 트래킹 실행
+    trackLandingViewed(lang, dark ? 'dark' : 'light');
   }, []);
 
-  // TR-005: Landing viewed tracking (once per session)
-  useEffect(() => {
-    trackLandingViewed(lang, isDarkRef.current ? 'dark' : 'light');
-  }, [lang]);
-
-  // TR-006: Scroll depth tracking
   useEffect(() => {
     const cleanup = setupScrollDepthTracking(lang, isDarkRef.current ? 'dark' : 'light');
     return cleanup;
