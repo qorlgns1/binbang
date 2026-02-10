@@ -151,7 +151,7 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
         <Header />
         <KpiStrip
           metrics={metrics}
-          isLoading={false}
+          isLoading={isMainLoading}
         />
         <div className='mt-6'>
           <Card>
