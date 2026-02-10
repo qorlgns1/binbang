@@ -3,6 +3,8 @@
  * Implements TR-001 ~ TR-012 from dashboard-action-center-implementation-spec.md
  */
 
+import crypto from 'crypto';
+
 type DashboardEvent =
   | 'dashboard_viewed'
   | 'dashboard_action_card_impression'
@@ -23,7 +25,7 @@ const sentEvents = new Set<string>();
 
 function getSessionId(): string {
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    sessionId = `session_${Date.now()}_${crypto.randomUUID()}`;
   }
   return sessionId;
 }
