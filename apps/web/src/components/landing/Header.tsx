@@ -12,6 +12,13 @@ interface HeaderProps {
   copy: LandingCopy;
 }
 
+/**
+ * Render the landing-page header with brand, navigation links, language and theme controls, and mobile menu.
+ *
+ * @param lang - Current language identifier used by the language and theme controls
+ * @param copy - Localized copy for header labels (brand, features, status, pricing, login)
+ * @returns The header element for the site's landing page containing desktop and mobile navigation
+ */
 export function Header({ lang, copy }: HeaderProps): React.ReactElement {
   return (
     <header className='fixed inset-x-0 top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur'>

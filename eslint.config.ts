@@ -25,6 +25,12 @@ type NoRestrictedImportsOptions = {
 // ESLint RuleConfig가 기대하는 형태: [Severity, Options]
 type NoRestrictedImportsRule = ['error', { patterns: RestrictedImportPattern[]; paths: RestrictedImportPath[] }];
 
+/**
+ * Create an ESLint `no-restricted-imports` rule configuration with `error` severity.
+ *
+ * @param options - Optional `patterns` and `paths` to enforce; missing properties default to empty arrays.
+ * @returns A `NoRestrictedImportsRule` (['error', { patterns, paths }]) using the provided patterns and paths
+ */
 function makeNoRestrictedImports(options: NoRestrictedImportsOptions): NoRestrictedImportsRule {
   return [
     'error',
@@ -59,6 +65,12 @@ const baseNoRestrictedImports = makeNoRestrictedImports({
   paths: baseRestrictedImportPaths,
 });
 
+/**
+ * Merge additional restricted-import patterns and paths into the base restricted-imports configuration and produce a ready-to-use ESLint rule tuple.
+ *
+ * @param extra - Additional `patterns` and/or `paths` to append to the base restricted-imports configuration
+ * @returns An `NoRestrictedImportsRule` tuple (`['error', { patterns, paths }]`) containing the base restrictions with `extra` entries appended
+ */
 function extendNoRestrictedImports(extra: NoRestrictedImportsOptions): NoRestrictedImportsRule {
   const baseOptions = baseNoRestrictedImports[1];
 

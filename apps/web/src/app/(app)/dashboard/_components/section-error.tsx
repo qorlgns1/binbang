@@ -6,6 +6,12 @@ interface SectionErrorProps {
   onRetry: () => void;
 }
 
+/**
+ * Renders an error card with a title, description, and a retry button.
+ *
+ * @param onRetry - Callback invoked when the retry button is clicked.
+ * @returns A React element containing a Card with centered error text and a retry Button.
+ */
 export function SectionError({ onRetry }: SectionErrorProps): React.ReactElement {
   return (
     <Card>

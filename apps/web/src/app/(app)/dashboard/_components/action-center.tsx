@@ -10,6 +10,13 @@ interface ActionCenterProps {
   onCtaClick: (card: ActionCardData) => void;
 }
 
+/**
+ * Render an action center that shows an empty-state card when there are no action cards, or a responsive grid of action cards otherwise.
+ *
+ * @param cards - Array of action card data to display
+ * @param onCtaClick - Callback invoked when an action card's primary CTA is clicked
+ * @returns A React element that renders either an empty-state card when `cards` is empty or a responsive grid of action cards
+ */
 export function ActionCenter({ cards, onCtaClick }: ActionCenterProps): React.ReactElement {
   // FR-025: 0건 시 안정 상태 카드
   if (cards.length === 0) {

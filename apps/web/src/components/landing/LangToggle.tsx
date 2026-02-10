@@ -11,6 +11,17 @@ interface LangToggleProps {
   variant?: 'desktop' | 'mobile';
 }
 
+/**
+ * Render a language toggle button that switches the site language between Korean and English.
+ *
+ * Activating the button sets a one-year cookie (`binbang-lang`), records the toggle via analytics,
+ * and navigates the browser to the selected language root (`/ko` or `/en`).
+ *
+ * @param currentLang - Current language code, either `'ko'` or `'en'`
+ * @param className - Additional CSS classes applied to the button
+ * @param variant - Rendering variant; `'desktop'` shows an icon and pill styling, `'mobile'` shows a compact label. Defaults to `'desktop'`
+ * @returns A button element that toggles the site language when clicked
+ */
 export function LangToggle({ currentLang, className = '', variant = 'desktop' }: LangToggleProps): React.ReactElement {
   const handleToggle = (): void => {
     const newLang: Lang = currentLang === 'ko' ? 'en' : 'ko';

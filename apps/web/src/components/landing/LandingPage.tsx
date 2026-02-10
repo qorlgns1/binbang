@@ -14,6 +14,13 @@ interface LandingPageProps {
   copy: LandingCopy;
 }
 
+/**
+ * Render the landing page composed of header, hero, features, footer, and tracker for the provided language and copy.
+ *
+ * @param lang - Language identifier used to localize content and analytics
+ * @param copy - Localized text and content passed to child components
+ * @returns A React element representing the composed landing page for the given `lang` and `copy`
+ */
 export function LandingPage({ lang, copy }: LandingPageProps): React.ReactElement {
   return (
     <div className='min-h-screen bg-background text-foreground'>

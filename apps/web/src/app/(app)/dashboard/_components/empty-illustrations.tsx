@@ -3,8 +3,10 @@ interface IllustrationProps {
 }
 
 /**
- * 메인 빈 상태용 등대 일러스트 (숙소 0건)
- * 앰버 불빛이 비치는 등대 + 파도 — "첫 숙소를 등록하세요"
+ * Hero lighthouse illustration used for the main empty state to encourage creating the first listing.
+ *
+ * @param className - Optional CSS class applied to the root SVG element.
+ * @returns A React element containing the SVG for the hero lighthouse illustration.
  */
 export function LighthouseHero({ className }: IllustrationProps): React.ReactElement {
   return (
@@ -147,8 +149,9 @@ export function LighthouseHero({ className }: IllustrationProps): React.ReactEle
 }
 
 /**
- * 안정 상태용 등대 일러스트 (Action Center 0건)
- * 고요한 바다 위 등대 + 체크 — "모두 안정적입니다"
+ * Illustration of a calm lighthouse with a check motif for an empty or healthy state.
+ *
+ * @returns A React element rendering an 80×72 SVG of a tranquil lighthouse, subtle glow, check mark badge, base ellipse, and decorative waves.
  */
 export function LighthouseCalm({ className }: IllustrationProps): React.ReactElement {
   return (
@@ -272,8 +275,12 @@ export function LighthouseCalm({ className }: IllustrationProps): React.ReactEle
 }
 
 /**
- * 소형 빈 상태용 등대 일러스트 (보드 탭, 이벤트)
- * 미니멀 등대 실루엣
+ * Render a compact lighthouse SVG used for small/empty states.
+ *
+ * Used for compact empty-state visuals (for example: board tabs or event placeholders).
+ *
+ * @param className - Optional CSS class applied to the root SVG element
+ * @returns An SVG React element depicting a minimal lighthouse illustration
  */
 export function LighthouseQuiet({ className }: IllustrationProps): React.ReactElement {
   return (

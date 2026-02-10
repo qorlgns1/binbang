@@ -12,6 +12,15 @@ interface KpiStripProps {
   isLoading: boolean;
 }
 
+/**
+ * Render a responsive strip of four KPI cards or a loading skeleton.
+ *
+ * Renders a SectionSkeleton with variant `'kpi'` when loading; otherwise computes display values and styling from `metrics` and returns a responsive grid of KPI cards for total, active, problem, and quota metrics.
+ *
+ * @param metrics - Dashboard metrics used to populate each KPI card (totalCount, activeCount, problemCount, quotaPercent, quotaRatio, etc.)
+ * @param isLoading - When true, show a KPI skeleton instead of the KPI cards
+ * @returns A React element containing either the KPI skeleton (if `isLoading`) or a responsive grid of KPI cards populated from `metrics`
+ */
 export function KpiStrip({ metrics, isLoading }: KpiStripProps): React.ReactElement {
   if (isLoading) {
     return <SectionSkeleton variant='kpi' />;
@@ -95,6 +104,17 @@ interface KpiItemData {
   progressColorClass?: string;
 }
 
+/**
+ * Render a KPI card displaying an icon, label, value, and optional description, pulse indicator, and progress bar.
+ *
+ * @param showPulse - When `true`, display a pulsing indicator next to the value.
+ * @param progress - Optional progress percentage (0–100). When provided, a progress bar is shown and its width is clamped to 100%.
+ * @param progressColorClass - CSS class applied to the progress fill element.
+ * @param accentClass - CSS class applied to the card's left accent border.
+ * @param iconBgClass - CSS class applied to the icon background container.
+ * @param iconColorClass - CSS class applied to the icon itself.
+ * @returns A React element representing the styled KPI card.
+ */
 function KpiCard({
   label,
   value,
@@ -142,7 +162,12 @@ function KpiCard({
 
 // ============================================================================
 // Helpers
-// ============================================================================
+/**
+ * Format a quota percentage for display, providing a fallback description when the quota is unavailable.
+ *
+ * @param quotaPercent - Quota percentage as a number (e.g., `75`) or `null` if the quota is unavailable.
+ * @returns An object with `value` containing the display string (e.g., `"75%"` or a null placeholder) and, when `quotaPercent` is `null`, a `description` explaining the missing quota.
+ */
 
 function getQuotaDisplay(quotaPercent: number | null): { value: string; description?: string } {
   if (quotaPercent === null) {
@@ -151,6 +176,12 @@ function getQuotaDisplay(quotaPercent: number | null): { value: string; descript
   return { value: `${quotaPercent}%` };
 }
 
+/**
+ * Chooses a text color utility class that reflects the quota usage level.
+ *
+ * @param quotaRatio - The quota ratio (used ÷ limit), or `null` when the ratio is unavailable
+ * @returns `'text-muted-foreground'` if `quotaRatio` is `null`, `'text-destructive'` if `quotaRatio` is greater than or equal to 1.0, `'text-chart-1'` if `quotaRatio` is greater than or equal to 0.8, and `'text-foreground'` otherwise
+ */
 function getQuotaColorClass(quotaRatio: number | null): string {
   if (quotaRatio === null) return 'text-muted-foreground';
   if (quotaRatio >= 1.0) return 'text-destructive';
@@ -158,6 +189,22 @@ function getQuotaColorClass(quotaRatio: number | null): string {
   return 'text-foreground';
 }
 
+/**
+ * Selects CSS utility classes for quota-related visuals based on the quota ratio.
+ *
+ * @param quotaRatio - The quota usage ratio as a fraction (e.g., 0.75). Use `null` when the quota is unknown.
+ * @returns An object containing CSS class names:
+ *  - `accent`: left-border accent class
+ *  - `iconBg`: icon background class
+ *  - `iconColor`: icon color class
+ *  - `progressColor`: progress bar color class
+ *
+ * The returned classes reflect these states:
+ *  - `quotaRatio === null` → muted styling
+ *  - `quotaRatio >= 1.0` → destructive (over quota) styling
+ *  - `quotaRatio >= 0.8` → warning (near quota) styling
+ *  - otherwise → primary (normal) styling
+ */
 function getQuotaAccent(quotaRatio: number | null): {
   accent: string;
   iconBg: string;

@@ -28,6 +28,13 @@ interface EventParams {
 let sessionId: string | null = null;
 const sentEvents = new Set<string>();
 
+/**
+ * Get or create a persistent session identifier for the current page session.
+ *
+ * Generates a unique session ID on the first call and returns the cached ID on subsequent calls.
+ *
+ * @returns The session identifier string; the same value is returned for the lifetime of the page session.
+ */
 function getSessionId(): string {
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${crypto.randomUUID()}`;
@@ -35,6 +42,11 @@ function getSessionId(): string {
   return sessionId;
 }
 
+/**
+ * Determines the viewport breakpoint category from the current window width.
+ *
+ * @returns `'mobile'`, `'tablet'`, `'pc'`, or `'wide'` corresponding to viewport widths: less than 768px, 768–1023px, 1024–1440px, and 1441px or greater, respectively.
+ */
 function getBreakpoint(): string {
   const width = window.innerWidth;
   if (width < 768) return 'mobile';
@@ -43,6 +55,13 @@ function getBreakpoint(): string {
   return 'wide';
 }
 
+/**
+ * Constructs the common analytics event parameters for the current session and page.
+ *
+ * @param locale - The user's locale identifier (for example, `en-US`)
+ * @param theme - The current theme identifier (for example, `light` or `dark`)
+ * @returns An EventParams object containing `session_id`, `user_type` (`guest`), `locale`, `theme`, `breakpoint`, `timestamp_iso`, `referrer`, and optional `utm_source`, `utm_medium`, and `utm_campaign` when present in the URL
+ */
 function getCommonParams(locale: string, theme: string): EventParams {
   const urlParams = new URLSearchParams(window.location.search);
   return {
@@ -60,7 +79,13 @@ function getCommonParams(locale: string, theme: string): EventParams {
 }
 
 /**
- * TR-005: landing_viewed는 세션당 1회만 전송
+ * Record a landing page view event, ensuring it is sent at most once per session.
+ *
+ * Sends a `landing_viewed` event with common event parameters and prevents duplicate sends
+ * for the same session.
+ *
+ * @param locale - The user's locale (e.g., "en-US") used in event parameters
+ * @param theme - The current UI theme (e.g., "light" or "dark") used in event parameters
  */
 export function trackLandingViewed(locale: string, theme: string): void {
   const eventKey = `${getSessionId()}_landing_viewed`;
@@ -72,7 +97,10 @@ export function trackLandingViewed(locale: string, theme: string): void {
 }
 
 /**
- * TR-004: hero_primary_cta_clicked는 클릭 즉시 전송
+ * Record that the hero primary call-to-action was clicked.
+ *
+ * @param locale - The user's locale (e.g., "en-US")
+ * @param theme - The current UI theme (e.g., "light" or "dark")
  */
 export function trackPrimaryCTAClicked(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
@@ -80,7 +108,10 @@ export function trackPrimaryCTAClicked(locale: string, theme: string): void {
 }
 
 /**
- * TR-005: hero_secondary_cta_clicked
+ * Record that the hero's secondary call-to-action was clicked.
+ *
+ * @param locale - The user's current locale (e.g., "en-US")
+ * @param theme - The current UI theme identifier (e.g., "light" or "dark")
  */
 export function trackSecondaryCTAClicked(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
@@ -88,7 +119,12 @@ export function trackSecondaryCTAClicked(locale: string, theme: string): void {
 }
 
 /**
- * TR-006: scroll_depth_70_reached는 최초 도달 시 1회 전송
+ * Send a single `scroll_depth_70_reached` event the first time 70% scroll depth is reached in the current session.
+ *
+ * Does nothing if this event has already been sent for the current session.
+ *
+ * @param locale - Locale string to include in the event's common parameters
+ * @param theme - Theme identifier to include in the event's common parameters
  */
 export function trackScrollDepth70(locale: string, theme: string): void {
   const eventKey = `${getSessionId()}_scroll_depth_70_reached`;
@@ -100,7 +136,7 @@ export function trackScrollDepth70(locale: string, theme: string): void {
 }
 
 /**
- * Theme toggled
+ * Records that the user toggled the site's theme.
  */
 export function trackThemeToggled(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
@@ -108,7 +144,10 @@ export function trackThemeToggled(locale: string, theme: string): void {
 }
 
 /**
- * Locale toggled
+ * Record that the user changed the UI locale.
+ *
+ * @param locale - The newly selected locale identifier (for example, "en-US")
+ * @param theme - The current theme value at the time of the toggle (for example, "light" or "dark")
  */
 export function trackLocaleToggled(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
@@ -116,7 +155,10 @@ export function trackLocaleToggled(locale: string, theme: string): void {
 }
 
 /**
- * Closing CTA clicked
+ * Records that the landing page closing call-to-action button was clicked.
+ *
+ * @param locale - User locale code included in the event parameters
+ * @param theme - Current UI theme included in the event parameters
  */
 export function trackClosingCTAClicked(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
@@ -124,7 +166,12 @@ export function trackClosingCTAClicked(locale: string, theme: string): void {
 }
 
 /**
- * TR-008: 이벤트 전송 실패 시 UI 동작은 유지하고 백그라운드 재시도는 최대 1회
+ * Dispatches a landing analytics event with best-effort delivery and non-blocking failure handling.
+ *
+ * Attempts to send the given event and its parameters to the analytics backend; errors are caught and logged and will not propagate to callers. The implementation is designed to perform at most one background retry on transient failures.
+ *
+ * @param eventName - The name of the landing event to send
+ * @param params - Common event parameters to include with the event
  */
 function sendEvent(eventName: LandingEvent, params: EventParams): void {
   // Console log for development
@@ -155,7 +202,11 @@ function sendEvent(eventName: LandingEvent, params: EventParams): void {
 }
 
 /**
- * Setup scroll depth tracking
+ * Attach a passive scroll listener that sends a `scroll_depth_70_reached` event once when the user reaches 70% of the page.
+ *
+ * @param locale - Current UI locale used when constructing the event payload
+ * @param theme - Current UI theme used when constructing the event payload
+ * @returns A cleanup function that removes the scroll listener added by this call
  */
 export function setupScrollDepthTracking(locale: string, theme: string): () => void {
   let hasTracked = false;

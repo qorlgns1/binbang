@@ -10,6 +10,15 @@ interface FooterProps {
   lang: Lang;
 }
 
+/**
+ * Renders the landing page footer containing a closing CTA section and a copyright row.
+ *
+ * The CTA link reports a closing-CTA analytics event when clicked.
+ *
+ * @param copy - Localized landing copy containing `footer` text (`title`, `description`, `cta`, `copyright`)
+ * @param lang - Active language code used for analytics reporting
+ * @returns The footer React element
+ */
 export function Footer({ copy, lang }: FooterProps): React.ReactElement {
   const handleCTAClick = (): void => {
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';

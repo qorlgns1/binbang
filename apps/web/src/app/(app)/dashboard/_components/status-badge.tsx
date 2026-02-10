@@ -10,6 +10,13 @@ interface StatusBadgeProps {
   isPaused?: boolean;
 }
 
+/**
+ * Renders a status Badge reflecting availability and optional paused state.
+ *
+ * @param status - The availability status to display.
+ * @param isPaused - If true, displays `PAUSED` regardless of `status`.
+ * @returns A React element containing a styled Badge with the status text.
+ */
 export function StatusBadge({ status, isPaused }: StatusBadgeProps): React.ReactElement {
   const displayStatus: StatusType = isPaused ? 'PAUSED' : status;
 

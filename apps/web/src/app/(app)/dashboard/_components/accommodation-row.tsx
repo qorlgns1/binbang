@@ -16,6 +16,14 @@ interface AccommodationRowProps {
   accommodation: Accommodation;
 }
 
+/**
+ * Renders a single accommodation row showing its name, platform, status, dates, last check time, and action links.
+ *
+ * Displays a status dot (uses 'PAUSED' when the accommodation is inactive), a platform badge, a StatusBadge reflecting the last status, the check-in/check-out date range, an optional last check timestamp, and buttons linking to the accommodation detail and edit pages.
+ *
+ * @param accommodation - The accommodation record containing `id`, `name`, `platform`, `checkIn`, `checkOut`, `lastCheck`, `lastStatus`, and `isActive`.
+ * @returns A React element representing the accommodation row.
+ */
 export function AccommodationRow({ accommodation }: AccommodationRowProps): React.ReactElement {
   const { id, name, platform, checkIn, checkOut, lastCheck, lastStatus, isActive } = accommodation;
   const displayStatus: StatusType = !isActive ? 'PAUSED' : lastStatus;

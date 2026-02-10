@@ -1,8 +1,9 @@
 /**
- * Smooth scroll to target element with custom easing
- * @param targetId - Element ID to scroll to
- * @param offset - Offset from top (default: 64px for header)
- * @param duration - Animation duration in milliseconds (default: 480ms)
+ * Smoothly scrolls the document to the element with the given ID using a custom easing curve.
+ *
+ * @param targetId - ID of the target element to scroll to
+ * @param offset - Vertical offset in pixels subtracted from the target's top (defaults to 64)
+ * @param duration - Animation duration in milliseconds (defaults to 480)
  */
 export function smoothScrollTo(targetId: string, offset = 64, duration = 480): void {
   const target = document.getElementById(targetId);

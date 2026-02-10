@@ -7,6 +7,13 @@ import { Tabs as TabsPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * Renders a styled Tabs root that applies orientation, composes a base class with any provided `className`, and forwards all other props to the underlying Radix Tabs root.
+ *
+ * @param className - Additional class names to merge with the component's base classes
+ * @param orientation - Orientation of the tabs; defaults to `'horizontal'`
+ * @returns The rendered Tabs root element
+ */
 function Tabs({ className, orientation = 'horizontal', ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return (
     <TabsPrimitive.Root
@@ -33,6 +40,13 @@ const tabsListVariants = cva(
   },
 );
 
+/**
+ * Render a Tabs List element with variant-driven styling.
+ *
+ * @param className - Additional class names to apply to the list container
+ * @param variant - Visual variant for the list; `'default'` applies the muted background, `'line'` uses a transparent background and line-style layout
+ * @returns The rendered TabsPrimitive.List element with classes produced by `tabsListVariants` merged with `className`
+ */
 function TabsList({
   className,
   variant = 'default',
@@ -48,6 +62,12 @@ function TabsList({
   );
 }
 
+/**
+ * Renders a styled trigger element for the Tabs component.
+ *
+ * @param props - Props passed to the underlying Radix `TabsTrigger`; `className`, if provided, is merged with the component's default styles.
+ * @returns The trigger element with the component's styling and all props forwarded to the Radix primitive.
+ */
 function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   return (
     <TabsPrimitive.Trigger
@@ -64,6 +84,12 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
   );
 }
 
+/**
+ * Renders a styled Tabs Content element used to display a tab's pane.
+ *
+ * @param className - Additional class names to merge with the component's default styles
+ * @returns The rendered Tabs content element
+ */
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content

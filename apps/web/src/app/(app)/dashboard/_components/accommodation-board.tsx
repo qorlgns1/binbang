@@ -27,6 +27,23 @@ interface AccommodationBoardProps {
 
 const TABS: BoardTab[] = ['problem', 'all', 'paused'];
 
+/**
+ * Render a tabbed accommodation operations board with per-tab counts, filtering, and sorting.
+ *
+ * Displays three tabs ("problem", "all", "paused") with counts, filters accommodations by the active tab,
+ * sorts results first by severity and then by most recent check, and renders either an empty-state illustration
+ * or a list of AccommodationRow items. While loading or in an error state it renders the corresponding
+ * skeleton or error section. When the active tab changes and a user is authenticated, the change is tracked
+ * and `onTabChange` is invoked.
+ *
+ * @param accommodations - Array of accommodations to display and evaluate for counts, filtering, and sorting
+ * @param activeTab - Currently selected board tab ('problem' | 'all' | 'paused')
+ * @param onTabChange - Callback invoked with the new tab when the user selects a different tab
+ * @param isLoading - When true, the component renders a board skeleton instead of the content
+ * @param isError - When true, the component renders an error section with a retry action
+ * @param onRetry - Callback invoked when retry is requested from the error section
+ * @returns A React element representing the accommodation board UI
+ */
 export function AccommodationBoard({
   accommodations,
   activeTab,
