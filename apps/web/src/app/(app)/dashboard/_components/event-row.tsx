@@ -50,8 +50,10 @@ export function EventRow({ event, isLast }: EventRowProps): React.ReactElement {
 function getRelativeTime(date: string | Date): string {
   const now = Date.now();
   const then = new Date(date).getTime();
+  if (Number.isNaN(then)) return '-';
   const diffMin = Math.floor((now - then) / 60_000);
 
+  if (diffMin < 0) return '곧';
   if (diffMin < 1) return '방금 전';
   if (diffMin < 60) return `${diffMin}분 전`;
   const diffHour = Math.floor(diffMin / 60);
