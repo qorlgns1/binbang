@@ -14,7 +14,6 @@ import { getPlatformSelectors } from './selectors';
  * 2. 가격: data-testid="price-after-tax" (세금 포함 1박 가격)
  * 3. 메타데이터: JSON-LD (schema.org Hotel)
  */
-/* eslint-disable no-useless-escape */
 const AGODA_DATA_EXTRACTOR = `function() {
   // ============================================
   // 1. JSON-LD 메타데이터 추출

@@ -123,8 +123,8 @@ pnpm dev:worker               # worker만 실행
 pnpm build                    # 프로덕션 빌드
 
 # 코드 품질
-pnpm lint                     # ESLint 검사
-pnpm lint:fix                 # ESLint 자동 수정
+pnpm lint                     # Biome 검사
+pnpm lint:fix                 # Biome 자동 수정
 pnpm format                   # Prettier 포맷팅
 pnpm format:check             # 포맷 검사
 pnpm test                     # Vitest 테스트 실행
