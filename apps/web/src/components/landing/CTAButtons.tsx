@@ -14,6 +14,16 @@ interface CTAButtonsProps {
   lang: Lang;
 }
 
+/**
+ * Render the primary and secondary call-to-action buttons used on the landing page.
+ *
+ * The primary button navigates users to the signup page and records a primary-CTA analytics event.
+ * The secondary button records a secondary-CTA analytics event and smooth-scrolls to the "features" section.
+ *
+ * @param copy - Localized copy/content for the CTA texts (from `LandingCopy`)
+ * @param lang - Language code used when reporting analytics (from `Lang`)
+ * @returns A React element containing the two CTA buttons (primary: signup link; secondary: scrolls to features)
+ */
 export function CTAButtons({ copy, lang }: CTAButtonsProps): React.ReactElement {
   const handleSecondaryCTA = (e: React.MouseEvent): void => {
     e.preventDefault();

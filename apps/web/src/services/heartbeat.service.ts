@@ -15,7 +15,12 @@ export interface HeartbeatHistoryItem {
 
 // ============================================================================
 // Service Functions
-// ============================================================================
+/**
+ * Fetches heartbeat history for the past `hours` hours, ordered by timestamp ascending.
+ *
+ * @param hours - Lookback window in hours to retrieve records (defaults to 24)
+ * @returns An array of heartbeat history items containing `id`, `timestamp`, `status`, `isProcessing`, `uptime`, and `workerId`
+ */
 
 export async function getHeartbeatHistory(hours: number = 24): Promise<HeartbeatHistoryItem[]> {
   const since = new Date();

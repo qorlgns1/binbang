@@ -10,6 +10,13 @@ interface HeroProps {
   lang: Lang;
 }
 
+/**
+ * Renders the landing-page hero section with background imagery, headline, description, CTAs, and status dashboard.
+ *
+ * @param copy - Localized copy for the hero (headlines, subheadlines, description, and status label)
+ * @param lang - Current language/locale used for child components and CTA behavior
+ * @returns A React element representing the landing hero section
+ */
 export function Hero({ copy, lang }: HeroProps): React.ReactElement {
   return (
     <section className='relative flex min-h-screen flex-col justify-center overflow-hidden px-4 pb-20 pt-28'>

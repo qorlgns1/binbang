@@ -33,7 +33,12 @@ interface DashboardContentProps {
 
 // ============================================================================
 // Component
-// ============================================================================
+/**
+ * Render the dashboard UI composed of a KPI strip, action center, accommodation board, and recent events.
+ *
+ * @param hasKakaoToken - Whether the current user has a Kakao token; affects generation and behavior of action cards.
+ * @returns The dashboard UI as a React element containing metrics, action cards, the accommodations board, and recent events.
+ */
 
 export function DashboardContent({ hasKakaoToken }: DashboardContentProps): React.ReactElement {
   const router = useRouter();
@@ -223,7 +228,11 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
 
 // ============================================================================
 // Header
-// ============================================================================
+/**
+ * Render the dashboard page header with the page title and subtitle.
+ *
+ * @returns A React element containing the dashboard title and descriptive subtitle.
+ */
 
 function Header(): React.ReactElement {
   return (

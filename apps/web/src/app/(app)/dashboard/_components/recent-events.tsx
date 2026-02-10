@@ -19,6 +19,19 @@ interface RecentEventsProps {
   onRetry: () => void;
 }
 
+/**
+ * Render the "최근 이벤트" dashboard section that displays recent events.
+ *
+ * Shows an error state with a retry action, a loading skeleton while data is loading,
+ * an empty illustration and message when there are no events, or a paginated list of
+ * event rows with a "더보기" button to reveal more items.
+ *
+ * @param events - Array of recent event objects to display
+ * @param isLoading - Whether the events are currently loading
+ * @param isError - Whether loading events failed and should show the error state
+ * @param onRetry - Callback invoked when the user requests a retry from the error state
+ * @returns A React element containing the recent events section
+ */
 export function RecentEvents({ events, isLoading, isError, onRetry }: RecentEventsProps): React.ReactElement {
   const [visibleCount, setVisibleCount] = useState(EVENTS_INITIAL_COUNT);
 

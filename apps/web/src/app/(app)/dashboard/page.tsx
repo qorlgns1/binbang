@@ -17,6 +17,11 @@ export const metadata = {
   },
 };
 
+/**
+ * Render the dashboard page and provide DashboardContent with the user's Kakao token presence.
+ *
+ * @returns A React element containing the dashboard layout; while DashboardContent is loading, renders three SectionSkeleton fallbacks and passes `hasKakaoToken` to the content component.
+ */
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
 

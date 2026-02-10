@@ -23,6 +23,12 @@ const FEATURE_IMAGES = [
   },
 ] as const;
 
+/**
+ * Render the features section with three responsive feature cards populated from provided localized copy.
+ *
+ * @param copy - Localized landing copy used for feature titles, subtitles, descriptions, and the "learn more" text
+ * @returns The React element for the features section containing three responsive feature cards
+ */
 export function Features({ copy }: FeaturesProps): React.ReactElement {
   const items = [
     {

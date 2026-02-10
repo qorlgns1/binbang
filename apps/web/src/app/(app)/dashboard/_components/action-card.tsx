@@ -34,6 +34,15 @@ interface ActionCardProps {
   onCtaClick: (card: ActionCardData) => void;
 }
 
+/**
+ * Render an action card with icon, title, description and a CTA button, while recording per-session impressions on mount and click events when the CTA is pressed.
+ *
+ * Tracks an impression for the card type when a session user exists and records a click before delegating to the provided callback.
+ *
+ * @param card - Action card data (includes `type`, `colorScheme`, `title`, `description`, `ctaLabel`, etc.)
+ * @param onCtaClick - Callback invoked with the `card` when the CTA button is clicked
+ * @returns A React element representing the rendered action card
+ */
 export function ActionCard({ card, onCtaClick }: ActionCardProps): React.ReactElement {
   const { data: session } = useSession();
   const userId = session?.user?.id ?? '';

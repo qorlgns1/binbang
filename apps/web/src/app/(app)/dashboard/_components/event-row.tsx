@@ -9,6 +9,13 @@ interface EventRowProps {
   isLast: boolean;
 }
 
+/**
+ * Render a horizontal timeline row for a single recent event in the dashboard.
+ *
+ * @param event - The RecentLog to display; used for status (dot), accommodation name, optional price, creation time, and notification indicator.
+ * @param isLast - Whether this row is the last in the list; when true the vertical timeline connector after the status dot is omitted.
+ * @returns A React element representing the timeline row for the provided event.
+ */
 export function EventRow({ event, isLast }: EventRowProps): React.ReactElement {
   return (
     <div className='flex gap-4 px-6'>
@@ -33,7 +40,12 @@ export function EventRow({ event, isLast }: EventRowProps): React.ReactElement {
 
 // ============================================================================
 // Relative Time Helper
-// ============================================================================
+/**
+ * Format a timestamp into a Korean relative time string.
+ *
+ * @param date - The time to format, provided as a `Date` or an ISO/parsable date string.
+ * @returns A Korean relative time such as `방금 전`, `5분 전`, `2시간 전`, `3일 전`, or a locale date string for dates 7+ days old.
+ */
 
 function getRelativeTime(date: string | Date): string {
   const now = Date.now();

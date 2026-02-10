@@ -5,6 +5,16 @@ interface SectionSkeletonProps {
   variant: 'kpi' | 'board' | 'action' | 'events';
 }
 
+/**
+ * Render a skeleton placeholder layout for a dashboard section.
+ *
+ * @param variant - Which skeleton layout to render:
+ *   - `'kpi'`: grid of four compact KPI cards
+ *   - `'action'`: grid of two larger action cards
+ *   - `'board'`: single card with three row placeholders and dividers
+ *   - `'events'`: single card with five event row placeholders
+ * @returns A React element containing the requested skeleton UI layout
+ */
 export function SectionSkeleton({ variant }: SectionSkeletonProps): React.ReactElement {
   switch (variant) {
     case 'kpi':

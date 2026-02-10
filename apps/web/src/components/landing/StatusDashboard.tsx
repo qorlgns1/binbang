@@ -28,6 +28,13 @@ export const MOCK_SYSTEM_STATUS = {
   avgResponseTime: '42ms',
 };
 
+/**
+ * Convert an absolute timestamp to a short, human-readable relative time string in the given language.
+ *
+ * @param timestamp - Time in milliseconds since the UNIX epoch to compare with the current time
+ * @param lang - Language code; `"ko"` produces Korean output, any other value produces English output
+ * @returns A short relative time string such as `방금`, `10초 전`, `3분 전`, `2시간 전` (Korean) or `just now`, `10s ago`, `3m ago`, `2h ago` (English)
+ */
 function getRelativeTime(timestamp: number, lang: Lang): string {
   const now = Date.now();
   const diff = Math.floor((now - timestamp) / 1000); // seconds
@@ -45,6 +52,18 @@ function getRelativeTime(timestamp: number, lang: Lang): string {
   }
 }
 
+/**
+ * Render a localized live status dashboard with simulated system metrics and streaming logs.
+ *
+ * Displays system overview metrics and a scrolling, time-localized log feed whose relative timestamps update periodically.
+ * When `isError` is true it renders an error card and an optional retry button.
+ *
+ * @param copy - UI copy and `mockLogs` used for initial and simulated log entries
+ * @param lang - Language code for relative time localization (default: `'ko'`)
+ * @param isError - If `true`, show the error state instead of the dashboard
+ * @param onRetry - Optional callback invoked when the retry button is clicked in the error state
+ * @returns A React element containing the status dashboard UI
+ */
 export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusDashboardProps): React.ReactElement {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [newestLogId, setNewestLogId] = useState<number | null>(null);

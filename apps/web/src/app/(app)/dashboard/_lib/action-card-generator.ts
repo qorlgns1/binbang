@@ -2,10 +2,14 @@ import { ACTION_CARDS_MAX, ACTION_CARD_CONFIG, ACTION_CARD_PRIORITY } from './co
 import type { ActionCard, ActionCardType, DashboardMetrics } from './types';
 
 /**
- * Action 카드 생성 (FR-020 ~ FR-027)
+ * Generate up to three prioritized dashboard action cards based on provided metrics and Kakao token state.
  *
- * 조건 충족 시 candidate 추가 → QUOTA_REACHED/QUOTA_NEAR_LIMIT 중복 금지(FR-023)
- * → 우선순위 내림차순 정렬(FR-026) → 최대 3개(FR-022) 반환
+ * Candidates are selected for QUOTA_REACHED, RECENT_ERROR_DETECTED, NOTIFICATION_NOT_CONNECTED,
+ * QUOTA_NEAR_LIMIT, and PAUSED_ACCOMMODATIONS_EXIST. If quota is reached, the near-limit card is suppressed.
+ *
+ * @param metrics - Dashboard metrics used to determine applicable action cards
+ * @param hasKakaoToken - Whether a Kakao notification token is present
+ * @returns An array of ActionCard objects sorted by descending priority, containing at most ACTION_CARDS_MAX items
  */
 export function generateActionCards(metrics: DashboardMetrics, hasKakaoToken: boolean): ActionCard[] {
   const candidates: ActionCard[] = [];
@@ -44,6 +48,12 @@ export function generateActionCards(metrics: DashboardMetrics, hasKakaoToken: bo
   return candidates.slice(0, ACTION_CARDS_MAX);
 }
 
+/**
+ * Builds an ActionCard object for the given action card type using configured templates.
+ *
+ * @param type - The action card type whose configured template and priority will be used
+ * @returns An ActionCard populated with its type, priority, title, description, CTA label/action, and color scheme
+ */
 function buildCard(type: ActionCardType): ActionCard {
   const config = ACTION_CARD_CONFIG[type];
   return {

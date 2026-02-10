@@ -28,6 +28,13 @@ interface StatusDashboardSlotProps {
   lang: Lang;
 }
 
+/**
+ * Render the StatusDashboard component with the provided localization props.
+ *
+ * @param copy - Localized copy content for the dashboard
+ * @param lang - Language selector used to choose localization
+ * @returns The StatusDashboard React element
+ */
 export function StatusDashboardSlot({ copy, lang }: StatusDashboardSlotProps): React.ReactElement {
   return (
     <StatusDashboard

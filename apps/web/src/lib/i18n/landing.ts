@@ -63,6 +63,12 @@ export interface LandingCopy {
   }>;
 }
 
+/**
+ * Load landing page translations for the specified language from public/locales/<lang>/landing.json.
+ *
+ * @param lang - Language code that identifies the locale directory to read
+ * @returns The parsed `LandingCopy` object containing landing page strings for the given language
+ */
 export function getLandingCopy(lang: Lang): LandingCopy {
   const filePath = join(process.cwd(), 'public', 'locales', lang, 'landing.json');
   const raw = readFileSync(filePath, 'utf-8');

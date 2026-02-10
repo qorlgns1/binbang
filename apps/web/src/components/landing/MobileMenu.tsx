@@ -20,6 +20,12 @@ interface MobileMenuProps {
   copy: LandingCopy;
 }
 
+/**
+ * Render a mobile navigation sheet with links and a login button using localized labels.
+ *
+ * @param copy - Localized copy for navigation labels; should provide `nav.features`, `nav.status`, `nav.pricing`, and `nav.login`
+ * @returns A React element containing a Sheet-based mobile menu with navigation links and a login button
+ */
 export function MobileMenu({ copy }: MobileMenuProps): React.ReactElement {
   return (
     <Sheet>
