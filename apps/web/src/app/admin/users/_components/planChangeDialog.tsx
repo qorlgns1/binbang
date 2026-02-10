@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminPlans } from '@/hooks/useAdminPlans';
 import { useUpdateUserPlan } from '@/hooks/useUpdateUserPlan';
 import type { AdminUserInfo } from '@/types/admin';
+import { cn } from '@/lib/utils';
 
 interface PlanChangeDialogProps {
   user: AdminUserInfo | null;
@@ -96,9 +97,10 @@ export function PlanChangeDialog({ user, onClose }: PlanChangeDialogProps) {
                     <Label
                       key={plan.id}
                       htmlFor={plan.id}
-                      className={`flex items-center space-x-3 rounded-lg border p-3 transition-colors ${
-                        selectedPlan === plan.name ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
-                      }`}
+                      className={cn(
+                        'flex items-center space-x-3 rounded-lg border p-3 transition-colors',
+                        selectedPlan === plan.name ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50',
+                      )}
                     >
                       <RadioGroupItem value={plan.name} id={plan.id} />
                       <div className='flex-1 cursor-pointer'>

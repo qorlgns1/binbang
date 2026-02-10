@@ -25,12 +25,12 @@ const AGODA_DATA_EXTRACTOR = `function() {
     const scripts = document.querySelectorAll('script');
     for (const script of scripts) {
       const text = script.textContent || '';
-      const hotelIdMatch = text.match(/hotelId[:s]*([0-9]+)/);
+      const hotelIdMatch = text.match(/hotelId[:\s]*([0-9]+)/);
       if (hotelIdMatch) {
         platformId = hotelIdMatch[1];
         break;
       }
-      const propertyIdMatch = text.match(/propertyId[:s]*([0-9]+)/);
+      const propertyIdMatch = text.match(/propertyId[:\s]*([0-9]+)/);
       if (propertyIdMatch) {
         platformId = propertyIdMatch[1];
         break;

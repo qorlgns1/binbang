@@ -176,7 +176,6 @@
     }
   ],
   "assist": {
-    "enabled": null,
     "actions": { "source": { "organizeImports": { "level": "on", "options": {} } } }
   }
 }
