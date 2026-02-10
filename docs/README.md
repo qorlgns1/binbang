@@ -1,10 +1,13 @@
 # Docs Index
 
+## AI 대화용 컨텍스트
+
+- **`docs/AI_CONTEXT.md`**: ChatGPT, Gemini, Grok 등에 붙여넣을 **프로젝트/역할/구조 요약** 한 파일. `architecture.md`, `ai-context-extra.md`, `brand-identity.md` 수정 후 `pnpm update:ai-context` 실행하면 여기에 반영됨.
+
 ## 구조
 
 - `docs/architecture/`
-  - `architecture.md`: 현재 모노레포 구조/경계 요약
-  - `project-structure.md`: 디렉터리/파일 구조 상세
+  - `architecture.md`: 현재 모노레포 구조/경계/워크스페이스 책임 (단일 기준)
   - `monorepo-plan.md`: 모노레포 전환 계획 원문
 - `docs/guides/`
   - `local-development.md`: 로컬 개발/환경변수/명령
