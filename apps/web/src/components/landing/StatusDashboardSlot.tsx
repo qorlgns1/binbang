@@ -7,10 +7,7 @@ import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 const StatusDashboard = dynamic(() => import('./StatusDashboard').then((mod) => mod.StatusDashboard), {
   ssr: false,
   loading: () => (
-    <section
-      id='status'
-      className='mx-auto w-full max-w-5xl'
-    >
+    <section id='status' className='mx-auto w-full max-w-5xl'>
       <div className='mb-4 flex items-center justify-between'>
         <div className='h-5 w-32 animate-pulse rounded bg-muted' />
         <div className='h-6 w-24 animate-pulse rounded-full bg-muted' />
@@ -36,10 +33,5 @@ interface StatusDashboardSlotProps {
  * @returns The StatusDashboard React element
  */
 export function StatusDashboardSlot({ copy, lang }: StatusDashboardSlotProps): React.ReactElement {
-  return (
-    <StatusDashboard
-      copy={copy}
-      lang={lang}
-    />
-  );
+  return <StatusDashboard copy={copy} lang={lang} />;
 }

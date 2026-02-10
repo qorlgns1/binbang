@@ -239,11 +239,11 @@ export async function getAccommodationPriceHistory(input: GetPriceHistoryInput):
   const dateFilter: { gte?: Date; lte?: Date } = {};
   if (input.from) {
     const fromDate = new Date(input.from);
-    if (!isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
+    if (!Number.isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
   }
   if (input.to) {
     const toDate = new Date(input.to);
-    if (!isNaN(toDate.getTime())) dateFilter.lte = toDate;
+    if (!Number.isNaN(toDate.getTime())) dateFilter.lte = toDate;
   }
 
   // 현재 일정과 일치하는 로그 + 레거시(일정 미기록) 로그만 조회

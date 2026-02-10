@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 
 import { XIcon } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
@@ -9,39 +9,19 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return (
-    <DialogPrimitive.Root
-      data-slot='dialog'
-      {...props}
-    />
-  );
+  return <DialogPrimitive.Root data-slot='dialog' {...props} />;
 }
 
 function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-  return (
-    <DialogPrimitive.Trigger
-      data-slot='dialog-trigger'
-      {...props}
-    />
-  );
+  return <DialogPrimitive.Trigger data-slot='dialog-trigger' {...props} />;
 }
 
 function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return (
-    <DialogPrimitive.Portal
-      data-slot='dialog-portal'
-      {...props}
-    />
-  );
+  return <DialogPrimitive.Portal data-slot='dialog-portal' {...props} />;
 }
 
 function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return (
-    <DialogPrimitive.Close
-      data-slot='dialog-close'
-      {...props}
-    />
-  );
+  return <DialogPrimitive.Close data-slot='dialog-close' {...props} />;
 }
 
 function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
@@ -78,15 +58,8 @@ function DialogContent({
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot='dialog-close'
-            asChild
-          >
-            <Button
-              variant='ghost'
-              className='absolute top-4 right-4'
-              size='icon-sm'
-            >
+          <DialogPrimitive.Close data-slot='dialog-close' asChild>
+            <Button variant='ghost' className='absolute top-4 right-4' size='icon-sm'>
               <XIcon />
               <span className='sr-only'>Close</span>
             </Button>
@@ -98,13 +71,7 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot='dialog-header'
-      className={cn('gap-2 flex flex-col', className)}
-      {...props}
-    />
-  );
+  return <div data-slot='dialog-header' className={cn('gap-2 flex flex-col', className)} {...props} />;
 }
 
 function DialogFooter({
@@ -133,11 +100,7 @@ function DialogFooter({
 
 function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
-    <DialogPrimitive.Title
-      data-slot='dialog-title'
-      className={cn('leading-none font-medium', className)}
-      {...props}
-    />
+    <DialogPrimitive.Title data-slot='dialog-title' className={cn('leading-none font-medium', className)} {...props} />
   );
 }
 

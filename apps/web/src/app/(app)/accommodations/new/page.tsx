@@ -29,7 +29,7 @@ export default function NewAccommodationPage(): React.ReactElement {
   const [adults, setAdults] = useState(2);
 
   // URL 변경 시 자동 파싱
-  /* eslint-disable react-hooks/exhaustive-deps */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional, runs only on url changes
   useEffect(() => {
     if (!url) {
       setParsedInfo(null);
@@ -90,12 +90,7 @@ export default function NewAccommodationPage(): React.ReactElement {
     <main className='mx-auto max-w-2xl px-4 py-8'>
       {/* 뒤로 가기 */}
       <div className='mb-6'>
-        <Button
-          asChild
-          variant='ghost'
-          size='sm'
-          className='gap-2 px-0 text-muted-foreground hover:text-foreground'
-        >
+        <Button asChild variant='ghost' size='sm' className='gap-2 px-0 text-muted-foreground hover:text-foreground'>
           <Link href='/dashboard'>
             <ArrowLeft className='size-4' />
             대시보드로 돌아가기
@@ -123,20 +118,12 @@ export default function NewAccommodationPage(): React.ReactElement {
         </CardHeader>
         <CardContent>
           {createMutation.error && (
-            <Alert
-              variant='destructive'
-              className='mb-6'
-            >
+            <Alert variant='destructive' className='mb-6'>
               <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
               <AlertDescription>
                 <p>{createMutation.error.message}</p>
                 {createMutation.error instanceof QuotaExceededError && (
-                  <Button
-                    asChild
-                    variant='outline'
-                    size='sm'
-                    className='mt-3'
-                  >
+                  <Button asChild variant='outline' size='sm' className='mt-3'>
                     <Link href='/pricing'>플랜 업그레이드</Link>
                   </Button>
                 )}
@@ -144,11 +131,7 @@ export default function NewAccommodationPage(): React.ReactElement {
             </Alert>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            onChange={() => createMutation.reset()}
-            className='space-y-6'
-          >
+          <form onSubmit={handleSubmit} onChange={() => createMutation.reset()} className='space-y-6'>
             {/* URL 입력 */}
             <div className='space-y-2'>
               <Label htmlFor='url'>숙소 URL *</Label>
@@ -245,7 +228,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 min='1'
                 max='20'
                 value={adults}
-                onChange={(e) => setAdults(parseInt(e.target.value) || 2)}
+                onChange={(e) => setAdults(parseInt(e.target.value, 10) || 2)}
                 className='bg-background/80 transition-all focus:bg-background'
               />
             </div>
@@ -259,11 +242,7 @@ export default function NewAccommodationPage(): React.ReactElement {
               >
                 {createMutation.isPending ? '추가 중...' : '숙소 추가'}
               </Button>
-              <Button
-                asChild
-                variant='outline'
-                className='border-border'
-              >
+              <Button asChild variant='outline' className='border-border'>
                 <Link href='/dashboard'>취소</Link>
               </Button>
             </div>

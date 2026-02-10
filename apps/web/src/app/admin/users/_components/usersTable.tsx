@@ -18,22 +18,18 @@ import type { AdminUserInfo } from '@/types/admin';
 import { PlanChangeDialog } from './planChangeDialog';
 import { RoleChangeDialog } from './roleChangeDialog';
 
+const TABLE_SKELETON_KEYS = ['user-row-1', 'user-row-2', 'user-row-3', 'user-row-4', 'user-row-5'];
+
 function RoleBadges({ roles }: { roles: string[] }) {
   return (
     <div className='flex gap-1'>
       {roles.map((role) =>
         role === 'ADMIN' ? (
-          <Badge
-            key={role}
-            className='bg-status-warning text-status-warning-foreground'
-          >
+          <Badge key={role} className='bg-status-warning text-status-warning-foreground'>
             Admin
           </Badge>
         ) : (
-          <Badge
-            key={role}
-            variant='secondary'
-          >
+          <Badge key={role} variant='secondary'>
             User
           </Badge>
         ),
@@ -45,11 +41,8 @@ function RoleBadges({ roles }: { roles: string[] }) {
 function TableSkeleton() {
   return (
     <div className='space-y-2'>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className='h-10 w-full'
-        />
+      {TABLE_SKELETON_KEYS.map((key) => (
+        <Skeleton key={key} className='h-10 w-full' />
       ))}
     </div>
   );
@@ -98,10 +91,7 @@ export function UsersTable({ filters }: UsersTableProps) {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
-                    <Link
-                      href={`/admin/users/${user.id}`}
-                      className='flex items-center gap-2 hover:underline'
-                    >
+                    <Link href={`/admin/users/${user.id}`} className='flex items-center gap-2 hover:underline'>
                       {user.image ? (
                         <Image
                           src={user.image}
@@ -122,10 +112,7 @@ export function UsersTable({ filters }: UsersTableProps) {
                     <RoleBadges roles={user.roles} />
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant='outline'
-                      className='text-xs'
-                    >
+                    <Badge variant='outline' className='text-xs'>
                       {user.planName ?? '-'}
                     </Badge>
                   </TableCell>
@@ -135,18 +122,10 @@ export function UsersTable({ filters }: UsersTableProps) {
                   </TableCell>
                   <TableCell>
                     <div className='flex gap-1'>
-                      <Button
-                        variant='outline'
-                        size='xs'
-                        onClick={() => setSelectedUserForRole(user)}
-                      >
+                      <Button variant='outline' size='xs' onClick={() => setSelectedUserForRole(user)}>
                         역할
                       </Button>
-                      <Button
-                        variant='outline'
-                        size='xs'
-                        onClick={() => setSelectedUserForPlan(user)}
-                      >
+                      <Button variant='outline' size='xs' onClick={() => setSelectedUserForPlan(user)}>
                         플랜
                       </Button>
                     </div>
@@ -158,12 +137,7 @@ export function UsersTable({ filters }: UsersTableProps) {
 
           {hasNextPage && (
             <div className='flex justify-center pt-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
+              <Button variant='outline' size='sm' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? '로딩 중...' : '더 보기'}
               </Button>
             </div>
@@ -171,14 +145,8 @@ export function UsersTable({ filters }: UsersTableProps) {
         </>
       )}
 
-      <RoleChangeDialog
-        user={selectedUserForRole}
-        onClose={() => setSelectedUserForRole(null)}
-      />
-      <PlanChangeDialog
-        user={selectedUserForPlan}
-        onClose={() => setSelectedUserForPlan(null)}
-      />
+      <RoleChangeDialog user={selectedUserForRole} onClose={() => setSelectedUserForRole(null)} />
+      <PlanChangeDialog user={selectedUserForPlan} onClose={() => setSelectedUserForPlan(null)} />
     </>
   );
 }

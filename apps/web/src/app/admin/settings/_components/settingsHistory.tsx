@@ -19,6 +19,8 @@ const PERIOD_OPTIONS = [
   { value: '7d', label: '7일' },
 ] as const;
 
+const TABLE_SKELETON_KEYS = ['history-row-1', 'history-row-2', 'history-row-3'];
+
 function getPeriodFrom(period: string): string {
   const now = Date.now();
   const ms: Record<string, number> = {
@@ -36,7 +38,7 @@ function isMsSetting(key: string): boolean {
 
 function formatMsValue(value: string): string {
   const num = Number(value);
-  if (isNaN(num)) return value;
+  if (Number.isNaN(num)) return value;
   if (num >= 60000 && num % 60000 === 0) return `${num / 60000}min`;
   if (num >= 1000 && num % 1000 === 0) return `${num / 1000}s`;
   return `${num}ms`;
@@ -56,11 +58,8 @@ function ValueDisplay({ settingKey, value }: { settingKey: string; value: string
 function TableSkeleton() {
   return (
     <div className='space-y-2'>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className='h-10 w-full'
-        />
+      {TABLE_SKELETON_KEYS.map((key) => (
+        <Skeleton key={key} className='h-10 w-full' />
       ))}
     </div>
   );
@@ -94,39 +93,27 @@ export function SettingsHistory() {
       <h3 className='text-lg font-semibold'>변경 이력</h3>
 
       <div className='flex flex-wrap items-center gap-3'>
-        <Select
-          value={period}
-          onValueChange={setPeriod}
-        >
+        <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger size='sm'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {PERIOD_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-              >
+              <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select
-          value={settingKey}
-          onValueChange={setSettingKey}
-        >
+        <Select value={settingKey} onValueChange={setSettingKey}>
           <SelectTrigger size='sm'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>전체 설정</SelectItem>
             {settingKeys.map((key) => (
-              <SelectItem
-                key={key}
-                value={key}
-              >
+              <SelectItem key={key} value={key}>
                 {key}
               </SelectItem>
             ))}
@@ -164,16 +151,10 @@ export function SettingsHistory() {
                   </TableCell>
                   <TableCell className='font-medium text-sm'>{log.settingKey}</TableCell>
                   <TableCell className='text-xs'>
-                    <ValueDisplay
-                      settingKey={log.settingKey}
-                      value={log.oldValue}
-                    />
+                    <ValueDisplay settingKey={log.settingKey} value={log.oldValue} />
                   </TableCell>
                   <TableCell className='text-xs'>
-                    <ValueDisplay
-                      settingKey={log.settingKey}
-                      value={log.newValue}
-                    />
+                    <ValueDisplay settingKey={log.settingKey} value={log.newValue} />
                   </TableCell>
                   <TableCell className='text-xs text-muted-foreground'>{log.changedBy.name ?? '-'}</TableCell>
                 </TableRow>
@@ -183,12 +164,7 @@ export function SettingsHistory() {
 
           {hasNextPage && (
             <div className='flex justify-center pt-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
+              <Button variant='outline' size='sm' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? '로딩 중...' : '더 보기'}
               </Button>
             </div>

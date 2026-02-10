@@ -35,17 +35,9 @@ export function PlansManagement() {
         </CardContent>
       </Card>
 
-      <PlanDialog
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
-        plan={null}
-      />
+      <PlanDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} plan={null} />
 
-      <PlanDialog
-        open={!!editingPlan}
-        onOpenChange={(open) => !open && setEditingPlan(null)}
-        plan={editingPlan}
-      />
+      <PlanDialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)} plan={editingPlan} />
     </div>
   );
 }

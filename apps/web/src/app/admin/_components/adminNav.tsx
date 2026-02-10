@@ -54,23 +54,14 @@ export function AdminNav({ userName }: AdminNavProps) {
 
       {/* Mobile Navigation - 우측 고정 배치 */}
       <div className='md:hidden fixed top-3 right-4 z-50'>
-        <Sheet
-          open={open}
-          onOpenChange={setOpen}
-        >
+        <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button
-              variant='outline'
-              size='icon'
-            >
+            <Button variant='outline' size='icon'>
               <Menu className='size-5' />
               <span className='sr-only'>메뉴 열기</span>
             </Button>
           </SheetTrigger>
-          <SheetContent
-            side='right'
-            className='w-72'
-          >
+          <SheetContent side='right' className='w-72'>
             <SheetHeader>
               <SheetTitle>Admin Menu</SheetTitle>
             </SheetHeader>
@@ -107,15 +98,8 @@ export function AdminNav({ userName }: AdminNavProps) {
 
             {/* 하단 액션 */}
             <div className='border-t pt-4 space-y-2'>
-              <Button
-                variant='outline'
-                className='w-full justify-start'
-                asChild
-              >
-                <Link
-                  href='/dashboard'
-                  onClick={() => setOpen(false)}
-                >
+              <Button variant='outline' className='w-full justify-start' asChild>
+                <Link href='/dashboard' onClick={() => setOpen(false)}>
                   Dashboard로 이동
                 </Link>
               </Button>

@@ -39,10 +39,7 @@ export function CheckLogList({ accommodationId }: { accommodationId: string }) {
         <>
           <div className='divide-y'>
             {allLogs.map((log) => (
-              <div
-                key={log.id}
-                className='p-4 flex items-center gap-4'
-              >
+              <div key={log.id} className='p-4 flex items-center gap-4'>
                 <Badge className={statusColors[log.status] ?? statusColors.UNKNOWN}>
                   {statusText[log.status] ?? statusText.UNKNOWN}
                 </Badge>
@@ -50,10 +47,7 @@ export function CheckLogList({ accommodationId }: { accommodationId: string }) {
                   {log.price && `${log.price}`}
                   {log.errorMessage && <span className='text-destructive ml-2'>{log.errorMessage}</span>}
                 </span>
-                <LocalDateTime
-                  date={log.createdAt}
-                  className='text-xs text-muted-foreground'
-                />
+                <LocalDateTime date={log.createdAt} className='text-xs text-muted-foreground' />
                 {log.notificationSent && <span className='text-xs text-status-success-foreground'>📱</span>}
               </div>
             ))}
@@ -61,11 +55,7 @@ export function CheckLogList({ accommodationId }: { accommodationId: string }) {
 
           {hasNextPage && (
             <div className='p-4 text-center border-t'>
-              <Button
-                variant='ghost'
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
+              <Button variant='ghost' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? '불러오는 중...' : '더 보기'}
               </Button>
             </div>

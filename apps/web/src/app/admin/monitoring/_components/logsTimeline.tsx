@@ -34,6 +34,8 @@ const PLATFORM_OPTIONS = [
   { value: 'AGODA', label: 'Agoda' },
 ] as const;
 
+const TABLE_SKELETON_KEYS = ['log-row-1', 'log-row-2', 'log-row-3', 'log-row-4', 'log-row-5'];
+
 function getPeriodFrom(period: string): string {
   const now = Date.now();
   const ms: Record<string, number> = {
@@ -68,11 +70,8 @@ function StatusBadge({ status }: { status: MonitoringLogEntry['status'] }) {
 function TableSkeleton() {
   return (
     <div className='space-y-2'>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className='h-10 w-full'
-        />
+      {TABLE_SKELETON_KEYS.map((key) => (
+        <Skeleton key={key} className='h-10 w-full' />
       ))}
     </div>
   );
@@ -99,57 +98,39 @@ export function LogsTimeline() {
   return (
     <div className='space-y-4'>
       <div className='flex flex-wrap items-center gap-3'>
-        <Select
-          value={period}
-          onValueChange={setPeriod}
-        >
+        <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger size='sm'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {PERIOD_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-              >
+              <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select
-          value={status}
-          onValueChange={setStatus}
-        >
+        <Select value={status} onValueChange={setStatus}>
           <SelectTrigger size='sm'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-              >
+              <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select
-          value={platform}
-          onValueChange={setPlatform}
-        >
+        <Select value={platform} onValueChange={setPlatform}>
           <SelectTrigger size='sm'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {PLATFORM_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-              >
+              <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
             ))}
@@ -215,12 +196,7 @@ export function LogsTimeline() {
 
           {hasNextPage && (
             <div className='flex justify-center pt-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
+              <Button variant='outline' size='sm' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                 {isFetchingNextPage ? '로딩 중...' : '더 보기'}
               </Button>
             </div>

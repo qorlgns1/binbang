@@ -2,8 +2,8 @@
  * Landing page i18n loader
  * Reads translations from public/locales at runtime (server-only)
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import type { Lang } from './config';
 

@@ -123,17 +123,11 @@ export function AccommodationBoard({
     <section>
       <h2 className='mb-3 text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
       <Card>
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-        >
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <CardHeader className='border-b'>
             <TabsList>
               {TABS.map((tab) => (
-                <TabsTrigger
-                  key={tab}
-                  value={tab}
-                >
+                <TabsTrigger key={tab} value={tab}>
                   {BOARD_TAB_LABELS[tab]}
                   <span className='ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground'>
                     {tabCounts[tab]}
@@ -144,11 +138,7 @@ export function AccommodationBoard({
           </CardHeader>
 
           {TABS.map((tab) => (
-            <TabsContent
-              key={tab}
-              value={tab}
-              className='mt-0'
-            >
+            <TabsContent key={tab} value={tab} className='mt-0'>
               {activeTab === tab && filteredAccommodations.length === 0 ? (
                 <CardContent className='flex flex-col items-center gap-2 py-12 text-center'>
                   <LighthouseQuiet className='mb-1 text-muted-foreground' />
@@ -157,10 +147,7 @@ export function AccommodationBoard({
               ) : (
                 <div className='divide-y'>
                   {filteredAccommodations.map((acc) => (
-                    <AccommodationRow
-                      key={acc.id}
-                      accommodation={acc}
-                    />
+                    <AccommodationRow key={acc.id} accommodation={acc} />
                   ))}
                 </div>
               )}

@@ -71,7 +71,7 @@ export function getEnvNumber(key: string, defaultValue: number): number {
     return defaultValue;
   }
   const parsed = parseInt(value, 10);
-  if (isNaN(parsed)) {
+  if (Number.isNaN(parsed)) {
     console.warn(`⚠️ ${key}의 값 "${value}"이 숫자가 아닙니다. 기본값 ${defaultValue} 사용`);
     return defaultValue;
   }

@@ -77,24 +77,21 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
       <div className='w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-lg'>
         <h2 className='mb-4 text-lg font-semibold'>{isEdit ? '셀렉터 수정' : '새 셀렉터 추가'}</h2>
 
-        <form
-          onSubmit={handleSubmit}
-          className='space-y-4'
-        >
+        <form onSubmit={handleSubmit} className='space-y-4'>
           {/* Category */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>카테고리</label>
+            <label htmlFor='selector-category' className='mb-1 block text-sm font-medium'>
+              카테고리
+            </label>
             <select
+              id='selector-category'
               value={category}
               onChange={(e) => setCategory(e.target.value as SelectorCategory)}
               disabled={isEdit}
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50'
             >
               {CATEGORIES.map((cat) => (
-                <option
-                  key={cat.value}
-                  value={cat.value}
-                >
+                <option key={cat.value} value={cat.value}>
                   {cat.label}
                 </option>
               ))}
@@ -103,8 +100,11 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
 
           {/* Name */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>이름</label>
+            <label htmlFor='selector-name' className='mb-1 block text-sm font-medium'>
+              이름
+            </label>
             <input
+              id='selector-name'
               type='text'
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -117,8 +117,11 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
 
           {/* Selector */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>CSS 셀렉터</label>
+            <label htmlFor='selector-css' className='mb-1 block text-sm font-medium'>
+              CSS 셀렉터
+            </label>
             <input
+              id='selector-css'
               type='text'
               value={selectorValue}
               onChange={(e) => setSelectorValue(e.target.value)}
@@ -130,10 +133,11 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
 
           {/* Extractor Code */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>
+            <label htmlFor='selector-extractor-code' className='mb-1 block text-sm font-medium'>
               추출 코드 <span className='text-muted-foreground'>(선택)</span>
             </label>
             <textarea
+              id='selector-extractor-code'
               value={extractorCode}
               onChange={(e) => setExtractorCode(e.target.value)}
               placeholder={`// el은 선택된 요소입니다
@@ -150,11 +154,14 @@ return match ? match[0] : null;`}
 
           {/* Priority */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>우선순위</label>
+            <label htmlFor='selector-priority' className='mb-1 block text-sm font-medium'>
+              우선순위
+            </label>
             <input
+              id='selector-priority'
               type='number'
               value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+              onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
               className='w-32 rounded-md border border-input bg-background px-3 py-2 text-sm'
             />
             <p className='mt-1 text-xs text-muted-foreground'>높을수록 먼저 시도됩니다.</p>
@@ -162,10 +169,11 @@ return match ? match[0] : null;`}
 
           {/* Description */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>
+            <label htmlFor='selector-description' className='mb-1 block text-sm font-medium'>
               설명 <span className='text-muted-foreground'>(선택)</span>
             </label>
             <input
+              id='selector-description'
               type='text'
               value={description}
               onChange={(e) => setDescription(e.target.value)}

@@ -21,7 +21,7 @@ import {
   updateHeartbeat,
 } from '@workspace/shared/worker';
 import 'dotenv/config';
-import { createServer } from 'http';
+import { createServer } from 'node:http';
 
 import { processCheck } from './checkProcessor';
 import { getConfig, initConfig, logConfig } from './config';

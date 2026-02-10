@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMonitoringSummary } from '@/hooks/useMonitoringSummary';
 import type { MonitoringSummary } from '@/types/admin';
 
+const SUMMARY_SKELETON_KEYS = ['summary-1', 'summary-2', 'summary-3', 'summary-4', 'summary-5'];
+
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return '-';
   const diff = Date.now() - new Date(iso).getTime();
@@ -49,10 +51,7 @@ function SummaryCard({ title, icon: Icon, children }: { title: string; icon: Luc
 
 function WorkerCard({ data }: { data: MonitoringSummary }) {
   return (
-    <SummaryCard
-      title='Worker Health'
-      icon={Activity}
-    >
+    <SummaryCard title='Worker Health' icon={Activity}>
       <div className='space-y-2'>
         <div className='flex items-center gap-2'>
           <StatusBadge status={data.worker.status} />
@@ -68,10 +67,7 @@ function WorkerCard({ data }: { data: MonitoringSummary }) {
 
 function DbCard({ data }: { data: MonitoringSummary }) {
   return (
-    <SummaryCard
-      title='Database'
-      icon={Database}
-    >
+    <SummaryCard title='Database' icon={Database}>
       <div className='space-y-1'>
         <div className='flex items-center gap-2'>
           <Badge
@@ -100,10 +96,7 @@ function CheckRateCard({ data }: { data: MonitoringSummary }) {
         : 'text-status-error-foreground';
 
   return (
-    <SummaryCard
-      title='Check Success Rate (24h)'
-      icon={CheckCircle}
-    >
+    <SummaryCard title='Check Success Rate (24h)' icon={CheckCircle}>
       <div className='space-y-1'>
         <p className={`text-2xl font-bold ${rateColor}`}>{rate}%</p>
         <p className='text-xs text-muted-foreground'>
@@ -117,10 +110,7 @@ function CheckRateCard({ data }: { data: MonitoringSummary }) {
 function RecentErrorsCard({ data }: { data: MonitoringSummary }) {
   const hasErrors = data.recentErrors1h.count > 0;
   return (
-    <SummaryCard
-      title='Recent Errors (1h)'
-      icon={AlertTriangle}
-    >
+    <SummaryCard title='Recent Errors (1h)' icon={AlertTriangle}>
       <div className='space-y-1'>
         <p
           className={`text-2xl font-bold ${hasErrors ? 'text-status-error-foreground' : 'text-status-success-foreground'}`}
@@ -128,10 +118,7 @@ function RecentErrorsCard({ data }: { data: MonitoringSummary }) {
           {data.recentErrors1h.count}
         </p>
         {data.recentErrors1h.lastMessage && (
-          <p
-            className='text-xs text-muted-foreground truncate'
-            title={data.recentErrors1h.lastMessage}
-          >
+          <p className='text-xs text-muted-foreground truncate' title={data.recentErrors1h.lastMessage}>
             {data.recentErrors1h.lastMessage}
           </p>
         )}
@@ -142,10 +129,7 @@ function RecentErrorsCard({ data }: { data: MonitoringSummary }) {
 
 function LastSuccessCard({ data }: { data: MonitoringSummary }) {
   return (
-    <SummaryCard
-      title='Last Successful Check'
-      icon={Clock}
-    >
+    <SummaryCard title='Last Successful Check' icon={Clock}>
       <div className='space-y-1'>
         <p className='text-lg font-semibold'>{formatRelativeTime(data.lastSuccessfulCheck)}</p>
         <p className='text-xs text-muted-foreground'>활성 숙소: {data.activeAccommodations}개</p>
@@ -157,11 +141,8 @@ function LastSuccessCard({ data }: { data: MonitoringSummary }) {
 function SummaryCardsSkeleton() {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Card
-          size='sm'
-          key={i}
-        >
+      {SUMMARY_SKELETON_KEYS.map((key) => (
+        <Card size='sm' key={key}>
           <CardHeader>
             <Skeleton className='h-4 w-24' />
           </CardHeader>

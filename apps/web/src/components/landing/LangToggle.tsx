@@ -28,6 +28,7 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
     // 쿠키 저장
+    // biome-ignore lint/suspicious/noDocumentCookie: language preference cookie must be set for server-side locale routing
     document.cookie = `binbang-lang=${newLang}; path=/; max-age=31536000`;
 
     // 트래킹

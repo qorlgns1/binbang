@@ -1,8 +1,8 @@
 import type { NextConfig } from 'next';
 
 import bundleAnalyzer from '@next/bundle-analyzer';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

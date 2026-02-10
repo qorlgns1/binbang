@@ -50,16 +50,7 @@ function UserAvatar({
   }
 
   if (user.image) {
-    return (
-      <Image
-        src={user.image}
-        alt=''
-        width={32}
-        height={32}
-        className='size-8 rounded-full'
-        unoptimized
-      />
-    );
+    return <Image src={user.image} alt='' width={32} height={32} className='size-8 rounded-full' unoptimized />;
   }
 
   return (
@@ -97,19 +88,13 @@ export function ActivityItem({ activity }: Props) {
           {(oldVal || newVal) && (
             <div className='flex items-center gap-2 text-sm mt-2'>
               {oldVal && (
-                <Badge
-                  variant='outline'
-                  className='font-normal'
-                >
+                <Badge variant='outline' className='font-normal'>
                   {oldVal}
                 </Badge>
               )}
               {oldVal && newVal && <ArrowRight className='size-3 text-muted-foreground' />}
               {newVal && (
-                <Badge
-                  variant='secondary'
-                  className='font-normal'
-                >
+                <Badge variant='secondary' className='font-normal'>
                   {newVal}
                 </Badge>
               )}

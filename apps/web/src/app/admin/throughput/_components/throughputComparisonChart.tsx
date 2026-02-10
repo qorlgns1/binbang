@@ -57,19 +57,13 @@ export function ThroughputComparisonChart({ filters }: Props) {
     <Card>
       <CardHeader className='flex flex-row items-center justify-between'>
         <CardTitle>설정별 비교</CardTitle>
-        <Select
-          value={compareBy}
-          onValueChange={(v) => setCompareBy(v as CompareBy)}
-        >
+        <Select value={compareBy} onValueChange={(v) => setCompareBy(v as CompareBy)}>
           <SelectTrigger className='w-[180px]'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {COMPARE_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-              >
+              <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
             ))}
@@ -82,29 +76,13 @@ export function ThroughputComparisonChart({ filters }: Props) {
             비교할 데이터가 없습니다.
           </div>
         ) : (
-          <ChartContainer
-            config={chartConfig}
-            className='h-[250px] w-full'
-          >
+          <ChartContainer config={chartConfig} className='h-[250px] w-full'>
             <BarChart data={chartData}>
               <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey='name'
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-              />
+              <XAxis dataKey='name' tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar
-                dataKey='avgThroughputPerMin'
-                fill='var(--color-avgThroughputPerMin)'
-                radius={[4, 4, 0, 0]}
-              />
+              <Bar dataKey='avgThroughputPerMin' fill='var(--color-avgThroughputPerMin)' radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         )}

@@ -77,10 +77,7 @@ export function KpiStrip({ metrics, isLoading }: KpiStripProps): React.ReactElem
   return (
     <div className='grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4'>
       {items.map((item) => (
-        <KpiCard
-          key={item.label}
-          {...item}
-        />
+        <KpiCard key={item.label} {...item} />
       ))}
     </div>
   );

@@ -77,25 +77,15 @@ function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: bool
 
       <CardFooter>
         {isCurrentPlan ? (
-          <Button
-            className='w-full'
-            variant='outline'
-            disabled
-          >
+          <Button className='w-full' variant='outline' disabled>
             현재 이용 중
           </Button>
         ) : plan.price === 0 ? (
-          <Button
-            className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
-            asChild
-          >
+          <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
             <Link href='/signup'>무료로 시작하기</Link>
           </Button>
         ) : (
-          <Button
-            className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
-            asChild
-          >
+          <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
             <Link href={`mailto:rlgns0610@gmail.com?subject=${plan.name} 플랜 업그레이드 문의`}>업그레이드 문의</Link>
           </Button>
         )}
@@ -108,10 +98,7 @@ function PricingCardsSkeleton(): React.ReactElement {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto'>
       {[1, 2, 3].map((i) => (
-        <Card
-          key={i}
-          className='flex flex-col'
-        >
+        <Card key={i} className='flex flex-col'>
           <CardHeader className='text-center'>
             <Skeleton className='h-6 w-20 mx-auto' />
             <Skeleton className='h-4 w-32 mx-auto mt-2' />
@@ -120,10 +107,7 @@ function PricingCardsSkeleton(): React.ReactElement {
             <Skeleton className='h-10 w-24 mx-auto mb-6' />
             <div className='space-y-3'>
               {[1, 2, 3, 4].map((j) => (
-                <Skeleton
-                  key={j}
-                  className='h-5 w-full'
-                />
+                <Skeleton key={j} className='h-5 w-full' />
               ))}
             </div>
           </CardContent>
@@ -153,11 +137,7 @@ export function PricingCards(): React.ReactElement {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12 max-w-5xl mx-auto px-4 pt-4'>
       {plans.map((plan) => (
-        <PlanCard
-          key={plan.id}
-          plan={plan}
-          isCurrentPlan={plan.name === currentPlanName}
-        />
+        <PlanCard key={plan.id} plan={plan} isCurrentPlan={plan.name === currentPlanName} />
       ))}
     </div>
   );

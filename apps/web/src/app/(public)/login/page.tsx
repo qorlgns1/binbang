@@ -54,10 +54,7 @@ function LoginForm(): React.ReactElement {
   return (
     <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel
-          ctaLabel='랜딩 페이지 보기'
-          ctaHref='/'
-        />
+        <AuthBrandPanel ctaLabel='랜딩 페이지 보기' ctaHref='/' />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
@@ -71,10 +68,7 @@ function LoginForm(): React.ReactElement {
               </Alert>
             )}
 
-            <form
-              onSubmit={handleCredentialsLogin}
-              className='space-y-3'
-            >
+            <form onSubmit={handleCredentialsLogin} className='space-y-3'>
               <div className='space-y-1.5'>
                 <Label htmlFor='email'>이메일</Label>
                 <Input
@@ -129,12 +123,8 @@ function LoginForm(): React.ReactElement {
               onClick={() => signIn('kakao', { callbackUrl })}
               className='w-full justify-center gap-3 bg-[#FEE500] text-[#191919] hover:bg-[#FDD800]'
             >
-              <svg
-                width='24'
-                height='24'
-                viewBox='0 0 24 24'
-                fill='currentColor'
-              >
+              <svg width='24' height='24' viewBox='0 0 24 24' fill='currentColor'>
+                <title>카카오</title>
                 <path d='M12 3C6.477 3 2 6.463 2 10.742c0 2.782 1.86 5.22 4.656 6.585-.145.525-.936 3.385-1.008 3.623 0 0-.02.168.089.233.109.065.236.031.236.031.313-.043 3.624-2.363 4.193-2.766.588.082 1.2.125 1.834.125 5.523 0 10-3.463 10-7.742S17.523 3 12 3z' />
               </svg>
               카카오로 로그인
@@ -145,11 +135,8 @@ function LoginForm(): React.ReactElement {
               onClick={() => signIn('google', { callbackUrl })}
               className='w-full justify-center gap-3 border-border bg-background/70'
             >
-              <svg
-                width='24'
-                height='24'
-                viewBox='0 0 24 24'
-              >
+              <svg width='24' height='24' viewBox='0 0 24 24'>
+                <title>구글</title>
                 <path
                   fill='#4285F4'
                   d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'

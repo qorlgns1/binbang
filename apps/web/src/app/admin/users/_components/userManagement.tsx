@@ -36,19 +36,13 @@ export function UserManagement() {
           onChange={(e) => setSearch(e.target.value)}
           className='w-64'
         />
-        <Select
-          value={role}
-          onValueChange={setRole}
-        >
+        <Select value={role} onValueChange={setRole}>
           <SelectTrigger size='sm'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {ROLE_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-              >
+              <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
             ))}

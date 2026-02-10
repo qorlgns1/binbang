@@ -82,11 +82,7 @@ export function ActionCard({ card, onCtaClick }: ActionCardProps): React.ReactEl
             <p className='text-sm leading-normal opacity-80'>{card.description}</p>
           </div>
         </div>
-        <Button
-          variant='outline'
-          onClick={handleCtaClick}
-          className='w-full min-h-[44px] md:w-auto'
-        >
+        <Button variant='outline' onClick={handleCtaClick} className='w-full min-h-[44px] md:w-auto'>
           {card.ctaLabel}
         </Button>
       </CardContent>

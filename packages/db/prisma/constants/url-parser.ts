@@ -69,7 +69,7 @@ function parseAgodaUrl(urlObj: URL, params: URLSearchParams): ParsedAccommodatio
   let checkOut: string | null = null;
   if (checkIn && isValidDate(checkIn) && los) {
     const nights = parseInt(los, 10);
-    if (!isNaN(nights) && nights > 0) {
+    if (!Number.isNaN(nights) && nights > 0) {
       checkOut = calculateCheckOut(checkIn, nights);
     }
   }
@@ -90,7 +90,7 @@ function isValidDate(dateStr: string): boolean {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
   if (!regex.test(dateStr)) return false;
   const date = new Date(dateStr);
-  return !isNaN(date.getTime());
+  return !Number.isNaN(date.getTime());
 }
 
 function calculateCheckOut(checkIn: string, nights: number): string {

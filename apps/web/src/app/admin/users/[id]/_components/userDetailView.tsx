@@ -20,11 +20,7 @@ export function UserDetailView({ userId }: Props) {
   return (
     <div className='space-y-6'>
       <div className='flex items-center gap-4'>
-        <Button
-          variant='ghost'
-          size='sm'
-          asChild
-        >
+        <Button variant='ghost' size='sm' asChild>
           <Link href='/admin/users'>
             <ArrowLeft className='size-4 mr-2' />
             사용자 목록
@@ -33,11 +29,7 @@ export function UserDetailView({ userId }: Props) {
       </div>
 
       <div className='grid gap-6 lg:grid-cols-[1fr_2fr]'>
-        <UserDetailCard
-          user={user ?? null}
-          isLoading={isLoading}
-          isError={isError}
-        />
+        <UserDetailCard user={user ?? null} isLoading={isLoading} isError={isError} />
         <UserActivityTimeline userId={userId} />
       </div>
     </div>

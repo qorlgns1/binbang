@@ -58,10 +58,7 @@ export default function SignupPage(): React.ReactElement {
   return (
     <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel
-          ctaLabel='로그인으로 이동'
-          ctaHref='/login'
-        />
+        <AuthBrandPanel ctaLabel='로그인으로 이동' ctaHref='/login' />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
@@ -75,10 +72,7 @@ export default function SignupPage(): React.ReactElement {
               </Alert>
             )}
 
-            <form
-              onSubmit={handleSignup}
-              className='space-y-3'
-            >
+            <form onSubmit={handleSignup} className='space-y-3'>
               <div className='space-y-1.5'>
                 <Label htmlFor='name'>이름</Label>
                 <Input

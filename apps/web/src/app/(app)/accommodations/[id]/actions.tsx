@@ -24,11 +24,7 @@ export function DeleteButton({ id }: { id: string }) {
   }
 
   return (
-    <Button
-      variant='destructive'
-      onClick={handleDelete}
-      disabled={deleteMutation.isPending}
-    >
+    <Button variant='destructive' onClick={handleDelete} disabled={deleteMutation.isPending}>
       {deleteMutation.isPending ? '삭제 중...' : '삭제'}
     </Button>
   );

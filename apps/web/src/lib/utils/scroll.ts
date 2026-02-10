@@ -16,7 +16,7 @@ export function smoothScrollTo(targetId: string, offset = 64, duration = 480): v
 
   // cubic-bezier(0.22, 1, 0.36, 1)
   const easing = (t: number): number => {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
   };
 
   const animation = (currentTime: number): void => {

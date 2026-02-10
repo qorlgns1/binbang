@@ -410,7 +410,7 @@ apps/worker/.env.local  # Worker 전용 (REDIS_URL, KAKAO_*)
 ```typescript
 import type { NextConfig } from 'next';
 
-import path from 'path';
+import path from 'node:path';
 
 const nextConfig: NextConfig = {
   output: 'standalone',

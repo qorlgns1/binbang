@@ -50,11 +50,7 @@ export function ThroughputDashboard() {
 
       <Separator />
 
-      <ThroughputChart
-        filters={filters}
-        timeRange={timeRange}
-        onTimeRangeChange={setTimeRange}
-      />
+      <ThroughputChart filters={filters} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <ThroughputComparisonChart filters={filters} />

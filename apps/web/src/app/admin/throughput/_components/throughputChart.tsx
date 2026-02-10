@@ -78,6 +78,7 @@ export function ThroughputChart({ filters, timeRange, onTimeRangeChange }: Props
         <div className='flex gap-1'>
           {TIME_RANGES.map((range) => (
             <button
+              type='button'
               key={range.value}
               onClick={() => onTimeRangeChange(range.value)}
               className={cn(
@@ -98,23 +99,11 @@ export function ThroughputChart({ filters, timeRange, onTimeRangeChange }: Props
             해당 기간에 데이터가 없습니다.
           </div>
         ) : (
-          <ChartContainer
-            config={chartConfig}
-            className='h-[300px] w-full'
-          >
+          <ChartContainer config={chartConfig} className='h-[300px] w-full'>
             <LineChart data={chartData}>
               <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey='time'
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-              />
+              <XAxis dataKey='time' tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Line
                 type='monotone'

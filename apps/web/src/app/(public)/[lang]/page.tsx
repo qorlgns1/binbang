@@ -39,10 +39,5 @@ export default async function Home({ params }: PageProps): Promise<React.ReactEl
 
   const copy = getLandingCopy(langParam);
 
-  return (
-    <LandingPage
-      lang={langParam}
-      copy={copy}
-    />
-  );
+  return <LandingPage lang={langParam} copy={copy} />;
 }

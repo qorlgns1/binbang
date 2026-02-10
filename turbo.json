@@ -29,7 +29,7 @@
       "persistent": true
     },
     "lint": {
-      "inputs": ["$TURBO_DEFAULT$", "eslint.config.mjs"]
+      "inputs": ["$TURBO_DEFAULT$", "biome.json"]
     },
     "test": {
       "dependsOn": ["^build"],

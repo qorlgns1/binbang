@@ -61,25 +61,25 @@ async function analyzePageData(url: string) {
     // 4. 가용성 관련
     const available = document.querySelector('[data-element-value="available"]');
     const unavailable = document.querySelector('[data-element-value="unavailable"]');
-    result['available'] = !!available;
-    result['unavailable'] = !!unavailable;
+    result.available = !!available;
+    result.unavailable = !!unavailable;
 
     // 5. 검색 조건 (adults, rooms) - SearchBox에서 추출
     const adultsEl = document.querySelector('[data-selenium="adultValue"]');
     const roomsEl = document.querySelector('[data-selenium="roomValue"]');
-    if (adultsEl) result['adults'] = (adultsEl as HTMLElement).innerText;
-    if (roomsEl) result['rooms'] = (roomsEl as HTMLElement).innerText;
+    if (adultsEl) result.adults = (adultsEl as HTMLElement).innerText;
+    if (roomsEl) result.rooms = (roomsEl as HTMLElement).innerText;
 
     // 6. 체크인/체크아웃
     const checkInEl = document.querySelector('[data-selenium="checkInText"]');
     const checkOutEl = document.querySelector('[data-selenium="checkOutText"]');
-    if (checkInEl) result['checkIn'] = (checkInEl as HTMLElement).innerText;
-    if (checkOutEl) result['checkOut'] = (checkOutEl as HTMLElement).innerText;
+    if (checkInEl) result.checkIn = (checkInEl as HTMLElement).innerText;
+    if (checkOutEl) result.checkOut = (checkOutEl as HTMLElement).innerText;
 
     // 7. 세금 포함 가격 찾기 (1박당 총 금액)
     const allText = document.body.innerText;
     const taxMatch = allText.match(/1박당 총 금액[^\d]*([\d,]+)/);
-    if (taxMatch) result['perNightTotalPrice'] = taxMatch[1];
+    if (taxMatch) result.perNightTotalPrice = taxMatch[1];
 
     // 8. 추가 data-element-* 속성들
     const elements = document.querySelectorAll('[data-element-name*="price"]');
@@ -140,7 +140,7 @@ async function analyzePageData(url: string) {
 
     // 16. 주소
     const address = document.querySelector('[data-selenium="hotel-address-map"]');
-    if (address) result['address'] = (address as HTMLElement).innerText;
+    if (address) result.address = (address as HTMLElement).innerText;
 
     return result;
   });
@@ -171,7 +171,7 @@ async function main() {
     const testUrl = `${TEST_ACCOMMODATION.url}?checkIn=2026-04-28&los=4&adults=2&rooms=1&cid=1890020`;
     await analyzePageData(testUrl);
 
-    console.log('\n' + '━'.repeat(50));
+    console.log(`\n${'━'.repeat(50)}`);
     console.log('📋 체커 결과:');
 
     // 2. 실제 체커 실행

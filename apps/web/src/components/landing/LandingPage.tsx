@@ -25,20 +25,11 @@ export function LandingPage({ lang, copy }: LandingPageProps): React.ReactElemen
   return (
     <div className='min-h-screen bg-background text-foreground'>
       <LandingTracker lang={lang} />
-      <Header
-        lang={lang}
-        copy={copy}
-      />
+      <Header lang={lang} copy={copy} />
       <main>
-        <Hero
-          copy={copy}
-          lang={lang}
-        />
+        <Hero copy={copy} lang={lang} />
         <Features copy={copy} />
-        <Footer
-          copy={copy}
-          lang={lang}
-        />
+        <Footer copy={copy} lang={lang} />
       </main>
     </div>
   );

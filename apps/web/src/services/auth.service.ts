@@ -100,7 +100,7 @@ export interface CreateSessionResult {
 }
 
 export async function createSessionForUser(userId: string): Promise<CreateSessionResult> {
-  const { randomUUID } = await import('crypto');
+  const { randomUUID } = await import('node:crypto');
   const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30일
 
   const sessionToken = randomUUID();

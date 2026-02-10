@@ -8,6 +8,7 @@ import { useHeartbeatHistory } from '@/hooks/useHeartbeatHistory';
 
 const SLOT_COUNT = 120; // 2시간 = 120분
 const SLOT_MINUTES = 1;
+const EMPTY_SLOT_KEYS = Array.from({ length: SLOT_COUNT }, (_, index) => `slot-${index}`);
 
 export function HeartbeatTimeline() {
   const { data: history, isLoading } = useHeartbeatHistory();
@@ -82,12 +83,9 @@ export function HeartbeatTimeline() {
           <Badge variant='outline'>데이터 없음</Badge>
         </div>
         <div className='flex gap-0.5 h-6'>
-          {Array.from({ length: SLOT_COUNT }).map(
-            (_, i): React.ReactElement => (
-              <div
-                key={i}
-                className='flex-1 h-full bg-muted rounded-sm'
-              />
+          {EMPTY_SLOT_KEYS.map(
+            (key): React.ReactElement => (
+              <div key={key} className='flex-1 h-full bg-muted rounded-sm' />
             ),
           )}
         </div>

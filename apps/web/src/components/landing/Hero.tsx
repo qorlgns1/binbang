@@ -43,7 +43,7 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
           {/* Mobile: 각 줄마다 줄바꿈 */}
           <span className='md:hidden'>
             {copy.hero.headlineMobile.map((line, i) => (
-              <span key={i}>
+              <span key={line}>
                 {line}
                 {i < copy.hero.headlineMobile.length - 1 && <br />}
               </span>
@@ -51,7 +51,7 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
             <span className='bg-linear-to-r from-primary/70 via-primary to-primary/80 bg-clip-text text-transparent'>
               <br />
               {copy.hero.subheadlineMobile.map((line, i) => (
-                <span key={i}>
+                <span key={line}>
                   {line}
                   {i < copy.hero.subheadlineMobile.length - 1 && <br />}
                 </span>
@@ -70,16 +70,10 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
 
         <p className='mt-7 max-w-3xl text-base leading-[26px] text-muted-foreground'>{copy.hero.description}</p>
 
-        <CTAButtons
-          copy={copy}
-          lang={lang}
-        />
+        <CTAButtons copy={copy} lang={lang} />
 
         <div className='mt-16 w-full'>
-          <StatusDashboardSlot
-            copy={copy}
-            lang={lang}
-          />
+          <StatusDashboardSlot copy={copy} lang={lang} />
         </div>
       </div>
     </section>

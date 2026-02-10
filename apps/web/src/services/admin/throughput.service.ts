@@ -101,18 +101,17 @@ export async function getThroughputSummary(input: GetThroughputSummaryInput): Pr
     successRate,
     avgThroughputPerMin,
     lastCheckAt: lastCheck?.createdAt.toISOString() ?? null,
-    lastCycle:
-      lastCycle && lastCycle.durationMs
-        ? {
-            startedAt: lastCycle.startedAt.toISOString(),
-            durationMs: lastCycle.durationMs,
-            totalCount: lastCycle.totalCount,
-            successCount: lastCycle.successCount,
-            errorCount: lastCycle.errorCount,
-            concurrency: lastCycle.concurrency,
-            browserPoolSize: lastCycle.browserPoolSize,
-          }
-        : null,
+    lastCycle: lastCycle?.durationMs
+      ? {
+          startedAt: lastCycle.startedAt.toISOString(),
+          durationMs: lastCycle.durationMs,
+          totalCount: lastCycle.totalCount,
+          successCount: lastCycle.successCount,
+          errorCount: lastCycle.errorCount,
+          concurrency: lastCycle.concurrency,
+          browserPoolSize: lastCycle.browserPoolSize,
+        }
+      : null,
   };
 }
 

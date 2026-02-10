@@ -82,18 +82,10 @@ export function PriceChart({ prices, isLoading }: Props) {
         <CardTitle>가격 추이</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className='h-[300px] w-full'
-        >
+        <ChartContainer config={chartConfig} className='h-[300px] w-full'>
           <LineChart data={chartData}>
             <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey='time'
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-            />
+            <XAxis dataKey='time' tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis
               tickLine={false}
               axisLine={false}
@@ -103,13 +95,7 @@ export function PriceChart({ prices, isLoading }: Props) {
             <ChartTooltip
               content={<ChartTooltipContent formatter={(value) => formatPrice(value as number, currency)} />}
             />
-            <Line
-              type='monotone'
-              dataKey='price'
-              stroke='var(--color-price)'
-              strokeWidth={2}
-              dot={false}
-            />
+            <Line type='monotone' dataKey='price' stroke='var(--color-price)' strokeWidth={2} dot={false} />
             <Line
               type='monotone'
               dataKey='movingAvg'

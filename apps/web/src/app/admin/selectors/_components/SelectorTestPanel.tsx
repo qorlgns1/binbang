@@ -64,6 +64,7 @@ export function SelectorTestPanel() {
             </p>
           </div>
           <button
+            type='button'
             onClick={handleOpenSettings}
             className='rounded-md bg-muted px-3 py-1.5 text-sm font-medium hover:bg-muted/80'
           >
@@ -87,6 +88,7 @@ export function SelectorTestPanel() {
             />
             <div className='flex gap-2'>
               <button
+                type='button'
                 onClick={handleSaveSettings}
                 disabled={updateAttributes.isPending}
                 className='rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50'
@@ -94,6 +96,7 @@ export function SelectorTestPanel() {
                 {updateAttributes.isPending ? '저장 중...' : '저장'}
               </button>
               <button
+                type='button'
                 onClick={() => setShowSettings(false)}
                 className='rounded-md bg-muted px-4 py-2 text-sm font-medium hover:bg-muted/80'
               >
@@ -106,10 +109,7 @@ export function SelectorTestPanel() {
         {!showSettings && testableAttributes && testableAttributes.length > 0 && (
           <div className='mt-3 flex flex-wrap gap-2'>
             {testableAttributes.map((attr) => (
-              <code
-                key={attr}
-                className='rounded bg-muted px-2 py-0.5 text-xs'
-              >
+              <code key={attr} className='rounded bg-muted px-2 py-0.5 text-xs'>
                 {attr}
               </code>
             ))}
@@ -123,9 +123,12 @@ export function SelectorTestPanel() {
         <div className='space-y-4'>
           {/* URL Input */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>URL</label>
+            <label htmlFor='selector-test-url' className='mb-1 block text-sm font-medium'>
+              URL
+            </label>
             <div className='flex gap-2'>
               <input
+                id='selector-test-url'
                 type='url'
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -143,8 +146,11 @@ export function SelectorTestPanel() {
           {/* Date Inputs */}
           <div className='grid grid-cols-3 gap-4'>
             <div>
-              <label className='mb-1 block text-sm font-medium'>체크인</label>
+              <label htmlFor='selector-test-checkin' className='mb-1 block text-sm font-medium'>
+                체크인
+              </label>
               <input
+                id='selector-test-checkin'
                 type='date'
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
@@ -152,8 +158,11 @@ export function SelectorTestPanel() {
               />
             </div>
             <div>
-              <label className='mb-1 block text-sm font-medium'>체크아웃</label>
+              <label htmlFor='selector-test-checkout' className='mb-1 block text-sm font-medium'>
+                체크아웃
+              </label>
               <input
+                id='selector-test-checkout'
                 type='date'
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
@@ -161,11 +170,14 @@ export function SelectorTestPanel() {
               />
             </div>
             <div>
-              <label className='mb-1 block text-sm font-medium'>인원</label>
+              <label htmlFor='selector-test-adults' className='mb-1 block text-sm font-medium'>
+                인원
+              </label>
               <input
+                id='selector-test-adults'
                 type='number'
                 value={adults}
-                onChange={(e) => setAdults(parseInt(e.target.value) || 1)}
+                onChange={(e) => setAdults(parseInt(e.target.value, 10) || 1)}
                 min={1}
                 max={16}
                 className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
@@ -175,6 +187,7 @@ export function SelectorTestPanel() {
 
           {/* Test Button */}
           <button
+            type='button'
             onClick={runTest}
             disabled={isPending || !input}
             className='rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50'
@@ -222,9 +235,9 @@ export function SelectorTestPanel() {
                 <div>
                   <h4 className='mb-2 text-sm font-medium'>매칭된 셀렉터</h4>
                   <div className='space-y-1'>
-                    {result.matchedSelectors.map((sel, idx) => (
+                    {result.matchedSelectors.map((sel) => (
                       <div
-                        key={idx}
+                        key={`${sel.category}-${sel.name}-${sel.matched ? 'matched' : 'not-matched'}`}
                         className='flex items-center gap-2 text-sm'
                       >
                         <span
@@ -243,9 +256,9 @@ export function SelectorTestPanel() {
                 <div>
                   <h4 className='mb-2 text-sm font-medium'>매칭된 패턴</h4>
                   <div className='space-y-1'>
-                    {result.matchedPatterns.map((pat, idx) => (
+                    {result.matchedPatterns.map((pat) => (
                       <div
-                        key={idx}
+                        key={`${pat.type}-${pat.pattern}-${pat.matched ? 'matched' : 'not-matched'}`}
                         className='flex items-center gap-2 text-sm'
                       >
                         <span
@@ -278,9 +291,9 @@ export function SelectorTestPanel() {
                     활용하면 UI 변경에 강건합니다.
                   </p>
                   <div className='max-h-[500px] space-y-3 overflow-auto'>
-                    {result.testableElements.map((el, idx) => (
+                    {result.testableElements.map((el) => (
                       <div
-                        key={idx}
+                        key={`${el.attribute}-${el.value}-${el.tagName}-${el.html.slice(0, 32)}`}
                         className='rounded border border-border bg-muted/50 p-3'
                       >
                         <div className='mb-2 flex flex-wrap items-center gap-2'>

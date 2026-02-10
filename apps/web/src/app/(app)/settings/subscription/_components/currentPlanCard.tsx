@@ -69,10 +69,7 @@ export function CurrentPlanCard({ plan, isLoading, isError }: Props): React.Reac
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className='text-3xl font-bold text-primary'>{formatPrice(plan.price, plan.interval)}</div>
-        <Button
-          asChild
-          className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
-        >
+        <Button asChild className='w-full bg-primary text-primary-foreground hover:bg-primary/90'>
           <Link href='/pricing'>
             {isFree ? '플랜 업그레이드' : '플랜 변경'}
             <ArrowUpRight className='size-4 ml-2' />

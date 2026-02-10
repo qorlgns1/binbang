@@ -59,12 +59,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
     <main className='mx-auto max-w-4xl px-4 py-8'>
       {/* 뒤로 가기 */}
       <div className='mb-6'>
-        <Button
-          asChild
-          variant='ghost'
-          size='sm'
-          className='gap-2 px-0 text-muted-foreground hover:text-foreground'
-        >
+        <Button asChild variant='ghost' size='sm' className='gap-2 px-0 text-muted-foreground hover:text-foreground'>
           <Link href='/dashboard'>
             <ArrowLeft className='size-4' />
             대시보드로 돌아가기
@@ -80,10 +75,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
             {statusText[accommodation.lastStatus] ?? statusText.UNKNOWN}
           </Badge>
           {!accommodation.isActive && (
-            <Badge
-              variant='secondary'
-              className='border-border'
-            >
+            <Badge variant='secondary' className='border-border'>
               일시정지
             </Badge>
           )}
@@ -93,16 +85,10 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
 
       {/* 액션 버튼 그룹 */}
       <div className='mb-8 flex flex-wrap gap-3'>
-        <Button
-          asChild
-          className='bg-primary text-primary-foreground hover:bg-primary/90'
-        >
+        <Button asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
           <Link href={`/accommodations/${accommodation.id}/edit`}>수정</Link>
         </Button>
-        <ToggleActiveButton
-          id={accommodation.id}
-          isActive={accommodation.isActive}
-        />
+        <ToggleActiveButton id={accommodation.id} isActive={accommodation.isActive} />
         <DeleteButton id={accommodation.id} />
       </div>
 

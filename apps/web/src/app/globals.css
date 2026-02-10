@@ -1,6 +1,6 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -167,8 +167,8 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings:
-      'liga' 1,
-      'calt' 1;
+      "liga" 1,
+      "calt" 1;
   }
 
   /* Focus ring for accessibility (DS-026, FR-015) */
@@ -252,10 +252,10 @@
   *,
   *::before,
   *::after {
-    animation-duration: 0ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0ms !important;
-    scroll-behavior: auto !important;
+    animation-duration: 0ms;
+    animation-iteration-count: 1;
+    transition-duration: 0ms;
+    scroll-behavior: auto;
   }
 }
 

@@ -44,7 +44,7 @@ export function parsePrice(raw: string | null): ParsedPrice | null {
   // 쉼표 제거 후 숫자 파싱
   const cleaned = numericPart.replace(/,/g, '');
   const value = parseFloat(cleaned);
-  if (isNaN(value) || value < 0) return null;
+  if (Number.isNaN(value) || value < 0) return null;
 
   // 최소 단위로 변환: KRW=원(소수점 없음), 나머지=센트(×100)
   const amount = currency === 'KRW' ? Math.round(value) : Math.round(value * 100);

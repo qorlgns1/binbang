@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
-import { exec, spawn } from 'child_process';
-import * as fs from 'fs';
+import { exec, spawn } from 'node:child_process';
+import * as fs from 'node:fs';
 
 import { authOptions } from '@/lib/auth';
 
@@ -40,7 +40,7 @@ export async function POST(_request: Request): Promise<Response> {
               resolve(
                 NextResponse.json(
                   {
-                    error: 'Docker 재시작 실패: ' + error.message,
+                    error: `Docker 재시작 실패: ${error.message}`,
                     timestamp: new Date().toISOString(),
                   },
                   { status: 500 },

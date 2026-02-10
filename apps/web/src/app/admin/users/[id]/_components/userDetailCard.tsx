@@ -22,17 +22,11 @@ function RoleBadges({ roles }: { roles: string[] }) {
     <div className='flex gap-1 flex-wrap'>
       {roles.map((role) =>
         role === 'ADMIN' ? (
-          <Badge
-            key={role}
-            className='bg-status-warning text-status-warning-foreground'
-          >
+          <Badge key={role} className='bg-status-warning text-status-warning-foreground'>
             Admin
           </Badge>
         ) : (
-          <Badge
-            key={role}
-            variant='secondary'
-          >
+          <Badge key={role} variant='secondary'>
             User
           </Badge>
         ),
@@ -82,14 +76,7 @@ export function UserDetailCard({ user, isLoading, isError }: Props) {
       <CardHeader>
         <div className='flex items-center gap-4'>
           {user.image ? (
-            <Image
-              src={user.image}
-              alt=''
-              width={64}
-              height={64}
-              className='size-16 rounded-full'
-              unoptimized
-            />
+            <Image src={user.image} alt='' width={64} height={64} className='size-16 rounded-full' unoptimized />
           ) : (
             <div className='size-16 rounded-full bg-muted flex items-center justify-center'>
               <User className='size-8 text-muted-foreground' />
@@ -124,10 +111,7 @@ export function UserDetailCard({ user, isLoading, isError }: Props) {
           </div>
           <div className='flex items-center justify-between'>
             <span className='text-sm text-muted-foreground'>플랜</span>
-            <Badge
-              variant='outline'
-              className='text-xs'
-            >
+            <Badge variant='outline' className='text-xs'>
               {user.planName ?? '-'}
             </Badge>
           </div>
