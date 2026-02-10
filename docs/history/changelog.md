@@ -1,5 +1,33 @@
 # Changelog
 
+## v2.14.0 – 시스템 설정 MIN/MAX 제한 및 공유 모듈 정리
+
+관리자 시스템 설정에 DB 기반 최솟값/최댓값 제한을 추가하고, 공유 모듈을 정리했습니다.
+
+- **DB 기반 설정 범위 제한**: `SystemSettings`에 MIN/MAX 값을 추가하여 관리자 UI에서 유효 범위 편집 지원
+- **`computeUnits` 함수 개선**: 설정값 계산 시 min/max 핸들링 포함
+- **`@shared/url-builder` 추출**: `buildAccommodationUrl` 유틸을 shared 패키지로 승격
+- **의존성 정리**: axios 제거, tsc-alias 추가
+
+## v2.13.0 – BullMQ + Playwright 워커 마이그레이션
+
+워커 런타임을 node-cron + Puppeteer에서 BullMQ + Playwright로 전면 교체했습니다.
+
+- **BullMQ 잡 큐 도입**: Redis 기반 2단계 큐 (cycle → check), 반복 스케줄러
+- **Playwright 마이그레이션**: Puppeteer → Playwright Chromium으로 브라우저 엔진 교체
+- **배포 워크플로우 개선**: GitHub Actions digest 추출 간소화
+- **robots.txt 정리**: 불필요한 정적 파일 제거
+
+## v2.12.0 – 브랜드 아이덴티티 적용 및 코드 품질 강화
+
+등대 테마 브랜드 아이덴티티를 전 페이지에 적용하고, 코드 품질 기반을 강화했습니다.
+
+- **브랜드 아이덴티티 적용**: 대시보드, 프라이싱, 404, 숙소, 설정, 랜딩, 인증 페이지에 등대 테마 및 다크 모드 대응
+- **SEO Phase 1**: 메타데이터 최적화, 키워드 전략 수립, sitemap/robots 설정
+- **ESLint 모노레포 경계 규칙**: `rules.md` 기반 import 제한 자동 검증
+- **TypeScript 명시적 반환 타입**: 전체 코드베이스에 explicit function return types 적용
+- **rules.md 준수 리팩토링**: 랜딩/인증 페이지 구조 정리, JSX 간소화
+
 ## v2.11.0 – 동적 셀렉터 관리 시스템
 
 플랫폼 UI 변경에 코드 배포 없이 대응할 수 있는 동적 셀렉터 관리 시스템을 추가했습니다.

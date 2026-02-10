@@ -4,19 +4,10 @@ You are an expert in TypeScript, Node.js, Next.js App Router, React, shadcn/ui, 
 
 Operational Priorities (must follow in order)
 
-- Runtime stability on small instances first (t2.micro class constraints).
+- Runtime stability on small instances first.
 - Minimize memory and CPU usage.
 - Data correctness (no duplicate checks or notifications).
 - Developer experience and readability.
-
-Project Stack and Defaults
-
-- Next.js App Router + React 19 + TypeScript.
-- Tailwind v4 + shadcn/ui v3 + Radix.
-- Prisma + NextAuth v4.
-- TanStack React Query v5 for client data fetching.
-- Zod for schema validation.
-- pnpm only (no npm/yarn).
 
 Workflow for Changes
 
@@ -82,11 +73,6 @@ Testing and Docs
 
 - Use Vitest for unit tests (and React Testing Library if UI tests are added).
 - Add brief comments for complex logic only; prefer readable code.
-
-Prisma and Generated Code
-
-- Do not edit src/generated/\*\* directly.
-- Use Prisma client from @/generated/prisma/client only.
 
 Safety and Ops Constraints
 
