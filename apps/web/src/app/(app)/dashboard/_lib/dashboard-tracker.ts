@@ -2,7 +2,6 @@
  * Dashboard Analytics Tracker
  * Implements TR-001 ~ TR-012 from dashboard-action-center-implementation-spec.md
  */
-
 import crypto from 'crypto';
 
 type DashboardEvent =
