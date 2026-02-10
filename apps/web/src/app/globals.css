@@ -45,6 +45,9 @@
   --color-brand-navy: var(--brand-navy); /* Deep Night Navy */
   --color-brand-amber: var(--brand-amber); /* Lighthouse Light */
 
+  /* Animation (DS-019) */
+  --animate-dashboard-enter: dashboard-card-enter 200ms ease-out both;
+
   /* Radius (조금 더 둥글게 - 따뜻한 느낌) */
   --radius: 0.75rem;
   --radius-sm: calc(var(--radius) - 0.25rem);
@@ -229,6 +232,18 @@
       transform: translateY(0);
       filter: blur(0);
     }
+  }
+}
+
+/* DS-019: Dashboard card entrance animation */
+@keyframes dashboard-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

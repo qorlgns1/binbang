@@ -1,208 +1,235 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { signIn, signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-import { Activity, BellRing, Home } from 'lucide-react';
-
-import { LocalDateTime } from '@/components/LocalDateTime';
-import { QuotaGauge } from '@/components/quota-gauge';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAccommodations } from '@/hooks/useAccommodations';
-import { useRecentLogs } from '@/hooks/useRecentLogs';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAccommodationsQuery } from '@/features/accommodations/queries';
+import { useRecentLogsQuery } from '@/features/logs/queries';
+import { useUserQuotaQuery } from '@/features/user/queries';
 
-const statusColors: Record<string, string> = {
-  AVAILABLE: 'bg-status-success text-status-success-foreground border-transparent',
-  UNAVAILABLE: 'bg-status-error text-status-error-foreground border-transparent',
-  ERROR: 'bg-status-warning text-status-warning-foreground border-transparent',
-  UNKNOWN: 'bg-status-neutral text-status-neutral-foreground border-transparent',
-};
+import { AccommodationBoard } from './_components/accommodation-board';
+import { ActionCenter } from './_components/action-center';
+import { LighthouseHero } from './_components/empty-illustrations';
+import { KpiStrip } from './_components/kpi-strip';
+import { RecentEvents } from './_components/recent-events';
+import { SectionSkeleton } from './_components/section-skeleton';
+import { generateActionCards } from './_lib/action-card-generator';
+import { PAGE_SUBTITLE, PAGE_TITLE } from './_lib/constants';
+import { trackDashboardViewed } from './_lib/dashboard-tracker';
+import type { ActionCard, BoardTab, DashboardMetrics } from './_lib/types';
 
-const statusText: Record<string, string> = {
-  AVAILABLE: '예약 가능',
-  UNAVAILABLE: '예약 불가',
-  ERROR: '오류',
-  UNKNOWN: '확인 중',
-};
+// ============================================================================
+// Props
+// ============================================================================
 
-export function DashboardContent(): React.ReactElement {
+interface DashboardContentProps {
+  hasKakaoToken: boolean;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export function DashboardContent({ hasKakaoToken }: DashboardContentProps): React.ReactElement {
+  const router = useRouter();
   const { data: session } = useSession();
-  const { data: accommodations = [], isPending: accLoading } = useAccommodations();
-  const { data: recentLogs = [], isPending: logsLoading } = useRecentLogs();
+  const userId = session?.user?.id ?? '';
 
-  const activeCount = accommodations.filter((a) => a.isActive).length;
-  const userName = session?.user?.name?.trim();
-  const greeting = userName ? `안녕하세요, ${userName}님.` : '안녕하세요.';
+  // 데이터 훅 (IS-001: 병렬 요청)
+  const {
+    data: accommodations = [],
+    isPending: accLoading,
+    isError: accError,
+    refetch: refetchAcc,
+  } = useAccommodationsQuery();
+  const {
+    data: recentLogs = [],
+    isPending: logsLoading,
+    isError: logsError,
+    refetch: refetchLogs,
+  } = useRecentLogsQuery();
+  const { data: quotaData, isPending: quotaLoading } = useUserQuotaQuery();
+
+  // DF-002 ~ DF-010: 파생 메트릭 계산
+  const metrics: DashboardMetrics = useMemo(() => {
+    const totalCount = accommodations.length;
+    const activeCount = accommodations.filter((a) => a.isActive).length;
+    const pausedCount = accommodations.filter((a) => !a.isActive).length;
+    const problemCount = accommodations.filter((a) => a.lastStatus === 'ERROR' || a.lastStatus === 'UNKNOWN').length;
+    const availableCount = accommodations.filter((a) => a.lastStatus === 'AVAILABLE').length;
+
+    let quotaRatio: number | null = null;
+    if (quotaData && quotaData.quotas.maxAccommodations > 0) {
+      quotaRatio = quotaData.usage.accommodations / quotaData.quotas.maxAccommodations;
+    }
+    const quotaPercent = quotaRatio === null ? null : Math.floor(quotaRatio * 100);
+    const hasRecentError = recentLogs.some((log) => log.status === 'ERROR');
+
+    return {
+      totalCount,
+      activeCount,
+      pausedCount,
+      problemCount,
+      availableCount,
+      quotaRatio,
+      quotaPercent,
+      hasRecentError,
+    };
+  }, [accommodations, recentLogs, quotaData]);
+
+  // Action 카드 생성 (FR-020 ~ FR-027)
+  const actionCards = useMemo(() => generateActionCards(metrics, hasKakaoToken), [metrics, hasKakaoToken]);
+
+  // FR-031: 보드 기본 탭
+  const [activeTab, setActiveTab] = useState<BoardTab>('all');
+  const hasInitializedTab = useRef(false);
+
+  useEffect(() => {
+    if (!accLoading && !hasInitializedTab.current) {
+      hasInitializedTab.current = true;
+      if (metrics.problemCount > 0) {
+        setActiveTab('problem');
+      }
+    }
+  }, [accLoading, metrics.problemCount]);
+
+  // TR-005: dashboard_viewed (최초 완전 렌더 시 1회)
+  const hasTrackedViewed = useRef(false);
+
+  useEffect(() => {
+    if (!accLoading && !logsLoading && !quotaLoading && userId && !hasTrackedViewed.current) {
+      hasTrackedViewed.current = true;
+      trackDashboardViewed(userId);
+    }
+  }, [accLoading, logsLoading, quotaLoading, userId]);
+
+  // 보드 섹션 ref (CTA scroll 용)
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  // CTA 핸들러
+  const handleCtaClick = useCallback(
+    (card: ActionCard): void => {
+      switch (card.ctaAction) {
+        case 'navigate_pricing':
+          router.push('/pricing');
+          break;
+        case 'navigate_kakao':
+          void (async () => {
+            await signOut({ redirect: false });
+            await signIn('kakao', { callbackUrl: '/dashboard' });
+          })();
+          break;
+        case 'switch_tab_problem':
+          setActiveTab('problem');
+          boardRef.current?.scrollIntoView({ behavior: 'smooth' });
+          break;
+        case 'switch_tab_paused':
+          setActiveTab('paused');
+          boardRef.current?.scrollIntoView({ behavior: 'smooth' });
+          break;
+      }
+    },
+    [router],
+  );
+
+  const isMainLoading = accLoading || quotaLoading;
+
+  // FR-005: 숙소 0건 전체 빈 상태
+  if (!accLoading && !accError && accommodations.length === 0) {
+    return (
+      <>
+        <Header />
+        <KpiStrip
+          metrics={metrics}
+          isLoading={false}
+        />
+        <div className='mt-6'>
+          <Card>
+            <CardContent className='flex flex-col items-center justify-center py-16 text-center'>
+              <LighthouseHero className='mb-4 text-muted-foreground' />
+              <p className='mb-2 text-lg font-medium text-foreground'>아직 등록된 숙소가 없습니다</p>
+              <p className='mb-6 text-sm text-muted-foreground'>첫 번째 숙소를 등록하고 빈방 소식을 받아보세요</p>
+              <Button asChild>
+                <Link href='/accommodations/new'>첫 번째 숙소 등록하기</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
-      {/* Hero Section */}
-      <section className='mb-10'>
-        <div className='flex items-start justify-between'>
-          <div>
-            <h1 className='text-3xl font-semibold text-foreground md:text-4xl'>{greeting}</h1>
-            <p className='mt-2 text-lg text-muted-foreground'>
-              {activeCount > 0
-                ? `오늘도 빈방어때가 ${activeCount}곳의 불을 밝혀두었습니다.`
-                : '아직 등대가 비출 곳이 없네요. 첫 번째 숙소를 등록해보세요.'}
-            </p>
-          </div>
-          <div className='hidden items-center gap-2 md:flex'>
-            <div className='flex size-12 items-center justify-center rounded-full bg-primary/20'>
-              <Activity className='size-6 text-primary animate-pulse' />
-            </div>
-          </div>
+      {/* CP-001, CP-002 */}
+      <Header />
+
+      {/* FR-001: KPI Strip → Action Center → 숙소 운영 보드 → 최근 이벤트 */}
+      {/* DS-019: stagger 진입 애니메이션 (50ms 간격) */}
+      <div className='space-y-6'>
+        {/* Section 1: KPI Strip */}
+        <section className='animate-dashboard-enter'>
+          <KpiStrip
+            metrics={metrics}
+            isLoading={isMainLoading}
+          />
+        </section>
+
+        {/* Section 2: Action Center */}
+        <section className='animate-dashboard-enter [animation-delay:60ms]'>
+          {isMainLoading ? (
+            <SectionSkeleton variant='action' />
+          ) : (
+            <ActionCenter
+              cards={actionCards}
+              onCtaClick={handleCtaClick}
+            />
+          )}
+        </section>
+
+        {/* Section 3: 숙소 운영 보드 */}
+        <div
+          ref={boardRef}
+          className='animate-dashboard-enter [animation-delay:120ms]'
+        >
+          <AccommodationBoard
+            accommodations={accommodations}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            isLoading={accLoading}
+            isError={accError}
+            onRetry={() => void refetchAcc()}
+          />
         </div>
-      </section>
 
-      {/* 플랜 사용량 */}
-      <div className='mb-6'>
-        <QuotaGauge />
+        {/* Section 4: 최근 이벤트 */}
+        <div className='animate-dashboard-enter [animation-delay:180ms]'>
+          <RecentEvents
+            events={recentLogs}
+            isLoading={logsLoading}
+            isError={logsError}
+            onRetry={() => void refetchLogs()}
+          />
+        </div>
       </div>
-
-      {/* 요약 카드 */}
-      <div className='mb-8 grid grid-cols-1 gap-6 md:grid-cols-3'>
-        <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur transition-all hover:shadow-md'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='flex items-center gap-2'>
-              <Home className='size-4' />
-              등록된 숙소
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-bold'>{accLoading ? '--' : accommodations.length}</p>
-          </CardContent>
-        </Card>
-        <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur transition-all hover:shadow-md'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='flex items-center gap-2'>
-              <Activity className='size-4 text-primary animate-pulse' />
-              지금 불을 밝히고 있는 곳
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-bold text-primary'>
-              {accLoading ? '--' : accommodations.filter((a) => a.isActive).length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur transition-all hover:shadow-md'>
-          <CardHeader className='pb-2'>
-            <CardDescription className='flex items-center gap-2'>
-              <BellRing className='size-4 text-chart-3' />
-              예약 가능
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-3xl font-bold text-chart-3'>
-              {accLoading ? '--' : accommodations.filter((a) => a.lastStatus === 'AVAILABLE').length}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 숙소 목록 */}
-      <Card className='mb-8 border-border/80 bg-card/90 shadow-sm backdrop-blur'>
-        <CardHeader className='flex flex-row items-center justify-between space-y-0 border-b'>
-          <CardTitle>내 숙소</CardTitle>
-          <Button
-            asChild
-            className='bg-primary text-primary-foreground hover:bg-primary/90'
-          >
-            <Link href='/accommodations/new'>+ 숙소 추가</Link>
-          </Button>
-        </CardHeader>
-
-        {accLoading ? (
-          <CardContent className='p-12 text-center text-muted-foreground'>불러오는 중...</CardContent>
-        ) : accommodations.length === 0 ? (
-          <CardContent className='p-16 text-center'>
-            <div className='mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10'>
-              <Home className='size-8 text-primary' />
-            </div>
-            <p className='mb-2 text-lg font-medium text-foreground'>아직 등대가 비출 곳이 없네요</p>
-            <p className='mb-6 text-sm text-muted-foreground'>첫 번째 숙소를 등록하고 빈방 소식을 받아보세요</p>
-            <Button
-              asChild
-              className='bg-primary text-primary-foreground hover:bg-primary/90'
-            >
-              <Link href='/accommodations/new'>첫 번째 숙소 등록하기</Link>
-            </Button>
-          </CardContent>
-        ) : (
-          <div className='divide-y'>
-            {accommodations.map((acc) => (
-              <div
-                key={acc.id}
-                className='p-6 flex items-center justify-between hover:bg-muted/50'
-              >
-                <div className='flex-1'>
-                  <div className='flex items-center gap-3 mb-1'>
-                    <h3 className='font-medium'>{acc.name}</h3>
-                    <Badge className={statusColors[acc.lastStatus] ?? statusColors.UNKNOWN}>
-                      {statusText[acc.lastStatus] ?? statusText.UNKNOWN}
-                    </Badge>
-                    {!acc.isActive && <Badge variant='secondary'>일시정지</Badge>}
-                  </div>
-                  <p className='text-sm text-muted-foreground'>
-                    {acc.platform} · {acc.checkIn.split('T')[0]} ~ {acc.checkOut.split('T')[0]}
-                    {acc.lastPrice && ` · ${acc.lastPrice}`}
-                  </p>
-                  {acc.lastCheck && (
-                    <p className='text-xs text-muted-foreground mt-1'>
-                      마지막 체크: <LocalDateTime date={acc.lastCheck} />
-                    </p>
-                  )}
-                </div>
-                <Button
-                  asChild
-                  variant='link'
-                  className='px-0 text-sm'
-                >
-                  <Link href={`/accommodations/${acc.id}`}>상세보기</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* 최근 로그 */}
-      <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
-        <CardHeader className='border-b'>
-          <CardTitle>최근 발견한 빈방 소식</CardTitle>
-        </CardHeader>
-
-        {logsLoading ? (
-          <CardContent className='p-12 text-center text-muted-foreground'>불러오는 중...</CardContent>
-        ) : recentLogs.length === 0 ? (
-          <CardContent className='p-12 text-center text-muted-foreground'>아직 발견한 빈방 소식이 없습니다</CardContent>
-        ) : (
-          <div className='divide-y'>
-            {recentLogs.map((log) => (
-              <div
-                key={log.id}
-                className='p-4 flex items-center gap-4'
-              >
-                <Badge className={statusColors[log.status] ?? statusColors.UNKNOWN}>
-                  {statusText[log.status] ?? statusText.UNKNOWN}
-                </Badge>
-                <span className='flex-1 text-sm'>
-                  {log.accommodation.name}
-                  {log.price && ` · ${log.price}`}
-                </span>
-                <LocalDateTime
-                  date={log.createdAt}
-                  className='text-xs text-muted-foreground'
-                />
-                {log.notificationSent && <span className='text-xs text-status-success-foreground'>📱 알림 전송됨</span>}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
     </>
+  );
+}
+
+// ============================================================================
+// Header
+// ============================================================================
+
+function Header(): React.ReactElement {
+  return (
+    <header className='mb-6'>
+      <h1 className='text-2xl font-semibold leading-[1.2] text-foreground md:text-3xl'>{PAGE_TITLE}</h1>
+      <p className='mt-2 text-sm leading-normal text-muted-foreground'>{PAGE_SUBTITLE}</p>
+    </header>
   );
 }
