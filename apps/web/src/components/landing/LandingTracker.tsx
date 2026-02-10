@@ -34,7 +34,7 @@ export function LandingTracker({ lang }: LandingTrackerProps): null {
 
     // 테마 결정 후 트래킹 실행
     trackLandingViewed(lang, dark ? 'dark' : 'light');
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     const cleanup = setupScrollDepthTracking(lang, isDarkRef.current ? 'dark' : 'light');
