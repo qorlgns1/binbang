@@ -1,7 +1,7 @@
 /**
  * Settings utilities for web app
  * Simplified version that only uses environment variables (no DB caching)
- * For full DB-backed settings, use @workspace/shared/worker in apps/worker
+ * For full DB-backed settings, use @workspace/worker-shared/runtime in apps/worker
  */
 
 interface MonitoringSettings {

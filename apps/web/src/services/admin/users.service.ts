@@ -1,6 +1,5 @@
-import type { Prisma } from '@/generated/prisma/client';
-import { createAuditLog } from '@/lib/auditLog';
-import prisma from '@/lib/prisma';
+import { type Prisma, prisma } from '@workspace/db';
+import { createAuditLog } from '@/services/admin/audit-logs.service';
 import type { ActivityType, UserActivityItem, UserActivityResponse } from '@/types/activity';
 import type { AdminUserInfo, AdminUsersResponse } from '@/types/admin';
 
@@ -248,7 +247,7 @@ export interface UpdateUserPlanResult {
 export async function updateUserPlan(input: UpdateUserPlanInput): Promise<UpdateUserPlanResult> {
   const { userId, planName, changedById } = input;
 
-  const plan = await prisma.plan.findUnique({ where: { name: planName } });
+  const plan = await prisma.plan.findUnique({ where: { name: planName }, select: { id: true } });
   if (!plan) {
     throw new Error('Plan not found');
   }

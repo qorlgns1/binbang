@@ -12,11 +12,9 @@
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@workspace/db": ["../db/src"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../db" }]
+  "exclude": ["node_modules", "dist"]
 }

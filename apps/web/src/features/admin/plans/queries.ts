@@ -6,7 +6,7 @@
 
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
-import type { QuotaKey } from '@/generated/prisma/enums';
+import type { QuotaKey } from '@workspace/db/enums';
 import { adminKeys } from '@/lib/queryKeys';
 
 // ============================================================================

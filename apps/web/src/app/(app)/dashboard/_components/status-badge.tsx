@@ -1,4 +1,4 @@
-import type { AvailabilityStatus } from '@workspace/db';
+import type { AvailabilityStatus } from '@workspace/db/enums';
 
 import { STATUS_BADGE_STYLES, STATUS_BADGE_TEXT } from '@/app/(app)/dashboard/_lib/constants';
 import type { StatusType } from '@/app/(app)/dashboard/_lib/types';

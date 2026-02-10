@@ -2,7 +2,10 @@ import type { Session } from 'next-auth';
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
-import { isAdmin } from '@/lib/rbac';
+
+export function isAdmin(roleNames: string[]): boolean {
+  return roleNames.includes('ADMIN');
+}
 
 export async function requireAdmin(): Promise<Session | null> {
   const session = await getServerSession(authOptions);

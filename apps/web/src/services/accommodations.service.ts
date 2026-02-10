@@ -1,6 +1,4 @@
-import type { Accommodation, CheckLog } from '@/generated/prisma/client';
-import { QuotaKey } from '@/generated/prisma/enums';
-import prisma from '@/lib/prisma';
+import { type Accommodation, type CheckLog, QuotaKey, prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -47,12 +45,71 @@ export interface GetLogsResult {
 }
 
 // ============================================================================
+// Shared select (Prisma Accommodation 필드 일괄 선택)
+// ============================================================================
+
+const ACCOMMODATION_SELECT = {
+  id: true,
+  userId: true,
+  name: true,
+  platform: true,
+  url: true,
+  checkIn: true,
+  checkOut: true,
+  adults: true,
+  rooms: true,
+  isActive: true,
+  lastCheck: true,
+  lastStatus: true,
+  lastPrice: true,
+  lastPriceAmount: true,
+  lastPriceCurrency: true,
+  platformId: true,
+  platformName: true,
+  platformImage: true,
+  platformDescription: true,
+  addressCountry: true,
+  addressRegion: true,
+  addressLocality: true,
+  postalCode: true,
+  streetAddress: true,
+  ratingValue: true,
+  reviewCount: true,
+  latitude: true,
+  longitude: true,
+  platformMetadata: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const CHECK_LOG_SELECT = {
+  id: true,
+  accommodationId: true,
+  userId: true,
+  status: true,
+  price: true,
+  priceAmount: true,
+  priceCurrency: true,
+  errorMessage: true,
+  notificationSent: true,
+  checkIn: true,
+  checkOut: true,
+  pricePerNight: true,
+  cycleId: true,
+  durationMs: true,
+  retryCount: true,
+  previousStatus: true,
+  createdAt: true,
+} as const;
+
+// ============================================================================
 // Service Functions
 // ============================================================================
 
 export async function getAccommodationsByUserId(userId: string): Promise<Accommodation[]> {
   return prisma.accommodation.findMany({
     where: { userId },
+    select: ACCOMMODATION_SELECT,
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -60,8 +117,10 @@ export async function getAccommodationsByUserId(userId: string): Promise<Accommo
 export async function getAccommodationById(id: string, userId: string): Promise<AccommodationWithLogs | null> {
   return prisma.accommodation.findFirst({
     where: { id, userId },
-    include: {
+    select: {
+      ...ACCOMMODATION_SELECT,
       checkLogs: {
+        select: CHECK_LOG_SELECT,
         orderBy: { createdAt: 'desc' },
         take: 50,
       },
@@ -106,6 +165,7 @@ export async function createAccommodation(input: CreateAccommodationInput): Prom
       checkOut: input.checkOut,
       adults: input.adults,
     },
+    select: ACCOMMODATION_SELECT,
   });
 }
 
@@ -117,6 +177,7 @@ export async function updateAccommodation(
   // 소유권 확인
   const existing = await prisma.accommodation.findFirst({
     where: { id, userId },
+    select: { id: true },
   });
 
   if (!existing) {
@@ -133,6 +194,7 @@ export async function updateAccommodation(
       ...(input.adults !== undefined && { adults: input.adults }),
       ...(input.isActive !== undefined && { isActive: input.isActive }),
     },
+    select: ACCOMMODATION_SELECT,
   });
 }
 
@@ -140,6 +202,7 @@ export async function deleteAccommodation(id: string, userId: string): Promise<b
   // 소유권 확인
   const existing = await prisma.accommodation.findFirst({
     where: { id, userId },
+    select: { id: true },
   });
 
   if (!existing) {
@@ -148,6 +211,7 @@ export async function deleteAccommodation(id: string, userId: string): Promise<b
 
   await prisma.accommodation.delete({
     where: { id },
+    select: { id: true },
   });
 
   return true;
@@ -156,6 +220,7 @@ export async function deleteAccommodation(id: string, userId: string): Promise<b
 export async function getAccommodationLogs(input: GetLogsInput): Promise<GetLogsResult> {
   const logs = await prisma.checkLog.findMany({
     where: { accommodationId: input.accommodationId },
+    select: CHECK_LOG_SELECT,
     orderBy: { createdAt: 'desc' },
     take: input.limit + 1,
     ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),

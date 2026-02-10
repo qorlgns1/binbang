@@ -8,6 +8,7 @@
       "@/*": ["./src/*"],
       "@/generated/*": ["../../packages/db/generated/*"],
       "@workspace/db": ["../../packages/db/src"],
+      "@workspace/db/enums": ["../../packages/db/src/enums.ts"],
       "@workspace/shared": ["../../packages/shared/src"]
     }
   },

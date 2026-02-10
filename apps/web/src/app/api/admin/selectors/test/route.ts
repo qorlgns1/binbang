@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import type { Platform } from '@/generated/prisma/client';
+import type { Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
 
 interface TestSelectorPayload {

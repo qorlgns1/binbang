@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { Platform, SelectorCategory } from '@/generated/prisma/client';
+import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { useDeleteSelector, useSelectors, useUpdateSelector } from '@/hooks/useSelectors';
 import type { PlatformSelectorItem } from '@/types/admin';
 

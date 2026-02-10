@@ -1,7 +1,7 @@
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 
-import type { User } from '@/generated/prisma/client';
-import prisma from '@/lib/prisma';
+import { prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -27,12 +27,6 @@ export interface AuthUser {
 // ============================================================================
 // Service Functions
 // ============================================================================
-
-export async function findUserByEmail(email: string): Promise<User | null> {
-  return prisma.user.findUnique({
-    where: { email },
-  });
-}
 
 export async function createUserWithCredentials(input: SignupInput): Promise<AuthUser> {
   const hashedPassword = await bcrypt.hash(input.password, 12);
@@ -85,6 +79,120 @@ export async function verifyCredentials(input: CredentialsLoginInput): Promise<A
   };
 }
 
+// ============================================================================
+// NextAuth Adapter / Callback 용 서비스 함수
+// ============================================================================
+
+export interface AdapterUser {
+  id: string;
+  email: string;
+  emailVerified: Date | null;
+  name: string | null;
+  image: string | null;
+  roles: { name: string }[];
+  plan: { name: string } | null;
+}
+
+export interface AdapterSession {
+  id: string;
+  sessionToken: string;
+  userId: string;
+  expires: Date;
+}
+
+export function createNextAuthAdapter() {
+  const baseAdapter = PrismaAdapter(prisma);
+  return {
+    ...baseAdapter,
+    getUser: getUserWithRolesAndPlan,
+    getSessionAndUser: getSessionAndUserByToken,
+  };
+}
+
+export async function getUserWithRolesAndPlan(id: string): Promise<AdapterUser | null> {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      emailVerified: true,
+      name: true,
+      image: true,
+      roles: { select: { name: true } },
+      plan: { select: { name: true } },
+    },
+  });
+  if (!user) return null;
+  return user as typeof user & { email: string };
+}
+
+export async function getSessionAndUserByToken(
+  sessionToken: string,
+): Promise<{ session: AdapterSession; user: AdapterUser } | null> {
+  const result = await prisma.session.findUnique({
+    where: { sessionToken },
+    select: {
+      id: true,
+      sessionToken: true,
+      userId: true,
+      expires: true,
+      user: {
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          name: true,
+          image: true,
+          roles: { select: { name: true } },
+          plan: { select: { name: true } },
+        },
+      },
+    },
+  });
+  if (!result) return null;
+  const { user, ...session } = result;
+  return {
+    session,
+    user: user as typeof user & { email: string },
+  };
+}
+
+export async function findAccountUserId(provider: string, providerAccountId: string): Promise<string | null> {
+  const account = await prisma.account.findUnique({
+    where: {
+      provider_providerAccountId: {
+        provider,
+        providerAccountId,
+      },
+    },
+    select: { userId: true },
+  });
+  return account?.userId ?? null;
+}
+
+export async function saveKakaoTokens(
+  userId: string,
+  tokens: {
+    accessToken: string;
+    refreshToken?: string | null;
+    expiresAt?: number | null;
+  },
+): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      kakaoAccessToken: tokens.accessToken,
+      kakaoRefreshToken: tokens.refreshToken,
+      kakaoTokenExpiry: tokens.expiresAt ? new Date(tokens.expiresAt * 1000) : null,
+    },
+    select: { id: true },
+  });
+}
+
+// ============================================================================
+// 기타 서비스 함수
+// ============================================================================
+
 export async function checkEmailExists(email: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { email },
@@ -112,6 +220,7 @@ export async function createSessionForUser(userId: string): Promise<CreateSessio
       userId,
       expires,
     },
+    select: { id: true },
   });
 
   return { sessionToken, expires };

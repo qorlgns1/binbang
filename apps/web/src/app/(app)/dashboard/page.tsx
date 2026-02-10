@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { hasKakaoToken } from '@/services/user.service';
 
 import { SectionSkeleton } from './_components/section-skeleton';
 import { DashboardContent } from './dashboardContent';
@@ -26,14 +26,7 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
 
   // 카카오 토큰 확인 (Action Center용)
-  const user = session?.user?.id
-    ? await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { kakaoAccessToken: true },
-      })
-    : null;
-
-  const hasKakaoToken = !!user?.kakaoAccessToken;
+  const hasKakao = session?.user?.id ? await hasKakaoToken(session.user.id) : false;
 
   return (
     <main className='mx-auto max-w-7xl px-4 py-8'>
@@ -47,7 +40,7 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
           </div>
         }
       >
-        <DashboardContent hasKakaoToken={hasKakaoToken} />
+        <DashboardContent hasKakaoToken={hasKakao} />
       </Suspense>
     </main>
   );

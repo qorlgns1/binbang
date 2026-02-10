@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { Platform } from '@/generated/prisma/client';
+import type { Platform } from '@workspace/db/enums';
 import { useInvalidateSelectorCache } from '@/hooks/useSelectors';
 
 import { PatternList } from './PatternList';

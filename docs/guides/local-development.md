@@ -146,10 +146,10 @@ pnpm local:docker down            # 로컬 Docker 중지
 ## 테스트
 
 ```bash
-# 전체 테스트 실행
+# 전체 테스트 실행 (Turbo로 각 패키지 vitest 실행)
 pnpm test
 
-# 감시 모드
+# 루트에서 vitest 직접 실행 (감시 모드)
 pnpm vitest
 
 # 커버리지

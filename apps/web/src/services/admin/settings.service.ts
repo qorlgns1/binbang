@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@workspace/db';
 import type { SettingsChangeLogsResponse, SystemSettingItem, SystemSettingsResponse } from '@/types/admin';
 
 // ============================================================================

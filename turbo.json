@@ -43,6 +43,10 @@
       "dependsOn": ["@workspace/web#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+    "@workspace/worker#typecheck": {
+      "dependsOn": ["@workspace/worker-shared#build", "@workspace/db#db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
+    },
     "clean": {
       "cache": false
     }

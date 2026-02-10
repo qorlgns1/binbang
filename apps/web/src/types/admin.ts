@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, PatternType, Platform, SelectorCategory } from '@/generated/prisma/client';
+import type { AvailabilityStatus, PatternType, Platform, SelectorCategory } from '@workspace/db/enums';
 
 export interface WorkerHealthInfo {
   status: 'healthy' | 'degraded' | 'down';

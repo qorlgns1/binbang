@@ -6,20 +6,23 @@ import {
   checkAgoda,
   checkAirbnb,
   closeBrowserPool,
+  initBrowserPool,
+} from '@workspace/worker-shared/browser';
+import {
   createCheckQueue,
   createCheckWorker,
   createCycleQueue,
   createCycleWorker,
   createRedisConnection,
+  getPlatformSelectors,
   getSettings,
-  initBrowserPool,
   invalidateSelectorCache,
   loadPlatformSelectors,
   recordHeartbeatHistory,
   setupRepeatableJobs,
   startHeartbeatMonitoring,
   updateHeartbeat,
-} from '@workspace/shared/worker';
+} from '@workspace/worker-shared/runtime';
 import 'dotenv/config';
 import { createServer } from 'node:http';
 
@@ -249,8 +252,13 @@ async function main(): Promise<void> {
             blockResourceTypes: testSettings.checker.blockResourceTypes,
           };
 
+          const selectorCache = getPlatformSelectors(platform);
           const checker = platform === 'AIRBNB' ? checkAirbnb : checkAgoda;
-          const result = await checker(testAccommodation, { testableAttributes, runtimeConfig });
+          const result = await checker(testAccommodation, {
+            testableAttributes,
+            runtimeConfig,
+            selectorCache,
+          });
 
           console.log(`Test result: ${result.available ? 'Available' : 'Unavailable'} - ${result.price || 'N/A'}`);
           console.log(`Testable elements extracted: ${result.testableElements?.length ?? 0}`);

@@ -1,15 +1,15 @@
 import type { AvailabilityStatus } from '@workspace/db';
 import { prisma } from '@workspace/db';
 import { type AccommodationMetadata, parsePrice } from '@workspace/shared';
+import { type CheckerRuntimeConfig, checkAccommodation } from '@workspace/worker-shared/browser';
+import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
-  type CheckJobPayload,
-  type CheckerRuntimeConfig,
-  type Job,
-  checkAccommodation,
+  getPlatformSelectors,
   getSettings,
   notifyAvailable,
   updateHeartbeat,
-} from '@workspace/shared/worker';
+  type Job,
+} from '@workspace/worker-shared/runtime';
 
 import { determineStatus, isSameStayDates, nightsBetween, shouldSendAvailabilityNotification } from './statusUtils';
 
@@ -30,6 +30,8 @@ export async function processCheck(job: Job): Promise<void> {
       blockResourceTypes: settings.checker.blockResourceTypes,
     };
 
+    const selectorCache = getPlatformSelectors(data.platform);
+
     const result = await checkAccommodation(
       {
         id: data.accommodationId,
@@ -39,7 +41,7 @@ export async function processCheck(job: Job): Promise<void> {
         adults: data.adults,
         platform: data.platform,
       },
-      { runtimeConfig },
+      { runtimeConfig, selectorCache },
     );
 
     const status = determineStatus(result);

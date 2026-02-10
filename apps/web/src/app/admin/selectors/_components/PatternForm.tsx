@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { PatternType, Platform } from '@/generated/prisma/client';
+import type { PatternType, Platform } from '@workspace/db/enums';
 import { useCreatePattern, useUpdatePattern } from '@/hooks/usePatterns';
 import type { PlatformPatternItem } from '@/types/admin';
 

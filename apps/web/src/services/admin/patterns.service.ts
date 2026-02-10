@@ -1,5 +1,4 @@
-import type { PatternType, Platform } from '@/generated/prisma/client';
-import prisma from '@/lib/prisma';
+import { type PatternType, type Platform, prisma } from '@workspace/db';
 import type {
   CreatePatternPayload,
   PlatformPatternItem,
@@ -74,8 +73,17 @@ export async function getPatterns(input: GetPatternsInput): Promise<PlatformPatt
       ...(patternType && { patternType }),
       ...(!includeInactive && { isActive: true }),
     },
-    include: {
+    select: {
+      id: true,
+      platform: true,
+      patternType: true,
+      pattern: true,
+      locale: true,
+      isActive: true,
+      priority: true,
       createdBy: { select: { id: true, name: true } },
+      createdAt: true,
+      updatedAt: true,
     },
     orderBy: [{ platform: 'asc' }, { patternType: 'asc' }, { priority: 'desc' }, { pattern: 'asc' }],
   });
@@ -98,6 +106,7 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
         pattern: body.pattern,
       },
     },
+    select: { id: true },
   });
 
   if (existing) {
@@ -129,8 +138,17 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
           priority: body.priority ?? 0,
           createdById,
         },
-        include: {
+        select: {
+          id: true,
+          platform: true,
+          patternType: true,
+          pattern: true,
+          locale: true,
+          isActive: true,
+          priority: true,
           createdBy: { select: { id: true, name: true } },
+          createdAt: true,
+          updatedAt: true,
         },
       });
 
@@ -148,6 +166,7 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
           }),
           changedById: createdById,
         },
+        select: { id: true },
       });
 
       return created;
@@ -163,6 +182,7 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
   // 기존 패턴 조회
   const existing = await prisma.platformPattern.findUnique({
     where: { id },
+    select: { id: true, pattern: true, isActive: true, priority: true, locale: true },
   });
 
   if (!existing) {
@@ -213,8 +233,17 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
           ...(body.priority !== undefined && { priority: body.priority }),
           ...(body.locale !== undefined && { locale: body.locale }),
         },
-        include: {
+        select: {
+          id: true,
+          platform: true,
+          patternType: true,
+          pattern: true,
+          locale: true,
+          isActive: true,
+          priority: true,
           createdBy: { select: { id: true, name: true } },
+          createdAt: true,
+          updatedAt: true,
         },
       });
 
@@ -230,6 +259,7 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
             newValue: change.newValue,
             changedById: updatedById,
           },
+          select: { id: true },
         });
       }
 
@@ -245,6 +275,7 @@ export async function deletePattern(input: DeletePatternInput): Promise<void> {
 
   const existing = await prisma.platformPattern.findUnique({
     where: { id },
+    select: { id: true, platform: true, patternType: true, pattern: true },
   });
 
   if (!existing) {
@@ -265,6 +296,7 @@ export async function deletePattern(input: DeletePatternInput): Promise<void> {
         }),
         changedById: deletedById,
       },
+      select: { id: true },
     });
 
     // 삭제

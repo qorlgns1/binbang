@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import type { PatternType, Platform } from '@/generated/prisma/client';
+import type { PatternType, Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
 import { createPattern, getPatterns } from '@/services/admin/patterns.service';
 import type { CreatePatternPayload } from '@/types/admin';

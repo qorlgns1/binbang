@@ -12,7 +12,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
-import type { PatternType, Platform } from '@/generated/prisma/client';
+import type { PatternType, Platform } from '@workspace/db/enums';
 import { adminKeys } from '@/lib/queryKeys';
 import type {
   CreatePatternPayload,

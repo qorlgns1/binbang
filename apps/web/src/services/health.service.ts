@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -68,6 +68,7 @@ export async function getHealthStatus(isDev: boolean = false): Promise<HealthChe
 export async function getHeartbeatStatus(): Promise<HeartbeatResponse> {
   const heartbeat = await prisma.workerHeartbeat.findUnique({
     where: { id: 'singleton' },
+    select: { lastHeartbeatAt: true, isProcessing: true, updatedAt: true },
   });
 
   if (!heartbeat) {

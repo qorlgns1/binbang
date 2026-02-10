@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "dom", "dom.iterable"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "@workspace/db": ["../db/src"],
+      "@workspace/shared": ["../shared/src"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "../db" }, { "path": "../shared" }]
+}

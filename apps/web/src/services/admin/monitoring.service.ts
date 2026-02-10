@@ -1,5 +1,4 @@
-import type { AvailabilityStatus, Platform, Prisma } from '@/generated/prisma/client';
-import prisma from '@/lib/prisma';
+import { type AvailabilityStatus, type Platform, type Prisma, prisma } from '@workspace/db';
 import { loadSettings } from '@/lib/settings';
 import type { MonitoringLogEntry, MonitoringLogsResponse, MonitoringSummary, WorkerHealthInfo } from '@/types/admin';
 
@@ -44,7 +43,10 @@ export async function getMonitoringSummary(): Promise<MonitoringSummary> {
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
   const [heartbeat, dbLatency, checkStats24h, recentErrors, lastSuccess, activeCount] = await Promise.all([
-    prisma.workerHeartbeat.findUnique({ where: { id: 'singleton' } }),
+    prisma.workerHeartbeat.findUnique({
+      where: { id: 'singleton' },
+      select: { lastHeartbeatAt: true, startedAt: true, isProcessing: true, schedule: true },
+    }),
 
     (async (): Promise<number> => {
       const start = Date.now();

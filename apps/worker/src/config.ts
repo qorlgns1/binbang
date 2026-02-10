@@ -1,4 +1,4 @@
-import { getEnv, loadSettings, validateWorkerEnv } from '@workspace/shared/worker';
+import { getEnv, loadSettings, validateWorkerEnv } from '@workspace/worker-shared/runtime';
 
 interface WorkerConfig {
   redisUrl: string;

@@ -1,4 +1,4 @@
-import type { AvailabilityStatus } from '@workspace/db';
+import type { AvailabilityStatus } from '@workspace/db/enums';
 
 // ============================================================================
 // Action Card Types

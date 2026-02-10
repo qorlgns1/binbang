@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
-import type { Platform, SelectorCategory } from '@/generated/prisma/client';
+import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { adminKeys } from '@/lib/queryKeys';
 import type { PlatformSelectorsResponse, SelectorChangeLogsFilter, SelectorChangeLogsResponse } from '@/types/admin';
 

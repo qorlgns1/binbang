@@ -13,6 +13,11 @@
       "types": "./src/client.ts",
       "development": "./src/client.ts",
       "default": "./dist/src/client.js"
+    },
+    "./enums": {
+      "types": "./src/enums.ts",
+      "development": "./src/enums.ts",
+      "default": "./dist/src/enums.js"
     }
   },
   "scripts": {

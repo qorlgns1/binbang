@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, Platform } from '@/generated/prisma/client';
+import type { AvailabilityStatus, Platform } from '@workspace/db/enums';
 
 export type ActivityType = 'audit' | 'check' | 'accommodation';
 

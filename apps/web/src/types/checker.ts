@@ -1,4 +1,4 @@
-import type { Platform } from '@/generated/prisma/client';
+import type { Platform } from '@workspace/db/enums';
 
 // JSON-LD 기반 숙소 메타데이터
 export interface AccommodationMetadata {

@@ -1,5 +1,4 @@
-import { QuotaKey } from '@/generated/prisma/enums';
-import prisma from '@/lib/prisma';
+import { QuotaKey, prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -40,6 +39,14 @@ export interface UserSubscriptionResponse {
 // ============================================================================
 // Service Functions
 // ============================================================================
+
+export async function hasKakaoToken(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { kakaoAccessToken: true },
+  });
+  return !!user?.kakaoAccessToken;
+}
 
 export async function getUserQuota(userId: string): Promise<UserQuotaResponse | null> {
   const user = await prisma.user.findUnique({
