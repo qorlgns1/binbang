@@ -76,6 +76,10 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
     const TIME_UPDATE_INTERVAL_MS = 5000; // 5초마다 시간 업데이트
 
     const logData = copy.mockLogs;
+    if (logData.length === 0) {
+      setLogs([]);
+      return;
+    }
     const now = Date.now();
     const initialLogs = logData.slice(0, INITIAL_LOG_COUNT).map((log, i, arr) => ({
       ...log,
