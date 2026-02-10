@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import type { Platform, SelectorCategory } from '@/generated/prisma/client';
+import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
 import { createSelector, getSelectors } from '@/services/admin/selectors.service';
 import type { CreateSelectorPayload } from '@/types/admin';

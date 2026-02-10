@@ -7,7 +7,7 @@ import { ko } from 'date-fns/locale';
 import { ArrowRight, Check, Home, Shield, UserCog, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import { AvailabilityStatus } from '@/generated/prisma/enums';
+import { AvailabilityStatus } from '@workspace/db/enums';
 import type { UserActivityItem } from '@/types/activity';
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {

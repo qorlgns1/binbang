@@ -1,6 +1,6 @@
 import { prisma } from '@workspace/db';
-import type { CheckJobPayload, Job, Queue } from '@workspace/shared/worker';
-import { getSettings, loadSettings, updateHeartbeat } from '@workspace/shared/worker';
+import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
+import { getSettings, loadSettings, updateHeartbeat, type Job, type Queue } from '@workspace/worker-shared/runtime';
 
 export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<void> {
   return async (_job: Job): Promise<void> => {

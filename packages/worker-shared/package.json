@@ -1,0 +1,63 @@
+{
+  "name": "@workspace/worker-shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./browser": {
+      "types": "./src/browser/index.ts",
+      "development": "./src/browser/index.ts",
+      "default": "./dist/browser/index.js"
+    },
+    "./jobs": {
+      "types": "./src/jobs/index.ts",
+      "development": "./src/jobs/index.ts",
+      "default": "./dist/jobs/index.js"
+    },
+    "./runtime": {
+      "types": "./src/runtime/index.ts",
+      "development": "./src/runtime/index.ts",
+      "default": "./dist/runtime/index.js"
+    },
+    "./observability": {
+      "types": "./src/observability/index.ts",
+      "development": "./src/observability/index.ts",
+      "default": "./dist/observability/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist node_modules",
+    "lint": "biome lint ."
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "axios": "^1.13.5",
+    "dotenv": "^17.2.3"
+  },
+  "peerDependencies": {
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.0.0",
+    "playwright": "^1.58.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    },
+    "bullmq": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.9",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.7.2",
+    "vitest": "catalog:"
+  }
+}

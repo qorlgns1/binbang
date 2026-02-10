@@ -1,6 +1,6 @@
 /**
  * Environment variable utilities for web app
- * Local implementation - does not import from @workspace/shared/worker
+ * Local implementation - does not import from @workspace/worker-shared
  */
 
 const WEB_REQUIRED_ENV_VARS = [

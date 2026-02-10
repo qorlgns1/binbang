@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from '@/generated/prisma/client';
+import type { SubscriptionStatus } from '@workspace/db/enums';
 
 export interface SubscriptionPlanInfo {
   name: string;

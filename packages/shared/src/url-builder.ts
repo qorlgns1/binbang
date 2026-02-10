@@ -1,4 +1,4 @@
-import type { Platform } from '@workspace/db';
+import type { Platform } from './types/enums';
 
 import { calculateNights, formatDate } from './checkers/utils';
 

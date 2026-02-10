@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { Platform } from '@/generated/prisma/client';
+import type { Platform } from '@workspace/db/enums';
 import { useSelectorTest } from '@/hooks/useSelectorTest';
 import { useTestableAttributes, useUpdateTestableAttributes } from '@/hooks/useTestableAttributes';
 

@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, Platform } from '@/generated/prisma/client';
+import type { AvailabilityStatus, Platform } from '@workspace/db/enums';
 
 /** API/클라이언트용 숙소 타입 (JSON 직렬화로 Date → string) */
 export interface Accommodation {

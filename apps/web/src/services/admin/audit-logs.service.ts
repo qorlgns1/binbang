@@ -1,5 +1,37 @@
-import type { Prisma } from '@/generated/prisma/client';
-import prisma from '@/lib/prisma';
+import { type Prisma, prisma } from '@workspace/db';
+
+// ============================================================================
+// Create
+// ============================================================================
+
+interface CreateAuditLogParams {
+  actorId: string | null;
+  targetId: string;
+  entityType: string;
+  action: string;
+  oldValue?: Prisma.InputJsonValue;
+  newValue?: Prisma.InputJsonValue;
+  ipAddress?: string;
+}
+
+export async function createAuditLog(params: CreateAuditLogParams): Promise<void> {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId: params.actorId,
+        targetId: params.targetId,
+        entityType: params.entityType,
+        action: params.action,
+        oldValue: params.oldValue ?? undefined,
+        newValue: params.newValue ?? undefined,
+        ipAddress: params.ipAddress ?? undefined,
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    console.error('AuditLog 기록 실패:', error);
+  }
+}
 
 // ============================================================================
 // Types

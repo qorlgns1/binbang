@@ -1,6 +1,6 @@
 import { parsePrice } from '@workspace/shared/checkers';
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -48,6 +48,7 @@ export async function backfillPrices(): Promise<BackfillPricesResult> {
           prisma.checkLog.update({
             where: { id: log.id },
             data: { priceAmount: parsed.amount, priceCurrency: parsed.currency },
+            select: { id: true },
           }),
         );
       }
@@ -77,6 +78,7 @@ export async function backfillPrices(): Promise<BackfillPricesResult> {
         prisma.accommodation.update({
           where: { id: acc.id },
           data: { lastPriceAmount: parsed.amount, lastPriceCurrency: parsed.currency },
+          select: { id: true },
         }),
       );
     }

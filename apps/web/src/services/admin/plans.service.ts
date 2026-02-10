@@ -1,5 +1,4 @@
-import { QuotaKey } from '@/generated/prisma/enums';
-import prisma from '@/lib/prisma';
+import { QuotaKey, prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -64,7 +63,7 @@ export async function getAdminPlans(): Promise<AdminPlanItem[]> {
 export async function createAdminPlan(input: CreatePlanInput): Promise<AdminPlanItem> {
   const { name, description, price, interval, maxAccommodations, checkIntervalMin } = input;
 
-  const existing = await prisma.plan.findUnique({ where: { name } });
+  const existing = await prisma.plan.findUnique({ where: { name }, select: { id: true } });
   if (existing) {
     throw new Error('Plan name already exists');
   }
@@ -99,13 +98,13 @@ export async function createAdminPlan(input: CreatePlanInput): Promise<AdminPlan
 export async function updateAdminPlan(id: string, input: UpdatePlanInput): Promise<AdminPlanItem> {
   const { name, description, price, interval, maxAccommodations, checkIntervalMin } = input;
 
-  const existing = await prisma.plan.findUnique({ where: { id } });
+  const existing = await prisma.plan.findUnique({ where: { id }, select: { id: true, name: true } });
   if (!existing) {
     throw new Error('Plan not found');
   }
 
   if (name && name !== existing.name) {
-    const duplicate = await prisma.plan.findUnique({ where: { name } });
+    const duplicate = await prisma.plan.findUnique({ where: { name }, select: { id: true } });
     if (duplicate) {
       throw new Error('Plan name already exists');
     }
@@ -119,6 +118,7 @@ export async function updateAdminPlan(id: string, input: UpdatePlanInput): Promi
       ...(price !== undefined && { price }),
       ...(interval !== undefined && { interval }),
     },
+    select: { id: true },
   });
 
   if (maxAccommodations !== undefined) {
@@ -126,6 +126,7 @@ export async function updateAdminPlan(id: string, input: UpdatePlanInput): Promi
       where: { planId_key: { planId: id, key: QuotaKey.MAX_ACCOMMODATIONS } },
       update: { value: maxAccommodations },
       create: { planId: id, key: QuotaKey.MAX_ACCOMMODATIONS, value: maxAccommodations },
+      select: { id: true },
     });
   }
 
@@ -134,6 +135,7 @@ export async function updateAdminPlan(id: string, input: UpdatePlanInput): Promi
       where: { planId_key: { planId: id, key: QuotaKey.CHECK_INTERVAL_MIN } },
       update: { value: checkIntervalMin },
       create: { planId: id, key: QuotaKey.CHECK_INTERVAL_MIN, value: checkIntervalMin },
+      select: { id: true },
     });
   }
 
@@ -167,5 +169,5 @@ export async function deleteAdminPlan(id: string): Promise<void> {
     throw new Error(`Cannot delete plan with ${plan._count.users} active users`);
   }
 
-  await prisma.plan.delete({ where: { id } });
+  await prisma.plan.delete({ where: { id }, select: { id: true } });
 }

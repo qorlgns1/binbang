@@ -6,11 +6,4 @@ export * from '../generated/prisma/client';
 export type { Prisma } from '../generated/prisma/client';
 
 // Re-export enums explicitly for convenience
-export {
-  Platform,
-  AvailabilityStatus,
-  QuotaKey,
-  SubscriptionStatus,
-  SelectorCategory,
-  PatternType,
-} from '../generated/prisma/enums';
+export * from './enums';

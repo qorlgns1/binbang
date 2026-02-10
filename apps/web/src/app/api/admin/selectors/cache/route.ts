@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
-import type { Platform } from '@/generated/prisma/client';
+import type { Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
-import { invalidateSelectorCache } from '@/lib/selectors';
+import { invalidateSelectorCache } from '@/services/selectors.service';
 
 interface InvalidateCachePayload {
   platform?: Platform;

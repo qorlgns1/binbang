@@ -2,6 +2,10 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# 공통 의존성 버전 (catalog:) 참조 시 여기만 바꾸면 됨
+catalog:
+  vitest: ^4.0.18
+
 onlyBuiltDependencies:
   - "@prisma/client"
   - "@prisma/engines"

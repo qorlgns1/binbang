@@ -6,7 +6,7 @@
 
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { Platform } from '@/generated/prisma/client';
+import type { Platform } from '@workspace/db/enums';
 import { adminKeys } from '@/lib/queryKeys';
 import type { CreateSelectorPayload, PlatformSelectorItem, UpdateSelectorPayload } from '@/types/admin';
 

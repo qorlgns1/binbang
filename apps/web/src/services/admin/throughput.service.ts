@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@workspace/db';
 import type {
   ThroughputBucket,
   ThroughputComparisonGroup,
@@ -62,6 +62,15 @@ export async function getThroughputSummary(input: GetThroughputSummaryInput): Pr
     prisma.checkCycle.findFirst({
       where: { startedAt: where.createdAt ? { gte: where.createdAt.gte, lte: where.createdAt.lte } : undefined },
       orderBy: { startedAt: 'desc' },
+      select: {
+        startedAt: true,
+        durationMs: true,
+        totalCount: true,
+        successCount: true,
+        errorCount: true,
+        concurrency: true,
+        browserPoolSize: true,
+      },
     }),
   ]);
 

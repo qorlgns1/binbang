@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { getAccommodationById } from '@/services/accommodations.service';
 import type { PageParams } from '@/types/api';
 
 import { PriceTrendSection } from './_components/priceTrendSection';
@@ -46,12 +46,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
 
   if (!session?.user?.id) redirect('/login');
 
-  const accommodation = await prisma.accommodation.findFirst({
-    where: {
-      id,
-      userId: session.user.id,
-    },
-  });
+  const accommodation = await getAccommodationById(id, session.user.id);
 
   if (!accommodation) notFound();
 

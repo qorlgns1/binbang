@@ -70,10 +70,7 @@
       "trailingCommas": "all",
       "semicolons": "always",
       "arrowParentheses": "always",
-      "bracketSameLine": false,
-      "quoteStyle": "single",
-      "attributePosition": "auto",
-      "bracketSpacing": true
+      "quoteStyle": "single"
     }
   },
   "css": {
@@ -85,7 +82,7 @@
   "html": { "formatter": { "indentScriptAndStyle": false, "selfCloseVoidElements": "always" } },
   "overrides": [
     {
-      "includes": ["apps/web/**/*.{ts,tsx}"],
+      "includes": ["apps/web/**/*.{ts,tsx}", "!apps/web/src/services/**/*.{ts,tsx}"],
       "linter": {
         "rules": {
           "style": {
@@ -94,9 +91,40 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["@shared/worker", "@shared/worker/*"],
-                    "message": "apps/web에서 @shared/worker 임포트는 금지입니다. (rules.md 3.2)",
-                    "invertImportNamePattern": false
+                    "group": ["@workspace/worker-shared", "@workspace/worker-shared/*"],
+                    "message": "apps/web에서 worker 전용 모듈 임포트는 금지입니다. (rules.md 3.2)"
+                  },
+                  {
+                    "group": ["@/generated/prisma", "@/generated/prisma/*"],
+                    "message": "@/generated/prisma 직접 임포트는 금지입니다. @workspace/db를 사용하세요. (rules.md 5.2)"
+                  },
+                  {
+                    "group": ["@workspace/db", "@workspace/db/client"],
+                    "message": "apps/web에서는 services 레이어 외 @workspace/db 직접 임포트를 금지합니다. @workspace/db/enums 또는 services를 사용하세요. (rules.md 6.1)"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/src/services/**/*.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@workspace/worker-shared", "@workspace/worker-shared/*"],
+                    "message": "apps/web에서 worker 전용 모듈 임포트는 금지입니다. (rules.md 3.2)"
+                  },
+                  {
+                    "group": ["@/generated/prisma", "@/generated/prisma/*"],
+                    "message": "@/generated/prisma 직접 임포트는 금지입니다. @workspace/db를 사용하세요. (rules.md 5.2)"
                   }
                 ]
               }
@@ -122,23 +150,44 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@repo/db": { "message": "@shared에서 DB 접근은 금지입니다. (rules.md 3.1)" }
+                  "@workspace/db": { "message": "@shared에서 DB 접근은 금지입니다. (rules.md 3.1)" }
                 },
                 "patterns": [
                   {
                     "group": ["node:*", "fs", "path", "child_process", "http", "https", "net", "os"],
-                    "message": "@shared에서 Node 모듈 사용은 금지입니다. (rules.md 3.1)",
-                    "invertImportNamePattern": false
+                    "message": "@shared에서 Node 모듈 사용은 금지입니다. (rules.md 3.1)"
                   },
                   {
                     "group": ["../*"],
-                    "message": "상대경로 대신 절대경로(@/)를 사용하세요.",
-                    "invertImportNamePattern": false
+                    "message": "상대경로 대신 절대경로(@/)를 사용하세요."
                   },
                   {
                     "group": ["**/packages/*/src/**"],
-                    "message": "Deep imports는 금지입니다. 패키지의 공개 진입점을 사용하세요. (rules.md 2.1)",
-                    "invertImportNamePattern": false
+                    "message": "Deep imports는 금지입니다. 패키지의 공개 진입점을 사용하세요. (rules.md 2.1)"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/worker-shared/src/**/*.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@workspace/web", "@workspace/web/*", "next", "next/*", "react", "react-dom"],
+                    "message": "@workspace/worker-shared에서 web UI/runtime 의존은 금지입니다. (rules.md 3.2)"
+                  },
+                  {
+                    "group": ["**/packages/*/src/**"],
+                    "message": "Deep imports는 금지입니다. 패키지의 공개 진입점을 사용하세요. (rules.md 2.1)"
                   }
                 ]
               }
@@ -155,17 +204,14 @@
             "noRestrictedImports": {
               "level": "error",
               "options": {
-                "paths": {},
                 "patterns": [
                   {
                     "group": ["../*"],
-                    "message": "상대경로 대신 절대경로(@/) 사용",
-                    "invertImportNamePattern": false
+                    "message": "상대경로 대신 절대경로(@/) 사용"
                   },
                   {
                     "group": ["**/packages/*/src/**"],
-                    "message": "Deep imports 금지",
-                    "invertImportNamePattern": false
+                    "message": "Deep imports 금지"
                   }
                 ]
               }

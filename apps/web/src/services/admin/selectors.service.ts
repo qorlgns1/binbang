@@ -1,5 +1,4 @@
-import type { Platform, SelectorCategory } from '@/generated/prisma/client';
-import prisma from '@/lib/prisma';
+import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
 import type {
   CreateSelectorPayload,
   PlatformSelectorItem,
@@ -90,9 +89,20 @@ export async function getSelectors(input: GetSelectorsInput): Promise<PlatformSe
       ...(category && { category }),
       ...(!includeInactive && { isActive: true }),
     },
-    include: {
+    select: {
+      id: true,
+      platform: true,
+      category: true,
+      name: true,
+      selector: true,
+      extractorCode: true,
+      priority: true,
+      isActive: true,
+      description: true,
       createdBy: { select: { id: true, name: true } },
       updatedBy: { select: { id: true, name: true } },
+      createdAt: true,
+      updatedAt: true,
     },
     orderBy: [{ platform: 'asc' }, { category: 'asc' }, { priority: 'desc' }, { name: 'asc' }],
   });
@@ -115,6 +125,7 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
         name: body.name,
       },
     },
+    select: { id: true },
   });
 
   if (existing) {
@@ -152,9 +163,20 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
           createdById,
           updatedById: createdById,
         },
-        include: {
+        select: {
+          id: true,
+          platform: true,
+          category: true,
+          name: true,
+          selector: true,
+          extractorCode: true,
+          priority: true,
+          isActive: true,
+          description: true,
           createdBy: { select: { id: true, name: true } },
           updatedBy: { select: { id: true, name: true } },
+          createdAt: true,
+          updatedAt: true,
         },
       });
 
@@ -173,6 +195,7 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
           }),
           changedById: createdById,
         },
+        select: { id: true },
       });
 
       return created;
@@ -188,6 +211,7 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
   // 기존 셀렉터 조회
   const existing = await prisma.platformSelector.findUnique({
     where: { id },
+    select: { id: true, selector: true, priority: true, isActive: true },
   });
 
   if (!existing) {
@@ -223,9 +247,20 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
           ...(body.description !== undefined && { description: body.description }),
           updatedById,
         },
-        include: {
+        select: {
+          id: true,
+          platform: true,
+          category: true,
+          name: true,
+          selector: true,
+          extractorCode: true,
+          priority: true,
+          isActive: true,
+          description: true,
           createdBy: { select: { id: true, name: true } },
           updatedBy: { select: { id: true, name: true } },
+          createdAt: true,
+          updatedAt: true,
         },
       });
 
@@ -247,6 +282,7 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
           }),
           changedById: updatedById,
         },
+        select: { id: true },
       });
 
       return updated;
@@ -261,6 +297,7 @@ export async function deleteSelector(input: DeleteSelectorInput): Promise<void> 
 
   const existing = await prisma.platformSelector.findUnique({
     where: { id },
+    select: { id: true, platform: true, category: true, name: true, selector: true },
   });
 
   if (!existing) {
@@ -285,6 +322,7 @@ export async function deleteSelector(input: DeleteSelectorInput): Promise<void> 
         }),
         changedById: deletedById,
       },
+      select: { id: true },
     });
   });
 }
@@ -323,7 +361,15 @@ export async function getSelectorHistory(input: GetSelectorHistoryInput): Promis
     where,
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
-    include: {
+    select: {
+      id: true,
+      entityType: true,
+      entityId: true,
+      action: true,
+      field: true,
+      oldValue: true,
+      newValue: true,
+      createdAt: true,
       changedBy: {
         select: { id: true, name: true },
       },

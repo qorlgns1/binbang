@@ -1,5 +1,4 @@
-import { QuotaKey } from '@/generated/prisma/enums';
-import prisma from '@/lib/prisma';
+import { QuotaKey, prisma } from '@workspace/db';
 
 // ============================================================================
 // Types

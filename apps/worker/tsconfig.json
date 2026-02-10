@@ -8,10 +8,18 @@
     "moduleResolution": "bundler",
     "paths": {
       "@workspace/db": ["../../packages/db/src"],
-      "@workspace/shared": ["../../packages/shared/src"]
+      "@workspace/shared": ["../../packages/shared/src"],
+      "@workspace/worker-shared/browser": ["../../packages/worker-shared/src/browser/index.ts"],
+      "@workspace/worker-shared/jobs": ["../../packages/worker-shared/src/jobs/index.ts"],
+      "@workspace/worker-shared/runtime": ["../../packages/worker-shared/src/runtime/index.ts"],
+      "@workspace/worker-shared/observability": ["../../packages/worker-shared/src/observability/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../../packages/db" }, { "path": "../../packages/shared" }]
+  "references": [
+    { "path": "../../packages/db" },
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/worker-shared" }
+  ]
 }
