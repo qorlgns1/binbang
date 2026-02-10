@@ -7,15 +7,15 @@
 ```text
 binbang/
 ├── apps/
-│   ├── web/
-│   └── worker/
+│   ├── web/                    # Next.js (UI + Route Handlers)
+│   └── worker/                 # BullMQ + Playwright 워커
 ├── packages/
-│   ├── db/
-│   └── shared/
+│   ├── db/                     # Prisma 스키마, 마이그레이션, DB 클라이언트
+│   └── shared/                 # 공유 코드 (순수 유틸 + 워커 전용)
 ├── docker/
 ├── docs/
 ├── .github/workflows/
-├── rules.md
+├── rules.md                    # 모노레포 강제 규칙
 ├── RULES_SUMMARY.md
 ├── package.json
 ├── pnpm-workspace.yaml
@@ -25,35 +25,97 @@ binbang/
 ## apps/web
 
 ```text
-apps/web/
-├── src/
-│   ├── app/                 # App Router pages + Route Handlers
-│   ├── components/          # UI 컴포넌트 (shadcn 포함)
-│   ├── features/            # 도메인 단위 쿼리/뮤테이션 모듈
-│   ├── hooks/               # React Query 기반 훅
-│   ├── lib/                 # 인증/유틸/미들웨어성 모듈
-│   ├── services/            # 라우트 핸들러가 호출하는 서비스 계층
-│   └── types/               # 웹 앱 전용 타입
-├── package.json
-└── tsconfig.json
+apps/web/src/
+├── app/
+│   ├── (app)/                  # 인증 필요 라우트 그룹
+│   │   ├── dashboard/          # 대시보드
+│   │   │   ├── _components/    # KPI, Action Center, Board, Events 등
+│   │   │   ├── _lib/           # types, constants, tracker, generator
+│   │   │   ├── dashboardContent.tsx
+│   │   │   └── page.tsx
+│   │   ├── accommodations/     # 숙소 상세/수정
+│   │   └── settings/           # 구독 설정
+│   ├── (public)/               # 비인증 라우트 그룹
+│   │   ├── [lang]/             # 랜딩 페이지 (i18n)
+│   │   ├── login/
+│   │   ├── signup/
+│   │   └── pricing/
+│   ├── admin/                  # 관리자 페이지
+│   │   ├── audit-logs/
+│   │   ├── heartbeat/
+│   │   ├── monitoring/
+│   │   ├── plans/
+│   │   ├── selectors/
+│   │   ├── settings/
+│   │   ├── throughput/
+│   │   └── users/
+│   ├── api/                    # Route Handlers
+│   │   ├── accommodations/
+│   │   ├── admin/              # 관리자 API
+│   │   ├── auth/
+│   │   ├── health/
+│   │   ├── heartbeat/
+│   │   ├── logs/
+│   │   ├── plans/
+│   │   ├── user/
+│   │   └── worker/
+│   ├── globals.css             # Tailwind v4 토큰 + 커스텀 애니메이션
+│   ├── layout.tsx
+│   ├── not-found.tsx
+│   ├── robots.ts
+│   └── sitemap.ts
+├── components/
+│   ├── ui/                     # shadcn/ui 컴포넌트 (20개)
+│   ├── analytics/              # Google Analytics
+│   ├── landing/                # 랜딩 페이지 컴포넌트
+│   ├── LocalDateTime.tsx
+│   ├── app-header.tsx
+│   └── providers.tsx           # QueryClient, SessionProvider 등
+├── features/                   # 도메인별 React Query 훅/뮤테이션
+│   ├── accommodations/
+│   ├── admin/
+│   ├── heartbeat/
+│   ├── logs/
+│   ├── plans/
+│   ├── user/
+│   └── worker/
+├── lib/                        # 유틸리티/설정
+│   ├── analytics/              # 트래킹 유틸
+│   ├── i18n/                   # 다국어 사전
+│   ├── utils/
+│   ├── auth.ts                 # NextAuth 설정
+│   ├── prisma.ts               # Prisma 클라이언트 인스턴스
+│   ├── queryKeys.ts            # React Query 키 팩토리
+│   ├── rbac.ts                 # isAdmin() 헬퍼
+│   ├── rateLimit.ts            # API Rate Limiting
+│   └── selectors.ts            # 동적 셀렉터 로더
+├── services/                   # Route Handler가 호출하는 서비스 계층
+│   ├── admin/
+│   ├── accommodations.service.ts
+│   ├── auth.service.ts
+│   ├── health.service.ts
+│   ├── heartbeat.service.ts
+│   ├── logs.service.ts
+│   ├── plans.service.ts
+│   └── user.service.ts
+└── types/                      # 웹 앱 전용 타입
 ```
 
 핵심 원칙:
 
-- 라우트 핸들러에서 DB 직접 호출 대신 서비스 계층 사용
+- Route Handler에서 DB 직접 호출 대신 서비스 계층 사용
+- 페이지별 co-located 패턴: `_components/`, `_lib/`로 관련 코드 배치
 - 공유 로직은 `packages/shared`로 이동
 
 ## apps/worker
 
 ```text
-apps/worker/
-├── src/
-│   ├── main.ts              # 워커 엔트리/조합 지점
-│   ├── config.ts            # 워커 설정 로드
-│   ├── processor.ts         # 체크 실행 오케스트레이션
-│   └── limiter.ts           # 런타임 제약/제어 보조
-├── package.json
-└── tsconfig.json
+apps/worker/src/
+├── main.ts              # 워커 엔트리 (BullMQ 큐/워커 초기화)
+├── config.ts            # 워커 설정 로드
+├── cycleProcessor.ts    # 사이클 잡 처리 (숙소 목록 → check 잡 enqueue)
+├── checkProcessor.ts    # 개별 숙소 체크 실행
+└── statusUtils.ts       # 상태 판정 유틸
 ```
 
 핵심 원칙:
@@ -70,10 +132,9 @@ packages/db/
 │   ├── migrations/
 │   └── seed*.ts
 ├── src/
-│   ├── client.ts            # Prisma client 생성/설정
-│   └── index.ts             # 공개 엔트리
+│   ├── client.ts         # Prisma Client 생성/설정
+│   └── index.ts          # 공개 엔트리 (@workspace/db)
 ├── prisma.config.ts
-├── package.json
 └── tsconfig.json
 ```
 
@@ -85,19 +146,18 @@ packages/db/
 ## packages/shared
 
 ```text
-packages/shared/
-├── src/
-│   ├── index.ts
-│   ├── types/
-│   ├── url-parser.ts
-│   └── worker/
-│       ├── index.ts
-│       ├── browser/
-│       ├── jobs/
-│       ├── runtime/
-│       └── observability/
-├── package.json
-└── tsconfig.json
+packages/shared/src/
+├── index.ts              # 공개 엔트리 (@workspace/shared)
+├── types/
+├── checkers/             # 플랫폼별 체커 로직
+├── url-parser.ts
+├── url-builder.ts        # buildAccommodationUrl
+└── worker/               # 워커 전용 (@workspace/shared/worker)
+    ├── index.ts
+    ├── browser/           # Playwright 브라우저 풀/실행
+    ├── jobs/              # 잡 정의 (실행 X)
+    ├── runtime/           # 실행 전략 (BullMQ, 스케줄러, 설정)
+    └── observability/     # 로깅, 하트비트, 메트릭
 ```
 
 핵심 원칙:
@@ -118,26 +178,26 @@ docker/
 └── docker-compose.production.yml
 ```
 
-용도:
-
-- local/develop/production 환경별 compose 분리
-- bake로 web/worker 이미지 빌드/푸시
-
 ## docs
 
 ```text
 docs/
 ├── README.md
-├── architecture/
-├── guides/
-├── history/
-└── backlog/
+├── architecture/         # 구조, 모노레포 계획, 이 문서
+├── guides/               # 로컬 개발, 배포, RBAC, SEO, 워커 런타임
+├── history/              # 변경 이력, 브랜딩, 완료된 스펙
+└── backlog/              # 미완료 기능 백로그
 ```
 
 ## 빠른 탐색 명령
 
 ```bash
+# 디렉터리 구조 확인
 find apps packages -maxdepth 3 -type d | sort
+
+# 워크스페이스 import 확인
 rg -n "from '@workspace/" apps packages
-rg -n "prisma\\." apps/web/src/app/api apps/web/src/services apps/worker/src
+
+# DB 접근 코드 확인
+rg -n "prisma\." apps/web/src/app/api apps/web/src/services apps/worker/src
 ```

@@ -1,40 +1,14 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
-import { prisma } from '@workspace/db';
-
 import { authOptions } from '@/lib/auth';
+import { getHeartbeatHistory } from '@/services/heartbeat.service';
 
-export interface HeartbeatHistoryItem {
-  id: number;
-  timestamp: Date;
-  status: 'healthy' | 'unhealthy' | 'processing';
-  isProcessing: boolean;
-  uptime?: number | null;
-  workerId: string;
-}
-
-async function getHeartbeatHistory(hours: number = 24): Promise<HeartbeatHistoryItem[]> {
-  try {
-    const since = new Date();
-    since.setHours(since.getHours() - hours);
-
-    return (await prisma.heartbeatHistory.findMany({
-      where: {
-        timestamp: {
-          gte: since,
-        },
-      },
-      orderBy: {
-        timestamp: 'asc',
-      },
-    })) as HeartbeatHistoryItem[];
-  } catch (error) {
-    console.error('Heartbeat history fetch failed:', error);
-    return [];
-  }
-}
-
+/**
+ * Handle GET requests for admin-only heartbeat history and return recent heartbeat records.
+ *
+ * @returns A NextResponse containing the heartbeat history as JSON for authorized ADMIN users; if the requester is not an ADMIN, a 401 JSON error `{ error: 'Unauthorized' }`; on server error, a 500 JSON object with `error` (the error message or `'Unknown error'`) and `timestamp` (ISO string).
+ */
 export async function GET(): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
 

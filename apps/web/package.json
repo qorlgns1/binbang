@@ -9,13 +9,15 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
-    "clean": "rm -rf .next node_modules"
+    "clean": "rm -rf .next node_modules",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "@next/bundle-analyzer": "^16.1.6",
+    "@tanstack/react-query": "^5.90.20",
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
-    "@next-auth/prisma-adapter": "^1.0.7",
-    "@tanstack/react-query": "^5.90.20",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

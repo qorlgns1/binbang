@@ -1,7 +1,23 @@
-node_modules
-**/.next
-**/dist
-**/build
-pnpm-lock.yaml
+# dependencies / build outputs
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+**/dist/
+
+# coverage / cache
+**/coverage/
+**/.turbo/
+**/.cache/
+
+# generated code
+**/generated/
 packages/db/generated
+
+# env files
+**/.env
+**/.env.*
+
+# docs & lock
 docs/
+pnpm-lock.yaml

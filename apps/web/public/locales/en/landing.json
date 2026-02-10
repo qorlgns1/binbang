@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "brand": "Binbang",
+    "features": "Features",
+    "status": "System Status",
+    "pricing": "Pricing",
+    "login": "Login"
+  },
+  "hero": {
+    "headline": "So your rest never loses its way,",
+    "headlineMobile": ["So your rest", "never loses its way,"],
+    "subheadline": "Binbang keeps the lighthouse on all night.",
+    "subheadlineMobile": ["'Binbang' keeps the lighthouse", "on all night."],
+    "description": "Tired of endless refreshing? Binbang keeps watch while you sleep and catches the vacancy at your dream stay first.",
+    "cta": "Start Vacancy Alerts",
+    "secondaryCta": "See Features",
+    "statusLabel": "Live System Status"
+  },
+  "features": {
+    "f1Title": "Brighter News, First",
+    "f1Subtitle": "Less waiting, more excitement",
+    "f1Desc": "Browser optimization finds open rooms up to 4x faster than conventional checks. Be the first to know and secure your perfect stay ahead of everyone else.",
+    "f2Title": "Clear Through Any Fog",
+    "f2Subtitle": "Unwavering accuracy through every change",
+    "f2Desc": "Dynamic selectors adapt to booking-site UI changes without redeploying code. Even when platforms evolve, Binbang's vision never loses its way.",
+    "f3Title": "An Unfading Lighthouse",
+    "f3Subtitle": "Steadfast protection, even while you sleep",
+    "f3Desc": "Minute-level heartbeat logs keep monitoring stable and transparent, all day. The system detects and recovers from any issues automatically, so your watch never ends.",
+    "learnMore": "Learn more"
+  },
+  "trust": {
+    "title": "Live Operations",
+    "operational": "Operational",
+    "uptime": "Uptime",
+    "activeMonitors": "Active Monitors",
+    "response": "Avg Response",
+    "emptyLogs": "No system activity in the last 5 minutes.",
+    "errorMessage": "Failed to load live status. Retrying in 5 seconds.",
+    "retry": "Retry"
+  },
+  "footer": {
+    "title": "We handle the complexity.",
+    "description": "You can focus on planning your next trip.",
+    "cta": "Get Vacancy Updates",
+    "copyright": "© 2026 Binbang. All rights reserved."
+  },
+  "mockLogs": [
+    { "id": 1, "message": "Vacancy found: Park Hyatt Seoul (Premium Suite)", "location": "Seoul" },
+    { "id": 2, "message": "Vacancy found: Grand Hyatt Jeju (Ocean View Deluxe)", "location": "Jeju" },
+    { "id": 3, "message": "Check complete: 2,847 targets scanned", "location": "System" },
+    { "id": 4, "message": "Vacancy found: Shilla Stay Gwanghwamun (Executive)", "location": "Seoul" },
+    { "id": 5, "message": "Alert sent: Delivered to 3 users", "location": "System" },
+    { "id": 6, "message": "Vacancy found: Lotte Hotel Busan (Ocean Premier)", "location": "Busan" },
+    { "id": 7, "message": "Vacancy found: Four Seasons Seoul (Corner King)", "location": "Seoul" },
+    { "id": 8, "message": "Check complete: 1,923 targets scanned", "location": "System" },
+    { "id": 9, "message": "Vacancy found: Maison Glad Jeju (Standard Double)", "location": "Jeju" },
+    { "id": 10, "message": "Vacancy found: Ananti Cove (Oceanhill Deluxe)", "location": "Busan" },
+    { "id": 11, "message": "Vacancy found: Conrad Seoul (Executive)", "location": "Seoul" },
+    { "id": 12, "message": "Alert sent: Delivered to 7 users", "location": "System" },
+    { "id": 13, "message": "Vacancy found: Banyan Tree Club & Spa (Pool Villa)", "location": "Jeju" },
+    { "id": 14, "message": "Check complete: 3,421 targets scanned", "location": "System" },
+    { "id": 15, "message": "Vacancy found: Seamarq Hotel (Ocean View Twin)", "location": "Gangneung" }
+  ]
+}

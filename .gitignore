@@ -13,7 +13,7 @@ build/
 
 # Environment
 .env
-.env.develop
+.env.development
 .env.production
 .env.local
 .env.development.local

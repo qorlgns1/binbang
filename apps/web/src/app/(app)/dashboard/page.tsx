@@ -1,10 +1,12 @@
+import { Suspense } from 'react';
+
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
+import { SectionSkeleton } from './_components/section-skeleton';
 import { DashboardContent } from './dashboardContent';
-import { KakaoAlertBanner } from './kakao-alert-banner';
 
 export const metadata = {
   title: '대시보드',
@@ -15,10 +17,15 @@ export const metadata = {
   },
 };
 
+/**
+ * Render the dashboard page and provide DashboardContent with the user's Kakao token presence.
+ *
+ * @returns A React element containing the dashboard layout; while DashboardContent is loading, renders three SectionSkeleton fallbacks and passes `hasKakaoToken` to the content component.
+ */
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
 
-  // 카카오 토큰 확인 (알림 배너용)
+  // 카카오 토큰 확인 (Action Center용)
   const user = session?.user?.id
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -30,8 +37,18 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
 
   return (
     <main className='mx-auto max-w-7xl px-4 py-8'>
-      {!hasKakaoToken && <KakaoAlertBanner />}
-      <DashboardContent />
+      <Suspense
+        fallback={
+          <div className='space-y-6'>
+            <SectionSkeleton variant='kpi' />
+            <SectionSkeleton variant='action' />
+            <SectionSkeleton variant='board' />
+            <SectionSkeleton variant='events' />
+          </div>
+        }
+      >
+        <DashboardContent hasKakaoToken={hasKakaoToken} />
+      </Suspense>
     </main>
   );
 }
