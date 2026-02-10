@@ -57,7 +57,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
       setMaxAccommodations(5);
       setCheckIntervalMin(30);
     }
-  }, [plan, open]);
+  }, [plan]);
 
   const error = createMutation.error || updateMutation.error;
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -92,10 +92,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>{isEdit ? '플랜 수정' : '플랜 추가'}</DialogTitle>
@@ -104,10 +101,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          onSubmit={handleSubmit}
-          className='space-y-4'
-        >
+        <form onSubmit={handleSubmit} className='space-y-4'>
           {error && (
             <Alert variant='destructive'>
               <AlertDescription>{error.message}</AlertDescription>
@@ -116,13 +110,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
 
           <div className='space-y-2'>
             <Label htmlFor='name'>플랜 이름 *</Label>
-            <Input
-              id='name'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder='예: PRO'
-              required
-            />
+            <Input id='name' value={name} onChange={(e) => setName(e.target.value)} placeholder='예: PRO' required />
           </div>
 
           <div className='space-y-2'>
@@ -143,7 +131,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
               type='number'
               min={0}
               value={price}
-              onChange={(e) => setPrice(parseInt(e.target.value) || 0)}
+              onChange={(e) => setPrice(parseInt(e.target.value, 10) || 0)}
             />
           </div>
 
@@ -155,7 +143,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
                 type='number'
                 min={1}
                 value={maxAccommodations}
-                onChange={(e) => setMaxAccommodations(parseInt(e.target.value) || 1)}
+                onChange={(e) => setMaxAccommodations(parseInt(e.target.value, 10) || 1)}
               />
             </div>
             <div className='space-y-2'>
@@ -165,23 +153,16 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
                 type='number'
                 min={1}
                 value={checkIntervalMin}
-                onChange={(e) => setCheckIntervalMin(parseInt(e.target.value) || 1)}
+                onChange={(e) => setCheckIntervalMin(parseInt(e.target.value, 10) || 1)}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
               취소
             </Button>
-            <Button
-              type='submit'
-              disabled={isPending}
-            >
+            <Button type='submit' disabled={isPending}>
               {isPending ? '저장 중...' : isEdit ? '수정' : '추가'}
             </Button>
           </DialogFooter>

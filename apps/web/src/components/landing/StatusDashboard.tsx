@@ -110,14 +110,11 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
       clearInterval(timeInterval);
       clearInterval(logInterval);
     };
-  }, [lang, copy.mockLogs]);
+  }, [copy.mockLogs]);
   // Error state (FR-012, CHK-009)
   if (isError) {
     return (
-      <section
-        id='status'
-        className='mx-auto w-full max-w-5xl'
-      >
+      <section id='status' className='mx-auto w-full max-w-5xl'>
         <div className='mb-4 flex items-center justify-between'>
           <h3 className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary md:text-sm'>
             <Activity className='size-4' />
@@ -141,10 +138,7 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
   }
 
   return (
-    <section
-      id='status'
-      className='mx-auto w-full max-w-5xl'
-    >
+    <section id='status' className='mx-auto w-full max-w-5xl'>
       <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
         <h3 className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary md:text-sm'>
           <Activity className='size-4 animate-pulse' />

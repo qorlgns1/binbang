@@ -109,7 +109,7 @@ function resolveValue(key: string, dbMap: Map<string, string>): string {
 
 function toInt(value: string, fallback: number): number {
   const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? fallback : parsed;
+  return Number.isNaN(parsed) ? fallback : parsed;
 }
 
 function toJsonArray(value: string, fallback: string[]): string[] {

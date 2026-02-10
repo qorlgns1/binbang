@@ -44,6 +44,7 @@ export function SelectorManager() {
           <p className='text-muted-foreground'>플랫폼별 CSS 셀렉터와 텍스트 패턴을 관리합니다.</p>
         </div>
         <button
+          type='button'
           onClick={handleInvalidateCache}
           disabled={invalidateCache.isPending}
           className='rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50'
@@ -57,6 +58,7 @@ export function SelectorManager() {
         <div className='flex gap-4'>
           {PLATFORMS.map((p) => (
             <button
+              type='button'
               key={p}
               onClick={() => setPlatform(p)}
               className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
@@ -74,6 +76,7 @@ export function SelectorManager() {
       {/* Content Tabs */}
       <div className='flex gap-2'>
         <button
+          type='button'
           onClick={() => setTab('selectors')}
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
             tab === 'selectors'
@@ -84,6 +87,7 @@ export function SelectorManager() {
           셀렉터
         </button>
         <button
+          type='button'
           onClick={() => setTab('patterns')}
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
             tab === 'patterns'
@@ -94,6 +98,7 @@ export function SelectorManager() {
           패턴
         </button>
         <button
+          type='button'
           onClick={() => setTab('history')}
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
             tab === 'history'
@@ -104,6 +109,7 @@ export function SelectorManager() {
           변경 이력
         </button>
         <button
+          type='button'
           onClick={() => setTab('test')}
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
             tab === 'test' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'

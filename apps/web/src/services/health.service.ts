@@ -87,9 +87,9 @@ export async function getHeartbeatStatus(): Promise<HeartbeatResponse> {
   const now = new Date();
   const timeSinceLastHeartbeat = now.getTime() - new Date(heartbeat.lastHeartbeatAt).getTime();
   const minutesSinceLastHeartbeat = timeSinceLastHeartbeat / (1000 * 60);
-  const intervalMs = parseInt(process.env.HEARTBEAT_INTERVAL_MS || '60000');
+  const intervalMs = parseInt(process.env.HEARTBEAT_INTERVAL_MS || '60000', 10);
   const missedBeats = Math.floor(timeSinceLastHeartbeat / intervalMs);
-  const missedThreshold = parseInt(process.env.HEARTBEAT_MISSED_THRESHOLD || '1');
+  const missedThreshold = parseInt(process.env.HEARTBEAT_MISSED_THRESHOLD || '1', 10);
 
   const isHealthy = missedBeats < missedThreshold;
   const alerts: string[] = [];

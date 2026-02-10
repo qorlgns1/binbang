@@ -58,7 +58,7 @@ function computeUnits(
       const allNums = [val, minVals[key], maxVals[key]]
         .filter((v): v is string => v !== undefined && v !== '')
         .map(Number)
-        .filter((n) => !isNaN(n) && n > 0);
+        .filter((n) => !Number.isNaN(n) && n > 0);
 
       if (allNums.length === 0) {
         units[key] = 'ms';
@@ -84,6 +84,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_ORDER = ['worker', 'browser', 'checker', 'monitoring', 'notification', 'heartbeat'];
+const LOADING_SKELETON_KEYS = ['settings-loading-1', 'settings-loading-2', 'settings-loading-3'];
 
 export function SettingsManager() {
   const { data, isLoading, isError } = useSystemSettings();
@@ -174,13 +175,13 @@ export function SettingsManager() {
     for (const s of data.settings) {
       if (s.type !== 'int') continue;
       const val = Number(values[s.key]);
-      if (isNaN(val)) continue;
+      if (Number.isNaN(val)) continue;
 
       const min = minValues[s.key] !== undefined ? Number(minValues[s.key]) : null;
       const max = maxValues[s.key] !== undefined ? Number(maxValues[s.key]) : null;
 
-      if (min !== null && !isNaN(min) && val < min) keys.add(s.key);
-      if (max !== null && !isNaN(max) && val > max) keys.add(s.key);
+      if (min !== null && !Number.isNaN(min) && val < min) keys.add(s.key);
+      if (max !== null && !Number.isNaN(max) && val > max) keys.add(s.key);
     }
     return keys;
   }, [data, values, minValues, maxValues]);
@@ -193,7 +194,7 @@ export function SettingsManager() {
       if (s.type !== 'int') continue;
       const min = minValues[s.key] !== undefined ? Number(minValues[s.key]) : null;
       const max = maxValues[s.key] !== undefined ? Number(maxValues[s.key]) : null;
-      if (min !== null && max !== null && !isNaN(min) && !isNaN(max) && min > max) {
+      if (min !== null && max !== null && !Number.isNaN(min) && !Number.isNaN(max) && min > max) {
         keys.add(s.key);
       }
     }
@@ -275,11 +276,8 @@ export function SettingsManager() {
     return (
       <div className='space-y-6'>
         <Skeleton className='h-8 w-48' />
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton
-            key={i}
-            className='h-48 w-full'
-          />
+        {LOADING_SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className='h-48 w-full' />
         ))}
       </div>
     );
@@ -298,17 +296,10 @@ export function SettingsManager() {
       <div className='flex items-center justify-between'>
         <h2 className='text-xl font-semibold'>시스템 설정</h2>
         <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            onClick={handleReset}
-            disabled={!hasChanges || mutation.isPending}
-          >
+          <Button variant='outline' onClick={handleReset} disabled={!hasChanges || mutation.isPending}>
             초기화
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || hasValidationErrors || mutation.isPending}
-          >
+          <Button onClick={handleSave} disabled={!hasChanges || hasValidationErrors || mutation.isPending}>
             {mutation.isPending ? '저장 중...' : '저장'}
           </Button>
         </div>
@@ -414,7 +405,7 @@ function SettingRow({
   const displayValue = isMs
     ? (() => {
         const raw = Number(value);
-        return isNaN(raw) ? value : String(msToDisplay(raw, currentUnit));
+        return Number.isNaN(raw) ? value : String(msToDisplay(raw, currentUnit));
       })()
     : value;
 
@@ -423,7 +414,7 @@ function SettingRow({
     isMs && minValue
       ? (() => {
           const raw = Number(minValue);
-          return isNaN(raw) ? minValue : String(msToDisplay(raw, currentUnit));
+          return Number.isNaN(raw) ? minValue : String(msToDisplay(raw, currentUnit));
         })()
       : minValue;
 
@@ -431,7 +422,7 @@ function SettingRow({
     isMs && maxValue
       ? (() => {
           const raw = Number(maxValue);
-          return isNaN(raw) ? maxValue : String(msToDisplay(raw, currentUnit));
+          return Number.isNaN(raw) ? maxValue : String(msToDisplay(raw, currentUnit));
         })()
       : maxValue;
 
@@ -440,10 +431,7 @@ function SettingRow({
       <div className='flex items-center gap-2'>
         <Label htmlFor={item.key}>{item.key}</Label>
         {isChanged && (
-          <Badge
-            variant='outline'
-            className='text-xs'
-          >
+          <Badge variant='outline' className='text-xs'>
             변경됨
           </Badge>
         )}
@@ -459,7 +447,7 @@ function SettingRow({
             value={displayValue}
             onChange={(e) => {
               const num = Number(e.target.value);
-              if (e.target.value === '' || isNaN(num)) {
+              if (e.target.value === '' || Number.isNaN(num)) {
                 onValueChange(item.key, e.target.value);
               } else {
                 onValueChange(item.key, String(displayToMs(num, currentUnit)));
@@ -495,7 +483,7 @@ function SettingRow({
             })()}
             onChange={(e) => {
               const num = Number(e.target.value);
-              if (e.target.value === '' || isNaN(num) || num < 1) {
+              if (e.target.value === '' || Number.isNaN(num) || num < 1) {
                 onValueChange(item.key, e.target.value);
               } else {
                 onValueChange(item.key, minutesToCron(num));
@@ -535,10 +523,7 @@ function SettingRow({
               onCheckedChange={() => onToggleLimitEdit(item.key)}
               disabled={isPending}
             />
-            <Label
-              htmlFor={`limit-${item.key}`}
-              className='text-xs text-muted-foreground cursor-pointer'
-            >
+            <Label htmlFor={`limit-${item.key}`} className='text-xs text-muted-foreground cursor-pointer'>
               범위 제한
             </Label>
           </div>
@@ -551,7 +536,7 @@ function SettingRow({
               onChange={(e) => {
                 const num = Number(e.target.value);
                 if (isMs) {
-                  if (e.target.value === '' || isNaN(num)) {
+                  if (e.target.value === '' || Number.isNaN(num)) {
                     onMinChange(item.key, e.target.value);
                   } else {
                     onMinChange(item.key, String(displayToMs(num, currentUnit)));
@@ -571,7 +556,7 @@ function SettingRow({
               onChange={(e) => {
                 const num = Number(e.target.value);
                 if (isMs) {
-                  if (e.target.value === '' || isNaN(num)) {
+                  if (e.target.value === '' || Number.isNaN(num)) {
                     onMaxChange(item.key, e.target.value);
                   } else {
                     onMaxChange(item.key, String(displayToMs(num, currentUnit)));
@@ -593,7 +578,7 @@ function SettingRow({
 
 function formatLimitDisplay(rawValue: string, unit: TimeUnit): string {
   const num = Number(rawValue);
-  if (isNaN(num)) return rawValue;
+  if (Number.isNaN(num)) return rawValue;
   return `${msToDisplay(num, unit)}${unit}`;
 }
 
@@ -644,11 +629,7 @@ function PriceBackfill() {
               기존 CheckLog/Accommodation의 가격 문자열을 파싱하여 숫자·통화 필드를 채웁니다.
             </p>
           </div>
-          <Button
-            variant='outline'
-            onClick={handleBackfill}
-            disabled={isPending}
-          >
+          <Button variant='outline' onClick={handleBackfill} disabled={isPending}>
             {isPending ? '처리 중...' : '실행'}
           </Button>
         </div>

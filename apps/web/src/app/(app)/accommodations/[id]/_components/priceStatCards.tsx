@@ -22,13 +22,12 @@ function formatDate(iso: string): string {
 }
 
 function StatCardsSkeleton() {
+  const skeletonKeys = ['stat-card-1', 'stat-card-2', 'stat-card-3', 'stat-card-4'];
+
   return (
     <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card
-          size='sm'
-          key={i}
-        >
+      {skeletonKeys.map((key) => (
+        <Card size='sm' key={key}>
           <CardHeader>
             <Skeleton className='h-4 w-20' />
           </CardHeader>

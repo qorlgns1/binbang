@@ -46,6 +46,7 @@ export function PriceTrendSection({ accommodationId }: Props) {
         <div className='flex gap-1'>
           {TIME_RANGES.map((range) => (
             <button
+              type='button'
               key={range.value}
               onClick={() => setTimeRange(range.value)}
               className={cn(
@@ -61,14 +62,8 @@ export function PriceTrendSection({ accommodationId }: Props) {
         </div>
       </div>
 
-      <PriceStatCards
-        stats={data?.stats ?? null}
-        isLoading={isLoading}
-      />
-      <PriceChart
-        prices={data?.prices ?? []}
-        isLoading={isLoading}
-      />
+      <PriceStatCards stats={data?.stats ?? null} isLoading={isLoading} />
+      <PriceChart prices={data?.prices ?? []} isLoading={isLoading} />
     </div>
   );
 }

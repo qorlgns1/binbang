@@ -42,16 +42,7 @@ function UserAvatar({ user }: { user: { name: string | null; email: string | nul
   }
 
   if (user.image) {
-    return (
-      <Image
-        src={user.image}
-        alt=''
-        width={32}
-        height={32}
-        className='size-8 rounded-full'
-        unoptimized
-      />
-    );
+    return <Image src={user.image} alt='' width={32} height={32} className='size-8 rounded-full' unoptimized />;
   }
 
   return (
@@ -73,19 +64,13 @@ function AuditLogItem({ log }: { log: AuditLogInfo }) {
     return (
       <div className='flex items-center gap-2 text-sm mt-2'>
         {oldVal && (
-          <Badge
-            variant='outline'
-            className='font-normal'
-          >
+          <Badge variant='outline' className='font-normal'>
             {oldVal}
           </Badge>
         )}
         {oldVal && newVal && <ArrowRight className='size-3 text-muted-foreground' />}
         {newVal && (
-          <Badge
-            variant='secondary'
-            className='font-normal'
-          >
+          <Badge variant='secondary' className='font-normal'>
             {newVal}
           </Badge>
         )}
@@ -125,10 +110,7 @@ function TimelineSkeleton() {
   return (
     <div className='space-y-4'>
       {[1, 2, 3, 4, 5].map((i) => (
-        <div
-          key={i}
-          className='flex gap-4 py-4 border-b border-border'
-        >
+        <div key={i} className='flex gap-4 py-4 border-b border-border'>
           <Skeleton className='size-8 rounded-full' />
           <div className='flex-1 space-y-2'>
             <Skeleton className='h-4 w-32' />
@@ -166,10 +148,7 @@ export function AuditLogTimeline() {
           {!isLoading && <span className='text-sm text-muted-foreground'>총 {total}건</span>}
         </div>
         <div className='flex gap-2 pt-2'>
-          <Select
-            value={actionFilter}
-            onValueChange={setActionFilter}
-          >
+          <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger className='w-[140px]'>
               <SelectValue placeholder='액션 필터' />
             </SelectTrigger>
@@ -179,10 +158,7 @@ export function AuditLogTimeline() {
               <SelectItem value='plan.change'>플랜 변경</SelectItem>
             </SelectContent>
           </Select>
-          <Select
-            value={entityFilter}
-            onValueChange={setEntityFilter}
-          >
+          <Select value={entityFilter} onValueChange={setEntityFilter}>
             <SelectTrigger className='w-[140px]'>
               <SelectValue placeholder='대상 필터' />
             </SelectTrigger>
@@ -210,20 +186,12 @@ export function AuditLogTimeline() {
           <>
             <div className='divide-y divide-border'>
               {logs.map((log) => (
-                <AuditLogItem
-                  key={log.id}
-                  log={log}
-                />
+                <AuditLogItem key={log.id} log={log} />
               ))}
             </div>
             {hasNextPage && (
               <div className='flex justify-center pt-4'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                >
+                <Button variant='outline' size='sm' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                   {isFetchingNextPage ? '로딩 중...' : '더 보기'}
                 </Button>
               </div>

@@ -39,15 +39,8 @@ export function CTAButtons({ copy, lang }: CTAButtonsProps): React.ReactElement 
 
   return (
     <div className='mt-10 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center'>
-      <Button
-        asChild
-        size='lg'
-        className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'
-      >
-        <Link
-          href='/signup'
-          onClick={handlePrimaryCTA}
-        >
+      <Button asChild size='lg' className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'>
+        <Link href='/signup' onClick={handlePrimaryCTA}>
           <BellRing className='mr-2 size-5' />
           {copy.hero.cta}
         </Link>

@@ -13,6 +13,8 @@ interface Props {
   onEdit: (plan: AdminPlanInfo) => void;
 }
 
+const TABLE_SKELETON_KEYS = ['plan-row-1', 'plan-row-2', 'plan-row-3'];
+
 function getQuotaValue(quotas: { key: QuotaKey; value: number }[], key: QuotaKey): number {
   return quotas.find((q) => q.key === key)?.value ?? 0;
 }
@@ -25,11 +27,8 @@ function formatPrice(price: number) {
 function TableSkeleton() {
   return (
     <div className='space-y-2'>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className='h-12 w-full'
-        />
+      {TABLE_SKELETON_KEYS.map((key) => (
+        <Skeleton key={key} className='h-12 w-full' />
       ))}
     </div>
   );
@@ -109,11 +108,7 @@ export function PlansTable({ onEdit }: Props) {
             </TableCell>
             <TableCell>
               <div className='flex gap-1'>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  onClick={() => onEdit(plan)}
-                >
+                <Button variant='ghost' size='icon' onClick={() => onEdit(plan)}>
                   <Pencil className='size-4' />
                 </Button>
                 <Button

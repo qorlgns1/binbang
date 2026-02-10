@@ -52,10 +52,7 @@ export function SelectorHistory() {
       <div className='rounded-lg border border-border bg-card'>
         <div className='divide-y divide-border'>
           {data?.logs.map((log) => (
-            <div
-              key={log.id}
-              className='px-4 py-3'
-            >
+            <div key={log.id} className='px-4 py-3'>
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
                   <span
@@ -107,7 +104,9 @@ export function SelectorHistory() {
         {/* Load More */}
         {data?.nextCursor && (
           <div className='border-t border-border px-4 py-3 text-center'>
-            <button className='text-sm text-primary hover:underline'>더 보기</button>
+            <button type='button' className='text-sm text-primary hover:underline'>
+              더 보기
+            </button>
           </div>
         )}
       </div>

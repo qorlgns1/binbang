@@ -65,14 +65,14 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
       <div className='w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg'>
         <h2 className='mb-4 text-lg font-semibold'>{isEdit ? '패턴 수정' : '새 패턴 추가'}</h2>
 
-        <form
-          onSubmit={handleSubmit}
-          className='space-y-4'
-        >
+        <form onSubmit={handleSubmit} className='space-y-4'>
           {/* Pattern Type */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>타입</label>
+            <label htmlFor='pattern-type' className='mb-1 block text-sm font-medium'>
+              타입
+            </label>
             <select
+              id='pattern-type'
               value={patternType}
               onChange={(e) => setPatternType(e.target.value as PatternType)}
               disabled={isEdit}
@@ -85,8 +85,11 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
 
           {/* Pattern */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>패턴 텍스트</label>
+            <label htmlFor='pattern-text' className='mb-1 block text-sm font-medium'>
+              패턴 텍스트
+            </label>
             <input
+              id='pattern-text'
               type='text'
               value={patternValue}
               onChange={(e) => setPatternValue(e.target.value)}
@@ -101,8 +104,11 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
 
           {/* Locale */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>언어</label>
+            <label htmlFor='pattern-locale' className='mb-1 block text-sm font-medium'>
+              언어
+            </label>
             <select
+              id='pattern-locale'
               value={locale}
               onChange={(e) => setLocale(e.target.value)}
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
@@ -116,11 +122,14 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
 
           {/* Priority */}
           <div>
-            <label className='mb-1 block text-sm font-medium'>우선순위</label>
+            <label htmlFor='pattern-priority' className='mb-1 block text-sm font-medium'>
+              우선순위
+            </label>
             <input
+              id='pattern-priority'
               type='number'
               value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+              onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
               className='w-32 rounded-md border border-input bg-background px-3 py-2 text-sm'
             />
             <p className='mt-1 text-xs text-muted-foreground'>높을수록 먼저 확인합니다.</p>

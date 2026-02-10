@@ -87,6 +87,7 @@ export function PatternList({ platform }: PatternListProps) {
           </label>
         </div>
         <button
+          type='button'
           onClick={() => {
             setEditingPattern(null);
             setShowForm(true);
@@ -106,10 +107,7 @@ export function PatternList({ platform }: PatternListProps) {
             if (!patterns?.length) return null;
 
             return (
-              <div
-                key={patternType}
-                className='rounded-lg border border-border bg-card'
-              >
+              <div key={patternType} className='rounded-lg border border-border bg-card'>
                 <div
                   className={`border-b border-border px-4 py-2 ${
                     patternType === 'AVAILABLE' ? 'bg-status-success' : 'bg-status-error'
@@ -136,6 +134,7 @@ export function PatternList({ platform }: PatternListProps) {
                       </div>
                       <div className='ml-4 flex items-center gap-2'>
                         <button
+                          type='button'
                           onClick={() => handleToggleActive(pattern)}
                           disabled={updatePattern.isPending}
                           className={`rounded px-2 py-1 text-xs font-medium ${
@@ -147,6 +146,7 @@ export function PatternList({ platform }: PatternListProps) {
                           {pattern.isActive ? '활성' : '비활성'}
                         </button>
                         <button
+                          type='button'
                           onClick={() => {
                             setEditingPattern(pattern);
                             setShowForm(true);
@@ -154,12 +154,8 @@ export function PatternList({ platform }: PatternListProps) {
                           className='rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground'
                           title='수정'
                         >
-                          <svg
-                            className='h-4 w-4'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
+                          <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <title>수정</title>
                             <path
                               strokeLinecap='round'
                               strokeLinejoin='round'
@@ -169,17 +165,14 @@ export function PatternList({ platform }: PatternListProps) {
                           </svg>
                         </button>
                         <button
+                          type='button'
                           onClick={() => handleDelete(pattern)}
                           disabled={deletePattern.isPending}
                           className='rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
                           title='삭제'
                         >
-                          <svg
-                            className='h-4 w-4'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
+                          <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <title>삭제</title>
                             <path
                               strokeLinecap='round'
                               strokeLinejoin='round'

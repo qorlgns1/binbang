@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminPlans } from '@/hooks/useAdminPlans';
 import { useUpdateUserPlan } from '@/hooks/useUpdateUserPlan';
 import type { AdminUserInfo } from '@/types/admin';
+import { cn } from '@/lib/utils';
 
 interface PlanChangeDialogProps {
   user: AdminUserInfo | null;
@@ -87,34 +88,22 @@ export function PlanChangeDialog({ user, onClose }: PlanChangeDialogProps) {
               {plansLoading ? (
                 <div className='space-y-2'>
                   {[1, 2, 3].map((i) => (
-                    <Skeleton
-                      key={i}
-                      className='h-16 w-full'
-                    />
+                    <Skeleton key={i} className='h-16 w-full' />
                   ))}
                 </div>
               ) : (
-                <RadioGroup
-                  value={selectedPlan}
-                  onValueChange={setSelectedPlan}
-                  className='space-y-2'
-                >
+                <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan} className='space-y-2'>
                   {plans?.map((plan) => (
-                    <div
+                    <Label
                       key={plan.id}
-                      className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                        selectedPlan === plan.name ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
-                      }`}
-                      onClick={() => setSelectedPlan(plan.name)}
+                      htmlFor={plan.id}
+                      className={cn(
+                        'flex items-center space-x-3 rounded-lg border p-3 transition-colors',
+                        selectedPlan === plan.name ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50',
+                      )}
                     >
-                      <RadioGroupItem
-                        value={plan.name}
-                        id={plan.id}
-                      />
-                      <Label
-                        htmlFor={plan.id}
-                        className='flex-1 cursor-pointer'
-                      >
+                      <RadioGroupItem value={plan.name} id={plan.id} />
+                      <div className='flex-1 cursor-pointer'>
                         <div className='flex items-center justify-between'>
                           <div>
                             <div className='font-medium'>{plan.name}</div>
@@ -122,8 +111,8 @@ export function PlanChangeDialog({ user, onClose }: PlanChangeDialogProps) {
                           </div>
                           <div className='text-sm font-medium'>{formatPrice(plan.price)}</div>
                         </div>
-                      </Label>
-                    </div>
+                      </div>
+                    </Label>
                   ))}
                 </RadioGroup>
               )}
@@ -136,17 +125,10 @@ export function PlanChangeDialog({ user, onClose }: PlanChangeDialogProps) {
         )}
 
         <DialogFooter>
-          <Button
-            variant='outline'
-            onClick={handleClose}
-            disabled={mutation.isPending}
-          >
+          <Button variant='outline' onClick={handleClose} disabled={mutation.isPending}>
             취소
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={mutation.isPending || !selectedPlan || !hasChanged}
-          >
+          <Button onClick={handleConfirm} disabled={mutation.isPending || !selectedPlan || !hasChanged}>
             {mutation.isPending ? '변경 중...' : '확인'}
           </Button>
         </DialogFooter>

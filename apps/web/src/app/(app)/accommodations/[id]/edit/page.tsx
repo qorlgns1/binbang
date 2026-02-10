@@ -100,10 +100,7 @@ export default function EditAccommodationPage() {
     return (
       <main className='max-w-2xl mx-auto px-4 py-8'>
         <div className='mb-6'>
-          <Link
-            href={`/accommodations/${id}`}
-            className='text-sm text-muted-foreground hover:text-foreground'
-          >
+          <Link href={`/accommodations/${id}`} className='text-sm text-muted-foreground hover:text-foreground'>
             ← 숙소 상세로 돌아가기
           </Link>
         </div>
@@ -117,10 +114,7 @@ export default function EditAccommodationPage() {
   return (
     <main className='max-w-2xl mx-auto px-4 py-8'>
       <div className='mb-6'>
-        <Link
-          href={`/accommodations/${id}`}
-          className='text-sm text-muted-foreground hover:text-foreground'
-        >
+        <Link href={`/accommodations/${id}`} className='text-sm text-muted-foreground hover:text-foreground'>
           ← 숙소 상세로 돌아가기
         </Link>
       </div>
@@ -130,20 +124,13 @@ export default function EditAccommodationPage() {
         </CardHeader>
         <CardContent>
           {errorMessage && (
-            <Alert
-              variant='destructive'
-              className='mb-6'
-            >
+            <Alert variant='destructive' className='mb-6'>
               <AlertTitle>오류</AlertTitle>
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            onChange={() => updateMutation.reset()}
-            className='space-y-6'
-          >
+          <form onSubmit={handleSubmit} onChange={() => updateMutation.reset()} className='space-y-6'>
             {/* URL 입력 */}
             <div className='space-y-2'>
               <Label htmlFor='url'>숙소 URL *</Label>
@@ -165,11 +152,7 @@ export default function EditAccommodationPage() {
                     <AlertTitle className='text-sm font-medium text-info-foreground'>
                       URL에서 정보를 찾았습니다
                     </AlertTitle>
-                    <Button
-                      type='button'
-                      size='sm'
-                      onClick={applyParsedInfo}
-                    >
+                    <Button type='button' size='sm' onClick={applyParsedInfo}>
                       모두 적용
                     </Button>
                   </div>
@@ -234,23 +217,16 @@ export default function EditAccommodationPage() {
                 min='1'
                 max='20'
                 value={adults}
-                onChange={(e) => setAdults(parseInt(e.target.value) || 2)}
+                onChange={(e) => setAdults(parseInt(e.target.value, 10) || 2)}
               />
             </div>
 
             {/* 버튼 */}
             <div className='flex gap-4'>
-              <Button
-                type='submit'
-                disabled={updateMutation.isPending}
-                className='flex-1'
-              >
+              <Button type='submit' disabled={updateMutation.isPending} className='flex-1'>
                 {updateMutation.isPending ? '수정 중...' : '수정 완료'}
               </Button>
-              <Button
-                asChild
-                variant='outline'
-              >
+              <Button asChild variant='outline'>
                 <Link href={`/accommodations/${id}`}>취소</Link>
               </Button>
             </div>

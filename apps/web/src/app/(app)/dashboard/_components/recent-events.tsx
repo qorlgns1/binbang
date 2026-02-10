@@ -73,20 +73,12 @@ export function RecentEvents({ events, isLoading, isError, onRetry }: RecentEven
           <>
             <div>
               {visibleEvents.map((event, index) => (
-                <EventRow
-                  key={event.id}
-                  event={event}
-                  isLast={index === visibleEvents.length - 1}
-                />
+                <EventRow key={event.id} event={event} isLast={index === visibleEvents.length - 1} />
               ))}
             </div>
             {hasMore && (
               <CardContent className='pt-0 pb-4 text-center'>
-                <Button
-                  variant='ghost'
-                  onClick={handleLoadMore}
-                  className='w-full min-h-[44px] md:w-auto'
-                >
+                <Button variant='ghost' onClick={handleLoadMore} className='w-full min-h-[44px] md:w-auto'>
                   더보기
                 </Button>
               </CardContent>

@@ -71,10 +71,7 @@ function StatusCard() {
         <div className='space-y-4'>
           <div className='flex justify-between items-center'>
             <span>상태</span>
-            <Badge
-              className={statusBgColor}
-              variant='secondary'
-            >
+            <Badge className={statusBgColor} variant='secondary'>
               <span className={statusColor}>{status?.workerStatus || '알 수 없음'}</span>
             </Badge>
           </div>

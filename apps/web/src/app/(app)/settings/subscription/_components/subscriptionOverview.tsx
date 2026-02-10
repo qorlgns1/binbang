@@ -17,25 +17,11 @@ export function SubscriptionOverview(): React.ReactElement {
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>
-        <CurrentPlanCard
-          plan={data?.plan ?? null}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <UsageCard
-          quotas={data?.quotas ?? null}
-          usage={data?.usage ?? null}
-          isLoading={isLoading}
-          isError={isError}
-        />
+        <CurrentPlanCard plan={data?.plan ?? null} isLoading={isLoading} isError={isError} />
+        <UsageCard quotas={data?.quotas ?? null} usage={data?.usage ?? null} isLoading={isLoading} isError={isError} />
       </div>
 
-      {data?.subscription && (
-        <BillingCard
-          subscription={data.subscription}
-          isLoading={isLoading}
-        />
-      )}
+      {data?.subscription && <BillingCard subscription={data.subscription} isLoading={isLoading} />}
     </div>
   );
 }

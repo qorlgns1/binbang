@@ -10,6 +10,8 @@ interface Props {
   filters: { from?: string; to?: string };
 }
 
+const SUMMARY_SKELETON_KEYS = ['throughput-1', 'throughput-2', 'throughput-3', 'throughput-4'];
+
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   const seconds = Math.round(ms / 1000);
@@ -22,11 +24,8 @@ function formatDuration(ms: number): string {
 function SummaryCardsSkeleton() {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card
-          size='sm'
-          key={i}
-        >
+      {SUMMARY_SKELETON_KEYS.map((key) => (
+        <Card size='sm' key={key}>
           <CardHeader>
             <Skeleton className='h-4 w-24' />
           </CardHeader>

@@ -111,10 +111,10 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
             ? Number(existing.maxValue)
             : null;
 
-      if (newMin !== null && (isNaN(newMin) || !Number.isInteger(newMin))) {
+      if (newMin !== null && (Number.isNaN(newMin) || !Number.isInteger(newMin))) {
         throw new Error(`Setting "${update.key}": minValue must be a valid integer`);
       }
-      if (newMax !== null && (isNaN(newMax) || !Number.isInteger(newMax))) {
+      if (newMax !== null && (Number.isNaN(newMax) || !Number.isInteger(newMax))) {
         throw new Error(`Setting "${update.key}": maxValue must be a valid integer`);
       }
       if (newMin !== null && newMax !== null && newMin > newMax) {
@@ -123,7 +123,7 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
 
       // min/max 변경 시 현재(또는 새) value가 범위 내인지 검증
       const effectiveValue = Number(update.value ?? existing.value);
-      if (!isNaN(effectiveValue) && existing.type === 'int') {
+      if (!Number.isNaN(effectiveValue) && existing.type === 'int') {
         if (newMin !== null && effectiveValue < newMin) {
           throw new Error(`Setting "${update.key}": Current value ${effectiveValue} is below new min ${newMin}`);
         }
@@ -153,10 +153,10 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
             ? Number(existing.maxValue)
             : null;
 
-      if (effectiveMin !== null && !isNaN(effectiveMin) && num < effectiveMin) {
+      if (effectiveMin !== null && !Number.isNaN(effectiveMin) && num < effectiveMin) {
         throw new Error(`Setting "${update.key}": Value must be between ${effectiveMin} and ${effectiveMax ?? '∞'}`);
       }
-      if (effectiveMax !== null && !isNaN(effectiveMax) && num > effectiveMax) {
+      if (effectiveMax !== null && !Number.isNaN(effectiveMax) && num > effectiveMax) {
         throw new Error(`Setting "${update.key}": Value must be between ${effectiveMin ?? 0} and ${effectiveMax}`);
       }
     }

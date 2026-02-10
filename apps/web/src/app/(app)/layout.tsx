@@ -24,11 +24,7 @@ export default async function AppLayout({ children }: { children: ReactNode }): 
 
       {/* Content */}
       <div className='relative z-10'>
-        <AppHeader
-          userName={session.user.name ?? null}
-          userImage={session.user.image ?? null}
-          isAdmin={isAdmin}
-        />
+        <AppHeader userName={session.user.name ?? null} userImage={session.user.image ?? null} isAdmin={isAdmin} />
         {children}
       </div>
     </div>

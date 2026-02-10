@@ -38,19 +38,12 @@ export default async function PricingPage(): Promise<React.ReactElement> {
         <header className='border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-40'>
           <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
             <div className='flex items-center gap-4'>
-              <Button
-                variant='ghost'
-                size='icon'
-                asChild
-              >
+              <Button variant='ghost' size='icon' asChild>
                 <Link href={isLoggedIn ? '/dashboard' : '/'}>
                   <ArrowLeft className='size-5' />
                 </Link>
               </Button>
-              <Link
-                href='/'
-                className='flex items-center gap-2'
-              >
+              <Link href='/' className='flex items-center gap-2'>
                 <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
                   <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
                 </span>
@@ -60,25 +53,16 @@ export default async function PricingPage(): Promise<React.ReactElement> {
             {isLoggedIn ? (
               <div className='flex items-center gap-4'>
                 <span className='text-sm text-muted-foreground'>{session.user.name}</span>
-                <Button
-                  asChild
-                  className='bg-primary text-primary-foreground hover:bg-primary/90'
-                >
+                <Button asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
                   <Link href='/dashboard'>Dashboard</Link>
                 </Button>
               </div>
             ) : (
               <div className='flex items-center gap-2'>
-                <Button
-                  variant='outline'
-                  asChild
-                >
+                <Button variant='outline' asChild>
                   <Link href='/login'>로그인</Link>
                 </Button>
-                <Button
-                  asChild
-                  className='bg-primary text-primary-foreground hover:bg-primary/90'
-                >
+                <Button asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
                   <Link href='/signup'>무료로 시작하기</Link>
                 </Button>
               </div>

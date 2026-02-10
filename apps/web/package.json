@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "biome lint .",
     "typecheck": "next typegen && tsc --noEmit",
     "clean": "rm -rf .next node_modules",
     "analyze": "ANALYZE=true next build"
@@ -35,7 +35,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^16.1.6",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-query-devtools": "^5.91.3",
     "@types/node": "^24.10.9",

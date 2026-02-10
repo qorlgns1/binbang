@@ -50,10 +50,7 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactEle
       <div className='max-w-7xl mx-auto px-4 py-3 flex items-center justify-between'>
         {/* 좌측: 로고 + 데스크톱 네비게이션 */}
         <div className='flex items-center gap-6'>
-          <Link
-            href='/dashboard'
-            className='flex items-center gap-2'
-          >
+          <Link href='/dashboard' className='flex items-center gap-2'>
             <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
               <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
             </span>
@@ -105,34 +102,21 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactEle
             {isDark ? 'Light' : 'Dark'}
           </button>
           <span className='text-sm text-muted-foreground'>{userName}</span>
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={() => signOut({ callbackUrl: '/login' })}
-          >
+          <Button variant='ghost' size='sm' onClick={() => signOut({ callbackUrl: '/login' })}>
             로그아웃
           </Button>
         </div>
 
         {/* 모바일: 햄버거 메뉴 */}
         <div className='md:hidden'>
-          <Sheet
-            open={open}
-            onOpenChange={setOpen}
-          >
+          <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button
-                variant='outline'
-                size='icon'
-              >
+              <Button variant='outline' size='icon'>
                 <Menu className='size-5' />
                 <span className='sr-only'>메뉴 열기</span>
               </Button>
             </SheetTrigger>
-            <SheetContent
-              side='right'
-              className='w-72'
-            >
+            <SheetContent side='right' className='w-72'>
               <SheetHeader>
                 <SheetTitle>메뉴</SheetTitle>
               </SheetHeader>

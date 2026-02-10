@@ -78,10 +78,7 @@ export function SelectorList({ platform }: SelectorListProps) {
           >
             <option value='ALL'>전체 카테고리</option>
             {CATEGORY_ORDER.map((cat) => (
-              <option
-                key={cat}
-                value={cat}
-              >
+              <option key={cat} value={cat}>
                 {CATEGORY_LABELS[cat]}
               </option>
             ))}
@@ -97,6 +94,7 @@ export function SelectorList({ platform }: SelectorListProps) {
           </label>
         </div>
         <button
+          type='button'
           onClick={() => {
             setEditingSelector(null);
             setShowForm(true);
@@ -114,10 +112,7 @@ export function SelectorList({ platform }: SelectorListProps) {
           if (!selectors?.length) return null;
 
           return (
-            <div
-              key={category}
-              className='rounded-lg border border-border bg-card'
-            >
+            <div key={category} className='rounded-lg border border-border bg-card'>
               <div className='border-b border-border bg-muted/50 px-4 py-2'>
                 <h3 className='font-medium'>{CATEGORY_LABELS[category]}</h3>
               </div>
@@ -141,6 +136,7 @@ export function SelectorList({ platform }: SelectorListProps) {
                     </div>
                     <div className='ml-4 flex items-center gap-2'>
                       <button
+                        type='button'
                         onClick={() => handleToggleActive(selector)}
                         disabled={updateSelector.isPending}
                         className={`rounded px-2 py-1 text-xs font-medium ${
@@ -152,6 +148,7 @@ export function SelectorList({ platform }: SelectorListProps) {
                         {selector.isActive ? '활성' : '비활성'}
                       </button>
                       <button
+                        type='button'
                         onClick={() => {
                           setEditingSelector(selector);
                           setShowForm(true);
@@ -159,12 +156,8 @@ export function SelectorList({ platform }: SelectorListProps) {
                         className='rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground'
                         title='수정'
                       >
-                        <svg
-                          className='h-4 w-4'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
+                        <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <title>수정</title>
                           <path
                             strokeLinecap='round'
                             strokeLinejoin='round'
@@ -174,17 +167,14 @@ export function SelectorList({ platform }: SelectorListProps) {
                         </svg>
                       </button>
                       <button
+                        type='button'
                         onClick={() => handleDelete(selector)}
                         disabled={deleteSelector.isPending}
                         className='rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
                         title='삭제'
                       >
-                        <svg
-                          className='h-4 w-4'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
+                        <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <title>삭제</title>
                           <path
                             strokeLinecap='round'
                             strokeLinejoin='round'

@@ -149,10 +149,7 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
     return (
       <>
         <Header />
-        <KpiStrip
-          metrics={metrics}
-          isLoading={isMainLoading}
-        />
+        <KpiStrip metrics={metrics} isLoading={isMainLoading} />
         <div className='mt-6'>
           <Card>
             <CardContent className='flex flex-col items-center justify-center py-16 text-center'>
@@ -179,10 +176,7 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
       <div className='space-y-6'>
         {/* Section 1: KPI Strip */}
         <section className='animate-dashboard-enter'>
-          <KpiStrip
-            metrics={metrics}
-            isLoading={isMainLoading}
-          />
+          <KpiStrip metrics={metrics} isLoading={isMainLoading} />
         </section>
 
         {/* Section 2: Action Center */}
@@ -190,18 +184,12 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
           {isMainLoading ? (
             <SectionSkeleton variant='action' />
           ) : (
-            <ActionCenter
-              cards={actionCards}
-              onCtaClick={handleCtaClick}
-            />
+            <ActionCenter cards={actionCards} onCtaClick={handleCtaClick} />
           )}
         </section>
 
         {/* Section 3: 숙소 운영 보드 */}
-        <div
-          ref={boardRef}
-          className='animate-dashboard-enter [animation-delay:120ms]'
-        >
+        <div ref={boardRef} className='animate-dashboard-enter [animation-delay:120ms]'>
           <AccommodationBoard
             accommodations={accommodations}
             activeTab={activeTab}

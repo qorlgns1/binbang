@@ -79,10 +79,7 @@ export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
             <div className='text-sm text-muted-foreground'>현재 역할</div>
             <div className='flex gap-1'>
               {user.roles.map((role) => (
-                <Badge
-                  key={role}
-                  variant={role === 'ADMIN' ? 'default' : 'secondary'}
-                >
+                <Badge key={role} variant={role === 'ADMIN' ? 'default' : 'secondary'}>
                   {role}
                 </Badge>
               ))}
@@ -90,16 +87,16 @@ export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
             <div className='text-sm text-muted-foreground pt-2'>변경할 역할</div>
             <div className='space-y-2'>
               {AVAILABLE_ROLES.map((role) => (
-                <label
-                  key={role}
-                  className='flex items-center gap-2 cursor-pointer'
-                >
+                <div key={role} className='flex items-center gap-2 cursor-pointer'>
                   <Checkbox
+                    id={`role-option-${role}`}
                     checked={selectedRoles.includes(role)}
                     onCheckedChange={(checked) => handleToggle(role, !!checked)}
                   />
-                  <span className='text-sm'>{role}</span>
-                </label>
+                  <label htmlFor={`role-option-${role}`} className='cursor-pointer text-sm'>
+                    {role}
+                  </label>
+                </div>
               ))}
             </div>
           </div>
@@ -110,17 +107,10 @@ export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
         )}
 
         <DialogFooter>
-          <Button
-            variant='outline'
-            onClick={handleClose}
-            disabled={mutation.isPending}
-          >
+          <Button variant='outline' onClick={handleClose} disabled={mutation.isPending}>
             취소
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={mutation.isPending || selectedRoles.length === 0 || !hasChanged}
-          >
+          <Button onClick={handleConfirm} disabled={mutation.isPending || selectedRoles.length === 0 || !hasChanged}>
             {mutation.isPending ? '변경 중...' : '확인'}
           </Button>
         </DialogFooter>

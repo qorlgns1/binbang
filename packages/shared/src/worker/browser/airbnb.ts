@@ -36,7 +36,7 @@ const AIRBNB_DATA_EXTRACTOR = `function() {
           latitude: jsonLd.latitude,
           longitude: jsonLd.longitude,
           ratingValue: jsonLd.aggregateRating?.ratingValue,
-          reviewCount: parseInt(jsonLd.aggregateRating?.ratingCount) || undefined,
+          reviewCount: parseInt(jsonLd.aggregateRating?.ratingCount, 10) || undefined,
           rawJsonLd: jsonLd
         };
         break;

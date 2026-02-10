@@ -189,19 +189,14 @@ function sendEvent(eventName: LandingEvent, params: EventParams): void {
   // mixpanel.track(eventName, params);
 
   // For now, just log to console
-  try {
-    // Simulate API call
-    // fetch('/api/analytics', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ event: eventName, params }),
-    // }).catch(() => {
-    //   // TR-008: Retry once on failure
-    // });
-  } catch (error) {
-    // Silently fail - don't block UI
-    console.error('[Analytics] Failed to send event:', eventName, error);
-  }
+  // Simulate API call
+  // fetch('/api/analytics', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ event: eventName, params }),
+  // }).catch(() => {
+  //   // TR-008: Retry once on failure
+  // });
 }
 
 /**

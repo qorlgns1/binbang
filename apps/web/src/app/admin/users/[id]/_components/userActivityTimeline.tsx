@@ -19,10 +19,7 @@ function TimelineSkeleton() {
   return (
     <div className='space-y-4'>
       {[1, 2, 3, 4, 5].map((i) => (
-        <div
-          key={i}
-          className='flex gap-4 py-4 border-b border-border'
-        >
+        <div key={i} className='flex gap-4 py-4 border-b border-border'>
           <Skeleton className='size-8 rounded-full flex-shrink-0' />
           <div className='flex-1 space-y-2'>
             <Skeleton className='h-4 w-32' />
@@ -58,10 +55,7 @@ export function UserActivityTimeline({ userId }: Props) {
           {!isLoading && <span className='text-sm text-muted-foreground'>총 {total}건</span>}
         </div>
         <div className='flex gap-2 pt-2'>
-          <Select
-            value={typeFilter}
-            onValueChange={(v) => setTypeFilter(v as ActivityType | 'all')}
-          >
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as ActivityType | 'all')}>
             <SelectTrigger className='w-[160px]'>
               <SelectValue placeholder='활동 유형' />
             </SelectTrigger>
@@ -89,20 +83,12 @@ export function UserActivityTimeline({ userId }: Props) {
           <>
             <div className='divide-y divide-border'>
               {activities.map((activity) => (
-                <ActivityItem
-                  key={activity.id}
-                  activity={activity}
-                />
+                <ActivityItem key={activity.id} activity={activity} />
               ))}
             </div>
             {hasNextPage && (
               <div className='flex justify-center pt-4'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                >
+                <Button variant='outline' size='sm' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                   {isFetchingNextPage ? '로딩 중...' : '더 보기'}
                 </Button>
               </div>

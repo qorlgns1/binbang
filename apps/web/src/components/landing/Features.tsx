@@ -58,10 +58,7 @@ export function Features({ copy }: FeaturesProps): React.ReactElement {
   ];
 
   return (
-    <section
-      id='features'
-      className='bg-background px-4 py-24'
-    >
+    <section id='features' className='bg-background px-4 py-24'>
       <div className='mx-auto grid w-full max-w-7xl gap-6 md:grid-cols-3'>
         {items.map((item) => (
           <article

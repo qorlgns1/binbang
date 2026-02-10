@@ -29,10 +29,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
           <div className='hidden md:flex items-center gap-4'>
             <span className='text-sm text-muted-foreground'>{session.user.name}</span>
-            <Link
-              href='/dashboard'
-              className='text-sm text-primary hover:underline'
-            >
+            <Link href='/dashboard' className='text-sm text-primary hover:underline'>
               Dashboard
             </Link>
           </div>

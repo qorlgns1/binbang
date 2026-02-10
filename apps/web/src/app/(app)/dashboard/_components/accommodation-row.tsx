@@ -42,16 +42,10 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
       <div className='min-w-0 flex-1'>
         <div className='mb-1 flex flex-wrap items-center gap-2'>
           <h3 className='truncate text-sm font-medium'>{name}</h3>
-          <Badge
-            variant='outline'
-            className='text-xs'
-          >
+          <Badge variant='outline' className='text-xs'>
             {platform}
           </Badge>
-          <StatusBadge
-            status={lastStatus}
-            isPaused={!isActive}
-          />
+          <StatusBadge status={lastStatus} isPaused={!isActive} />
         </div>
         <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground'>
           <span>
@@ -65,21 +59,13 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
         </div>
       </div>
       <div className='flex shrink-0 items-center gap-1'>
-        <Button
-          asChild
-          variant='ghost'
-          size='sm'
-        >
+        <Button asChild variant='ghost' size='sm'>
           <Link href={`/accommodations/${id}`}>
             <ExternalLink className='size-4' />
             <span className='sr-only md:not-sr-only'>상세보기</span>
           </Link>
         </Button>
-        <Button
-          asChild
-          variant='ghost'
-          size='sm'
-        >
+        <Button asChild variant='ghost' size='sm'>
           <Link href={`/accommodations/${id}/edit`}>
             <Pencil className='size-4' />
             <span className='sr-only md:not-sr-only'>수정</span>

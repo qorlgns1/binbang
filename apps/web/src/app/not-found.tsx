@@ -40,22 +40,13 @@ export default function NotFound(): React.ReactElement {
 
           {/* CTA Buttons */}
           <div className='flex flex-col items-center gap-3 sm:flex-row sm:justify-center'>
-            <Button
-              asChild
-              size='lg'
-              className='bg-primary text-primary-foreground hover:bg-primary/90'
-            >
+            <Button asChild size='lg' className='bg-primary text-primary-foreground hover:bg-primary/90'>
               <Link href='/dashboard'>
                 <Home className='mr-2 size-5' />
                 대시보드로 돌아가기
               </Link>
             </Button>
-            <Button
-              asChild
-              size='lg'
-              variant='outline'
-              className='border-border bg-card/60 hover:bg-accent'
-            >
+            <Button asChild size='lg' variant='outline' className='border-border bg-card/60 hover:bg-accent'>
               <Link href='/'>
                 <Search className='mr-2 size-5' />
                 홈으로 가기
