@@ -1,7 +1,7 @@
 import { prisma } from '@workspace/db';
 import axios from 'axios';
 
-import { type SendMessageParams, sendKakaoMessageHttp } from '@/observability/kakao/message';
+import { type SendMessageParams, sendKakaoMessageHttp } from '@workspace/worker-shared/observability';
 import { getSettings } from './settings';
 import { getEnv } from './settings/env';
 
