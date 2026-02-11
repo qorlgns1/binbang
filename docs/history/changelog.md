@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.18.0 – 대시보드 첫 방문 튜토리얼
+
+로그인 직후 첫 방문 사용자에게 서비스 핵심 기능을 안내하는 온보딩 튜토리얼을 추가했습니다.
+
+- **4단계 튜토리얼 Dialog**: 서비스 소개 → 숙소 등록 안내 → 카카오 알림 설정 → 완료, shadcn Dialog/Progress 사용
+- **DB 기반 상태 관리**: User 모델에 `tutorialCompletedAt`, `tutorialDismissedAt` 필드 추가, 완료/건너뛰기 후 재노출 방지
+- **API**: `GET/PATCH /api/user/tutorial` (인증 필수, Zod 검증, 서비스 레이어 위임)
+- **React Query 연동**: `useUserTutorialQuery` + `useCompleteTutorialMutation` / `useDismissTutorialMutation`
+- **UX**: 실수 종료 방지(외부 클릭/ESC 무시), 키보드 접근성, 모바일(360px+) 대응
+- **서비스 테스트**: `user.service.test.ts` 6개 케이스 (상태 조회/완료/건너뛰기)
+
 ## v2.17.0 – 저장소 규칙 문서 체계 정비
 
 개발 규칙 문서의 기준점을 통합하고, 모노레포 경계/정책 설명을 명확히 정리했습니다.

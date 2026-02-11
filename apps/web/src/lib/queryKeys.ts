@@ -91,4 +91,5 @@ export const userKeys = {
   all: ['user'] as const,
   quota: (): readonly ['user', 'quota'] => [...userKeys.all, 'quota'] as const,
   subscription: (): readonly ['user', 'subscription'] => [...userKeys.all, 'subscription'] as const,
+  tutorial: (): readonly ['user', 'tutorial'] => [...userKeys.all, 'tutorial'] as const,
 };
