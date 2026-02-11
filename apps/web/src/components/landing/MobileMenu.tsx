@@ -45,6 +45,9 @@ export function MobileMenu({ copy }: MobileMenuProps): React.ReactElement {
           <Link href='/pricing' className='text-base text-foreground'>
             {copy.nav.pricing}
           </Link>
+          <Link href='/privacy' className='text-base text-foreground'>
+            {copy.footer.privacy}
+          </Link>
           <Button asChild className='mt-2 bg-primary text-primary-foreground hover:bg-primary/90'>
             <Link href='/login'>{copy.nav.login}</Link>
           </Button>

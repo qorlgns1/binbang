@@ -49,6 +49,10 @@ export default async function Home({ params }: PageProps): Promise<React.ReactEl
   }
 
   const copy = getLandingCopy(langParam);
+  const baseUrl =
+    typeof process.env.NEXTAUTH_URL === 'string'
+      ? process.env.NEXTAUTH_URL.replace(/\/$/, '')
+      : 'https://binbang.moodybeard.com';
 
-  return <LandingPage lang={langParam} copy={copy} />;
+  return <LandingPage lang={langParam} copy={copy} baseUrl={baseUrl} />;
 }
