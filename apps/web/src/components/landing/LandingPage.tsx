@@ -2,6 +2,7 @@ import dynamic from 'next/dynamic';
 
 import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 
+import { AppPurpose } from './AppPurpose';
 import { Header } from './Header';
 import { Hero } from './Hero';
 
@@ -28,6 +29,7 @@ export function LandingPage({ lang, copy }: LandingPageProps): React.ReactElemen
       <Header lang={lang} copy={copy} />
       <main>
         <Hero copy={copy} lang={lang} />
+        <AppPurpose copy={copy} />
         <Features copy={copy} />
         <Footer copy={copy} lang={lang} />
       </main>

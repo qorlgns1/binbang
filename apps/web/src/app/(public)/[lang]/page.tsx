@@ -1,9 +1,20 @@
+import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { notFound, redirect } from 'next/navigation';
 
 import { LandingPage } from '@/components/landing/LandingPage';
 import { authOptions } from '@/lib/auth';
 import { getLandingCopy, isValidLang, supportedLangs } from '@/lib/i18n/landing';
+
+export const metadata: Metadata = {
+  title: 'Binbang – 빈방 알림 서비스',
+  description:
+    'Binbang(빈방어때)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다. Google 로그인 시 이메일은 회원 식별 및 알림 발송에만 사용됩니다.',
+  openGraph: {
+    title: 'Binbang – 빈방 알림 서비스',
+    description: 'Binbang(빈방어때)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다.',
+  },
+};
 
 /**
  * Provide static route parameters for each supported language.

@@ -1,6 +1,6 @@
 {
   "nav": {
-    "brand": "빈방어때",
+    "brand": "Binbang",
     "features": "기능 소개",
     "status": "시스템 상태",
     "pricing": "요금제",
@@ -46,6 +46,7 @@
     "privacy": "개인정보처리방침",
     "terms": "서비스 약관"
   },
+  "appPurpose": "Binbang(빈방어때)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다. Google 로그인 시 수집하는 이메일 주소는 회원 식별 및 빈방 알림 발송에만 사용됩니다.",
   "mockLogs": [
     { "id": 1, "message": "빈방 발견: 파크하얏트 서울 (프리미엄 스위트)", "location": "서울" },
     { "id": 2, "message": "빈방 발견: 그랜드 하얏트 제주 (오션뷰 디럭스)", "location": "제주" },

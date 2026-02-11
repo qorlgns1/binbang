@@ -58,6 +58,8 @@ export interface LandingCopy {
     privacy: string;
     terms: string;
   };
+  /** 앱 목적 및 데이터 사용 목적 (Google OAuth 검증용). */
+  appPurpose: string;
   mockLogs: Array<{
     id: number;
     message: string;
