@@ -15,11 +15,14 @@
   - `rbac-local-testing.md`: RBAC 기능 로컬 검증 가이드
   - `worker-bullmq-runtime-flow.md`: 워커(BullMQ/Playwright) 실행 흐름 상세
   - `codex-request-playbook.md`: Codex에 릴리즈/PR/커밋정리 작업을 요청하는 템플릿 모음
+  - `google-form-service-operations.md`: 구글폼 기반 서비스 운영 설계서(상품/과금/분쟁/SOP/KPI)
 - `docs/history/`
   - `changelog.md`: 버전 변경 이력
   - `develop-work-units.md`: `main..develop` 작업 단위 재구성 기록
 - `docs/backlog/`
-  - 기능/개선 TODO 문서 모음
+  - `google-form-ops-mvp-backlog.md`: 구글폼 운영형 MVP 기능 백로그(P0/P1/P2)
+  - `improvement-plan.md`: 프로젝트 전반 개선 계획
+  - `throughput-and-analysis.md`: 처리량/분석 대시보드 확장 백로그
 
 ## 문서 작성 원칙
 

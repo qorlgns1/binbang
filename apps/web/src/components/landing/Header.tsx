@@ -40,6 +40,9 @@ export function Header({ lang, copy }: HeaderProps): React.ReactElement {
           <Link href='/pricing' className='landing-header-link text-sm text-muted-foreground hover:text-primary'>
             {copy.nav.pricing}
           </Link>
+          <Link href='/privacy' className='landing-header-link text-sm text-muted-foreground hover:text-primary'>
+            {copy.footer.privacy}
+          </Link>
 
           <LangToggle currentLang={lang} />
           <ThemeToggle lang={lang} />

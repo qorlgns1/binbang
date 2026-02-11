@@ -27,8 +27,8 @@ vi.mock('@workspace/db', () => ({
 
 vi.mock('bcryptjs', () => ({
   default: {
-    hash: (...args: unknown[]) => mockBcryptHash(...args),
-    compare: (...args: unknown[]) => mockBcryptCompare(...args),
+    hash: (...args: unknown[]) => (mockBcryptHash as (...a: unknown[]) => unknown)(...args),
+    compare: (...args: unknown[]) => (mockBcryptCompare as (...a: unknown[]) => unknown)(...args),
   },
 }));
 
