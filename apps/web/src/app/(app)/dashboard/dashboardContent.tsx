@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAccommodationsQuery } from '@/features/accommodations/queries';
 import { useRecentLogsQuery } from '@/features/logs/queries';
-import { useUserQuotaQuery } from '@/features/user/queries';
+import { useUserQuotaQuery, useUserTutorialQuery } from '@/features/user/queries';
 
 import { AccommodationBoard } from './_components/accommodation-board';
 import { ActionCenter } from './_components/action-center';
 import { LighthouseHero } from './_components/empty-illustrations';
+import { FirstUserTutorialDialog } from './_components/first-user-tutorial-dialog';
 import { KpiStrip } from './_components/kpi-strip';
 import { RecentEvents } from './_components/recent-events';
 import { SectionSkeleton } from './_components/section-skeleton';
@@ -59,6 +60,7 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
     refetch: refetchLogs,
   } = useRecentLogsQuery();
   const { data: quotaData, isPending: quotaLoading } = useUserQuotaQuery();
+  const { data: tutorialData } = useUserTutorialQuery();
 
   // DF-002 ~ DF-010: 파생 메트릭 계산
   const metrics: DashboardMetrics = useMemo(() => {
@@ -144,6 +146,8 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
 
   const isMainLoading = accLoading || quotaLoading;
 
+  const showTutorial = tutorialData?.shouldShow === true;
+
   // FR-005: 숙소 0건 전체 빈 상태
   if (!accLoading && !accError && accommodations.length === 0) {
     return (
@@ -162,6 +166,7 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
             </CardContent>
           </Card>
         </div>
+        <FirstUserTutorialDialog open={showTutorial} />
       </>
     );
   }
@@ -210,6 +215,8 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
           />
         </div>
       </div>
+
+      <FirstUserTutorialDialog open={showTutorial} />
     </>
   );
 }

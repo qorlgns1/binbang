@@ -4,6 +4,10 @@ import { QuotaKey, prisma } from '@workspace/db';
 // Types
 // ============================================================================
 
+export interface TutorialStatusResponse {
+  shouldShow: boolean;
+}
+
 export interface UserQuotaResponse {
   planName: string;
   quotas: {
@@ -148,4 +152,39 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
         }
       : null,
   };
+}
+
+// ============================================================================
+// Tutorial
+// ============================================================================
+
+export async function getTutorialStatus(userId: string): Promise<TutorialStatusResponse | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { tutorialCompletedAt: true, tutorialDismissedAt: true },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  return {
+    shouldShow: user.tutorialCompletedAt === null && user.tutorialDismissedAt === null,
+  };
+}
+
+export async function completeTutorial(userId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { tutorialCompletedAt: new Date() },
+    select: { id: true },
+  });
+}
+
+export async function dismissTutorial(userId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { tutorialDismissedAt: new Date() },
+    select: { id: true },
+  });
 }

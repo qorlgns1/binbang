@@ -24,8 +24,13 @@ export interface UserQuotaInfo {
   };
 }
 
+export interface TutorialStatus {
+  shouldShow: boolean;
+}
+
 export type UseUserQuotaQueryResult = UseQueryResult<UserQuotaInfo, Error>;
 export type UseUserSubscriptionQueryResult = UseQueryResult<UserSubscriptionResponse, Error>;
+export type UseUserTutorialQueryResult = UseQueryResult<TutorialStatus, Error>;
 
 // ============================================================================
 // Fetch Functions
@@ -47,6 +52,14 @@ async function fetchUserSubscription(): Promise<UserSubscriptionResponse> {
   return res.json();
 }
 
+async function fetchTutorialStatus(): Promise<TutorialStatus> {
+  const res = await fetch('/api/user/tutorial');
+  if (!res.ok) {
+    throw new Error('튜토리얼 상태를 불러올 수 없습니다');
+  }
+  return res.json();
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -64,5 +77,13 @@ export function useUserSubscriptionQuery(): UseUserSubscriptionQueryResult {
     queryKey: userKeys.subscription(),
     queryFn: fetchUserSubscription,
     staleTime: 60 * 1000, // 1분
+  });
+}
+
+export function useUserTutorialQuery(): UseUserTutorialQueryResult {
+  return useQuery({
+    queryKey: userKeys.tutorial(),
+    queryFn: fetchTutorialStatus,
+    staleTime: Number.POSITIVE_INFINITY,
   });
 }
