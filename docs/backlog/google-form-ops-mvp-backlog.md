@@ -77,37 +77,29 @@
   - `apps/web/src/services/intake.service.ts` — `rawPayloadFieldsSchema` + `validateAndExtractFields` 추가
   - `apps/web/src/services/intake.service.test.ts` — 검증 테스트 8건 추가 (총 18개)
 
-## P0-1B. 폼 버전/질문 매핑 레지스트리 도입
+## P0-1B. 폼 버전/질문 매핑 레지스트리 도입 ⏭️ 건너뜀 (2026-02-11)
 
-- 목표: Google Form 질문 순서/문구 변경에도 파싱이 깨지지 않도록 버전 기반 매핑 관리
-- 구현
-  - `formVersion`, `mappingRevision` 메타 저장
-  - 의미키별 매핑 규칙(질문 ID/제목 alias/정규식)을 DB 또는 설정 파일로 관리
-  - 매핑 실패 제출을 `NEEDS_REVIEW`로 격리하고 자동 시작 차단
-- 완료조건(DoD)
-  - 질문 번호 변경/삽입/삭제 후에도 의미키 매핑이 유지되면 정상 처리
-  - 필수 의미키 누락 제출은 `REJECTED_INVALID_FORM`
-  - 운영자가 매핑 레지스트리를 UI 또는 설정 파일에서 갱신 가능
-- 구현 위치
-  - `packages/db/prisma/schema.prisma`
-  - `apps/web/src/services/intake-mapping.service.ts` (신규)
-  - `apps/web/src/services/intake.service.ts`
-  - `apps/web/src/app/admin/cases/**`
+- 사유: Apps Script에서 질문 고유 ID 기반으로 매핑 후 semantic key로 전송하는 구조로 구현 완료. 서버 측 매핑 레지스트리가 불필요해짐.
+- `formVersion` 필드는 스키마에 이미 존재하므로, 향후 필요 시 Apps Script에서 추가 전송하면 됨.
 
-## P0-2. 운영 상태 머신(케이스 파이프라인) 도입
+## P0-2. 운영 상태 머신(케이스 파이프라인) 도입 ✅ 완료 (2026-02-11)
 
-- 목표: “지금 어느 단계인지”를 말싸움 없이 상태값으로 관리
-- 상태 제안
+- 목표: "지금 어느 단계인지"를 말싸움 없이 상태값으로 관리
+- 상태 전이 규칙
   - `RECEIVED` → `REVIEWING` → `WAITING_PAYMENT` → `ACTIVE_MONITORING` → `CONDITION_MET` → `BILLED` → `CLOSED`
-  - 예외: `REJECTED`, `EXPIRED`, `CANCELLED`
+  - 예외 분기: `REVIEWING` → `REJECTED`, `WAITING_PAYMENT` → `CANCELLED`, `ACTIVE_MONITORING` → `EXPIRED`/`CANCELLED`
+  - 터미널 상태: `REJECTED`, `EXPIRED`, `CANCELLED`, `CLOSED` (전이 불가)
 - 완료조건(DoD)
-  - 상태 변경 시 `who/when/why` 감사 로그 저장
+  - 상태 변경 시 `who/when/why` 감사 로그(`CaseStatusLog`) 저장
   - 허용되지 않은 상태 전이 차단(예: 결제 전 `ACTIVE_MONITORING` 금지)
+  - 유효한 `FormSubmission`에서만 케이스 생성 가능 (REJECTED/PROCESSED 차단)
 - 구현 위치
-  - `packages/db/prisma/schema.prisma`
-  - `apps/web/src/services/cases.service.ts`
-  - `apps/web/src/services/admin/audit-logs.service.ts`
-  - `apps/web/src/app/api/admin/cases/**/route.ts`
+  - `packages/db/prisma/schema.prisma` — `CaseStatus` enum, `Case` 모델, `CaseStatusLog` 모델, `FormSubmission` 역방향 relation
+  - `apps/web/src/services/cases.service.ts` — 케이스 생성/전이/조회 서비스 (transaction 기반)
+  - `apps/web/src/services/cases.service.test.ts` — 단위 테스트 (24개 통과)
+  - `apps/web/src/app/api/admin/cases/route.ts` — 목록(GET) + 생성(POST) API
+  - `apps/web/src/app/api/admin/cases/[id]/route.ts` — 상세 조회 API
+  - `apps/web/src/app/api/admin/cases/[id]/status/route.ts` — 상태 전이 API (PATCH)
 
 ## P0-3. Q4 모호성 감지 + 시작 전 명확화 큐
 
