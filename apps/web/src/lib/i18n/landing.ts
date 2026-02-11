@@ -24,6 +24,8 @@ export interface LandingCopy {
     subheadline: string;
     subheadlineMobile: string[];
     description: string;
+    /** Hero 내 앱 목적 한 줄 (Google OAuth 검증: 첫 화면에 노출). */
+    aboutApp: string;
     cta: string;
     secondaryCta: string;
     statusLabel: string;

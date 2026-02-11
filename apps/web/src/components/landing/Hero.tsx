@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 
@@ -69,6 +70,16 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
         </h1>
 
         <p className='mt-7 max-w-3xl text-base leading-[26px] text-muted-foreground'>{copy.hero.description}</p>
+
+        <p className='mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground'>
+          {copy.hero.aboutApp}{' '}
+          <Link
+            href='/privacy'
+            className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
+          >
+            {copy.footer.privacy}
+          </Link>
+        </p>
 
         <CTAButtons copy={copy} lang={lang} />
 
