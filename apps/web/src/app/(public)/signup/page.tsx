@@ -159,6 +159,13 @@ export default function SignupPage(): React.ReactElement {
               >
                 개인정보처리방침
               </Link>
+              <span className='text-muted-foreground'>·</span>
+              <Link
+                href='/terms'
+                className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
+              >
+                서비스 약관
+              </Link>
             </div>
           </CardContent>
         </Card>

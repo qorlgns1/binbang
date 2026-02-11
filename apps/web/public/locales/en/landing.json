@@ -43,7 +43,8 @@
     "description": "You can focus on planning your next trip.",
     "cta": "Get Vacancy Updates",
     "copyright": "© 2026 Binbang. All rights reserved.",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
   },
   "mockLogs": [
     { "id": 1, "message": "Vacancy found: Park Hyatt Seoul (Premium Suite)", "location": "Seoul" },

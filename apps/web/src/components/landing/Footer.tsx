@@ -50,6 +50,13 @@ export function Footer({ copy, lang }: FooterProps): React.ReactElement {
         >
           {copy.footer.privacy}
         </Link>
+        <span className='mx-2'>·</span>
+        <Link
+          href='/terms'
+          className='underline underline-offset-4 hover:text-foreground'
+        >
+          {copy.footer.terms}
+        </Link>
       </footer>
     </>
   );
