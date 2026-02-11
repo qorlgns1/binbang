@@ -78,12 +78,7 @@ interface FormSubmissionRow {
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    error != null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    (error as { code: string }).code === 'P2002'
-  );
+  return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
 }
 
 function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
@@ -106,9 +101,7 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
 // Service Functions
 // ============================================================================
 
-export async function createFormSubmission(
-  input: CreateFormSubmissionInput,
-): Promise<CreateFormSubmissionResult> {
+export async function createFormSubmission(input: CreateFormSubmissionInput): Promise<CreateFormSubmissionResult> {
   try {
     const created = await prisma.formSubmission.create({
       data: {
@@ -137,9 +130,7 @@ export async function createFormSubmission(
   }
 }
 
-export async function getFormSubmissionById(
-  id: string,
-): Promise<FormSubmissionOutput | null> {
+export async function getFormSubmissionById(id: string): Promise<FormSubmissionOutput | null> {
   const submission = await prisma.formSubmission.findUnique({
     where: { id },
     select: FORM_SUBMISSION_SELECT,
@@ -152,9 +143,7 @@ export async function getFormSubmissionById(
   return toOutput(submission);
 }
 
-export async function getFormSubmissions(
-  input: GetFormSubmissionsInput,
-): Promise<GetFormSubmissionsResult> {
+export async function getFormSubmissions(input: GetFormSubmissionsInput): Promise<GetFormSubmissionsResult> {
   const where: Prisma.FormSubmissionWhereInput = {};
 
   if (input.status) {

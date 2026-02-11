@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  createFormSubmission,
-  getFormSubmissionById,
-  getFormSubmissions,
-} from './intake.service';
+import { createFormSubmission, getFormSubmissionById, getFormSubmissions } from './intake.service';
 
 const { mockCreate, mockFindUnique, mockFindMany, mockCount } = vi.hoisted(
   (): {
@@ -163,11 +159,7 @@ describe('intake.service', (): void => {
     });
 
     it('returns nextCursor when hasMore', async (): Promise<void> => {
-      const rows = [
-        makeRow({ id: 'sub-1' }),
-        makeRow({ id: 'sub-2' }),
-        makeRow({ id: 'sub-3' }),
-      ];
+      const rows = [makeRow({ id: 'sub-1' }), makeRow({ id: 'sub-2' }), makeRow({ id: 'sub-3' })];
       mockFindMany.mockResolvedValue(rows);
       mockCount.mockResolvedValue(5);
 
