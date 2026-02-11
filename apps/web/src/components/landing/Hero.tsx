@@ -73,10 +73,7 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
 
         <p className='mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground'>
           {copy.hero.aboutApp}{' '}
-          <Link
-            href='/privacy'
-            className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
-          >
+          <Link href='/privacy' className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'>
             {copy.footer.privacy}
           </Link>
         </p>
