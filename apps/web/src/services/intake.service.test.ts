@@ -57,6 +57,10 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
     sourceIp: '1.2.3.4',
     extractedFields: null,
     rejectionReason: null,
+    consentBillingOnConditionMet: null,
+    consentServiceScope: null,
+    consentCapturedAt: null,
+    consentTexts: null,
     receivedAt: NOW,
     createdAt: NOW,
     updatedAt: NOW,
@@ -298,6 +302,55 @@ describe('intake.service', (): void => {
           }),
         }),
       );
+    });
+
+    it('stores consent evidence fields when all validations pass', async (): Promise<void> => {
+      const payload = makeValidPayload();
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-1', rawPayload: payload });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            consentBillingOnConditionMet: true,
+            consentServiceScope: true,
+            consentCapturedAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('stores consent texts with checkbox originals when valid', async (): Promise<void> => {
+      const payload = makeValidPayload();
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-2', rawPayload: payload });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            consentTexts: {
+              billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
+              scope:
+                '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
+            },
+          }),
+        }),
+      );
+    });
+
+    it('does not store consent fields when validation fails', async (): Promise<void> => {
+      const payload = makeValidPayload({ billing_consent: false });
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-3', rawPayload: payload });
+
+      const updateCall = mockUpdate.mock.calls[0][0];
+      expect(updateCall.data.status).toBe('REJECTED');
+      expect(updateCall.data.consentBillingOnConditionMet).toBeUndefined();
+      expect(updateCall.data.consentServiceScope).toBeUndefined();
+      expect(updateCall.data.consentCapturedAt).toBeUndefined();
     });
   });
 

@@ -40,6 +40,10 @@ export interface CaseDetailOutput extends CaseOutput {
     rawPayload: unknown;
     extractedFields: unknown;
     rejectionReason: string | null;
+    consentBillingOnConditionMet: boolean | null;
+    consentServiceScope: boolean | null;
+    consentCapturedAt: string | null;
+    consentTexts: { billing: string; scope: string } | null;
     receivedAt: string;
   };
   statusLogs: CaseStatusLogOutput[];
@@ -125,6 +129,10 @@ const CASE_DETAIL_SELECT = {
       rawPayload: true,
       extractedFields: true,
       rejectionReason: true,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: true,
+      consentTexts: true,
       receivedAt: true,
     },
   },
@@ -176,6 +184,10 @@ interface CaseDetailRow extends CaseRow {
     rawPayload: unknown;
     extractedFields: unknown;
     rejectionReason: string | null;
+    consentBillingOnConditionMet: boolean | null;
+    consentServiceScope: boolean | null;
+    consentCapturedAt: Date | null;
+    consentTexts: unknown;
     receivedAt: Date;
   };
   statusLogs: {
@@ -198,6 +210,10 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
       rawPayload: row.submission.rawPayload,
       extractedFields: row.submission.extractedFields,
       rejectionReason: row.submission.rejectionReason,
+      consentBillingOnConditionMet: row.submission.consentBillingOnConditionMet,
+      consentServiceScope: row.submission.consentServiceScope,
+      consentCapturedAt: row.submission.consentCapturedAt?.toISOString() ?? null,
+      consentTexts: (row.submission.consentTexts as { billing: string; scope: string }) ?? null,
       receivedAt: row.submission.receivedAt.toISOString(),
     },
     statusLogs: row.statusLogs.map(

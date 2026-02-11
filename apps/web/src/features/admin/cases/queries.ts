@@ -36,6 +36,10 @@ export interface CaseDetail extends CaseItem {
     rawPayload: unknown;
     extractedFields: unknown;
     rejectionReason: string | null;
+    consentBillingOnConditionMet: boolean | null;
+    consentServiceScope: boolean | null;
+    consentCapturedAt: string | null;
+    consentTexts: { billing: string; scope: string } | null;
     receivedAt: string;
   };
   statusLogs: {

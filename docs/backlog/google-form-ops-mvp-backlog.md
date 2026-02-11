@@ -132,19 +132,27 @@
   - `apps/web/src/app/admin/cases/[id]/_components/clarificationPanel.tsx` — 모호성 패널
   - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 상태 전이 다이얼로그
 
-## P0-4. Q7 동의 2종 체크 증거화
+## P0-4. Q7 동의 2종 체크 증거화 ✅ 완료 (2026-02-11)
 
-- 목표: “비용 발생 동의”와 “열림 여부만 확인” 동의를 계약 데이터로 고정
+- 목표: "비용 발생 동의"와 "열림 여부만 확인" 동의를 계약 데이터로 고정
 - 구현
-  - Q7 항목을 분리 필드(`consentBillingOnConditionMet`, `consentServiceScope`)로 저장
-  - 둘 다 true가 아니면 접수 무효 처리
-  - 동의 시각/원문/폼 응답 ID를 함께 저장
+  - `FormSubmission` 모델에 명시적 동의 컬럼 4개 추가: `consentBillingOnConditionMet`, `consentServiceScope`, `consentCapturedAt`, `consentTexts`
+  - 폼 검증 성공 시 동의값(Boolean) + 캡처 시각 + 체크박스 원문(JSON)을 DB에 저장
+  - 동의 체크박스 원문 상수 정의 (운영 가이드 Q7: "설명문보다 체크 문장 자체를 계약 근거로 취급")
+  - 둘 다 true가 아니면 접수 무효(`REJECTED`) 처리 (P0-1A에서 구현, 유지)
+  - 관리자 케이스 상세 페이지에 Q7 동의 증거 패널 추가
 - 완료조건(DoD)
-  - 관리자 상세에서 Q7 동의 스냅샷 즉시 조회 가능
+  - 관리자 상세에서 Q7 동의 스냅샷(동의 여부 + 체크박스 원문 + 캡처 시각 + 응답 ID) 즉시 조회 가능
   - 동의 누락 건은 자동 `REJECTED`
+  - 동의값이 JSON(`extractedFields`)뿐 아니라 명시적 DB 컬럼으로도 저장
 - 구현 위치
-  - `packages/db/prisma/schema.prisma`
-  - `apps/web/src/services/intake.service.ts`
+  - `packages/db/prisma/schema.prisma` — `FormSubmission`에 동의 4컬럼 추가
+  - `apps/web/src/services/intake.service.ts` — `CONSENT_TEXTS` 상수, `validateAndExtractFields`에서 동의 저장, Output 타입 확장
+  - `apps/web/src/services/intake.service.test.ts` — 동의 증거 테스트 3건 추가 (총 21개)
+  - `apps/web/src/services/cases.service.ts` — `CASE_DETAIL_SELECT` submission에 동의 필드 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `CaseDetail.submission` 타입 확장
+  - `apps/web/src/app/admin/cases/[id]/_components/consentEvidencePanel.tsx` — Q7 동의 증거 패널
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 패널 통합
 
 ## P0-5. 결제 확인 전 시작 차단(하드 게이트)
 

@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCaseDetailQuery } from '@/features/admin/cases';
 
 import { ClarificationPanel } from './clarificationPanel';
+import { ConsentEvidencePanel } from './consentEvidencePanel';
 import { StatusTransitionDialog } from './statusTransitionDialog';
 
 interface Props {
@@ -116,6 +117,14 @@ export function CaseDetailView({ caseId }: Props) {
             currentStatus={caseData.status}
             ambiguityResult={caseData.ambiguityResult}
             clarificationResolvedAt={caseData.clarificationResolvedAt}
+          />
+
+          <ConsentEvidencePanel
+            responseId={caseData.submission.responseId}
+            consentBillingOnConditionMet={caseData.submission.consentBillingOnConditionMet}
+            consentServiceScope={caseData.submission.consentServiceScope}
+            consentCapturedAt={caseData.submission.consentCapturedAt}
+            consentTexts={caseData.submission.consentTexts}
           />
 
           <Card>

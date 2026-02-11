@@ -16,6 +16,11 @@ export interface CreateFormSubmissionResult {
   created: boolean;
 }
 
+export interface ConsentTexts {
+  billing: string;
+  scope: string;
+}
+
 export interface FormSubmissionOutput {
   id: string;
   responseId: string;
@@ -25,6 +30,10 @@ export interface FormSubmissionOutput {
   sourceIp: string | null;
   extractedFields: unknown;
   rejectionReason: string | null;
+  consentBillingOnConditionMet: boolean | null;
+  consentServiceScope: boolean | null;
+  consentCapturedAt: string | null;
+  consentTexts: ConsentTexts | null;
   receivedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +64,10 @@ const FORM_SUBMISSION_SELECT = {
   sourceIp: true,
   extractedFields: true,
   rejectionReason: true,
+  consentBillingOnConditionMet: true,
+  consentServiceScope: true,
+  consentCapturedAt: true,
+  consentTexts: true,
   receivedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -73,10 +86,19 @@ interface FormSubmissionRow {
   sourceIp: string | null;
   extractedFields: unknown;
   rejectionReason: string | null;
+  consentBillingOnConditionMet: boolean | null;
+  consentServiceScope: boolean | null;
+  consentCapturedAt: Date | null;
+  consentTexts: unknown;
   receivedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const CONSENT_TEXTS: ConsentTexts = {
+  billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
+  scope: '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
+} as const;
 
 function isValidFutureDate(value: string): boolean {
   const date = new Date(value);
@@ -111,6 +133,10 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
     sourceIp: row.sourceIp,
     extractedFields: row.extractedFields,
     rejectionReason: row.rejectionReason,
+    consentBillingOnConditionMet: row.consentBillingOnConditionMet,
+    consentServiceScope: row.consentServiceScope,
+    consentCapturedAt: row.consentCapturedAt?.toISOString() ?? null,
+    consentTexts: (row.consentTexts as ConsentTexts) ?? null,
     receivedAt: row.receivedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -127,7 +153,13 @@ async function validateAndExtractFields(submissionId: string, rawPayload: Record
   if (result.success) {
     await prisma.formSubmission.update({
       where: { id: submissionId },
-      data: { extractedFields: result.data as unknown as Prisma.InputJsonValue },
+      data: {
+        extractedFields: result.data as unknown as Prisma.InputJsonValue,
+        consentBillingOnConditionMet: result.data.billing_consent,
+        consentServiceScope: result.data.scope_consent,
+        consentCapturedAt: new Date(),
+        consentTexts: CONSENT_TEXTS as unknown as Prisma.InputJsonValue,
+      },
       select: { id: true },
     });
   } else {
