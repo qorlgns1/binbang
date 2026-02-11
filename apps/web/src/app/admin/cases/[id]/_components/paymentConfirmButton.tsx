@@ -18,21 +18,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirmPaymentMutation } from '@/features/admin/cases';
 
+import { formatDateTime } from './formatDateTime';
+
 interface Props {
   caseId: string;
   currentStatus: string;
   paymentConfirmedAt: string | null;
   paymentConfirmedBy: string | null;
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 export function PaymentConfirmButton({ caseId, currentStatus, paymentConfirmedAt, paymentConfirmedBy }: Props) {

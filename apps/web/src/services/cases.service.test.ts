@@ -6,6 +6,7 @@ import {
   getCaseById,
   getCases,
   isValidTransition,
+  linkAccommodation,
   transitionCaseStatus,
 } from './cases.service';
 
@@ -23,6 +24,7 @@ const {
   mockSubmissionFindUnique,
   mockSubmissionUpdate,
   mockStatusLogCreate,
+  mockAccommodationFindUnique,
   mockTransaction,
 } = vi.hoisted(
   (): {
@@ -35,6 +37,7 @@ const {
     mockSubmissionFindUnique: ReturnType<typeof vi.fn>;
     mockSubmissionUpdate: ReturnType<typeof vi.fn>;
     mockStatusLogCreate: ReturnType<typeof vi.fn>;
+    mockAccommodationFindUnique: ReturnType<typeof vi.fn>;
     mockTransaction: ReturnType<typeof vi.fn>;
   } => ({
     mockCaseCreate: vi.fn(),
@@ -46,6 +49,7 @@ const {
     mockSubmissionFindUnique: vi.fn(),
     mockSubmissionUpdate: vi.fn(),
     mockStatusLogCreate: vi.fn(),
+    mockAccommodationFindUnique: vi.fn(),
     mockTransaction: vi.fn(),
   }),
 );
@@ -66,6 +70,9 @@ vi.mock('@workspace/db', () => ({
     },
     caseStatusLog: {
       create: mockStatusLogCreate,
+    },
+    accommodation: {
+      findUnique: mockAccommodationFindUnique,
     },
     $transaction: mockTransaction,
   },
@@ -90,6 +97,7 @@ function makeCaseRow(overrides: Partial<Record<string, unknown>> = {}) {
     clarificationResolvedAt: null,
     paymentConfirmedAt: null,
     paymentConfirmedBy: null,
+    accommodationId: null,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
@@ -125,6 +133,7 @@ function makeCaseDetailRow(overrides: Partial<Record<string, unknown>> = {}) {
         createdAt: NOW,
       },
     ],
+    conditionMetEvents: [],
     ...overrides,
   };
 }
@@ -144,6 +153,9 @@ function setupTransactionMock(): void {
       },
       caseStatusLog: {
         create: mockStatusLogCreate,
+      },
+      accommodation: {
+        findUnique: mockAccommodationFindUnique,
       },
     };
     return fn(tx);
@@ -304,6 +316,9 @@ describe('cases.service', (): void => {
         status: 'RECEIVED',
         ambiguityResult: null,
         clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
       mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
       mockStatusLogCreate.mockResolvedValue({ id: 'log-2' });
@@ -339,6 +354,9 @@ describe('cases.service', (): void => {
         status: 'RECEIVED',
         ambiguityResult: null,
         clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
 
       await expect(
@@ -368,6 +386,9 @@ describe('cases.service', (): void => {
         status: 'CLOSED',
         ambiguityResult: null,
         clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
 
       await expect(
@@ -385,6 +406,9 @@ describe('cases.service', (): void => {
         status: 'REVIEWING',
         ambiguityResult: { severity: 'AMBER', missingSlots: ['인원'], ambiguousTerms: [] },
         clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
 
       await expect(
@@ -402,6 +426,9 @@ describe('cases.service', (): void => {
         status: 'REVIEWING',
         ambiguityResult: { severity: 'AMBER', missingSlots: ['인원'], ambiguousTerms: [] },
         clarificationResolvedAt: NOW,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
       mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
       mockStatusLogCreate.mockResolvedValue({ id: 'log-3' });
@@ -422,6 +449,9 @@ describe('cases.service', (): void => {
         status: 'REVIEWING',
         ambiguityResult: { severity: 'GREEN', missingSlots: [], ambiguousTerms: [] },
         clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
       mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
       mockStatusLogCreate.mockResolvedValue({ id: 'log-4' });
@@ -442,6 +472,9 @@ describe('cases.service', (): void => {
         status: 'NEEDS_CLARIFICATION',
         ambiguityResult: { severity: 'AMBER', missingSlots: [], ambiguousTerms: ['적당한'] },
         clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
       });
       mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
       mockStatusLogCreate.mockResolvedValue({ id: 'log-5' });
@@ -551,6 +584,8 @@ describe('cases.service', (): void => {
         ambiguityResult: null,
         clarificationResolvedAt: null,
         paymentConfirmedAt: null,
+        accommodationId: 'acc-1',
+        _count: { conditionMetEvents: 0 },
       });
 
       await expect(
@@ -562,13 +597,15 @@ describe('cases.service', (): void => {
       ).rejects.toThrow('Payment must be confirmed before monitoring start');
     });
 
-    it('allows WAITING_PAYMENT → ACTIVE_MONITORING when payment confirmed', async (): Promise<void> => {
+    it('allows WAITING_PAYMENT → ACTIVE_MONITORING when payment confirmed and accommodation linked', async (): Promise<void> => {
       mockCaseFindUnique.mockResolvedValue({
         id: 'case-1',
         status: 'WAITING_PAYMENT',
         ambiguityResult: null,
         clarificationResolvedAt: null,
         paymentConfirmedAt: NOW,
+        accommodationId: 'acc-1',
+        _count: { conditionMetEvents: 0 },
       });
       mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
       mockStatusLogCreate.mockResolvedValue({ id: 'log-pay' });
@@ -658,6 +695,133 @@ describe('cases.service', (): void => {
       await expect(confirmPayment({ caseId: 'case-1', confirmedById: 'admin-1' })).rejects.toThrow(
         'Payment already confirmed',
       );
+    });
+  });
+
+  // ==========================================================================
+  // linkAccommodation
+  // ==========================================================================
+
+  describe('linkAccommodation', (): void => {
+    it('sets accommodationId on case', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        accommodationId: null,
+      });
+      mockAccommodationFindUnique.mockResolvedValue({ id: 'acc-1' });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-link' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(
+        makeCaseDetailRow({ status: 'WAITING_PAYMENT', accommodationId: 'acc-1' }),
+      );
+
+      const result = await linkAccommodation({
+        caseId: 'case-1',
+        accommodationId: 'acc-1',
+        changedById: 'admin-1',
+      });
+
+      expect(result.accommodationId).toBe('acc-1');
+      expect(mockCaseUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { accommodationId: 'acc-1' },
+        }),
+      );
+    });
+
+    it('throws when not WAITING_PAYMENT', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'REVIEWING',
+        accommodationId: null,
+      });
+
+      await expect(
+        linkAccommodation({ caseId: 'case-1', accommodationId: 'acc-1', changedById: 'admin-1' }),
+      ).rejects.toThrow('Accommodation link requires WAITING_PAYMENT status');
+    });
+
+    it('throws when accommodation not found', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        accommodationId: null,
+      });
+      mockAccommodationFindUnique.mockResolvedValue(null);
+
+      await expect(
+        linkAccommodation({ caseId: 'case-1', accommodationId: 'non-existent', changedById: 'admin-1' }),
+      ).rejects.toThrow('Accommodation not found');
+    });
+  });
+
+  // ==========================================================================
+  // Accommodation + Evidence guards
+  // ==========================================================================
+
+  describe('accommodation and evidence guards', (): void => {
+    it('blocks WAITING_PAYMENT → ACTIVE_MONITORING when no accommodation linked', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+        paymentConfirmedAt: NOW,
+        accommodationId: null,
+        _count: { conditionMetEvents: 0 },
+      });
+
+      await expect(
+        transitionCaseStatus({
+          caseId: 'case-1',
+          toStatus: 'ACTIVE_MONITORING',
+          changedById: 'admin-1',
+        }),
+      ).rejects.toThrow('Accommodation must be linked before monitoring start');
+    });
+
+    it('blocks ACTIVE_MONITORING → CONDITION_MET when no evidence', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'ACTIVE_MONITORING',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+        paymentConfirmedAt: NOW,
+        accommodationId: 'acc-1',
+        _count: { conditionMetEvents: 0 },
+      });
+
+      await expect(
+        transitionCaseStatus({
+          caseId: 'case-1',
+          toStatus: 'CONDITION_MET',
+          changedById: 'admin-1',
+        }),
+      ).rejects.toThrow('At least one condition met evidence is required');
+    });
+
+    it('allows ACTIVE_MONITORING → CONDITION_MET when evidence exists', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'ACTIVE_MONITORING',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+        paymentConfirmedAt: NOW,
+        accommodationId: 'acc-1',
+        _count: { conditionMetEvents: 1 },
+      });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-cm' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(makeCaseDetailRow({ status: 'CONDITION_MET' }));
+
+      const result = await transitionCaseStatus({
+        caseId: 'case-1',
+        toStatus: 'CONDITION_MET',
+        changedById: 'admin-1',
+      });
+
+      expect(result.status).toBe('CONDITION_MET');
     });
   });
 });

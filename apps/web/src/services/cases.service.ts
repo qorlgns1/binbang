@@ -24,6 +24,12 @@ export interface ConfirmPaymentInput {
   note?: string;
 }
 
+export interface LinkAccommodationInput {
+  caseId: string;
+  accommodationId: string;
+  changedById: string;
+}
+
 export interface CaseOutput {
   id: string;
   submissionId: string;
@@ -36,8 +42,18 @@ export interface CaseOutput {
   clarificationResolvedAt: string | null;
   paymentConfirmedAt: string | null;
   paymentConfirmedBy: string | null;
+  accommodationId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConditionMetEventOutput {
+  id: string;
+  checkLogId: string;
+  evidenceSnapshot: unknown;
+  screenshotBase64: string | null;
+  capturedAt: string;
+  createdAt: string;
 }
 
 export interface CaseDetailOutput extends CaseOutput {
@@ -55,6 +71,7 @@ export interface CaseDetailOutput extends CaseOutput {
     receivedAt: string;
   };
   statusLogs: CaseStatusLogOutput[];
+  conditionMetEvents: ConditionMetEventOutput[];
 }
 
 export interface CaseStatusLogOutput {
@@ -116,6 +133,7 @@ const CASE_SELECT = {
   clarificationResolvedAt: true,
   paymentConfirmedAt: true,
   paymentConfirmedBy: true,
+  accommodationId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -150,6 +168,17 @@ const CASE_DETAIL_SELECT = {
     select: CASE_STATUS_LOG_SELECT,
     orderBy: { createdAt: 'desc' as const },
   },
+  conditionMetEvents: {
+    select: {
+      id: true,
+      checkLogId: true,
+      evidenceSnapshot: true,
+      screenshotBase64: true,
+      capturedAt: true,
+      createdAt: true,
+    },
+    orderBy: { capturedAt: 'desc' as const },
+  },
 } as const;
 
 // ============================================================================
@@ -168,6 +197,7 @@ interface CaseRow {
   clarificationResolvedAt: Date | null;
   paymentConfirmedAt: Date | null;
   paymentConfirmedBy: string | null;
+  accommodationId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -185,6 +215,7 @@ function toCaseOutput(row: CaseRow): CaseOutput {
     clarificationResolvedAt: row.clarificationResolvedAt?.toISOString() ?? null,
     paymentConfirmedAt: row.paymentConfirmedAt?.toISOString() ?? null,
     paymentConfirmedBy: row.paymentConfirmedBy,
+    accommodationId: row.accommodationId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -210,6 +241,14 @@ interface CaseDetailRow extends CaseRow {
     toStatus: CaseStatus;
     changedById: string;
     reason: string | null;
+    createdAt: Date;
+  }[];
+  conditionMetEvents: {
+    id: string;
+    checkLogId: string;
+    evidenceSnapshot: unknown;
+    screenshotBase64: string | null;
+    capturedAt: Date;
     createdAt: Date;
   }[];
 }
@@ -238,6 +277,16 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
         changedById: log.changedById,
         reason: log.reason,
         createdAt: log.createdAt.toISOString(),
+      }),
+    ),
+    conditionMetEvents: row.conditionMetEvents.map(
+      (evt): ConditionMetEventOutput => ({
+        id: evt.id,
+        checkLogId: evt.checkLogId,
+        evidenceSnapshot: evt.evidenceSnapshot,
+        screenshotBase64: evt.screenshotBase64,
+        capturedAt: evt.capturedAt.toISOString(),
+        createdAt: evt.createdAt.toISOString(),
       }),
     ),
   };
@@ -319,6 +368,8 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
         ambiguityResult: true,
         clarificationResolvedAt: true,
         paymentConfirmedAt: true,
+        accommodationId: true,
+        _count: { select: { conditionMetEvents: true } },
       },
     });
 
@@ -338,10 +389,20 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
       }
     }
 
-    // Guard: WAITING_PAYMENT → ACTIVE_MONITORING requires payment confirmation
+    // Guard: WAITING_PAYMENT → ACTIVE_MONITORING requires payment confirmation + accommodation link
     if (current.status === 'WAITING_PAYMENT' && input.toStatus === 'ACTIVE_MONITORING') {
       if (!current.paymentConfirmedAt) {
         throw new Error('Payment must be confirmed before monitoring start');
+      }
+      if (!current.accommodationId) {
+        throw new Error('Accommodation must be linked before monitoring start');
+      }
+    }
+
+    // Guard: ACTIVE_MONITORING → CONDITION_MET requires at least one evidence
+    if (current.status === 'ACTIVE_MONITORING' && input.toStatus === 'CONDITION_MET') {
+      if (current._count.conditionMetEvents === 0) {
+        throw new Error('At least one condition met evidence is required');
       }
     }
 
@@ -417,6 +478,56 @@ export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDe
         toStatus: 'WAITING_PAYMENT',
         changedById: input.confirmedById,
         reason: input.note ?? '결제 확인',
+      },
+      select: { id: true },
+    });
+
+    return tx.case.findUniqueOrThrow({
+      where: { id: input.caseId },
+      select: CASE_DETAIL_SELECT,
+    });
+  });
+
+  return toCaseDetailOutput(result);
+}
+
+export async function linkAccommodation(input: LinkAccommodationInput): Promise<CaseDetailOutput> {
+  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
+    const current = await tx.case.findUnique({
+      where: { id: input.caseId },
+      select: { id: true, status: true, accommodationId: true },
+    });
+
+    if (!current) {
+      throw new Error('Case not found');
+    }
+
+    if (current.status !== 'WAITING_PAYMENT') {
+      throw new Error(`Accommodation link requires WAITING_PAYMENT status, current: ${current.status}`);
+    }
+
+    const accommodation = await tx.accommodation.findUnique({
+      where: { id: input.accommodationId },
+      select: { id: true },
+    });
+
+    if (!accommodation) {
+      throw new Error('Accommodation not found');
+    }
+
+    await tx.case.update({
+      where: { id: input.caseId },
+      data: { accommodationId: input.accommodationId },
+      select: { id: true },
+    });
+
+    await tx.caseStatusLog.create({
+      data: {
+        caseId: input.caseId,
+        fromStatus: 'WAITING_PAYMENT',
+        toStatus: 'WAITING_PAYMENT',
+        changedById: input.changedById,
+        reason: `숙소 연결: ${input.accommodationId}`,
       },
       select: { id: true },
     });

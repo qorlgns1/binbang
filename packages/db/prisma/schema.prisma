@@ -131,6 +131,7 @@ model Accommodation {
   platformMetadata    Json?     // 전체 JSON-LD 데이터
 
   checkLogs CheckLog[]
+  cases     Case[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -186,6 +187,8 @@ model CheckLog {
   durationMs      Int?
   retryCount      Int       @default(0)
   previousStatus  AvailabilityStatus?
+
+  conditionMetEvents ConditionMetEvent[]
 
   createdAt       DateTime @default(now())
 
@@ -495,10 +498,13 @@ model Case {
   clarificationResolvedAt DateTime?
   paymentConfirmedAt  DateTime?
   paymentConfirmedBy  String?
+  accommodationId     String?
+  accommodation       Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  statusLogs      CaseStatusLog[]
+  statusLogs          CaseStatusLog[]
+  conditionMetEvents  ConditionMetEvent[]
 
   @@index([status])
   @@index([createdAt])
@@ -516,4 +522,19 @@ model CaseStatusLog {
 
   @@index([caseId])
   @@index([createdAt])
+}
+
+model ConditionMetEvent {
+  id               String   @id @default(cuid())
+  caseId           String
+  case             Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  checkLogId       String
+  checkLog         CheckLog @relation(fields: [checkLogId], references: [id], onDelete: Cascade)
+  evidenceSnapshot Json
+  screenshotBase64 String?  @db.Text
+  capturedAt       DateTime
+  createdAt        DateTime @default(now())
+
+  @@unique([caseId, checkLogId])
+  @@index([caseId])
 }

@@ -179,20 +179,43 @@
   - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 결제 버튼 통합
   - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 결제 미확인 시 비활성화
 
-## P0-6. 조건 충족(열림 확인) 이벤트 증거 패킷
+## P0-6. 조건 충족(열림 확인) 이벤트 증거 패킷 ✅ 완료 (2026-02-11)
 
-- 목표: “봤다/못 봤다” 논쟁을 증거 패킷으로 종결
+- 목표: "봤다/못 봤다" 논쟁을 증거 패킷으로 종결
 - 구현
-  - 조건 충족 시점에 이벤트 생성(`ConditionMetEvent`)
-  - 필수 증거 저장: 체크 시각, 플랫폼, 체크 결과, 가격/옵션, 스크린샷 경로
-  - 이벤트 멱등키(`caseId + checkLogId`)로 중복 과금 방지
+  - `Case.accommodationId` 추가: 관리자가 케이스에 숙소를 수동 연결
+  - `ConditionMetEvent` 모델: `evidenceSnapshot`(JSON) + `screenshotBase64`(Text) + 멱등키(`@@unique([caseId, checkLogId])`)
+  - 워커 자동 감지: ACTIVE_MONITORING Case에 연결된 숙소가 AVAILABLE 전환 시 증거 자동 생성
+  - 스크린샷 캡처: `captureScreenshot` 플래그로 Case-linked 체크에서만 스크린샷 촬영
+  - 가드 2종: WAITING_PAYMENT → ACTIVE_MONITORING 시 숙소 연결 필수, ACTIVE_MONITORING → CONDITION_MET 시 증거 1건 이상 필수
+  - 관리자 UI: 숙소 연결 버튼, 증거 패킷 패널(스크린샷 뷰어 + JSON 복사)
+- 리팩토링 (rules.md 기준 개선)
+  - **Rule 8 위반 수정**: `apps/worker/src/cycleProcessor.ts`에서 `prisma.case.findMany()` 직접 호출(DB 로직)을 `packages/worker-shared/src/runtime/cases.ts`의 `findActiveCaseLinks()` 함수로 분리하여 Rule 8("DB logic MUST NOT live in apps/worker") 준수
+  - **코드 중복 제거**: `formatDateTime()` 함수가 `caseDetailView.tsx`, `conditionEvidencePanel.tsx`, `paymentConfirmButton.tsx`, `consentEvidencePanel.tsx` 4곳에 중복 정의되어 있던 것을 `formatDateTime.ts` 공용 유틸리티로 추출 (3곳 적용, `consentEvidencePanel.tsx`는 `second` 옵션 포함으로 별도 유지)
 - 완료조건(DoD)
-  - 케이스당 동일 체크에 대한 이벤트 1건만 생성
-  - 운영자 화면에서 증거 패킷 다운로드/복사 가능
+  - 케이스당 동일 체크에 대한 이벤트 1건만 생성 (멱등키 + P2002 무시)
+  - 운영자 화면에서 증거 패킷 조회/스크린샷 확인/메타데이터 복사 가능
+  - 숙소 미연결/증거 미존재 시 상태 전이 차단
 - 구현 위치
-  - `packages/db/prisma/schema.prisma`
-  - `packages/worker-shared/src/runtime/notifications/**`
-  - `apps/web/src/services/evidence.service.ts` (신규)
+  - `packages/db/prisma/schema.prisma` — `Case.accommodationId`, `ConditionMetEvent` 모델, `CheckLog` 역관계
+  - `packages/shared/src/types/checker.ts` — `CheckResult.screenshotBase64` 추가
+  - `packages/worker-shared/src/jobs/types.ts` — `CheckJobPayload.caseId`/`conditionDefinition` 추가
+  - `packages/worker-shared/src/browser/baseChecker.ts` — `captureScreenshot` 플래그 + 스크린샷 캡처 로직
+  - `packages/worker-shared/src/runtime/evidence.ts` — `createConditionMetEvent()` (멱등)
+  - `packages/worker-shared/src/runtime/cases.ts` — `findActiveCaseLinks()` (Rule 8 준수를 위한 DB 쿼리 분리)
+  - `packages/worker-shared/src/runtime/index.ts` — evidence/cases export 추가
+  - `apps/worker/src/cycleProcessor.ts` — `findActiveCaseLinks()` 호출 + caseId payload 추가
+  - `apps/worker/src/checkProcessor.ts` — `saveCheckLog` 반환값 변경 + 증거 생성 로직
+  - `apps/web/src/services/cases.service.ts` — `linkAccommodation()` + 가드 + 타입/select 확장
+  - `apps/web/src/services/cases.service.test.ts` — 숙소 연결 + 증거 가드 테스트 6건 추가 (총 42개)
+  - `apps/web/src/app/api/admin/cases/[id]/accommodation/route.ts` — 숙소 연결 API (PATCH)
+  - `apps/web/src/features/admin/cases/mutations.ts` — `useLinkAccommodationMutation` 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `ConditionMetEvent`/`accommodationId` 타입 추가
+  - `apps/web/src/app/admin/cases/[id]/_components/accommodationLinkButton.tsx` — 숙소 연결 버튼
+  - `apps/web/src/app/admin/cases/[id]/_components/conditionEvidencePanel.tsx` — 증거 패킷 패널
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 패널/버튼 통합
+  - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 숙소/증거 가드 비활성화
+  - `apps/web/src/app/admin/cases/[id]/_components/formatDateTime.ts` — 공용 날짜 포맷 유틸리티 (중복 제거)
 
 ## P0-7. 알림 + 과금 이벤트 원자적 트리거
 

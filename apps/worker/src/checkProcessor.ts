@@ -4,6 +4,7 @@ import { type AccommodationMetadata, parsePrice } from '@workspace/shared';
 import { type CheckerRuntimeConfig, checkAccommodation } from '@workspace/worker-shared/browser';
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
+  createConditionMetEvent,
   getPlatformSelectors,
   getSettings,
   notifyAvailable,
@@ -28,6 +29,7 @@ export async function processCheck(job: Job): Promise<void> {
       patternRetryMs: settings.browser.patternRetryMs,
       retryDelayMs: settings.checker.retryDelayMs,
       blockResourceTypes: settings.checker.blockResourceTypes,
+      captureScreenshot: !!data.caseId,
     };
 
     const selectorCache = getPlatformSelectors(data.platform);
@@ -49,11 +51,31 @@ export async function processCheck(job: Job): Promise<void> {
 
     const durationMs = Date.now() - startTime;
 
-    await saveCheckLog(data, status, result, {
+    const checkLogId = await saveCheckLog(data, status, result, {
       durationMs,
       retryCount: result.retryCount,
       previousStatus: data.lastStatus,
     });
+
+    // Case-linked 모니터링에서 AVAILABLE 감지 시 증거 생성
+    if (data.caseId && status === 'AVAILABLE') {
+      await createConditionMetEvent({
+        caseId: data.caseId,
+        checkLogId,
+        evidenceSnapshot: {
+          checkUrl: result.checkUrl,
+          platform: data.platform,
+          status,
+          price: result.price,
+          checkIn: data.checkIn,
+          checkOut: data.checkOut,
+          conditionDefinition: data.conditionDefinition ?? null,
+        },
+        screenshotBase64: result.screenshotBase64 ?? null,
+        capturedAt: new Date(),
+      });
+      console.log(`  Evidence captured for case ${data.caseId}`);
+    }
 
     await sendNotificationIfNeeded(data, status, result);
     await updateAccommodationStatus(data.accommodationId, status, result.price, result.metadata);
@@ -116,14 +138,14 @@ async function saveCheckLog(
     retryCount: number;
     previousStatus: AvailabilityStatus | null;
   },
-): Promise<void> {
+): Promise<string> {
   const parsed = parsePrice(result.price);
   const checkIn = new Date(data.checkIn);
   const checkOut = new Date(data.checkOut);
   const nights = nightsBetween(checkIn, checkOut);
   const pricePerNight = parsed ? Math.round(parsed.amount / nights) : null;
 
-  await prisma.checkLog.create({
+  const log = await prisma.checkLog.create({
     data: {
       accommodationId: data.accommodationId,
       userId: data.userId,
@@ -143,6 +165,8 @@ async function saveCheckLog(
     },
     select: { id: true },
   });
+
+  return log.id;
 }
 
 async function sendNotificationIfNeeded(

@@ -33,5 +33,13 @@ export {
 } from './selectors';
 export type { PlatformSelectorCache, SelectorConfig } from './selectors';
 
+// Evidence
+export { createConditionMetEvent } from './evidence';
+export type { CreateConditionMetEventInput } from './evidence';
+
+// Cases
+export { findActiveCaseLinks } from './cases';
+export type { ActiveCaseLink } from './cases';
+
 // BullMQ types (re-exported for consumer convenience)
 export type { Queue, Worker, Job } from 'bullmq';

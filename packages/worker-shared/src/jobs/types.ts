@@ -16,4 +16,6 @@ export interface CheckJobPayload {
   userId: string;
   kakaoAccessToken: string | null;
   lastStatus: AvailabilityStatus | null;
+  caseId?: string;
+  conditionDefinition?: string;
 }

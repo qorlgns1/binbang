@@ -26,8 +26,18 @@ export interface CaseItem {
   clarificationResolvedAt: string | null;
   paymentConfirmedAt: string | null;
   paymentConfirmedBy: string | null;
+  accommodationId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConditionMetEvent {
+  id: string;
+  checkLogId: string;
+  evidenceSnapshot: unknown;
+  screenshotBase64: string | null;
+  capturedAt: string;
+  createdAt: string;
 }
 
 export interface CaseDetail extends CaseItem {
@@ -52,6 +62,7 @@ export interface CaseDetail extends CaseItem {
     reason: string | null;
     createdAt: string;
   }[];
+  conditionMetEvents: ConditionMetEvent[];
 }
 
 export interface CasesResponse {

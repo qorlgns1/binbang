@@ -59,6 +59,7 @@ export interface CheckResult {
   matchedSelectors?: MatchedSelector[]; // 테스트용: 매칭된 셀렉터 목록
   matchedPatterns?: MatchedPattern[]; // 테스트용: 매칭된 패턴 목록
   testableElements?: TestableElement[]; // 테스트용: data-testid 등 추출된 요소들
+  screenshotBase64?: string; // 조건 충족 증거용 스크린샷
 }
 
 export interface AccommodationToCheck {

@@ -1,6 +1,13 @@
 import { prisma } from '@workspace/db';
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
-import { getSettings, loadSettings, updateHeartbeat, type Job, type Queue } from '@workspace/worker-shared/runtime';
+import {
+  findActiveCaseLinks,
+  getSettings,
+  loadSettings,
+  updateHeartbeat,
+  type Job,
+  type Queue,
+} from '@workspace/worker-shared/runtime';
 
 export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<void> {
   return async (_job: Job): Promise<void> => {
@@ -35,7 +42,13 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       },
     });
 
+    // ACTIVE_MONITORING 상태 Case 중 숙소가 연결된 것들을 조회
+    const caseByAccommodationId = await findActiveCaseLinks();
+
     console.log(`Accommodations to check: ${accommodations.length}`);
+    if (caseByAccommodationId.size > 0) {
+      console.log(`Active cases with linked accommodations: ${caseByAccommodationId.size}`);
+    }
 
     if (accommodations.length === 0) {
       console.log('No accommodations to check.\n');
@@ -56,22 +69,26 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       select: { id: true },
     });
 
-    const jobs = accommodations.map((acc): { name: string; data: CheckJobPayload } => ({
-      name: 'check',
-      data: {
-        cycleId: cycle.id,
-        accommodationId: acc.id,
-        name: acc.name,
-        url: acc.url,
-        platform: acc.platform,
-        checkIn: acc.checkIn.toISOString(),
-        checkOut: acc.checkOut.toISOString(),
-        adults: acc.adults,
-        userId: acc.user.id,
-        kakaoAccessToken: acc.user.kakaoAccessToken,
-        lastStatus: acc.lastStatus,
-      } satisfies CheckJobPayload,
-    }));
+    const jobs = accommodations.map((acc): { name: string; data: CheckJobPayload } => {
+      const caseLink = caseByAccommodationId.get(acc.id);
+      return {
+        name: 'check',
+        data: {
+          cycleId: cycle.id,
+          accommodationId: acc.id,
+          name: acc.name,
+          url: acc.url,
+          platform: acc.platform,
+          checkIn: acc.checkIn.toISOString(),
+          checkOut: acc.checkOut.toISOString(),
+          adults: acc.adults,
+          userId: acc.user.id,
+          kakaoAccessToken: acc.user.kakaoAccessToken,
+          lastStatus: acc.lastStatus,
+          ...(caseLink && { caseId: caseLink.caseId, conditionDefinition: caseLink.conditionDefinition }),
+        } satisfies CheckJobPayload,
+      };
+    });
 
     await checkQueue.addBulk(jobs);
 

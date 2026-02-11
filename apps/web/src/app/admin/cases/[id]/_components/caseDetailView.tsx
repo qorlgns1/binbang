@@ -10,23 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCaseDetailQuery } from '@/features/admin/cases';
 
+import { AccommodationLinkButton } from './accommodationLinkButton';
 import { ClarificationPanel } from './clarificationPanel';
+import { ConditionEvidencePanel } from './conditionEvidencePanel';
 import { ConsentEvidencePanel } from './consentEvidencePanel';
+import { formatDateTime } from './formatDateTime';
 import { PaymentConfirmButton } from './paymentConfirmButton';
 import { StatusTransitionDialog } from './statusTransitionDialog';
 
 interface Props {
   caseId: string;
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 export function CaseDetailView({ caseId }: Props) {
@@ -83,6 +76,8 @@ export function CaseDetailView({ caseId }: Props) {
                   caseId={caseId}
                   currentStatus={caseData.status}
                   paymentConfirmedAt={caseData.paymentConfirmedAt}
+                  accommodationId={caseData.accommodationId}
+                  conditionMetEventsCount={caseData.conditionMetEvents.length}
                 />
               </CardTitle>
             </CardHeader>
@@ -98,6 +93,11 @@ export function CaseDetailView({ caseId }: Props) {
                 currentStatus={caseData.status}
                 paymentConfirmedAt={caseData.paymentConfirmedAt}
                 paymentConfirmedBy={caseData.paymentConfirmedBy}
+              />
+              <AccommodationLinkButton
+                caseId={caseId}
+                currentStatus={caseData.status}
+                accommodationId={caseData.accommodationId}
               />
             </CardContent>
           </Card>
@@ -137,6 +137,8 @@ export function CaseDetailView({ caseId }: Props) {
             consentCapturedAt={caseData.submission.consentCapturedAt}
             consentTexts={caseData.submission.consentTexts}
           />
+
+          <ConditionEvidencePanel conditionMetEvents={caseData.conditionMetEvents} currentStatus={caseData.status} />
 
           <Card>
             <CardHeader>
