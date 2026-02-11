@@ -1,4 +1,5 @@
 import { type FormSubmissionStatus, type Prisma, prisma } from '@workspace/db';
+import { z } from 'zod';
 
 // ============================================================================
 // Types
@@ -77,6 +78,25 @@ interface FormSubmissionRow {
   updatedAt: Date;
 }
 
+function isValidFutureDate(value: string): boolean {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date >= today;
+}
+
+const rawPayloadFieldsSchema = z.object({
+  contact_channel: z.enum(['카카오톡', '이메일']),
+  contact_value: z.string().min(1, '연락처가 비어있습니다'),
+  target_url: z.string().url('유효하지 않은 URL입니다'),
+  condition_definition: z.string().min(10, '조건 정의가 너무 짧습니다 (최소 10자)'),
+  request_window: z.string().refine(isValidFutureDate, '유효하지 않은 날짜이거나 이미 지난 날짜입니다'),
+  check_frequency: z.string().nullable().optional(),
+  billing_consent: z.literal(true, { errorMap: () => ({ message: '비용 발생 동의가 필요합니다' }) }),
+  scope_consent: z.literal(true, { errorMap: () => ({ message: '서비스 범위 동의가 필요합니다' }) }),
+});
+
 function isUniqueConstraintError(error: unknown): boolean {
   return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
 }
@@ -101,6 +121,28 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
 // Service Functions
 // ============================================================================
 
+async function validateAndExtractFields(submissionId: string, rawPayload: Record<string, unknown>): Promise<void> {
+  const result = rawPayloadFieldsSchema.safeParse(rawPayload);
+
+  if (result.success) {
+    await prisma.formSubmission.update({
+      where: { id: submissionId },
+      data: { extractedFields: result.data as unknown as Prisma.InputJsonValue },
+      select: { id: true },
+    });
+  } else {
+    const reasons = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
+    await prisma.formSubmission.update({
+      where: { id: submissionId },
+      data: {
+        status: 'REJECTED',
+        rejectionReason: reasons.join('; '),
+      },
+      select: { id: true },
+    });
+  }
+}
+
 export async function createFormSubmission(input: CreateFormSubmissionInput): Promise<CreateFormSubmissionResult> {
   try {
     const created = await prisma.formSubmission.create({
@@ -112,7 +154,16 @@ export async function createFormSubmission(input: CreateFormSubmissionInput): Pr
       select: FORM_SUBMISSION_SELECT,
     });
 
-    return { submission: toOutput(created), created: true };
+    // 신규 생성 후 rawPayload 검증/추출
+    await validateAndExtractFields(created.id, input.rawPayload);
+
+    // 검증 결과가 반영된 최신 상태 조회
+    const updated = await prisma.formSubmission.findUnique({
+      where: { id: created.id },
+      select: FORM_SUBMISSION_SELECT,
+    });
+
+    return { submission: toOutput(updated ?? created), created: true };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       const existing = await prisma.formSubmission.findUnique({

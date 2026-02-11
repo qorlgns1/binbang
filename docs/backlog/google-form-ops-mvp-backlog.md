@@ -57,26 +57,25 @@
   - `apps/web/src/app/api/admin/submissions/[id]/route.ts` — 관리자 상세 API
   - `apps/web/src/services/intake.service.test.ts` — 단위 테스트 (10개 통과)
 
-## P0-1A. Q1~Q7 입력 스키마 고정 + 무효 요청 차단
+## P0-1A. Q1~Q7 입력 스키마 고정 + 무효 요청 차단 ✅ 완료 (2026-02-11)
 
 - 목표: 폼 질문별 역할(Q1~Q7 별칭/의미키)을 데이터 스키마로 강제해 운영 흔들림 제거
 - 구현
-  - 의미키 기반 필드 매핑 스키마 정의(`contact_channel`, `contact_value`, `target_url`, `condition_definition`, `request_window`, `check_frequency`, `billing_consent`, `scope_consent`)
+  - Zod 기반 `rawPayloadFieldsSchema` 정의 (8개 의미키: `contact_channel`, `contact_value`, `target_url`, `condition_definition`, `request_window`, `check_frequency`, `billing_consent`, `scope_consent`)
   - 필수 검증:
-    - `target_url` 유효성
-    - `condition_definition` 비어있음/모호 표현 감지
-    - `request_window` 기간 유효성(시작 <= 종료)
-    - `billing_consent`/`scope_consent` 모두 true
-  - 무효 요청은 케이스 생성 전 `REJECTED`로 분리 저장
+    - `target_url` URL 형식 유효성
+    - `condition_definition` 최소 10자 (모호 표현 감지는 P0-3에서)
+    - `request_window` 유효한 미래 날짜 (폼에 종료일만 있으므로 종료일만 검증)
+    - `billing_consent`/`scope_consent` 모두 `true`
+  - 무효 요청은 `REJECTED` 상태 + `rejectionReason`에 모든 사유를 세미콜론 구분으로 저장
+  - 유효 요청은 `extractedFields`에 정규화된 의미키 필드 저장
 - 완료조건(DoD)
-  - 폼 원문과 정규화된 의미키 필드가 함께 저장됨
-  - 무효 요청은 시작/결제 단계로 진입 불가
-  - 운영자 화면에서 “무효 사유”를 즉시 확인 가능
+  - 폼 원문(`rawPayload`)과 정규화된 의미키 필드(`extractedFields`)가 함께 저장됨
+  - 무효 요청은 `REJECTED` 상태로 분리 (P0-2 케이스 생성 시 차단 기반)
+  - 관리자 API(`GET /api/admin/submissions/:id`)에서 `rejectionReason` 즉시 확인 가능
 - 구현 위치
-  - `apps/web/src/services/intake.service.ts`
-  - `apps/web/src/services/condition-parser.service.ts`
-  - `apps/web/src/app/api/intake/google-form/route.ts`
-  - `apps/web/src/app/admin/cases/**`
+  - `apps/web/src/services/intake.service.ts` — `rawPayloadFieldsSchema` + `validateAndExtractFields` 추가
+  - `apps/web/src/services/intake.service.test.ts` — 검증 테스트 8건 추가 (총 18개)
 
 ## P0-1B. 폼 버전/질문 매핑 레지스트리 도입
 
