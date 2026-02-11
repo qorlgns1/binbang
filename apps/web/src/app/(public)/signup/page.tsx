@@ -145,12 +145,19 @@ export default function SignupPage(): React.ReactElement {
               </Link>
             </p>
 
-            <div className='text-center pt-1'>
+            <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-center'>
               <Link
                 href='/pricing'
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 요금제 보기
+              </Link>
+              <span className='text-muted-foreground'>·</span>
+              <Link
+                href='/privacy'
+                className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
+              >
+                개인정보처리방침
               </Link>
             </div>
           </CardContent>
