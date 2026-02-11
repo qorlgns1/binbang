@@ -433,3 +433,29 @@ model SelectorChangeLog {
   @@index([changedById])
   @@index([createdAt])
 }
+
+// ── Google Form Intake ──
+
+enum FormSubmissionStatus {
+  RECEIVED
+  NEEDS_REVIEW
+  REJECTED
+  PROCESSED
+}
+
+model FormSubmission {
+  id              String               @id @default(cuid())
+  responseId      String               @unique
+  status          FormSubmissionStatus  @default(RECEIVED)
+  rawPayload      Json
+  formVersion     String?
+  sourceIp        String?
+  extractedFields Json?
+  rejectionReason String?
+  receivedAt      DateTime             @default(now())
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([status])
+  @@index([receivedAt])
+}
