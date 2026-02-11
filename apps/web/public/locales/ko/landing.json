@@ -42,7 +42,9 @@
     "title": "복잡함은 저희가 처리할게요.",
     "description": "당신은 이제 마음 편히, 설레는 여행만 준비하세요.",
     "cta": "빈방 소식 받아보기",
-    "copyright": "© 2026 Binbang. All rights reserved."
+    "copyright": "© 2026 Binbang. All rights reserved.",
+    "privacy": "개인정보처리방침",
+    "terms": "서비스 약관"
   },
   "mockLogs": [
     { "id": 1, "message": "빈방 발견: 파크하얏트 서울 (프리미엄 스위트)", "location": "서울" },

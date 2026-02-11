@@ -42,7 +42,15 @@ export function Footer({ copy, lang }: FooterProps): React.ReactElement {
       </section>
 
       <footer className='border-t border-border bg-background px-4 py-7 text-center text-sm text-muted-foreground'>
-        {copy.footer.copyright}
+        <span>{copy.footer.copyright}</span>
+        <span className='mx-2'>·</span>
+        <Link href='/privacy' className='underline underline-offset-4 hover:text-foreground'>
+          {copy.footer.privacy}
+        </Link>
+        <span className='mx-2'>·</span>
+        <Link href='/terms' className='underline underline-offset-4 hover:text-foreground'>
+          {copy.footer.terms}
+        </Link>
       </footer>
     </>
   );
