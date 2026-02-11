@@ -12,16 +12,10 @@ interface AppPurposeProps {
  */
 export function AppPurpose({ copy }: AppPurposeProps): React.ReactElement {
   return (
-    <section
-      className='border-t border-border bg-muted/40 px-4 py-6 text-center'
-      aria-label='앱 목적 및 데이터 사용'
-    >
+    <section className='border-t border-border bg-muted/40 px-4 py-6 text-center' aria-label='앱 목적 및 데이터 사용'>
       <p className='mx-auto max-w-2xl text-sm leading-relaxed text-muted-foreground'>
         {copy.appPurpose}{' '}
-        <Link
-          href='/privacy'
-          className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
-        >
+        <Link href='/privacy' className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'>
           {copy.footer.privacy}
         </Link>
       </p>
