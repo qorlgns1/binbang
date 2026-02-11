@@ -1,5 +1,7 @@
 import { type CaseStatus, type Prisma, prisma } from '@workspace/db';
 
+import { type AmbiguityResult, analyzeCondition } from './condition-parser.service';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -24,6 +26,8 @@ export interface CaseOutput {
   statusChangedAt: string;
   statusChangedBy: string | null;
   note: string | null;
+  ambiguityResult: AmbiguityResult | null;
+  clarificationResolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,7 +72,8 @@ export interface GetCasesResult {
 
 const VALID_TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
   RECEIVED: ['REVIEWING'],
-  REVIEWING: ['WAITING_PAYMENT', 'REJECTED'],
+  REVIEWING: ['NEEDS_CLARIFICATION', 'WAITING_PAYMENT', 'REJECTED'],
+  NEEDS_CLARIFICATION: ['REVIEWING'],
   WAITING_PAYMENT: ['ACTIVE_MONITORING', 'CANCELLED'],
   ACTIVE_MONITORING: ['CONDITION_MET', 'EXPIRED', 'CANCELLED'],
   CONDITION_MET: ['BILLED'],
@@ -95,6 +100,8 @@ const CASE_SELECT = {
   statusChangedAt: true,
   statusChangedBy: true,
   note: true,
+  ambiguityResult: true,
+  clarificationResolvedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -139,6 +146,8 @@ interface CaseRow {
   statusChangedAt: Date;
   statusChangedBy: string | null;
   note: string | null;
+  ambiguityResult: unknown;
+  clarificationResolvedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -152,6 +161,8 @@ function toCaseOutput(row: CaseRow): CaseOutput {
     statusChangedAt: row.statusChangedAt.toISOString(),
     statusChangedBy: row.statusChangedBy,
     note: row.note,
+    ambiguityResult: (row.ambiguityResult as AmbiguityResult) ?? null,
+    clarificationResolvedAt: row.clarificationResolvedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -229,6 +240,10 @@ export async function createCase(input: CreateCaseInput): Promise<CaseDetailOutp
       throw new Error('Submission has no extracted fields');
     }
 
+    const extracted = submission.extractedFields as Record<string, unknown>;
+    const conditionText = typeof extracted.condition_definition === 'string' ? extracted.condition_definition : '';
+    const ambiguity = analyzeCondition(conditionText);
+
     await tx.formSubmission.update({
       where: { id: input.submissionId },
       data: { status: 'PROCESSED' },
@@ -239,6 +254,7 @@ export async function createCase(input: CreateCaseInput): Promise<CaseDetailOutp
       data: {
         submissionId: input.submissionId,
         statusChangedBy: input.changedById,
+        ambiguityResult: ambiguity as unknown as Prisma.InputJsonValue,
       },
       select: CASE_DETAIL_SELECT,
     });
@@ -267,7 +283,7 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
   const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
     const current = await tx.case.findUnique({
       where: { id: input.caseId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, ambiguityResult: true, clarificationResolvedAt: true },
     });
 
     if (!current) {
@@ -278,13 +294,28 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
       throw new Error(`Invalid transition: ${current.status} → ${input.toStatus}`);
     }
 
+    // Guard: REVIEWING → WAITING_PAYMENT requires resolved ambiguity
+    if (current.status === 'REVIEWING' && input.toStatus === 'WAITING_PAYMENT') {
+      const ambiguity = current.ambiguityResult as AmbiguityResult | null;
+      if (ambiguity && ambiguity.severity !== 'GREEN' && !current.clarificationResolvedAt) {
+        throw new Error('Ambiguity must be resolved before payment');
+      }
+    }
+
+    const updateData: Record<string, unknown> = {
+      status: input.toStatus,
+      statusChangedAt: new Date(),
+      statusChangedBy: input.changedById,
+    };
+
+    // Set clarificationResolvedAt when resolving clarification
+    if (current.status === 'NEEDS_CLARIFICATION' && input.toStatus === 'REVIEWING') {
+      updateData.clarificationResolvedAt = new Date();
+    }
+
     await tx.case.update({
       where: { id: input.caseId },
-      data: {
-        status: input.toStatus,
-        statusChangedAt: new Date(),
-        statusChangedBy: input.changedById,
-      },
+      data: updateData,
       select: { id: true },
     });
 

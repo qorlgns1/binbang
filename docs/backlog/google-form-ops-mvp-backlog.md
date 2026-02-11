@@ -101,19 +101,36 @@
   - `apps/web/src/app/api/admin/cases/[id]/route.ts` — 상세 조회 API
   - `apps/web/src/app/api/admin/cases/[id]/status/route.ts` — 상태 전이 API (PATCH)
 
-## P0-3. Q4 모호성 감지 + 시작 전 명확화 큐
+## P0-3. Q4 모호성 감지 + 시작 전 명확화 큐 ✅ 완료 (2026-02-11)
 
 - 목표: 애매한 요청을 시작 전에 정리해 분쟁 선제 차단
 - 구현
-  - Q4 문구에서 누락 필드(대상/기간/인원/가격/옵션)를 규칙 기반 점검
-  - 누락 시 `NEEDS_CLARIFICATION` 플래그 부여
-  - 운영자 템플릿으로 명확화 요청 메시지 1클릭 발송
+  - Q4(`condition_definition`) 텍스트에서 인원/가격 조건/트리거 문구 필수 슬롯을 규칙 기반으로 검사
+  - 모호 표현 사전(`적당한`, `괜찮은`, `저렴한`, `좋은 가격`, `가능하면`, `빨리`) 기반 감지
+  - `GREEN`/`AMBER`/`RED` 3단계 판정: GREEN(명확), AMBER(일부 누락 또는 모호), RED(트리거 자체 불명확)
+  - `CaseStatus` enum에 `NEEDS_CLARIFICATION` 정식 추가 (REVIEWING ↔ NEEDS_CLARIFICATION 양방향 전이)
+  - `Case` 모델에 `ambiguityResult`(JSON), `clarificationResolvedAt`(DateTime?) 필드 추가
+  - 가드: AMBER/RED이고 `clarificationResolvedAt` 미설정 시 `REVIEWING → WAITING_PAYMENT` 전이 차단
+  - 명확화 해결(`NEEDS_CLARIFICATION → REVIEWING` 전이) 시 `clarificationResolvedAt` 자동 설정
+  - 관리자 UI: 케이스 목록/상세 페이지, 모호성 분석 패널, 상태 전이 다이얼로그
+  - 운영자용 명확화 요청 템플릿 1클릭 복사 기능
 - 완료조건(DoD)
-  - 모호성 플래그 케이스는 결제 요청/시작 버튼 비활성화
-  - 명확화 답변 반영 후에만 다음 단계 진행 가능
+  - 모호성 AMBER/RED 케이스는 명확화 해결 전 `WAITING_PAYMENT` 전이 차단
+  - 명확화 답변 반영(NEEDS_CLARIFICATION → REVIEWING) 후에만 다음 단계 진행 가능
+  - 관리자 UI에서 모호성 분석 결과(severity, 누락 슬롯, 모호 표현) 즉시 확인 가능
 - 구현 위치
-  - `apps/web/src/services/condition-parser.service.ts` (신규)
-  - `apps/web/src/app/admin/cases/_components/clarification-panel.tsx` (신규)
+  - `packages/db/prisma/schema.prisma` — `NEEDS_CLARIFICATION` 상태, `ambiguityResult`/`clarificationResolvedAt` 필드
+  - `apps/web/src/services/condition-parser.service.ts` — 규칙 기반 모호성 감지 엔진
+  - `apps/web/src/services/condition-parser.service.test.ts` — 13개 테스트
+  - `apps/web/src/services/cases.service.ts` — 전이 규칙/가드/분석 통합 (30개 테스트)
+  - `apps/web/src/lib/queryKeys.ts` — `cases`/`caseDetail` 키 추가
+  - `apps/web/src/features/admin/cases/` — queries, mutations, index
+  - `apps/web/src/app/admin/cases/page.tsx` — 케이스 목록 페이지
+  - `apps/web/src/app/admin/cases/_components/caseManagement.tsx` — 목록 컴포넌트
+  - `apps/web/src/app/admin/cases/[id]/page.tsx` — 케이스 상세 페이지
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 상세 컴포넌트
+  - `apps/web/src/app/admin/cases/[id]/_components/clarificationPanel.tsx` — 모호성 패널
+  - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 상태 전이 다이얼로그
 
 ## P0-4. Q7 동의 2종 체크 증거화
 

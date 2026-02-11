@@ -467,6 +467,7 @@ model FormSubmission {
 enum CaseStatus {
   RECEIVED
   REVIEWING
+  NEEDS_CLARIFICATION
   WAITING_PAYMENT
   ACTIVE_MONITORING
   CONDITION_MET
@@ -486,6 +487,8 @@ model Case {
   statusChangedAt DateTime   @default(now())
   statusChangedBy String?
   note            String?    @db.Text
+  ambiguityResult         Json?
+  clarificationResolvedAt DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 

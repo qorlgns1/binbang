@@ -79,6 +79,8 @@ function makeCaseRow(overrides: Partial<Record<string, unknown>> = {}) {
     statusChangedAt: NOW,
     statusChangedBy: 'admin-1',
     note: null,
+    ambiguityResult: null,
+    clarificationResolvedAt: null,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
@@ -93,7 +95,10 @@ function makeCaseDetailRow(overrides: Partial<Record<string, unknown>> = {}) {
       responseId: 'resp-abc',
       status: 'PROCESSED',
       rawPayload: { contact_channel: '카카오톡' },
-      extractedFields: { contact_channel: '카카오톡' },
+      extractedFields: {
+        contact_channel: '카카오톡',
+        condition_definition: '2인 기준 1박 30만원 이하로 예약 가능한 상태',
+      },
       rejectionReason: null,
       receivedAt: NOW,
     },
@@ -163,6 +168,14 @@ describe('cases.service', (): void => {
       expect(isValidTransition('ACTIVE_MONITORING', 'CONDITION_MET')).toBe(true);
     });
 
+    it('allows REVIEWING → NEEDS_CLARIFICATION', (): void => {
+      expect(isValidTransition('REVIEWING', 'NEEDS_CLARIFICATION')).toBe(true);
+    });
+
+    it('allows NEEDS_CLARIFICATION → REVIEWING', (): void => {
+      expect(isValidTransition('NEEDS_CLARIFICATION', 'REVIEWING')).toBe(true);
+    });
+
     it('rejects RECEIVED → ACTIVE_MONITORING', (): void => {
       expect(isValidTransition('RECEIVED', 'ACTIVE_MONITORING')).toBe(false);
     });
@@ -193,7 +206,10 @@ describe('cases.service', (): void => {
       mockSubmissionFindUnique.mockResolvedValue({
         id: 'sub-1',
         status: 'RECEIVED',
-        extractedFields: { contact_channel: '카카오톡' },
+        extractedFields: {
+          contact_channel: '카카오톡',
+          condition_definition: '2인 기준 1박 30만원 이하로 예약 가능한 상태',
+        },
       });
       mockSubmissionUpdate.mockResolvedValue({ id: 'sub-1' });
       mockCaseCreate.mockResolvedValue(makeCaseDetailRow());
@@ -240,7 +256,10 @@ describe('cases.service', (): void => {
       mockSubmissionFindUnique.mockResolvedValue({
         id: 'sub-1',
         status: 'PROCESSED',
-        extractedFields: { contact_channel: '카카오톡' },
+        extractedFields: {
+          contact_channel: '카카오톡',
+          condition_definition: '2인 기준 1박 30만원 이하로 예약 가능한 상태',
+        },
       });
 
       await expect(createCase({ submissionId: 'sub-1', changedById: 'admin-1' })).rejects.toThrow(
@@ -267,7 +286,12 @@ describe('cases.service', (): void => {
 
   describe('transitionCaseStatus', (): void => {
     it('transitions from RECEIVED to REVIEWING', async (): Promise<void> => {
-      mockCaseFindUnique.mockResolvedValue({ id: 'case-1', status: 'RECEIVED' });
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'RECEIVED',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+      });
       mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
       mockStatusLogCreate.mockResolvedValue({ id: 'log-2' });
       mockCaseFindUniqueOrThrow.mockResolvedValue(makeCaseDetailRow({ status: 'REVIEWING' }));
@@ -297,7 +321,12 @@ describe('cases.service', (): void => {
     });
 
     it('throws on invalid transition', async (): Promise<void> => {
-      mockCaseFindUnique.mockResolvedValue({ id: 'case-1', status: 'RECEIVED' });
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'RECEIVED',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+      });
 
       await expect(
         transitionCaseStatus({
@@ -321,7 +350,12 @@ describe('cases.service', (): void => {
     });
 
     it('throws on terminal state transition', async (): Promise<void> => {
-      mockCaseFindUnique.mockResolvedValue({ id: 'case-1', status: 'CLOSED' });
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'CLOSED',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+      });
 
       await expect(
         transitionCaseStatus({
@@ -330,6 +364,91 @@ describe('cases.service', (): void => {
           changedById: 'admin-1',
         }),
       ).rejects.toThrow('Invalid transition: CLOSED → RECEIVED');
+    });
+
+    it('blocks REVIEWING → WAITING_PAYMENT when ambiguity not resolved', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'REVIEWING',
+        ambiguityResult: { severity: 'AMBER', missingSlots: ['인원'], ambiguousTerms: [] },
+        clarificationResolvedAt: null,
+      });
+
+      await expect(
+        transitionCaseStatus({
+          caseId: 'case-1',
+          toStatus: 'WAITING_PAYMENT',
+          changedById: 'admin-1',
+        }),
+      ).rejects.toThrow('Ambiguity must be resolved before payment');
+    });
+
+    it('allows REVIEWING → WAITING_PAYMENT when ambiguity resolved', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'REVIEWING',
+        ambiguityResult: { severity: 'AMBER', missingSlots: ['인원'], ambiguousTerms: [] },
+        clarificationResolvedAt: NOW,
+      });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-3' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(makeCaseDetailRow({ status: 'WAITING_PAYMENT' }));
+
+      const result = await transitionCaseStatus({
+        caseId: 'case-1',
+        toStatus: 'WAITING_PAYMENT',
+        changedById: 'admin-1',
+      });
+
+      expect(result.status).toBe('WAITING_PAYMENT');
+    });
+
+    it('allows REVIEWING → WAITING_PAYMENT when severity is GREEN', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'REVIEWING',
+        ambiguityResult: { severity: 'GREEN', missingSlots: [], ambiguousTerms: [] },
+        clarificationResolvedAt: null,
+      });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-4' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(makeCaseDetailRow({ status: 'WAITING_PAYMENT' }));
+
+      const result = await transitionCaseStatus({
+        caseId: 'case-1',
+        toStatus: 'WAITING_PAYMENT',
+        changedById: 'admin-1',
+      });
+
+      expect(result.status).toBe('WAITING_PAYMENT');
+    });
+
+    it('sets clarificationResolvedAt when resolving clarification', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'NEEDS_CLARIFICATION',
+        ambiguityResult: { severity: 'AMBER', missingSlots: [], ambiguousTerms: ['적당한'] },
+        clarificationResolvedAt: null,
+      });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-5' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(makeCaseDetailRow({ status: 'REVIEWING' }));
+
+      await transitionCaseStatus({
+        caseId: 'case-1',
+        toStatus: 'REVIEWING',
+        changedById: 'admin-1',
+        reason: 'Clarification received',
+      });
+
+      expect(mockCaseUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'REVIEWING',
+            clarificationResolvedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
   });
 
