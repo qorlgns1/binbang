@@ -3,8 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: '개인정보처리방침 | Binbang',
-  description:
-    'Binbang(빈방어때) 개인정보처리방침. 수집·이용·보관·삭제 등 개인정보 처리 방식을 안내합니다.',
+  description: 'Binbang(빈방어때) 개인정보처리방침. 수집·이용·보관·삭제 등 개인정보 처리 방식을 안내합니다.',
 };
 
 /** 정적 생성으로 항상 200 HTML 응답 보장 (OAuth 검증용). */

@@ -12,8 +12,7 @@ export const metadata: Metadata = {
     'Binbang(빈방어때)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다. Google 로그인 시 이메일은 회원 식별 및 알림 발송에만 사용됩니다.',
   openGraph: {
     title: 'Binbang – 빈방 알림 서비스',
-    description:
-      'Binbang(빈방어때)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다.',
+    description: 'Binbang(빈방어때)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다.',
   },
 };
 
