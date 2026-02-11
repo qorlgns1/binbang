@@ -55,6 +55,7 @@ export interface LandingCopy {
     description: string;
     cta: string;
     copyright: string;
+    privacy: string;
   };
   mockLogs: Array<{
     id: number;
