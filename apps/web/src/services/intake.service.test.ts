@@ -2,31 +2,38 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createFormSubmission, getFormSubmissionById, getFormSubmissions } from './intake.service';
 
-const { mockCreate, mockFindUnique, mockFindMany, mockCount, mockUpdate } = vi.hoisted(
-  (): {
-    mockCreate: ReturnType<typeof vi.fn>;
-    mockFindUnique: ReturnType<typeof vi.fn>;
-    mockFindMany: ReturnType<typeof vi.fn>;
-    mockCount: ReturnType<typeof vi.fn>;
-    mockUpdate: ReturnType<typeof vi.fn>;
-  } => ({
-    mockCreate: vi.fn(),
-    mockFindUnique: vi.fn(),
-    mockFindMany: vi.fn(),
-    mockCount: vi.fn(),
-    mockUpdate: vi.fn(),
-  }),
-);
+const { mockCreate, mockFindUnique, mockFindUniqueOrThrow, mockFindMany, mockCount, mockUpdate, mockTransaction } =
+  vi.hoisted(
+    (): {
+      mockCreate: ReturnType<typeof vi.fn>;
+      mockFindUnique: ReturnType<typeof vi.fn>;
+      mockFindUniqueOrThrow: ReturnType<typeof vi.fn>;
+      mockFindMany: ReturnType<typeof vi.fn>;
+      mockCount: ReturnType<typeof vi.fn>;
+      mockUpdate: ReturnType<typeof vi.fn>;
+      mockTransaction: ReturnType<typeof vi.fn>;
+    } => ({
+      mockCreate: vi.fn(),
+      mockFindUnique: vi.fn(),
+      mockFindUniqueOrThrow: vi.fn(),
+      mockFindMany: vi.fn(),
+      mockCount: vi.fn(),
+      mockUpdate: vi.fn(),
+      mockTransaction: vi.fn(),
+    }),
+  );
 
 vi.mock('@workspace/db', () => ({
   prisma: {
     formSubmission: {
       create: mockCreate,
       findUnique: mockFindUnique,
+      findUniqueOrThrow: mockFindUniqueOrThrow,
       findMany: mockFindMany,
       count: mockCount,
       update: mockUpdate,
     },
+    $transaction: mockTransaction,
   },
 }));
 
@@ -68,10 +75,25 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+function setupTransactionMock(): void {
+  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      formSubmission: {
+        create: mockCreate,
+        findUnique: mockFindUnique,
+        findUniqueOrThrow: mockFindUniqueOrThrow,
+        update: mockUpdate,
+      },
+    };
+    return fn(tx);
+  });
+}
+
 describe('intake.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
     mockUpdate.mockResolvedValue({ id: 'sub-1' });
+    setupTransactionMock();
   });
 
   // ==========================================================================
@@ -85,7 +107,7 @@ describe('intake.service', (): void => {
       const updatedRow = makeRow({ rawPayload: payload, extractedFields: payload });
 
       mockCreate.mockResolvedValue(row);
-      mockFindUnique.mockResolvedValue(updatedRow);
+      mockFindUniqueOrThrow.mockResolvedValue(updatedRow);
 
       const result = await createFormSubmission({
         responseId: 'resp-abc',
@@ -98,7 +120,7 @@ describe('intake.service', (): void => {
       expect(result.submission.extractedFields).toEqual(payload);
       expect(mockCreate).toHaveBeenCalledOnce();
       expect(mockUpdate).toHaveBeenCalledOnce();
-      expect(mockFindUnique).toHaveBeenCalledOnce();
+      expect(mockFindUniqueOrThrow).toHaveBeenCalledOnce();
     });
 
     it('rejects submission with invalid payload and sets rejectionReason', async (): Promise<void> => {
@@ -111,7 +133,7 @@ describe('intake.service', (): void => {
       });
 
       mockCreate.mockResolvedValue(row);
-      mockFindUnique.mockResolvedValue(rejectedRow);
+      mockFindUniqueOrThrow.mockResolvedValue(rejectedRow);
 
       const result = await createFormSubmission({
         responseId: 'resp-abc',
@@ -180,11 +202,7 @@ describe('intake.service', (): void => {
     function setupCreateWithPayload(payload: Record<string, unknown>) {
       const row = makeRow({ rawPayload: payload });
       mockCreate.mockResolvedValue(row);
-      // findUnique will be called after update to return the latest state
-      mockFindUnique.mockImplementation(({ where }: { where: { id?: string; responseId?: string } }) => {
-        if (where.id) return Promise.resolve(row);
-        return Promise.resolve(null);
-      });
+      mockFindUniqueOrThrow.mockResolvedValue(row);
     }
 
     it('rejects when billing_consent is false', async (): Promise<void> => {

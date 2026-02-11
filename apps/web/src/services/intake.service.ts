@@ -147,55 +147,52 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
 // Service Functions
 // ============================================================================
 
-async function validateAndExtractFields(submissionId: string, rawPayload: Record<string, unknown>): Promise<void> {
-  const result = rawPayloadFieldsSchema.safeParse(rawPayload);
-
-  if (result.success) {
-    await prisma.formSubmission.update({
-      where: { id: submissionId },
-      data: {
-        extractedFields: result.data as unknown as Prisma.InputJsonValue,
-        consentBillingOnConditionMet: result.data.billing_consent,
-        consentServiceScope: result.data.scope_consent,
-        consentCapturedAt: new Date(),
-        consentTexts: CONSENT_TEXTS as unknown as Prisma.InputJsonValue,
-      },
-      select: { id: true },
-    });
-  } else {
-    const reasons = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
-    await prisma.formSubmission.update({
-      where: { id: submissionId },
-      data: {
-        status: 'REJECTED',
-        rejectionReason: reasons.join('; '),
-      },
-      select: { id: true },
-    });
-  }
-}
-
 export async function createFormSubmission(input: CreateFormSubmissionInput): Promise<CreateFormSubmissionResult> {
   try {
-    const created = await prisma.formSubmission.create({
-      data: {
-        responseId: input.responseId,
-        rawPayload: input.rawPayload as unknown as Prisma.InputJsonValue,
-        sourceIp: input.sourceIp,
-      },
-      select: FORM_SUBMISSION_SELECT,
+    const result = await prisma.$transaction(async (tx): Promise<FormSubmissionRow> => {
+      const created = await tx.formSubmission.create({
+        data: {
+          responseId: input.responseId,
+          rawPayload: input.rawPayload as unknown as Prisma.InputJsonValue,
+          sourceIp: input.sourceIp,
+        },
+        select: FORM_SUBMISSION_SELECT,
+      });
+
+      // rawPayload 검증/추출
+      const parseResult = rawPayloadFieldsSchema.safeParse(input.rawPayload);
+
+      if (parseResult.success) {
+        await tx.formSubmission.update({
+          where: { id: created.id },
+          data: {
+            extractedFields: parseResult.data as unknown as Prisma.InputJsonValue,
+            consentBillingOnConditionMet: parseResult.data.billing_consent,
+            consentServiceScope: parseResult.data.scope_consent,
+            consentCapturedAt: new Date(),
+            consentTexts: CONSENT_TEXTS as unknown as Prisma.InputJsonValue,
+          },
+          select: { id: true },
+        });
+      } else {
+        const reasons = parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
+        await tx.formSubmission.update({
+          where: { id: created.id },
+          data: {
+            status: 'REJECTED',
+            rejectionReason: reasons.join('; '),
+          },
+          select: { id: true },
+        });
+      }
+
+      return tx.formSubmission.findUniqueOrThrow({
+        where: { id: created.id },
+        select: FORM_SUBMISSION_SELECT,
+      });
     });
 
-    // 신규 생성 후 rawPayload 검증/추출
-    await validateAndExtractFields(created.id, input.rawPayload);
-
-    // 검증 결과가 반영된 최신 상태 조회
-    const updated = await prisma.formSubmission.findUnique({
-      where: { id: created.id },
-      select: FORM_SUBMISSION_SELECT,
-    });
-
-    return { submission: toOutput(updated ?? created), created: true };
+    return { submission: toOutput(result), created: true };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       const existing = await prisma.formSubmission.findUnique({

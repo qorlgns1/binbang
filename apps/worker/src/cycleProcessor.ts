@@ -1,7 +1,8 @@
-import { prisma } from '@workspace/db';
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
+  createCheckCycle,
   findActiveCaseLinks,
+  findActiveAccommodations,
   getSettings,
   loadSettings,
   updateHeartbeat,
@@ -24,23 +25,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
 
     const startTime = Date.now();
 
-    const accommodations = await prisma.accommodation.findMany({
-      where: {
-        isActive: true,
-        checkIn: { gte: new Date() },
-      },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-        platform: true,
-        checkIn: true,
-        checkOut: true,
-        adults: true,
-        lastStatus: true,
-        user: { select: { id: true, kakaoAccessToken: true } },
-      },
-    });
+    const accommodations = await findActiveAccommodations();
 
     // ACTIVE_MONITORING 상태 Case 중 숙소가 연결된 것들을 조회
     const caseByAccommodationId = await findActiveCaseLinks();
@@ -56,17 +41,14 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       return;
     }
 
-    const cycle = await prisma.checkCycle.create({
-      data: {
-        startedAt: new Date(startTime),
-        totalCount: accommodations.length,
-        concurrency: settings.worker.concurrency,
-        browserPoolSize: settings.worker.browserPoolSize,
-        navigationTimeoutMs: settings.browser.navigationTimeoutMs,
-        contentWaitMs: settings.browser.contentWaitMs,
-        maxRetries: settings.checker.maxRetries,
-      },
-      select: { id: true },
+    const cycleId = await createCheckCycle({
+      startedAt: new Date(startTime),
+      totalCount: accommodations.length,
+      concurrency: settings.worker.concurrency,
+      browserPoolSize: settings.worker.browserPoolSize,
+      navigationTimeoutMs: settings.browser.navigationTimeoutMs,
+      contentWaitMs: settings.browser.contentWaitMs,
+      maxRetries: settings.checker.maxRetries,
     });
 
     const jobs = accommodations.map((acc): { name: string; data: CheckJobPayload } => {
@@ -74,7 +56,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       return {
         name: 'check',
         data: {
-          cycleId: cycle.id,
+          cycleId,
           accommodationId: acc.id,
           name: acc.name,
           url: acc.url,
@@ -92,6 +74,6 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
 
     await checkQueue.addBulk(jobs);
 
-    console.log(`${accommodations.length} check jobs queued for cycle ${cycle.id}`);
+    console.log(`${accommodations.length} check jobs queued for cycle ${cycleId}`);
   };
 }
