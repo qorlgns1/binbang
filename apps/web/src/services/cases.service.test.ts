@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createCase, getCaseById, getCases, isValidTransition, transitionCaseStatus } from './cases.service';
+import {
+  confirmPayment,
+  createCase,
+  getCaseById,
+  getCases,
+  isValidTransition,
+  transitionCaseStatus,
+} from './cases.service';
 
 // ============================================================================
 // Mock setup
@@ -81,6 +88,8 @@ function makeCaseRow(overrides: Partial<Record<string, unknown>> = {}) {
     note: null,
     ambiguityResult: null,
     clarificationResolvedAt: null,
+    paymentConfirmedAt: null,
+    paymentConfirmedBy: null,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
@@ -100,6 +109,10 @@ function makeCaseDetailRow(overrides: Partial<Record<string, unknown>> = {}) {
         condition_definition: '2인 기준 1박 30만원 이하로 예약 가능한 상태',
       },
       rejectionReason: null,
+      consentBillingOnConditionMet: null,
+      consentServiceScope: null,
+      consentCapturedAt: null,
+      consentTexts: null,
       receivedAt: NOW,
     },
     statusLogs: [
@@ -522,6 +535,128 @@ describe('cases.service', (): void => {
         expect.objectContaining({
           where: { status: 'REVIEWING' },
         }),
+      );
+    });
+  });
+
+  // ==========================================================================
+  // Payment gate: transitionCaseStatus
+  // ==========================================================================
+
+  describe('payment gate', (): void => {
+    it('blocks WAITING_PAYMENT → ACTIVE_MONITORING when payment not confirmed', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+        paymentConfirmedAt: null,
+      });
+
+      await expect(
+        transitionCaseStatus({
+          caseId: 'case-1',
+          toStatus: 'ACTIVE_MONITORING',
+          changedById: 'admin-1',
+        }),
+      ).rejects.toThrow('Payment must be confirmed before monitoring start');
+    });
+
+    it('allows WAITING_PAYMENT → ACTIVE_MONITORING when payment confirmed', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        ambiguityResult: null,
+        clarificationResolvedAt: null,
+        paymentConfirmedAt: NOW,
+      });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-pay' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(makeCaseDetailRow({ status: 'ACTIVE_MONITORING' }));
+
+      const result = await transitionCaseStatus({
+        caseId: 'case-1',
+        toStatus: 'ACTIVE_MONITORING',
+        changedById: 'admin-1',
+      });
+
+      expect(result.status).toBe('ACTIVE_MONITORING');
+    });
+  });
+
+  // ==========================================================================
+  // confirmPayment
+  // ==========================================================================
+
+  describe('confirmPayment', (): void => {
+    it('sets paymentConfirmedAt and paymentConfirmedBy', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        paymentConfirmedAt: null,
+      });
+      mockCaseUpdate.mockResolvedValue({ id: 'case-1' });
+      mockStatusLogCreate.mockResolvedValue({ id: 'log-pc' });
+      mockCaseFindUniqueOrThrow.mockResolvedValue(
+        makeCaseDetailRow({ status: 'WAITING_PAYMENT', paymentConfirmedAt: NOW, paymentConfirmedBy: 'admin-1' }),
+      );
+
+      const result = await confirmPayment({
+        caseId: 'case-1',
+        confirmedById: 'admin-1',
+        note: '계좌이체 확인',
+      });
+
+      expect(result.paymentConfirmedAt).toBeTruthy();
+      expect(result.paymentConfirmedBy).toBe('admin-1');
+      expect(mockCaseUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            paymentConfirmedAt: expect.any(Date),
+            paymentConfirmedBy: 'admin-1',
+          }),
+        }),
+      );
+      expect(mockStatusLogCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fromStatus: 'WAITING_PAYMENT',
+            toStatus: 'WAITING_PAYMENT',
+            reason: '계좌이체 확인',
+          }),
+        }),
+      );
+    });
+
+    it('throws when case not found', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue(null);
+
+      await expect(confirmPayment({ caseId: 'non-existent', confirmedById: 'admin-1' })).rejects.toThrow(
+        'Case not found',
+      );
+    });
+
+    it('throws when case not in WAITING_PAYMENT status', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'REVIEWING',
+        paymentConfirmedAt: null,
+      });
+
+      await expect(confirmPayment({ caseId: 'case-1', confirmedById: 'admin-1' })).rejects.toThrow(
+        'Payment confirmation requires WAITING_PAYMENT status',
+      );
+    });
+
+    it('throws when already confirmed', async (): Promise<void> => {
+      mockCaseFindUnique.mockResolvedValue({
+        id: 'case-1',
+        status: 'WAITING_PAYMENT',
+        paymentConfirmedAt: NOW,
+      });
+
+      await expect(confirmPayment({ caseId: 'case-1', confirmedById: 'admin-1' })).rejects.toThrow(
+        'Payment already confirmed',
       );
     });
   });

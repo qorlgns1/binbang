@@ -24,6 +24,8 @@ export interface CaseItem {
   note: string | null;
   ambiguityResult: AmbiguityResult | null;
   clarificationResolvedAt: string | null;
+  paymentConfirmedAt: string | null;
+  paymentConfirmedBy: string | null;
   createdAt: string;
   updatedAt: string;
 }

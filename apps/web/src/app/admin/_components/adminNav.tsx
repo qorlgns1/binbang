@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/admin/heartbeat', label: 'Heartbeat' },
   { href: '/admin/throughput', label: 'Throughput' },
   { href: '/admin/selectors', label: 'Selectors' },
+  { href: '/admin/cases', label: 'Cases' },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/plans', label: 'Plans' },
   { href: '/admin/audit-logs', label: 'Audit' },

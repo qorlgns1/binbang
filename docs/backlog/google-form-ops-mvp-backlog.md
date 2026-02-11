@@ -154,20 +154,30 @@
   - `apps/web/src/app/admin/cases/[id]/_components/consentEvidencePanel.tsx` — Q7 동의 증거 패널
   - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 패널 통합
 
-## P0-5. 결제 확인 전 시작 차단(하드 게이트)
+## P0-5. 결제 확인 전 시작 차단(하드 게이트) ✅ 완료 (2026-02-11)
 
-- 목표: 운영 원칙 “결제 전 시작 금지”를 시스템으로 강제
+- 목표: 운영 원칙 "결제 전 시작 금지"를 시스템으로 강제
 - 구현
-  - `paymentConfirmedAt` nullable 필드 추가
-  - 결제 확인 액션 전에는 워커 잡 enqueue 금지
-  - 결제 확인 시점과 확인자(운영자) 감사 로그 저장
+  - `Case` 모델에 `paymentConfirmedAt`(DateTime?), `paymentConfirmedBy`(String?) 필드 추가
+  - `confirmPayment()` 서비스 함수: WAITING_PAYMENT 상태에서만 결제 확인 가능, 이미 확인된 경우 에러
+  - 결제 확인 시 감사 로그(`CaseStatusLog`): `WAITING_PAYMENT → WAITING_PAYMENT` + reason 기록 (상태 변경 없이 이력 보존)
+  - 결제 가드: `paymentConfirmedAt`가 null이면 `WAITING_PAYMENT → ACTIVE_MONITORING` 전이 차단
+  - 관리자 UI: 결제 확인 버튼 (WAITING_PAYMENT + 미확인 시 표시), 확인 완료 상태 표시
+  - 상태 전이 다이얼로그: 결제 미확인 시 "모니터링 시작" 옵션 비활성화 + 안내 메시지
 - 완료조건(DoD)
-  - 결제 미확인 케이스의 시작 API 호출은 4xx로 실패
+  - 결제 미확인 케이스의 `ACTIVE_MONITORING` 전이 API 호출은 에러로 실패
   - 결제 확인 후에만 `ACTIVE_MONITORING` 전이 가능
+  - 결제 확인 시점/확인자가 DB에 영구 저장
 - 구현 위치
-  - `apps/web/src/services/payments.service.ts` (신규)
-  - `apps/web/src/services/cases.service.ts`
-  - `packages/worker-shared/src/runtime/**` (enqueue 가드)
+  - `packages/db/prisma/schema.prisma` — `Case`에 `paymentConfirmedAt`/`paymentConfirmedBy` 추가
+  - `apps/web/src/services/cases.service.ts` — `confirmPayment()` + 결제 가드 + 타입/select 확장
+  - `apps/web/src/services/cases.service.test.ts` — 결제 가드 + confirmPayment 테스트 6건 추가 (총 36개)
+  - `apps/web/src/app/api/admin/cases/[id]/payment/route.ts` — 결제 확인 API (POST)
+  - `apps/web/src/features/admin/cases/mutations.ts` — `useConfirmPaymentMutation` 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `CaseItem` 타입에 결제 필드 추가
+  - `apps/web/src/app/admin/cases/[id]/_components/paymentConfirmButton.tsx` — 결제 확인 버튼
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 결제 버튼 통합
+  - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 결제 미확인 시 비활성화
 
 ## P0-6. 조건 충족(열림 확인) 이벤트 증거 패킷
 

@@ -18,6 +18,12 @@ export interface TransitionCaseStatusInput {
   reason?: string;
 }
 
+export interface ConfirmPaymentInput {
+  caseId: string;
+  confirmedById: string;
+  note?: string;
+}
+
 export interface CaseOutput {
   id: string;
   submissionId: string;
@@ -28,6 +34,8 @@ export interface CaseOutput {
   note: string | null;
   ambiguityResult: AmbiguityResult | null;
   clarificationResolvedAt: string | null;
+  paymentConfirmedAt: string | null;
+  paymentConfirmedBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +114,8 @@ const CASE_SELECT = {
   note: true,
   ambiguityResult: true,
   clarificationResolvedAt: true,
+  paymentConfirmedAt: true,
+  paymentConfirmedBy: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -156,6 +166,8 @@ interface CaseRow {
   note: string | null;
   ambiguityResult: unknown;
   clarificationResolvedAt: Date | null;
+  paymentConfirmedAt: Date | null;
+  paymentConfirmedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -171,6 +183,8 @@ function toCaseOutput(row: CaseRow): CaseOutput {
     note: row.note,
     ambiguityResult: (row.ambiguityResult as AmbiguityResult) ?? null,
     clarificationResolvedAt: row.clarificationResolvedAt?.toISOString() ?? null,
+    paymentConfirmedAt: row.paymentConfirmedAt?.toISOString() ?? null,
+    paymentConfirmedBy: row.paymentConfirmedBy,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -299,7 +313,13 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
   const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
     const current = await tx.case.findUnique({
       where: { id: input.caseId },
-      select: { id: true, status: true, ambiguityResult: true, clarificationResolvedAt: true },
+      select: {
+        id: true,
+        status: true,
+        ambiguityResult: true,
+        clarificationResolvedAt: true,
+        paymentConfirmedAt: true,
+      },
     });
 
     if (!current) {
@@ -315,6 +335,13 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
       const ambiguity = current.ambiguityResult as AmbiguityResult | null;
       if (ambiguity && ambiguity.severity !== 'GREEN' && !current.clarificationResolvedAt) {
         throw new Error('Ambiguity must be resolved before payment');
+      }
+    }
+
+    // Guard: WAITING_PAYMENT → ACTIVE_MONITORING requires payment confirmation
+    if (current.status === 'WAITING_PAYMENT' && input.toStatus === 'ACTIVE_MONITORING') {
+      if (!current.paymentConfirmedAt) {
+        throw new Error('Payment must be confirmed before monitoring start');
       }
     }
 
@@ -342,6 +369,54 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
         toStatus: input.toStatus,
         changedById: input.changedById,
         reason: input.reason,
+      },
+      select: { id: true },
+    });
+
+    return tx.case.findUniqueOrThrow({
+      where: { id: input.caseId },
+      select: CASE_DETAIL_SELECT,
+    });
+  });
+
+  return toCaseDetailOutput(result);
+}
+
+export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDetailOutput> {
+  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
+    const current = await tx.case.findUnique({
+      where: { id: input.caseId },
+      select: { id: true, status: true, paymentConfirmedAt: true },
+    });
+
+    if (!current) {
+      throw new Error('Case not found');
+    }
+
+    if (current.status !== 'WAITING_PAYMENT') {
+      throw new Error(`Payment confirmation requires WAITING_PAYMENT status, current: ${current.status}`);
+    }
+
+    if (current.paymentConfirmedAt) {
+      throw new Error('Payment already confirmed');
+    }
+
+    await tx.case.update({
+      where: { id: input.caseId },
+      data: {
+        paymentConfirmedAt: new Date(),
+        paymentConfirmedBy: input.confirmedById,
+      },
+      select: { id: true },
+    });
+
+    await tx.caseStatusLog.create({
+      data: {
+        caseId: input.caseId,
+        fromStatus: 'WAITING_PAYMENT',
+        toStatus: 'WAITING_PAYMENT',
+        changedById: input.confirmedById,
+        reason: input.note ?? '결제 확인',
       },
       select: { id: true },
     });

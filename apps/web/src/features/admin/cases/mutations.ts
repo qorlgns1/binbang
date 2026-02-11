@@ -19,11 +19,20 @@ interface TransitionCaseStatusVariables {
   reason?: string;
 }
 
+interface ConfirmPaymentVariables {
+  caseId: string;
+  note?: string;
+}
+
 interface CreateCaseResponse {
   case: CaseDetail;
 }
 
 interface TransitionCaseStatusResponse {
+  case: CaseDetail;
+}
+
+interface ConfirmPaymentResponse {
   case: CaseDetail;
 }
 
@@ -33,6 +42,7 @@ export type UseTransitionCaseStatusMutationResult = UseMutationResult<
   Error,
   TransitionCaseStatusVariables
 >;
+export type UseConfirmPaymentMutationResult = UseMutationResult<ConfirmPaymentResponse, Error, ConfirmPaymentVariables>;
 
 // ============================================================================
 // Mutation Functions
@@ -68,6 +78,19 @@ async function transitionCaseStatus({
   return res.json();
 }
 
+async function confirmPayment({ caseId, note }: ConfirmPaymentVariables): Promise<ConfirmPaymentResponse> {
+  const res = await fetch(`/api/admin/cases/${caseId}/payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || '결제 확인에 실패했습니다');
+  }
+  return res.json();
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -88,6 +111,18 @@ export function useTransitionCaseStatusMutation(): UseTransitionCaseStatusMutati
 
   return useMutation({
     mutationFn: transitionCaseStatus,
+    onSuccess: (_data, variables): void => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    },
+  });
+}
+
+export function useConfirmPaymentMutation(): UseConfirmPaymentMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: confirmPayment,
     onSuccess: (_data, variables): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
       queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });

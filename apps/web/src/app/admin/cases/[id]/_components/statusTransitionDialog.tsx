@@ -20,6 +20,7 @@ import { useTransitionCaseStatusMutation } from '@/features/admin/cases';
 interface Props {
   caseId: string;
   currentStatus: string;
+  paymentConfirmedAt: string | null;
 }
 
 const TRANSITIONS: Record<string, { value: string; label: string }[]> = {
@@ -43,7 +44,7 @@ const TRANSITIONS: Record<string, { value: string; label: string }[]> = {
   BILLED: [{ value: 'CLOSED', label: '완료 처리' }],
 };
 
-export function StatusTransitionDialog({ caseId, currentStatus }: Props) {
+export function StatusTransitionDialog({ caseId, currentStatus, paymentConfirmedAt }: Props) {
   const [open, setOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState('');
   const [reason, setReason] = useState('');
@@ -93,11 +94,15 @@ export function StatusTransitionDialog({ caseId, currentStatus }: Props) {
                 <SelectValue placeholder='상태 선택' />
               </SelectTrigger>
               <SelectContent>
-                {availableTransitions.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
+                {availableTransitions.map((t) => {
+                  const disabled = t.value === 'ACTIVE_MONITORING' && !paymentConfirmedAt;
+                  return (
+                    <SelectItem key={t.value} value={t.value} disabled={disabled}>
+                      {t.label}
+                      {disabled ? ' (결제 확인 필요)' : ''}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

@@ -12,6 +12,7 @@ import { useCaseDetailQuery } from '@/features/admin/cases';
 
 import { ClarificationPanel } from './clarificationPanel';
 import { ConsentEvidencePanel } from './consentEvidencePanel';
+import { PaymentConfirmButton } from './paymentConfirmButton';
 import { StatusTransitionDialog } from './statusTransitionDialog';
 
 interface Props {
@@ -78,7 +79,11 @@ export function CaseDetailView({ caseId }: Props) {
             <CardHeader>
               <CardTitle className='flex items-center justify-between'>
                 <span>기본 정보</span>
-                <StatusTransitionDialog caseId={caseId} currentStatus={caseData.status} />
+                <StatusTransitionDialog
+                  caseId={caseId}
+                  currentStatus={caseData.status}
+                  paymentConfirmedAt={caseData.paymentConfirmedAt}
+                />
               </CardTitle>
             </CardHeader>
             <CardContent className='space-y-3'>
@@ -88,6 +93,12 @@ export function CaseDetailView({ caseId }: Props) {
               <InfoRow label='최종 변경' value={formatDateTime(caseData.statusChangedAt)} />
               {caseData.assignedTo && <InfoRow label='담당자' value={caseData.assignedTo} />}
               {caseData.note && <InfoRow label='메모' value={caseData.note} />}
+              <PaymentConfirmButton
+                caseId={caseId}
+                currentStatus={caseData.status}
+                paymentConfirmedAt={caseData.paymentConfirmedAt}
+                paymentConfirmedBy={caseData.paymentConfirmedBy}
+              />
             </CardContent>
           </Card>
 

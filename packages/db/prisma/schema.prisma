@@ -493,6 +493,8 @@ model Case {
   note            String?    @db.Text
   ambiguityResult         Json?
   clarificationResolvedAt DateTime?
+  paymentConfirmedAt  DateTime?
+  paymentConfirmedBy  String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
