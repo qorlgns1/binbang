@@ -53,6 +53,9 @@ export async function PATCH(request: Request): Promise<Response> {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
     console.error('Tutorial update error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
