@@ -46,6 +46,7 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   },
+  "appPurpose": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available. When you sign in with Google, we use your email address only for account identification and sending vacancy alerts.",
   "mockLogs": [
     { "id": 1, "message": "Vacancy found: Park Hyatt Seoul (Premium Suite)", "location": "Seoul" },
     { "id": 2, "message": "Vacancy found: Grand Hyatt Jeju (Ocean View Deluxe)", "location": "Jeju" },
