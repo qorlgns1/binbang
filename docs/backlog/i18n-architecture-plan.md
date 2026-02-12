@@ -59,9 +59,10 @@
 
 ### 2.1 Locale / Language / Region
 
-- **Language**: `ko`, `en` 등 (UI 언어)
+- **Language**: `ko`, `en`, `ja`, `zh`, `es` 등 (UI 언어)
 - **Locale**: `ko-KR`, `en-US` 등 (언어+지역)
-- 본 계획서는 초기에 `ko`, `en`을 최소 집합으로 두되, 설계는 Locale 확장(`en-US`, `en-GB`)이 가능해야 한다.
+- 본 계획서의 1차 지원 locale은 `ko`, `en`, `ja`, `zh-CN`, `es-419`를 기준으로 한다.
+- 2차 확장 시 지역 분리 locale(`zh-TW`, `es-ES` 등)로 확장 가능해야 한다.
 
 ### 2.2 Namespace
 
@@ -175,6 +176,23 @@ DoD(호환성):
   을 포함하지 않는다.
 - 사용자 데이터는 항상 런타임 파라미터로 주입하고, 번역 리소스는 “정적 텍스트/ICU 템플릿”만 담는다.
 
+### ADR-9. 지원 Locale 세트 + 지역 매핑 정책
+
+권장 결정:
+
+- 1차 지원 locale: `ko`, `en`, `ja`, `zh-CN`, `es-419`
+- 기본 locale(`defaultLocale`): `ko`
+
+지역 매핑 정책(1차):
+
+- `zh-*` 요청은 `zh-CN`으로 매핑한다.
+- `es-*` 요청은 `es-419`로 매핑한다.
+
+2차 분리 정책:
+
+- 트래픽/고객요청/운영지표가 충분하면 `zh-TW`, `es-ES`를 별도 locale로 분리한다.
+- 분리 전까지는 매핑 정책으로 일관성을 유지한다.
+
 ---
 
 ## 4. 목표 아키텍처(To-Be) 개요
@@ -275,13 +293,62 @@ export function LoginButton(): React.ReactElement {
 - **Mode A (기본)**: Public만 `/{lang}/...` prefix 적용, App/Admin은 비-prefix 운영
 - **Mode B (옵션)**: Public/App/Admin 모두 `/{lang}/...` prefix로 통일
 
-지원 언어(예시): `ko`, `en`
+지원 언어(1차): `ko`, `en`, `ja`, `zh-CN`, `es-419`
 
 핵심 규칙:
 
 - URL에 locale이 있으면 **그 값이 Source of Truth**다.
 - URL에 locale이 없으면 (Mode에 따라) cookie/header로 **1차 협상 후 redirect**한다.
 - 로그인 사용자 `preferredLocale`은 서버에서 **2차 확정**에 반영된다(ADR-2 참고).
+
+### 5.6A Public 라우팅 구조 재설계(파일 시스템 정렬)
+
+문제:
+
+- Public 라우트가 `/(public)/[lang]/...`와 `/(public)/...`로 혼재하면,
+  locale 소스 우선순위(URL 최우선), 링크 정책, 테스트 케이스가 분산된다.
+
+목표(Mode A 기준):
+
+- Public 페이지는 파일 시스템 기준으로 `apps/web/src/app/(public)/[lang]/**`로 통일한다.
+- 비어드민 App 페이지(`(app)/**`)는 비-prefix 유지(Mode A 기본 정책).
+
+현재 -> 목표(권장 매핑):
+
+- `apps/web/src/app/(public)/[lang]/page.tsx` -> 유지
+- `apps/web/src/app/(public)/pricing/page.tsx` -> `apps/web/src/app/(public)/[lang]/pricing/page.tsx`
+- `apps/web/src/app/(public)/login/page.tsx` -> `apps/web/src/app/(public)/[lang]/login/page.tsx`
+- `apps/web/src/app/(public)/signup/page.tsx` -> `apps/web/src/app/(public)/[lang]/signup/page.tsx`
+- `apps/web/src/app/(public)/terms/page.tsx` -> `apps/web/src/app/(public)/[lang]/terms/page.tsx`
+- `apps/web/src/app/(public)/privacy/page.tsx` -> `apps/web/src/app/(public)/[lang]/privacy/page.tsx`
+
+마이그레이션 규칙:
+
+- 전환 기간에는 레거시 비-prefix 경로를 삭제하지 말고, middleware redirect로 canonical 경로(`/[lang]/...`)로 수렴시킨다.
+- canonical 경로 정착 후 레거시 파일/라우트를 제거한다(SEO 작업 전에 완료).
+
+### 5.6B Public 공통 헤더 + 언어 변경 UX 표준
+
+목표:
+
+- Public 페이지(landing/pricing/login/signup/terms/privacy)에
+  **경량 공통 헤더(브랜드 + 언어 변경)** 를 일관 적용한다.
+
+권장 구성:
+
+- 공통 헤더는 `apps/web/src/app/(public)/[lang]/layout.tsx`에서 주입한다.
+- 필수 요소:
+  - 브랜드/홈 링크
+    - 브랜드 표기 정책: `ko` locale은 `빈방`, 그 외 locale(`en`, `ja`, `zh-CN`, `es-419`)은 `binbang`
+  - 언어 변경 컨트롤(예: `ko` / `en` / `ja` / `zh-CN` / `es-419`)
+
+언어 변경 동작 규칙(필수):
+
+- 같은 페이지를 유지한 채 locale만 전환한다.
+  - 예: `/ko/pricing?plan=pro` -> `/es-419/pricing?plan=pro`
+- path와 query를 유지한다(불필요한 랜딩 페이지 복귀 금지).
+- 로그인 사용자라면 언어 변경 시 `preferredLocale` 동기화 정책을 적용한다.
+- 전환 후 화면 텍스트/포맷이 새 locale 기준으로 즉시 반영되어야 한다.
 
 ### 5.7 Middleware에서 locale 협상 + redirect(예시)
 
@@ -291,12 +358,26 @@ export function LoginButton(): React.ReactElement {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const SUPPORTED = new Set(['ko', 'en'] as const);
+const SUPPORTED = new Set(['ko', 'en', 'ja', 'zh-CN', 'es-419'] as const);
+type SupportedLocale = 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419';
 const DEFAULT_LOCALE = 'ko';
 
-function parseLocaleFromPath(pathname: string): string | null {
+function mapToSupportedLocale(raw: string | null | undefined): SupportedLocale | null {
+  if (!raw) return null;
+  if (SUPPORTED.has(raw as SupportedLocale)) return raw as SupportedLocale;
+
+  const normalized = raw.toLowerCase();
+  if (normalized.startsWith('zh')) return 'zh-CN';
+  if (normalized.startsWith('es')) return 'es-419';
+  if (normalized.startsWith('ja')) return 'ja';
+  if (normalized.startsWith('en')) return 'en';
+  if (normalized.startsWith('ko')) return 'ko';
+  return null;
+}
+
+function parseLocaleFromPath(pathname: string): SupportedLocale | null {
   const maybe = pathname.split('/')[1];
-  return maybe && SUPPORTED.has(maybe as 'ko' | 'en') ? maybe : null;
+  return mapToSupportedLocale(maybe);
 }
 
 export function middleware(req: NextRequest): NextResponse {
@@ -308,12 +389,12 @@ export function middleware(req: NextRequest): NextResponse {
 
   // 2) 1차 협상(예시, Edge-safe): cookie -> Accept-Language -> default
   // DB(user preferredLocale)는 여기서 다루지 않는다(ADR-2 참고).
-  const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value;
-  const headerLocale = req.headers.get('accept-language')?.split(',')[0]?.split('-')[0];
+  const cookieLocale = mapToSupportedLocale(req.cookies.get('NEXT_LOCALE')?.value);
+  const headerLocale = mapToSupportedLocale(req.headers.get('accept-language')?.split(',')[0]);
 
   const negotiated =
-    (cookieLocale && SUPPORTED.has(cookieLocale as 'ko' | 'en') ? cookieLocale : null) ??
-    (headerLocale && SUPPORTED.has(headerLocale as 'ko' | 'en') ? headerLocale : null) ??
+    cookieLocale ??
+    headerLocale ??
     DEFAULT_LOCALE;
 
   // 3) redirect to /{locale}/...
@@ -340,7 +421,7 @@ export const config = {
 
 ```ts
 // 개념 예시(실제 코드는 프로젝트 auth/session 구조에 맞춤)
-type Locale = 'ko' | 'en';
+type Locale = 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419';
 
 export async function resolveLocaleOnServer(input: {
   urlLocale: Locale | null;
@@ -366,7 +447,7 @@ export async function resolveLocaleOnServer(input: {
 // apps/web/src/i18n/request.ts
 import { getRequestConfig } from 'next-intl/server';
 
-type Locale = 'ko' | 'en';
+type Locale = 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419';
 type Namespace = 'common' | 'auth';
 
 async function loadNamespace(locale: Locale, ns: Namespace): Promise<Record<string, unknown>> {
@@ -504,7 +585,7 @@ export default async function LocaleLayout({
 
 ### 7.1 RequestContext 스키마(최소)
 
-- `locale`: `ko` | `en` (향후 `en-US` 등 확장)
+- `locale`: `ko` | `en` | `ja` | `zh-CN` | `es-419` (향후 `zh-TW`, `es-ES` 등 확장)
 - `timeZone`: 예: `Asia/Seoul`
 - `currency`: 예: `KRW`
 - `source`: locale 결정 근거(디버깅/관측용)
@@ -539,7 +620,7 @@ export default async function LocaleLayout({
 
 권장 모델(개념):
 
-- `User.preferredLocale: 'ko' | 'en' | null`
+- `User.preferredLocale: 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419' | null`
   - null이면 협상 결과(URL/cookie/header) 또는 기본값을 사용
 - 변경은 인증된 사용자만 가능
 - 저장 시 **supported locales**로 강제(검증 실패 시 거부)
@@ -632,6 +713,9 @@ export default async function LocaleLayout({
 권장 예외:
 
 - 브랜드/프로덕트 고유명사(예: 서비스명)
+  - 본 서비스 표기 고정 규칙:
+    - `ko` locale: `빈방`
+    - `en`, `ja`, `zh-CN`, `es-419`: `binbang`
 - 외부 서비스/제휴사 고유명사(번역하면 오히려 혼란)
 - 법적 고정 문구 중 “번역본이 법적 효력을 갖지 않는” 경우(정책/법무 판단 필요)
 
@@ -688,7 +772,7 @@ export default async function LocaleLayout({
 ### 10.1 공개 페이지 URL 전략
 
 - **권장**: Public(SEO 대상)만 locale prefix
-  - `/ko/...`, `/en/...`
+  - `/ko/...`, `/en/...`, `/ja/...`, `/zh-CN/...`, `/es-419/...`
 - 이유
   - canonical/hreflang/sitemap 설계가 단순해짐
   - 공유 링크의 의미가 명확해짐
@@ -930,8 +1014,12 @@ DoD(성능):
 
 권장 규칙:
 
+- 지역 매핑(alias) 정책을 먼저 적용한다.
+  - `zh-*` -> `zh-CN`
+  - `es-*` -> `es-419`
 - 요청 locale이 지역(locale)까지 포함하면,
   - 메시지는 `language-region` → `language` → `defaultLocale` 순으로 폴백한다.
+  - 단, `language` 리소스가 없으면 해당 단계를 건너뛰고 `defaultLocale`로 폴백한다.
 
 예시:
 
@@ -956,9 +1044,10 @@ DoD(성능):
 
 ### P0-1. ADR 확정(핵심 + 추가)
 
-- 결정(예시, 현재 문서 기준 ADR-1~ADR-8)
+- 결정(예시, 현재 문서 기준 ADR-1~ADR-9)
   - 메시지 포맷(ICU)
   - locale 우선순위(2단계 협상 포함)
+  - 지원 locale 세트/지역 매핑 정책
   - 누락 키 정책
   - 사용자 선호 locale 저장
   - Web 어댑터(`next-intl`) 선택
@@ -1044,11 +1133,48 @@ DoD(성능):
 
 ---
 
+### P2-1A. Public 라우팅 구조 정렬(`(public)/[lang]/**`)
+
+#### 내용 — P2-1A
+
+- Public 페이지 라우트를 `apps/web/src/app/(public)/[lang]/**`로 통일
+- 레거시 비-prefix 경로는 middleware redirect로 canonical 경로로 유도
+- 라우트 이동 후 페이지별 언어 변경 동작(토글/재렌더/링크)을 재검증
+
+#### 완료조건(DoD) — P2-1A
+
+- Public 주요 페이지(landing/pricing/login/signup/terms/privacy)의 canonical 경로가 `/[lang]/...`로 정렬
+- 레거시 경로 접근 시 canonical로 일관 redirect
+- SEO 작업(P2-2) 이전에 라우팅 정렬이 완료됨
+
+---
+
+### P2-1B. Public 공통 헤더/언어 변경 UX 적용
+
+#### 내용 — P2-1B
+
+- `apps/web/src/app/(public)/[lang]/layout.tsx`에 경량 Public 헤더 주입
+- pricing/login/signup/terms/privacy/landing에서 동일 헤더 사용
+- 언어 변경 시 현재 페이지 path/query 유지한 locale 전환
+
+#### 완료조건(DoD) — P2-1B
+
+- Public 주요 페이지에서 언어 변경 UI가 동일하게 노출
+- 언어 변경 시 같은 페이지 유지 + 텍스트/포맷 재반영 확인
+- 로그인 사용자 locale 변경 정책(`preferredLocale`)과 충돌 없음
+
+---
+
 ### P2-2. Public SEO 정책 적용(선택: prefix)
+
+실행 순서 정책(고정):
+
+- 이 작업은 **비어드민 페이지의 번역 적용 + 페이지 내 언어 변경 동작**이 완료된 뒤,
+  **마지막 단계**에서만 수행한다.
 
 #### 내용 — P2-2
 
-- `/ko/*`, `/en/*` 정책
+- `/ko/*`, `/en/*`, `/ja/*`, `/zh-CN/*`, `/es-419/*` 정책
 - `hreflang`, `canonical`, sitemap
 
 #### 완료조건(DoD) — P2-2
@@ -1162,7 +1288,7 @@ packages/worker-shared/src/runtime/i18n/
 4. 성공 시:
    - 해당 WU를 `- [x]`로 변경
    - `Done Date`에 완료일(`YYYY-MM-DD`) 기입
-   - 17.3 Progress Log에 1줄 추가
+   - 17.4 Progress Log에 1줄 추가
 5. 실패/차단 시:
    - 체크박스는 그대로 둔다.
    - WU의 `Blocker`를 채운다.
@@ -1274,7 +1400,54 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-### 17.3 Progress Log (체크박스와 함께 업데이트)
+- [ ] WU-14 Public 라우팅 구조 정렬(`(public)/[lang]/**`)
+  - Scope: Public 페이지 파일 구조를 `[lang]` prefix 기준으로 통일
+  - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/middleware.ts`, 관련 테스트 파일
+  - DoD: pricing/login/signup/terms/privacy의 canonical 경로가 `/[lang]/...`로 정렬
+  - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
+  - Done Date: `-`
+  - Blocker: `-`
+
+- [ ] WU-15 비어드민 페이지 언어 변경 동작 완료
+  - Scope: Public 공통 헤더(언어 변경 UI) + 비어드민 페이지 locale 전환 동작 구현/검증
+  - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/app/(app)/**`, `apps/web/src/lib/i18n/**`, 관련 테스트 파일
+  - DoD: 17.3의 `Public 공통 헤더(언어 변경)` + `언어 변경 동작` 체크가 대상 페이지에서 완료
+  - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
+  - Done Date: `-`
+  - Blocker: `-`
+
+- [ ] WU-16 Public SEO 최적화 마무리(최종 단계)
+  - Scope: `hreflang`/`canonical`/sitemap 정합성 마무리
+  - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/lib/i18n-runtime/seo.ts`, sitemap 관련 코드, 관련 테스트
+  - DoD: 17.3의 Public 페이지에서 `SEO 최적화(마지막)` 체크 완료
+  - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`, `pnpm ci:check`
+  - Done Date: `-`
+  - Blocker: `-`
+
+### 17.3 비어드민 페이지별 적용 매트릭스(체크박스)
+
+적용 원칙:
+
+- Public 페이지는 `/(public)/[lang]/**`로 라우팅 구조를 먼저 정렬한다.
+- Public 페이지는 공통 헤더(브랜드 + 언어 변경 UI)를 동일하게 사용한다.
+- 각 페이지는 **언어 변경 동작**(페이지에서 locale 전환 후 텍스트/포맷 반영)이 완료되어야 한다.
+- Public 페이지의 **SEO 최적화 체크는 마지막 단계에서만** 수행한다.
+  - 선행 조건: 해당 페이지의 `라우팅 구조 정렬([lang])` + `Public 공통 헤더(언어 변경)` + `텍스트 i18n 적용` + `언어 변경 동작` 체크 완료
+
+| 페이지 | 현재 라우트 파일 | 목표 라우트 파일 | 라우팅 구조 정렬([lang]) | Public 공통 헤더(언어 변경) | 텍스트 i18n 적용 | 언어 변경 동작 | SEO 최적화(마지막) | 비고 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `landing`, `common` |
+| Pricing | `apps/web/src/app/(public)/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `landing/pricing`, `common` |
+| Login | `apps/web/src/app/(public)/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `auth`, `common` |
+| Signup | `apps/web/src/app/(public)/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `auth`, `common` |
+| Terms | `apps/web/src/app/(public)/terms/page.tsx` | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `legal`, `common` |
+| Privacy | `apps/web/src/app/(public)/privacy/page.tsx` | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `legal`, `common` |
+| Dashboard | `apps/web/src/app/(app)/dashboard/page.tsx` | `apps/web/src/app/(app)/dashboard/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+| Accommodations New | `apps/web/src/app/(app)/accommodations/new/page.tsx` | `apps/web/src/app/(app)/accommodations/new/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+| Accommodation Detail | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+| Subscription Settings | `apps/web/src/app/(app)/settings/subscription/page.tsx` | `apps/web/src/app/(app)/settings/subscription/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+
+### 17.4 Progress Log (체크박스와 함께 업데이트)
 
 - `2026-02-12`: `WU-01` 완료 — `locale.ts`(Locale/SUPPORTED_LOCALES/DEFAULT_LOCALE/isSupportedLocale/normalizeLocale) + `./i18n` export + 테스트 18개 통과, typecheck 통과
 - `2026-02-12`: `WU-02` 완료 — `resolveLocale.ts`(URL>userProfile>cookie>acceptLanguage>default 우선순위) + 테스트 14개 통과, typecheck 통과
