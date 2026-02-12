@@ -1226,12 +1226,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-08 `request.ts` namespace slicing 적용
+- [x] WU-08 `request.ts` namespace slicing 적용
   - Scope: 페이지/그룹별 최소 namespace 로딩
   - Allowed Files: `apps/web/src/i18n/request.ts`, 필요 시 매핑 파일
   - DoD: `apps/web/messages/**` 기준으로 필요한 namespace만 주입
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-09 Worker i18n runtime 적용
@@ -1283,6 +1283,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-05` 완료 — `format.ts`(formatDate/formatNumber/formatCurrency/formatRelativeTime + 토큰 프리셋) + 테스트 23개 통과, typecheck 통과
 - `2026-02-12`: `WU-06` 완료 — `middleware.ts` 리팩터(shared i18n 코어 사용: parseLocaleFromPath+negotiateLocale), `.ts` 확장자 제거(cross-package 호환), web test 157개 + typecheck 통과
 - `2026-02-12`: `WU-07` 완료 — `i18n-runtime/server.ts`(resolveServerLocale: cookies+headers 자동 읽기, urlLocale/userPreferredLocale 파라미터) + 테스트 7개 통과, web test 164개 + typecheck 통과
+- `2026-02-12`: `WU-08` 완료 — `src/i18n/request.ts`(getNamespacesForRoute+loadMessages+getRequestMessages), route group→namespace 선언적 매핑, `messages/{locale}/{ns}.json` 구조, 테스트 9개 통과, web test 173개 + typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---
