@@ -24,6 +24,16 @@ export async function sendNotificationIfNeeded(
   const checkIn = new Date(input.checkIn);
   const checkOut = new Date(input.checkOut);
 
+  if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+    console.warn('Invalid stay dates', {
+      accommodationId: input.accommodationId,
+      userId: input.userId,
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+    });
+    return;
+  }
+
   let effectiveLastStatus: AvailabilityStatus | null = input.lastStatus;
 
   const lastLog = await prisma.checkLog.findFirst({

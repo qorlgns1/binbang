@@ -55,6 +55,8 @@ pnpm dev:worker
 - 관리자: `admin@example.com` / 비밀번호 `password123`
 - 일반 유저: `user@example.com` / 비밀번호 `password123`
 
+> 주의: 위 비밀번호는 **로컬 시드 전용**이며, 실서비스에서 사용/재사용하면 안 됩니다.
+
 ## 4. 빠른 확인 (시드 기반)
 
 ### 4-1. 관리자 로그인
@@ -206,7 +208,7 @@ curl -sS -X POST "http://localhost:3000/api/intake/google-form" \
 
 관리자 권한이 있어야 하며, 대상 알림이 `FAILED` 상태일 때만 재시도 가능하다(코드 기준).
 
-- `POST /api/admin/cases/[id]/notifications/[notificationId]/retry`
+- `POST /api/admin/cases/:id/notifications/:notificationId/retry`
 
 기대 결과:
 

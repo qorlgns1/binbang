@@ -132,13 +132,25 @@ export async function retryStaleCaseNotifications(
       continue;
     }
 
-    const sent = await sendKakaoNotification({
-      userId,
-      title,
-      description,
-      buttonText,
-      buttonUrl,
-    });
+    let sent = false;
+    try {
+      sent = await sendKakaoNotification({
+        userId,
+        title,
+        description,
+        buttonText,
+        buttonUrl,
+      });
+    } catch (error) {
+      const failReason = error instanceof Error ? error.message : '카카오 메시지 전송 예외';
+      await prisma.caseNotification.update({
+        where: { id: n.id },
+        data: { status: 'FAILED', failReason },
+        select: { id: true },
+      });
+      result.failed += 1;
+      continue;
+    }
 
     await prisma.caseNotification.update({
       where: { id: n.id },

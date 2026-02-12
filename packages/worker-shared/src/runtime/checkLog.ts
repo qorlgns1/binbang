@@ -22,7 +22,7 @@ export async function saveCheckLog(
   const checkIn = new Date(input.checkIn);
   const checkOut = new Date(input.checkOut);
   const nights = nightsBetween(checkIn, checkOut);
-  const pricePerNight = parsed ? Math.round(parsed.amount / nights) : null;
+  const pricePerNight = parsed && nights > 0 ? Math.round(parsed.amount / nights) : null;
 
   const log = await prisma.checkLog.create({
     data: {

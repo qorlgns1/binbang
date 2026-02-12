@@ -1,6 +1,7 @@
 # 구글폼 운영형 MVP 백로그 (조건 충족/열림 확인 과금 모델)
 
 > 작성일: 2026-02-11  
+> 수정일: 2026-02-12  
 > 목적: 웹사이트 없이 구글폼만으로 운영하는 현재 구조에서, 분쟁 없이 반복 가능한 운영 시스템을 만든다.
 > 운영 정책/상품 기준: `docs/guides/google-form-service-operations.md`
 > 테스트 가이드: `docs/guides/google-form-ops-mvp-test-guide.md`

@@ -358,6 +358,31 @@ describe('intake.service', (): void => {
       );
     });
 
+    it('stores consent texts from payload when provided', async (): Promise<void> => {
+      const payload = makeValidPayload({
+        form_version: 'v_test_1',
+        consent_texts: {
+          billing: '동의문구(원문) - billing',
+          scope: '동의문구(원문) - scope',
+        },
+      });
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-payload-1', rawPayload: payload });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            formVersion: 'v_test_1',
+            consentTexts: {
+              billing: '동의문구(원문) - billing',
+              scope: '동의문구(원문) - scope',
+            },
+          }),
+        }),
+      );
+    });
+
     it('does not store consent fields when validation fails', async (): Promise<void> => {
       const payload = makeValidPayload({ billing_consent: false });
       setupCreateWithPayload(payload);

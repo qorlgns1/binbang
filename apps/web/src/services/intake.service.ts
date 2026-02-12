@@ -21,6 +21,13 @@ export interface ConsentTexts {
   scope: string;
 }
 
+const FORM_CONSENT_MAP: Record<string, ConsentTexts> = {
+  default: {
+    billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
+    scope: '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
+  },
+} as const;
+
 export interface FormSubmissionOutput {
   id: string;
   responseId: string;
@@ -95,10 +102,10 @@ interface FormSubmissionRow {
   updatedAt: Date;
 }
 
-const CONSENT_TEXTS: ConsentTexts = {
-  billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
-  scope: '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
-} as const;
+const consentTextsSchema = z.object({
+  billing: z.string().min(1),
+  scope: z.string().min(1),
+});
 
 function isValidFutureDate(value: string): boolean {
   const date = new Date(value);
@@ -117,10 +124,30 @@ const rawPayloadFieldsSchema = z.object({
   check_frequency: z.string().nullable().optional(),
   billing_consent: z.literal(true, { errorMap: () => ({ message: '비용 발생 동의가 필요합니다' }) }),
   scope_consent: z.literal(true, { errorMap: () => ({ message: '서비스 범위 동의가 필요합니다' }) }),
+  // Apps Script가 전달할 수 있는 옵션 메타/원문
+  form_version: z.string().min(1).optional(),
+  formVersion: z.string().min(1).optional(),
+  consent_texts: consentTextsSchema.optional(),
+  billing_consent_text: z.string().min(1).optional(),
+  scope_consent_text: z.string().min(1).optional(),
 });
 
 function isUniqueConstraintError(error: unknown): boolean {
   return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
+}
+
+function resolveConsentEvidence(input: { formVersion: string | null; payloadConsentTexts: ConsentTexts | null }): {
+  formVersion: string | null;
+  consentTexts: ConsentTexts;
+} {
+  const mapped =
+    (input.formVersion ? FORM_CONSENT_MAP[input.formVersion] : null) ??
+    FORM_CONSENT_MAP.default ??
+    ({ billing: '', scope: '' } as const);
+  return {
+    formVersion: input.formVersion,
+    consentTexts: input.payloadConsentTexts ?? mapped,
+  };
 }
 
 function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
@@ -163,14 +190,26 @@ export async function createFormSubmission(input: CreateFormSubmissionInput): Pr
       const parseResult = rawPayloadFieldsSchema.safeParse(input.rawPayload);
 
       if (parseResult.success) {
+        const payloadFormVersion = parseResult.data.formVersion ?? parseResult.data.form_version ?? null;
+        const payloadConsentTexts =
+          parseResult.data.consent_texts ??
+          (parseResult.data.billing_consent_text && parseResult.data.scope_consent_text
+            ? { billing: parseResult.data.billing_consent_text, scope: parseResult.data.scope_consent_text }
+            : null);
+        const consentEvidence = resolveConsentEvidence({
+          formVersion: payloadFormVersion,
+          payloadConsentTexts,
+        });
+
         await tx.formSubmission.update({
           where: { id: created.id },
           data: {
             extractedFields: parseResult.data as unknown as Prisma.InputJsonValue,
+            formVersion: consentEvidence.formVersion,
             consentBillingOnConditionMet: parseResult.data.billing_consent,
             consentServiceScope: parseResult.data.scope_consent,
             consentCapturedAt: new Date(),
-            consentTexts: CONSENT_TEXTS as unknown as Prisma.InputJsonValue,
+            consentTexts: consentEvidence.consentTexts as unknown as Prisma.InputJsonValue,
           },
           select: { id: true },
         });

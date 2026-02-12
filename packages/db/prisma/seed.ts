@@ -10,7 +10,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
 
-import { type Prisma, PrismaClient } from '@/generated/prisma/client';
+import { Prisma, PrismaClient } from '@/generated/prisma/client';
 
 import {
   SEED_ACCOMMODATIONS,
@@ -207,24 +207,44 @@ async function main() {
         responseId: submission.responseId,
         status: submission.status,
         rawPayload: json(submission.rawPayload),
-        extractedFields: submission.extractedFields ? json(submission.extractedFields) : undefined,
+        extractedFields:
+          submission.extractedFields === null
+            ? Prisma.DbNull
+            : submission.extractedFields
+              ? json(submission.extractedFields)
+              : undefined,
         rejectionReason: submission.rejectionReason,
         consentBillingOnConditionMet: submission.consentBillingOnConditionMet,
         consentServiceScope: submission.consentServiceScope,
         consentCapturedAt: submission.consentCapturedAt,
-        consentTexts: submission.consentTexts ? json(submission.consentTexts) : undefined,
+        consentTexts:
+          submission.consentTexts === null
+            ? Prisma.DbNull
+            : submission.consentTexts
+              ? json(submission.consentTexts)
+              : undefined,
       },
       create: {
         id: submission.id,
         responseId: submission.responseId,
         status: submission.status,
         rawPayload: json(submission.rawPayload),
-        extractedFields: submission.extractedFields ? json(submission.extractedFields) : undefined,
+        extractedFields:
+          submission.extractedFields === null
+            ? Prisma.DbNull
+            : submission.extractedFields
+              ? json(submission.extractedFields)
+              : undefined,
         rejectionReason: submission.rejectionReason,
         consentBillingOnConditionMet: submission.consentBillingOnConditionMet,
         consentServiceScope: submission.consentServiceScope,
         consentCapturedAt: submission.consentCapturedAt,
-        consentTexts: submission.consentTexts ? json(submission.consentTexts) : undefined,
+        consentTexts:
+          submission.consentTexts === null
+            ? Prisma.DbNull
+            : submission.consentTexts
+              ? json(submission.consentTexts)
+              : undefined,
         receivedAt: submission.receivedAt,
       },
     });

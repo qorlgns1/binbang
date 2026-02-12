@@ -54,7 +54,7 @@ export async function createCheckCycle(input: CreateCheckCycleInput): Promise<st
 }
 
 export async function finalizeCycleCounter(cycleId: string, success: boolean): Promise<void> {
-  await prisma.$transaction(async (tx): Promise<void> => {
+  const cycleDurationMs = await prisma.$transaction(async (tx): Promise<number | null> => {
     const updatedCycle = await tx.checkCycle.update({
       where: { id: cycleId },
       data: success ? { successCount: { increment: 1 } } : { errorCount: { increment: 1 } },
@@ -63,15 +63,20 @@ export async function finalizeCycleCounter(cycleId: string, success: boolean): P
 
     const completedCount = (updatedCycle.successCount ?? 0) + (updatedCycle.errorCount ?? 0);
     if (updatedCycle.totalCount && completedCount >= updatedCycle.totalCount && !updatedCycle.completedAt) {
-      const cycleDurationMs = Date.now() - new Date(updatedCycle.startedAt).getTime();
+      const durationMs = Date.now() - new Date(updatedCycle.startedAt).getTime();
       await tx.checkCycle.update({
         where: { id: cycleId },
-        data: { completedAt: new Date(), durationMs: cycleDurationMs },
+        data: { completedAt: new Date(), durationMs },
         select: { id: true },
       });
-
-      await updateHeartbeat(false);
-      console.log(`\nMonitoring completed (${Math.round(cycleDurationMs / 1000)}s)\n`);
+      return durationMs;
     }
+
+    return null;
   });
+
+  if (cycleDurationMs != null) {
+    await updateHeartbeat(false);
+    console.log(`\nMonitoring completed (${Math.round(cycleDurationMs / 1000)}s)\n`);
+  }
 }

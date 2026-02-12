@@ -60,25 +60,35 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       maxRetries: settings.checker.maxRetries,
     });
 
-    const jobs = accommodations.map((acc): { name: string; data: CheckJobPayload } => {
-      const caseLink = caseByAccommodationId.get(acc.id);
-      return {
+    const jobs = accommodations.flatMap((acc): { name: string; data: CheckJobPayload }[] => {
+      const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
+
+      const baseData = {
+        cycleId,
+        accommodationId: acc.id,
+        name: acc.name,
+        url: acc.url,
+        platform: acc.platform,
+        checkIn: acc.checkIn.toISOString(),
+        checkOut: acc.checkOut.toISOString(),
+        adults: acc.adults,
+        userId: acc.user.id,
+        kakaoAccessToken: acc.user.kakaoAccessToken,
+        lastStatus: acc.lastStatus,
+      } satisfies CheckJobPayload;
+
+      if (caseLinks.length === 0) {
+        return [{ name: 'check', data: baseData }];
+      }
+
+      return caseLinks.map((caseLink) => ({
         name: 'check',
         data: {
-          cycleId,
-          accommodationId: acc.id,
-          name: acc.name,
-          url: acc.url,
-          platform: acc.platform,
-          checkIn: acc.checkIn.toISOString(),
-          checkOut: acc.checkOut.toISOString(),
-          adults: acc.adults,
-          userId: acc.user.id,
-          kakaoAccessToken: acc.user.kakaoAccessToken,
-          lastStatus: acc.lastStatus,
-          ...(caseLink && { caseId: caseLink.caseId, conditionDefinition: caseLink.conditionDefinition }),
+          ...baseData,
+          caseId: caseLink.caseId,
+          conditionDefinition: caseLink.conditionDefinition,
         } satisfies CheckJobPayload,
-      };
+      }));
     });
 
     await checkQueue.addBulk(jobs);
