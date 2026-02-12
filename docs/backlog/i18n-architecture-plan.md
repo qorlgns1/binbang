@@ -1258,12 +1258,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-12 CI 게이트 + 레거시 경로 차단
+- [x] WU-12 CI 게이트 + 레거시 경로 차단
   - Scope: `i18n:ci` 강제, `apps/web/public/locales/**` 변경 차단(EOL 정책 반영)
   - Allowed Files: `.github/workflows/*.yml`, `scripts/i18n/**`, 루트 `package.json`
   - DoD: 승인 없는 레거시 경로 변경 PR 실패
   - Verify: `pnpm ci:check` (또는 CI 워크플로우 검증 명령)
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-13 EOL 이후 레거시 경로 제거(2026-07-01 이후)
@@ -1287,6 +1287,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-09` 완료 — worker i18n runtime(loader+templates+userLocale), conditionTrigger 구조화 페이로드 전환, caseNotifications 레거시/구조화 양방향 호환, 메시지 ko/en notification.json, 테스트 11개 통과, ci:check 통과
 - `2026-02-12`: `WU-10` 완료 — `scripts/i18n/check.mjs`(key parity+param parity+빈 값 검사), apps/web+worker-shared messages 대상, `pnpm i18n:check` 스크립트 추가, ci:check 통과
 - `2026-02-12`: `WU-11` 완료 — `scripts/i18n/typegen.mjs`(ko 기준 namespace별 key union 타입 생성), 출력 `packages/shared/src/generated/i18n/messages.ts`(gitignored), `pnpm i18n:typegen` 스크립트 추가, WebMessages/WorkerMessages/TypedTranslateFunction 타입 제공, ci:check 통과
+- `2026-02-12`: `WU-12` 완료 — `scripts/i18n/check-legacy.mjs`(레거시 경로 변경 차단, EOL 2026-06-30), `pnpm i18n:ci`(typegen+check+check-legacy 통합), `.github/workflows/ci.yml`에 `pnpm i18n:ci` 단계 추가, ci:check 통과
 - `YYYY-MM-DD`: `-`
 
 ---

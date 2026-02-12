@@ -41,7 +41,9 @@
     "local:docker": "docker compose -f docker/docker-compose.local.yml",
     "update:ai-context": "node scripts/update-ai-context.mjs",
     "i18n:check": "node scripts/i18n/check.mjs",
-    "i18n:typegen": "node scripts/i18n/typegen.mjs"
+    "i18n:typegen": "node scripts/i18n/typegen.mjs",
+    "i18n:check-legacy": "node scripts/i18n/check-legacy.mjs",
+    "i18n:ci": "pnpm i18n:typegen && pnpm i18n:check && pnpm i18n:check-legacy"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.14",
