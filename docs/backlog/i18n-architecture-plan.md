@@ -1218,12 +1218,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-07 Web 서버 2차 확정(DB 포함)
+- [x] WU-07 Web 서버 2차 확정(DB 포함)
   - Scope: URL 미존재 케이스에서 `preferredLocale` 반영
   - Allowed Files: `apps/web/src/lib/i18n-runtime/server.ts`, 관련 호출부/테스트
   - DoD: 서버에서 세션/유저 컨텍스트 기반 locale 확정
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-08 `request.ts` namespace slicing 적용
@@ -1282,6 +1282,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-04` 완료 — `createI18n.ts`(t() key 조회/파라미터 치환/missing-key error+fallback 정책/fallbackMessages/onMissingKey 콜백) + 테스트 16개 통과, typecheck 통과
 - `2026-02-12`: `WU-05` 완료 — `format.ts`(formatDate/formatNumber/formatCurrency/formatRelativeTime + 토큰 프리셋) + 테스트 23개 통과, typecheck 통과
 - `2026-02-12`: `WU-06` 완료 — `middleware.ts` 리팩터(shared i18n 코어 사용: parseLocaleFromPath+negotiateLocale), `.ts` 확장자 제거(cross-package 호환), web test 157개 + typecheck 통과
+- `2026-02-12`: `WU-07` 완료 — `i18n-runtime/server.ts`(resolveServerLocale: cookies+headers 자동 읽기, urlLocale/userPreferredLocale 파라미터) + 테스트 7개 통과, web test 164개 + typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---
