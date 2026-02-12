@@ -1178,12 +1178,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-02 `resolveLocale()` 순수 함수 구현
+- [x] WU-02 `resolveLocale()` 순수 함수 구현
   - Scope: URL > DB > Cookie > Accept-Language > Default
   - Allowed Files: `packages/shared/src/i18n/resolveLocale.ts`, 관련 테스트 파일
   - DoD: `source`(`url|userProfile|cookie|acceptLanguage|default`) 포함 반환
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-03 Loader/에러 타입 정의
@@ -1277,6 +1277,7 @@ packages/worker-shared/src/runtime/i18n/
 ### 17.3 Progress Log (체크박스와 함께 업데이트)
 
 - `2026-02-12`: `WU-01` 완료 — `locale.ts`(Locale/SUPPORTED_LOCALES/DEFAULT_LOCALE/isSupportedLocale/normalizeLocale) + `./i18n` export + 테스트 18개 통과, typecheck 통과
+- `2026-02-12`: `WU-02` 완료 — `resolveLocale.ts`(URL>userProfile>cookie>acceptLanguage>default 우선순위) + 테스트 14개 통과, typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---
