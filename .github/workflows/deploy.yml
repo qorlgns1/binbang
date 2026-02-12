@@ -137,10 +137,10 @@ jobs:
               exit 0
             fi
 
-            # --- develop: 개발용 운영 서버 배포 (DB 마이그레이션·시드 후 컨테이너 기동) ---
+            # --- develop: 셸에서는 .env.development.host(DATABASE_URL) 사용, 컨테이너는 .env.development만 사용 ---
             docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
-            APP_ENV=development pnpm db:migrate:deploy
-            pnpm with-env:development pnpm --filter @workspace/db exec prisma generate
-            APP_ENV=development pnpm db:seed:deploy
-            pnpm with-env:development pnpm --filter @workspace/db db:seed
+            pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate deploy
+            pnpm with-env:development:host pnpm --filter @workspace/db exec prisma generate
+            pnpm with-env:development:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
+            pnpm with-env:development:host pnpm --filter @workspace/db db:seed
             docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d

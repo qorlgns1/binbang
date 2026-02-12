@@ -8,6 +8,7 @@
     "preinstall": "npx only-allow pnpm",
     "with-env:local": "dotenv -e .env -e .env.local --",
     "with-env:development": "dotenv -e .env.development --",
+    "with-env:development:host": "dotenv -e .env.development -e .env.development.host --",
     "with-env:production": "dotenv -e .env.production --",
     "dev": "pnpm with-env:local turbo run dev",
     "dev:web": "pnpm with-env:local turbo run dev --filter=@workspace/web",
