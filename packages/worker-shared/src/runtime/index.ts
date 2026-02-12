@@ -41,6 +41,10 @@ export type { CreateConditionMetEventInput } from './evidence';
 export { triggerConditionMet } from './conditionTrigger';
 export type { TriggerConditionMetInput, TriggerConditionMetResult } from './conditionTrigger';
 
+// Case notifications (retry queue)
+export { retryStaleCaseNotifications } from './caseNotifications';
+export type { RetryCaseNotificationsOptions, RetryCaseNotificationsResult } from './caseNotifications';
+
 // Cases
 export { findActiveCaseLinks } from './cases';
 export type { ActiveCaseLink } from './cases';

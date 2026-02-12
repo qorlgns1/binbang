@@ -3,6 +3,7 @@
 > 작성일: 2026-02-11  
 > 목적: 웹사이트 없이 구글폼만으로 운영하는 현재 구조에서, 분쟁 없이 반복 가능한 운영 시스템을 만든다.
 > 운영 정책/상품 기준: `docs/guides/google-form-service-operations.md`
+> 테스트 가이드: `docs/guides/google-form-ops-mvp-test-guide.md`
 
 ## 0. 제품 원칙 (고정)
 
@@ -217,21 +218,40 @@
   - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 숙소/증거 가드 비활성화
   - `apps/web/src/app/admin/cases/[id]/_components/formatDateTime.ts` — 공용 날짜 포맷 유틸리티 (중복 제거)
 
-## P0-7. 알림 + 과금 이벤트 원자적 트리거
+## P0-7. 알림 + 과금 이벤트 원자적 트리거 ✅ 완료 (2026-02-12)
 
 - 목표: 조건 충족 알림과 비용 발생 기록의 불일치 제거
 - 구현
-  - 단일 트랜잭션에서
-    - `ConditionMetEvent` 생성
-    - 고객 알림 발송 시도 기록
-    - `BillingEvent` 생성
-  - 실패 시 재시도 큐(최대 N회) + 중복 방지 키 사용
+  - Schema/마이그레이션: `NotificationStatus`, `BillingEventType` enum + `CaseNotification`, `BillingEvent` 모델 추가
+  - `triggerConditionMet` 함수:
+    - TX 내부: 증거(`ConditionMetEvent`) + 과금(`BillingEvent`) + 알림 시도 기록(`CaseNotification: PENDING`) + Case 전이 + 상태 로그
+    - TX 외부: 카카오 발송 + 결과 업데이트(`SENT`/`FAILED`)
+  - 워커 체크 처리 리팩토링:
+    - Case 연결 숙소(= `caseId` 포함)에서 `AVAILABLE` 감지 시 `triggerConditionMet()` 실행
+    - Case 미연결 숙소만 기존 “숙소 알림” 흐름을 유지
+  - 케이스 상세 조회 확장: `CaseDetail`에 `notifications`/`billingEvent` 포함(관리자 UI에서 증거/발송/과금 단일 화면 확인)
+  - 알림 재시도
+    - 수동: 관리자 API로 FAILED 알림 재시도 가능
+    - 자동: FAILED + 오래된 PENDING(stale) 알림을 주기적으로 재시도하는 워커 잡 추가
+  - 시드 데이터: `CONDITION_MET` 상태 케이스 1건에 `BillingEvent` 1건 + `CaseNotification(SENT)` 1건 포함
 - 완료조건(DoD)
   - 동일 케이스에서 `BillingEvent` 중복 생성 0건
   - 알림 실패 시 수동 재시도 가능
+  - 재시도(자동/수동) 시 `retryCount` 증가 + `maxRetries` 초과 시 차단
 - 구현 위치
-  - `packages/worker-shared/src/runtime/notifications/**`
-  - `apps/web/src/services/billing.service.ts` (신규)
+  - `packages/db/prisma/schema.prisma` — `NotificationStatus`, `BillingEventType`, `CaseNotification`, `BillingEvent`
+  - `packages/db/prisma/migrations/20260212081302_add_billing_event_and_case_notification/migration.sql`
+  - `packages/worker-shared/src/runtime/conditionTrigger.ts` — `triggerConditionMet()` (원자 트리거)
+  - `apps/worker/src/checkProcessor.ts` — Case-linked 숙소에서 `triggerConditionMet()` 호출
+  - `apps/web/src/services/cases.service.ts` — `CaseDetail`에 `notifications`/`billingEvent` select + mapper
+  - (수동 재시도) `apps/web/src/services/notifications.service.ts` — `retryNotification()`
+  - (수동 재시도) `apps/web/src/app/api/admin/cases/[id]/notifications/[notificationId]/retry/route.ts`
+  - (자동 재시도) `packages/worker-shared/src/runtime/caseNotifications.ts` — `retryStaleCaseNotifications()`
+  - (자동 재시도) `packages/worker-shared/src/runtime/scheduler.ts` — `notification-retry` repeatable job
+  - (자동 재시도) `apps/worker/src/cycleProcessor.ts` — `notification-retry` 처리
+  - (테스트) `packages/worker-shared/src/runtime/caseNotifications.test.ts`
+  - (시드) `packages/db/prisma/constants/index.ts` — `SEED_BILLING_EVENTS`, `SEED_CASE_NOTIFICATIONS`
+  - (시드) `packages/db/prisma/seed.ts` — upsert 적용
 
 ## P0-8. 운영자 액션 로그 + 분쟁 대응 템플릿
 

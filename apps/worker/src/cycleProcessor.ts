@@ -5,13 +5,22 @@ import {
   findActiveAccommodations,
   getSettings,
   loadSettings,
+  retryStaleCaseNotifications,
   updateHeartbeat,
   type Job,
   type Queue,
 } from '@workspace/worker-shared/runtime';
 
 export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<void> {
-  return async (_job: Job): Promise<void> => {
+  return async (job: Job): Promise<void> => {
+    if (job.name === 'notification-retry') {
+      const retryResult = await retryStaleCaseNotifications({ batchSize: 25, pendingStaleMs: 2 * 60_000 });
+      console.log(
+        `\n[notification-retry] scanned=${retryResult.scanned} claimed=${retryResult.claimed} sent=${retryResult.sent} failed=${retryResult.failed} skipped=${retryResult.skipped}`,
+      );
+      return;
+    }
+
     await loadSettings().catch((err: unknown): void => console.warn('Settings refresh failed, using cache:', err));
 
     const settings = getSettings();
