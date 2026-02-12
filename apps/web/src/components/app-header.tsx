@@ -54,7 +54,7 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactEle
             <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
               <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
             </span>
-            <span className='text-sm font-semibold tracking-wide text-foreground md:text-base'>빈방어때</span>
+            <span className='text-sm font-semibold tracking-wide text-foreground md:text-base'>빈방</span>
           </Link>
 
           {/* Desktop Navigation */}

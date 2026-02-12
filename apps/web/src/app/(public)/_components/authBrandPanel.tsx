@@ -19,7 +19,7 @@ export function AuthBrandPanel({ ctaLabel, ctaHref }: AuthBrandPanelProps) {
         <Badge className='border-primary/40 bg-primary/10 text-primary'>Lighthouse Signal</Badge>
 
         <div>
-          <p className='text-sm text-muted-foreground'>빈방어때</p>
+          <p className='text-sm text-muted-foreground'>빈방</p>
           <h2 className='mt-2 text-2xl font-semibold leading-tight text-foreground md:text-3xl'>
             당신의 휴식이 길을 잃지 않도록,
             <br />

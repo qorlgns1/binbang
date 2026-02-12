@@ -17,7 +17,7 @@ export default function TermsPage(): React.ReactElement {
       <p className='mt-2 text-sm text-muted-foreground'>최종 수정일: 2026년 2월 11일</p>
       <div className='prose prose-neutral mt-8 dark:prose-invert'>
         <p className='text-muted-foreground'>
-          빈방어때 서비스를 이용해 주셔서 감사합니다. 본 약관은 서비스 이용 시 적용되는 규정입니다.
+          빈방 서비스를 이용해 주셔서 감사합니다. 본 약관은 서비스 이용 시 적용되는 규정입니다.
         </p>
         <section className='mt-8'>
           <h2 className='text-xl font-medium text-foreground'>1. 약관의 동의</h2>
@@ -29,7 +29,7 @@ export default function TermsPage(): React.ReactElement {
         <section className='mt-6'>
           <h2 className='text-xl font-medium text-foreground'>2. 서비스 내용</h2>
           <p className='mt-2 text-muted-foreground'>
-            빈방어때는 숙소 예약 사이트의 빈방 정보를 모니터링하고, 설정하신 조건에 맞는 빈방이 발견되면 알림을
+            빈방 서비스는 숙소 예약 사이트의 빈방 정보를 모니터링하고, 설정하신 조건에 맞는 빈방이 발견되면 알림을
             보내드립니다. 서비스는 지속적으로 개선되며, 기능이나 운영 방식은 사전 공지 후 변경될 수 있습니다.
           </p>
         </section>

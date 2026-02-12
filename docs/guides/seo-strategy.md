@@ -1,4 +1,4 @@
-# SEO 전략 가이드: 빈방어때
+# SEO 전략 가이드: 빈방
 
 ## 1. 핵심 키워드 전략
 
@@ -41,13 +41,13 @@
 
 ```html
 <!-- 홈페이지 -->
-<title>빈방어때 - 숙소 빈방 알림 서비스 | 에어비앤비·아고다 실시간 모니터링</title>
+<title>빈방 - 숙소 빈방 알림 서비스 | 에어비앤비·아고다 실시간 모니터링</title>
 
 <!-- 요금제 페이지 -->
-<title>요금제 안내 - 빈방어때 | 1분마다 체크하는 숙소 알림</title>
+<title>요금제 안내 - 빈방 | 1분마다 체크하는 숙소 알림</title>
 
 <!-- 대시보드 -->
-<title>내 대시보드 - 빈방어때</title>
+<title>내 대시보드 - 빈방</title>
 ```
 
 **Title 작성 원칙**
@@ -63,13 +63,13 @@
 <!-- 홈페이지 -->
 <meta
   name="description"
-  content="원하는 숙소가 품절됐나요? 빈방어때가 1분마다 자동으로 체크해서 빈방이 생기면 즉시 카카오톡으로 알려드립니다. 에어비앤비, 아고다 지원. 무료로 시작하세요."
+  content="원하는 숙소가 품절됐나요? 빈방 서비스가 1분마다 자동으로 체크해서 빈방이 생기면 즉시 카카오톡으로 알려드립니다. 에어비앤비, 아고다 지원. 무료로 시작하세요."
 />
 
 <!-- 요금제 페이지 -->
 <meta
   name="description"
-  content="빈방어때 요금제를 확인하세요. FREE 플랜으로 무료 체험 후 업그레이드 가능. 1분마다 자동 체크, 실시간 카카오톡 알림, 가격 추이 분석까지."
+  content="빈방 요금제를 확인하세요. FREE 플랜으로 무료 체험 후 업그레이드 가능. 1분마다 자동 체크, 실시간 카카오톡 알림, 가격 추이 분석까지."
 />
 ```
 
@@ -90,7 +90,7 @@
 />
 <meta
   property="og:title"
-  content="빈방어때 - 당신의 휴식이 길을 잃지 않도록"
+  content="빈방 - 당신의 휴식이 길을 잃지 않도록"
 />
 <meta
   property="og:description"
@@ -112,7 +112,7 @@
 />
 <meta
   name="twitter:title"
-  content="빈방어때 - 숙소 빈방 알림 서비스"
+  content="빈방 - 숙소 빈방 알림 서비스"
 />
 <meta
   name="twitter:description"
@@ -132,7 +132,7 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "빈방어때",
+  "name": "빈방",
   "description": "1분마다 자동으로 체크하는 숙소 빈방 알림 서비스",
   "url": "https://binbang.moodybeard.com",
   "applicationCategory": "UtilitiesApplication",
@@ -159,7 +159,7 @@
   "serviceType": "숙소 빈방 모니터링 알림",
   "provider": {
     "@type": "Organization",
-    "name": "빈방어때"
+    "name": "빈방"
   },
   "areaServed": "KR",
   "hasOfferCatalog": {
@@ -187,7 +187,7 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "빈방어때는 어떻게 작동하나요?",
+      "name": "빈방은 어떻게 작동하나요?",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "1분마다 자동으로 숙소 예약 페이지를 확인하고, 빈방이 생기면 즉시 카카오톡으로 알려드립니다."
@@ -245,7 +245,7 @@
 <main>
   <article>
     <header>
-      <h1>빈방어때 - 숙소 빈방 알림</h1>
+      <h1>빈방 - 숙소 빈방 알림</h1>
     </header>
     <section>
       <h2>주요 기능</h2>
@@ -257,7 +257,7 @@
 // ❌ 피해야 할 구조
 <div>
   <div>
-    <div class="title">빈방어때</div>
+    <div class="title">빈방</div>
   </div>
 </div>
 ```
@@ -308,7 +308,7 @@
 // Next.js Image 사용 (이미 적용됨)
 <Image
   src='/hero.png'
-  alt='빈방어때 - 숙소 빈방 알림 서비스 대시보드'
+  alt='빈방 - 숙소 빈방 알림 서비스 대시보드'
   width={800}
   height={600}
   priority // Hero 이미지
@@ -368,16 +368,16 @@ Sitemap: https://binbang.moodybeard.com/sitemap.xml
 ❌ **키워드 스터핑** (나쁜 예)
 
 ```
-빈방어때는 숙소 빈방 알림 서비스입니다.
-숙소 빈방 알림을 원하시면 빈방어때를 사용하세요.
-빈방어때 숙소 빈방 알림은 최고입니다.
+빈방 서비스는 숙소 빈방 알림 서비스입니다.
+숙소 빈방 알림을 원하시면 빈방 서비스를 사용하세요.
+빈방의 숙소 빈방 알림은 최고입니다.
 ```
 
 ✅ **자연스러운 통합** (좋은 예)
 
 ```
 원하는 숙소가 품절됐나요?
-빈방어때가 1분마다 자동으로 체크해서
+빈방 서비스가 1분마다 자동으로 체크해서
 빈방이 생기면 즉시 알려드립니다.
 
 잠든 사이에도 당신을 지키는 성실함.

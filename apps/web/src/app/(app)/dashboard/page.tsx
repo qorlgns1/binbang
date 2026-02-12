@@ -10,7 +10,7 @@ import { DashboardContent } from './dashboardContent';
 
 export const metadata = {
   title: '대시보드',
-  description: '빈방어때 대시보드 - 등록된 숙소 모니터링 현황을 확인하세요',
+  description: '빈방 대시보드 - 등록된 숙소 모니터링 현황을 확인하세요',
   robots: {
     index: false,
     follow: false,

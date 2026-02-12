@@ -20,7 +20,7 @@ import { useCompleteTutorialMutation, useDismissTutorialMutation } from '@/featu
 
 const TUTORIAL_STEPS = [
   {
-    title: '빈방어때 시작하기',
+    title: '빈방 시작하기',
     body: '원하는 숙소를 등록하면 빈방 발생 시 카카오톡으로 알림을 받아요.',
   },
   {
@@ -33,7 +33,7 @@ const TUTORIAL_STEPS = [
   },
   {
     title: '준비 완료!',
-    body: '이제 빈방어때가 24시간 빈방을 모니터링해드릴게요. 편하게 기다리세요!',
+    body: '이제 빈방이 24시간 예약 가능 여부를 모니터링해드릴게요. 편하게 기다리세요!',
   },
 ] as const;
 
