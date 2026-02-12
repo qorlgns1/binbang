@@ -37,6 +37,10 @@ export type { PlatformSelectorCache, SelectorConfig } from './selectors';
 export { createConditionMetEvent } from './evidence';
 export type { CreateConditionMetEventInput } from './evidence';
 
+// Condition trigger (atomic billing + notification)
+export { triggerConditionMet } from './conditionTrigger';
+export type { TriggerConditionMetInput, TriggerConditionMetResult } from './conditionTrigger';
+
 // Cases
 export { findActiveCaseLinks } from './cases';
 export type { ActiveCaseLink } from './cases';

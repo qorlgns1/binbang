@@ -1,13 +1,13 @@
 import { type CheckerRuntimeConfig, checkAccommodation } from '@workspace/worker-shared/browser';
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
-  createConditionMetEvent,
   determineStatus,
   finalizeCycleCounter,
   getPlatformSelectors,
   getSettings,
   saveCheckLog,
   sendNotificationIfNeeded,
+  triggerConditionMet,
   updateAccommodationStatus,
   type Job,
 } from '@workspace/worker-shared/runtime';
@@ -62,9 +62,9 @@ export async function processCheck(job: Job): Promise<void> {
       { durationMs, retryCount: result.retryCount, previousStatus: data.lastStatus },
     );
 
-    // Case-linked 모니터링에서 AVAILABLE 감지 시 증거 생성
+    // Case-linked: 증거 + 과금 + 알림 + 자동 전이 (atomic)
     if (data.caseId && status === 'AVAILABLE') {
-      await createConditionMetEvent({
+      const triggerResult = await triggerConditionMet({
         caseId: data.caseId,
         checkLogId,
         evidenceSnapshot: {
@@ -78,24 +78,40 @@ export async function processCheck(job: Job): Promise<void> {
         },
         screenshotBase64: result.screenshotBase64 ?? null,
         capturedAt: new Date(),
-      });
-      console.log(`  Evidence captured for case ${data.caseId}`);
-    }
-
-    await sendNotificationIfNeeded(
-      {
-        accommodationId: data.accommodationId,
         userId: data.userId,
-        name: data.name,
+        accommodationName: data.name,
         checkIn: data.checkIn,
         checkOut: data.checkOut,
-        lastStatus: data.lastStatus,
-        kakaoAccessToken: data.kakaoAccessToken,
         price: result.price,
         checkUrl: result.checkUrl,
-      },
-      status,
-    );
+      });
+
+      if (triggerResult?.alreadyTriggered) {
+        console.log(`  Case ${data.caseId} already triggered (idempotent skip)`);
+      } else if (triggerResult) {
+        console.log(`  Case ${data.caseId}: CONDITION_MET + billing + notification`);
+      } else {
+        console.log(`  Case ${data.caseId}: not in ACTIVE_MONITORING, skipped`);
+      }
+    }
+
+    // Case 미연결 숙소만 기존 알림 흐름 사용
+    if (!data.caseId) {
+      await sendNotificationIfNeeded(
+        {
+          accommodationId: data.accommodationId,
+          userId: data.userId,
+          name: data.name,
+          checkIn: data.checkIn,
+          checkOut: data.checkOut,
+          lastStatus: data.lastStatus,
+          kakaoAccessToken: data.kakaoAccessToken,
+          price: result.price,
+          checkUrl: result.checkUrl,
+        },
+        status,
+      );
+    }
     await updateAccommodationStatus(data.accommodationId, status, result.price, result.metadata);
 
     console.log(`  Done (${durationMs}ms)`);

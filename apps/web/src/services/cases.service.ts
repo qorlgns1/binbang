@@ -56,6 +56,26 @@ export interface ConditionMetEventOutput {
   createdAt: string;
 }
 
+export interface CaseNotificationOutput {
+  id: string;
+  channel: string;
+  status: string;
+  payload: unknown;
+  sentAt: string | null;
+  failReason: string | null;
+  retryCount: number;
+  maxRetries: number;
+  createdAt: string;
+}
+
+export interface BillingEventOutput {
+  id: string;
+  type: string;
+  amountKrw: number;
+  description: string | null;
+  createdAt: string;
+}
+
 export interface CaseDetailOutput extends CaseOutput {
   submission: {
     id: string;
@@ -72,6 +92,8 @@ export interface CaseDetailOutput extends CaseOutput {
   };
   statusLogs: CaseStatusLogOutput[];
   conditionMetEvents: ConditionMetEventOutput[];
+  notifications: CaseNotificationOutput[];
+  billingEvent: BillingEventOutput | null;
 }
 
 export interface CaseStatusLogOutput {
@@ -179,6 +201,29 @@ const CASE_DETAIL_SELECT = {
     },
     orderBy: { capturedAt: 'desc' as const },
   },
+  notifications: {
+    select: {
+      id: true,
+      channel: true,
+      status: true,
+      payload: true,
+      sentAt: true,
+      failReason: true,
+      retryCount: true,
+      maxRetries: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
+  billingEvent: {
+    select: {
+      id: true,
+      type: true,
+      amountKrw: true,
+      description: true,
+      createdAt: true,
+    },
+  },
 } as const;
 
 // ============================================================================
@@ -251,6 +296,24 @@ interface CaseDetailRow extends CaseRow {
     capturedAt: Date;
     createdAt: Date;
   }[];
+  notifications: {
+    id: string;
+    channel: string;
+    status: string;
+    payload: unknown;
+    sentAt: Date | null;
+    failReason: string | null;
+    retryCount: number;
+    maxRetries: number;
+    createdAt: Date;
+  }[];
+  billingEvent: {
+    id: string;
+    type: string;
+    amountKrw: number;
+    description: string | null;
+    createdAt: Date;
+  } | null;
 }
 
 function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
@@ -289,6 +352,28 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
         createdAt: evt.createdAt.toISOString(),
       }),
     ),
+    notifications: row.notifications.map(
+      (n): CaseNotificationOutput => ({
+        id: n.id,
+        channel: n.channel,
+        status: n.status,
+        payload: n.payload,
+        sentAt: n.sentAt?.toISOString() ?? null,
+        failReason: n.failReason,
+        retryCount: n.retryCount,
+        maxRetries: n.maxRetries,
+        createdAt: n.createdAt.toISOString(),
+      }),
+    ),
+    billingEvent: row.billingEvent
+      ? {
+          id: row.billingEvent.id,
+          type: row.billingEvent.type,
+          amountKrw: row.billingEvent.amountKrw,
+          description: row.billingEvent.description,
+          createdAt: row.billingEvent.createdAt.toISOString(),
+        }
+      : null,
   };
 }
 

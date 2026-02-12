@@ -1,7 +1,9 @@
 import {
   AvailabilityStatus,
+  BillingEventType,
   CaseStatus,
   FormSubmissionStatus,
+  NotificationStatus,
   PatternType,
   Platform,
   SelectorCategory,
@@ -520,6 +522,30 @@ export interface SeedConditionMetEvent {
   createdAt: Date;
 }
 
+export interface SeedBillingEvent {
+  id: string;
+  caseId: string;
+  type: BillingEventType;
+  conditionMetEventId: string;
+  amountKrw: number;
+  description: string | null;
+  createdAt: Date;
+}
+
+export interface SeedCaseNotification {
+  id: string;
+  caseId: string;
+  channel: string;
+  status: NotificationStatus;
+  payload: Record<string, unknown>;
+  sentAt: Date | null;
+  failReason: string | null;
+  retryCount: number;
+  maxRetries: number;
+  idempotencyKey: string;
+  createdAt: Date;
+}
+
 function makeSubmissionPayload(
   targetUrl: string,
   conditionDefinition: string,
@@ -912,6 +938,40 @@ export const SEED_CONDITION_MET_EVENTS: SeedConditionMetEvent[] = [
     },
     screenshotBase64: null,
     capturedAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+    createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+  },
+];
+
+export const SEED_BILLING_EVENTS: SeedBillingEvent[] = [
+  {
+    id: 'seed_billing_1',
+    caseId: 'seed_case_5',
+    type: BillingEventType.CONDITION_MET_FEE,
+    conditionMetEventId: 'seed_evidence_1',
+    amountKrw: 0,
+    description: '조건 충족 수수료',
+    createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+  },
+];
+
+export const SEED_CASE_NOTIFICATIONS: SeedCaseNotification[] = [
+  {
+    id: 'seed_notification_1',
+    caseId: 'seed_case_5',
+    channel: 'KAKAO',
+    status: NotificationStatus.SENT,
+    payload: {
+      title: '숙소 예약 가능! 🎉',
+      description: `📍 ${SEED_ACCOMMODATIONS[1].name}\n📅 ${SEED_ACCOMMODATIONS[1].checkIn.toISOString().split('T')[0]} ~ ${SEED_ACCOMMODATIONS[1].checkOut.toISOString().split('T')[0]}\n💰 ₩93,000\n\n지금 바로 확인하세요!`,
+      buttonText: '예약하러 가기',
+      buttonUrl: SEED_ACCOMMODATIONS[1].url,
+      userId: '',
+    },
+    sentAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 29),
+    failReason: null,
+    retryCount: 0,
+    maxRetries: 3,
+    idempotencyKey: 'seed_case_5:seed_log_seed_cycle_1_seed_acc_2',
     createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
   },
 ];

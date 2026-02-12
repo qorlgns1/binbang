@@ -15,7 +15,9 @@ import { type Prisma, PrismaClient } from '@/generated/prisma/client';
 import {
   SEED_ACCOMMODATIONS,
   SEED_ACCOUNTS,
+  SEED_BILLING_EVENTS,
   SEED_CASES,
+  SEED_CASE_NOTIFICATIONS,
   SEED_CASE_STATUS_LOGS,
   SEED_CHECK_CYCLES,
   SEED_CHECK_LOGS,
@@ -398,6 +400,62 @@ async function main() {
     });
   }
   console.log(`   ✓ ConditionMetEvents: ${SEED_CONDITION_MET_EVENTS.length}`);
+
+  // ── Billing Events ──
+  for (const billing of SEED_BILLING_EVENTS) {
+    await prisma.billingEvent.upsert({
+      where: { id: billing.id },
+      update: {
+        caseId: billing.caseId,
+        type: billing.type,
+        conditionMetEventId: billing.conditionMetEventId,
+        amountKrw: billing.amountKrw,
+        description: billing.description,
+      },
+      create: {
+        id: billing.id,
+        caseId: billing.caseId,
+        type: billing.type,
+        conditionMetEventId: billing.conditionMetEventId,
+        amountKrw: billing.amountKrw,
+        description: billing.description,
+        createdAt: billing.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ BillingEvents: ${SEED_BILLING_EVENTS.length}`);
+
+  // ── Case Notifications ──
+  for (const notification of SEED_CASE_NOTIFICATIONS) {
+    await prisma.caseNotification.upsert({
+      where: { id: notification.id },
+      update: {
+        caseId: notification.caseId,
+        channel: notification.channel,
+        status: notification.status,
+        payload: json(notification.payload),
+        sentAt: notification.sentAt,
+        failReason: notification.failReason,
+        retryCount: notification.retryCount,
+        maxRetries: notification.maxRetries,
+        idempotencyKey: notification.idempotencyKey,
+      },
+      create: {
+        id: notification.id,
+        caseId: notification.caseId,
+        channel: notification.channel,
+        status: notification.status,
+        payload: json(notification.payload),
+        sentAt: notification.sentAt,
+        failReason: notification.failReason,
+        retryCount: notification.retryCount,
+        maxRetries: notification.maxRetries,
+        idempotencyKey: notification.idempotencyKey,
+        createdAt: notification.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ CaseNotifications: ${SEED_CASE_NOTIFICATIONS.length}`);
 
   // ── Worker Heartbeat ──
   await prisma.workerHeartbeat.upsert({

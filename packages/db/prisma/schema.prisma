@@ -505,6 +505,8 @@ model Case {
 
   statusLogs          CaseStatusLog[]
   conditionMetEvents  ConditionMetEvent[]
+  notifications       CaseNotification[]
+  billingEvent        BillingEvent?
 
   @@index([status])
   @@index([createdAt])
@@ -535,6 +537,53 @@ model ConditionMetEvent {
   capturedAt       DateTime
   createdAt        DateTime @default(now())
 
+  billingEvent BillingEvent?
+
   @@unique([caseId, checkLogId])
+  @@index([caseId])
+}
+
+// ── Billing & Notification ──
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum BillingEventType {
+  CONDITION_MET_FEE
+}
+
+model CaseNotification {
+  id             String             @id @default(cuid())
+  caseId         String
+  case           Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  channel        String             @default("KAKAO")
+  status         NotificationStatus @default(PENDING)
+  payload        Json
+  sentAt         DateTime?
+  failReason     String?            @db.Text
+  retryCount     Int                @default(0)
+  maxRetries     Int                @default(3)
+  idempotencyKey String             @unique
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([caseId])
+  @@index([status])
+}
+
+model BillingEvent {
+  id                  String            @id @default(cuid())
+  caseId              String            @unique
+  case                Case              @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  type                BillingEventType  @default(CONDITION_MET_FEE)
+  conditionMetEventId String            @unique
+  conditionMetEvent   ConditionMetEvent @relation(fields: [conditionMetEventId], references: [id])
+  amountKrw           Int
+  description         String?
+  createdAt           DateTime          @default(now())
+
   @@index([caseId])
 }
