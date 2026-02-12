@@ -1170,12 +1170,12 @@ packages/worker-shared/src/runtime/i18n/
 
 ### 17.2 Work Units 체크박스 보드
 
-- [ ] WU-01 Locale 기본 타입/상수 추가
+- [x] WU-01 Locale 기본 타입/상수 추가
   - Scope: `Locale`, `SUPPORTED_LOCALES`, `DEFAULT_LOCALE` 정의
   - Allowed Files: `packages/shared/src/i18n/locale.ts`, 관련 테스트 파일
   - DoD: 타입/상수 export + 테스트 통과
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-02 `resolveLocale()` 순수 함수 구현
@@ -1276,7 +1276,7 @@ packages/worker-shared/src/runtime/i18n/
 
 ### 17.3 Progress Log (체크박스와 함께 업데이트)
 
-- `YYYY-MM-DD`: `WU-xx` 완료/차단 요약 + 검증 결과 1줄
+- `2026-02-12`: `WU-01` 완료 — `locale.ts`(Locale/SUPPORTED_LOCALES/DEFAULT_LOCALE/isSupportedLocale/normalizeLocale) + `./i18n` export + 테스트 18개 통과, typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---
