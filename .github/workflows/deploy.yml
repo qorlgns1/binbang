@@ -78,11 +78,14 @@ jobs:
     steps:
       - name: Deploy
         uses: appleboy/ssh-action@v1.2.5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
           port: ${{ secrets.OCI_PORT }}
+          envs: DATABASE_URL
           script: |
             set -e
             cd ~/workspace/binbang
@@ -134,8 +137,8 @@ jobs:
               update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST" .env.production
               update_env_var DEPLOY_SHA "${{ github.sha }}" .env.production
               update_env_var DEPLOYED_AT "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" .env.production
-              if [ -n "${{ secrets.DATABASE_URL }}" ]; then
-                update_env_var DATABASE_URL "${{ secrets.DATABASE_URL }}" .env.production.local
+              if [ -n "$DATABASE_URL" ]; then
+                update_env_var DATABASE_URL "$DATABASE_URL" .env.production.local
               fi
 
               pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy

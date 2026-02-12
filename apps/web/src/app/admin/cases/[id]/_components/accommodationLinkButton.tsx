@@ -83,6 +83,11 @@ export function AccommodationLinkButton({ caseId, currentStatus, accommodationId
             placeholder='숙소 ID를 입력하세요'
             value={inputId}
             onChange={(e) => setInputId(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && inputId.trim() && !linkMutation.isPending) {
+                handleSubmit();
+              }
+            }}
           />
         </div>
 

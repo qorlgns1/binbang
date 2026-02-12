@@ -130,8 +130,8 @@ export function useCreateCaseMutation(): UseCreateCaseMutationResult {
 
   return useMutation({
     mutationFn: createCase,
-    onSuccess: (): void => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+    onSuccess: async (): Promise<void> => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
     },
   });
 }
@@ -141,9 +141,9 @@ export function useTransitionCaseStatusMutation(): UseTransitionCaseStatusMutati
 
   return useMutation({
     mutationFn: transitionCaseStatus,
-    onSuccess: (_data, variables): void => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
-      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    onSuccess: async (_data, variables): Promise<void> => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      await queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
     },
   });
 }
@@ -153,9 +153,9 @@ export function useConfirmPaymentMutation(): UseConfirmPaymentMutationResult {
 
   return useMutation({
     mutationFn: confirmPayment,
-    onSuccess: (_data, variables): void => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
-      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    onSuccess: async (_data, variables): Promise<void> => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      await queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
     },
   });
 }
@@ -165,9 +165,9 @@ export function useLinkAccommodationMutation(): UseLinkAccommodationMutationResu
 
   return useMutation({
     mutationFn: linkAccommodation,
-    onSuccess: (_data, variables): void => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
-      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    onSuccess: async (_data, variables): Promise<void> => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      await queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
     },
   });
 }

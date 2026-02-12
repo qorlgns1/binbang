@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { retryNotification } from '@/services/notifications.service';
+import { retryNotificationForCase } from '@/services/notifications.service';
 
 export async function POST(
   _request: Request,
@@ -13,8 +13,8 @@ export async function POST(
   }
 
   try {
-    const { notificationId } = await params;
-    const result = await retryNotification(notificationId);
+    const { id: caseId, notificationId } = await params;
+    const result = await retryNotificationForCase(notificationId, caseId);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });

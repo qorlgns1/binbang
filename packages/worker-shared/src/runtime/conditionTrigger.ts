@@ -1,5 +1,9 @@
 import { type Prisma, prisma } from '@workspace/db';
 
+function isUniqueConstraintError(error: unknown): boolean {
+  return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
+}
+
 import { sendKakaoNotification } from './notifications';
 
 // ============================================================================
@@ -185,8 +189,7 @@ export async function triggerConditionMet(input: TriggerConditionMetInput): Prom
 
     return result;
   } catch (error: unknown) {
-    const prismaError = error as { code?: string };
-    if (prismaError.code === 'P2002') {
+    if (isUniqueConstraintError(error)) {
       return {
         conditionMetEventId: '',
         billingEventId: '',
