@@ -1266,12 +1266,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-13 EOL 이후 레거시 경로 제거(2026-07-01 이후)
+- [x] WU-13 EOL 이후 레거시 경로 제거
   - Scope: `apps/web/public/locales/**` 로딩/참조 제거
   - Allowed Files: web i18n 로더/참조 코드, 필요 시 `apps/web/public/locales/**` 삭제
   - DoD: 메시지 소스가 `apps/web/messages/**`로 단일화
   - Verify: `pnpm i18n:check`, `pnpm --filter @workspace/web typecheck`, `pnpm --filter @workspace/web test`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 ### 17.3 Progress Log (체크박스와 함께 업데이트)
@@ -1288,6 +1288,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-10` 완료 — `scripts/i18n/check.mjs`(key parity+param parity+빈 값 검사), apps/web+worker-shared messages 대상, `pnpm i18n:check` 스크립트 추가, ci:check 통과
 - `2026-02-12`: `WU-11` 완료 — `scripts/i18n/typegen.mjs`(ko 기준 namespace별 key union 타입 생성), 출력 `packages/shared/src/generated/i18n/messages.ts`(gitignored), `pnpm i18n:typegen` 스크립트 추가, WebMessages/WorkerMessages/TypedTranslateFunction 타입 제공, ci:check 통과
 - `2026-02-12`: `WU-12` 완료 — `scripts/i18n/check-legacy.mjs`(레거시 경로 변경 차단, EOL 2026-06-30), `pnpm i18n:ci`(typegen+check+check-legacy 통합), `.github/workflows/ci.yml`에 `pnpm i18n:ci` 단계 추가, ci:check 통과
+- `2026-02-12`: `WU-13` 완료 — `apps/web/public/locales/` 삭제, `landing.json` → `messages/{ko,en}/landing.json` 이동, `getLandingCopy()` 경로 업데이트, i18n:check(common 13 + landing 40 keys), ci:check 통과
 - `YYYY-MM-DD`: `-`
 
 ---
