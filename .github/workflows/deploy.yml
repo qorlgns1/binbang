@@ -101,7 +101,7 @@ jobs:
               export PATH="$PWD/node_modules/.bin:$PATH"
             fi
             if ! command -v pnpm >/dev/null 2>&1; then
-              echo "::error::pnpm not found on server. Check PATH and Node/pnpm setup."
+              echo "ERROR: pnpm not found on server. Check PATH and Node/pnpm setup." >&2
               echo "PATH=$PATH" && echo "NVM_DIR=$NVM_DIR"
               command -v node >/dev/null 2>&1 && echo "node=$(command -v node)" || echo "node=not found"
               exit 1
@@ -117,8 +117,10 @@ jobs:
               key="$1"
               value="$2"
               file="$3"
+              # sed replacement safety: escape delimiter(|), backslash, and &
+              escaped_value=$(printf '%s' "$value" | sed -e 's/[\\&|]/\\&/g')
               if grep -q "^${key}=" "$file" 2>/dev/null; then
-                sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+                sed -i "s|^${key}=.*|${key}=${escaped_value}|" "$file"
               else
                 echo "${key}=${value}" >> "$file"
               fi
