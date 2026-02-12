@@ -37,7 +37,12 @@ export async function sendNotificationIfNeeded(
   let effectiveLastStatus: AvailabilityStatus | null = input.lastStatus;
 
   const lastLog = await prisma.checkLog.findFirst({
-    where: { accommodationId: input.accommodationId, checkIn: { not: null } },
+    where: {
+      accommodationId: input.accommodationId,
+      userId: input.userId,
+      checkIn: { not: null },
+      checkOut: { not: null },
+    },
     orderBy: { createdAt: 'desc' },
     select: { checkIn: true, checkOut: true },
     skip: 1,

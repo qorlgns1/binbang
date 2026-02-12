@@ -211,6 +211,7 @@ export async function createFormSubmission(input: CreateFormSubmissionInput): Pr
           data: {
             extractedFields: parseResult.data as unknown as Prisma.InputJsonValue,
             formVersion: consentEvidence.formVersion,
+            status: 'PROCESSED',
             consentBillingOnConditionMet: parseResult.data.billing_consent,
             consentServiceScope: parseResult.data.scope_consent,
             consentCapturedAt: new Date(),

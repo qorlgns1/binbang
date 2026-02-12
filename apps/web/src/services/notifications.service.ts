@@ -23,88 +23,108 @@ export async function retryNotificationForCase(
   notificationId: string,
   caseId: string | null,
 ): Promise<RetryNotificationResult> {
-  const notification = await prisma.caseNotification.findUnique({
-    where: { id: notificationId },
-    select: {
-      id: true,
-      caseId: true,
-      status: true,
-      payload: true,
-      retryCount: true,
-      maxRetries: true,
-      case: {
-        select: {
-          accommodation: {
-            select: { userId: true },
+  const markRetryFailed = async (failReason: string, error: unknown): Promise<void> => {
+    console.error('retryNotificationForCase failed:', { notificationId, caseId, failReason, error });
+    try {
+      await prisma.caseNotification.updateMany({
+        where: { id: notificationId, status: 'PENDING' },
+        data: { status: 'FAILED', failReason },
+      });
+    } catch (updateError) {
+      console.error('retryNotificationForCase: failed to update notification status after error:', {
+        notificationId,
+        updateError,
+        originalError: error,
+      });
+    }
+  };
+
+  try {
+    const notification = await prisma.caseNotification.findUnique({
+      where: { id: notificationId },
+      select: {
+        id: true,
+        caseId: true,
+        status: true,
+        payload: true,
+        retryCount: true,
+        maxRetries: true,
+        case: {
+          select: {
+            accommodation: {
+              select: { userId: true },
+            },
           },
         },
       },
-    },
-  });
-
-  if (!notification) {
-    return { success: false, error: 'Notification not found' };
-  }
-
-  if (caseId && notification.caseId !== caseId) {
-    return { success: false, error: 'Notification does not belong to this case' };
-  }
-
-  if (notification.status !== 'FAILED') {
-    return { success: false, error: 'Only FAILED notifications can be retried' };
-  }
-
-  if (notification.retryCount >= notification.maxRetries) {
-    return { success: false, error: 'Max retries exceeded' };
-  }
-
-  // 원자적 claim(중복 발송 방지): 읽은 retryCount와 동일할 때만 FAILED→PENDING 전이
-  const claimed = await prisma.caseNotification.updateMany({
-    where: {
-      id: notificationId,
-      status: 'FAILED',
-      retryCount: notification.retryCount,
-    },
-    data: {
-      status: 'PENDING',
-      retryCount: { increment: 1 },
-      failReason: null,
-    },
-  });
-
-  if (claimed.count !== 1) {
-    return { success: false, error: 'Notification is already being retried' };
-  }
-
-  const userId = notification.case?.accommodation?.userId;
-  if (!userId) {
-    await prisma.caseNotification.update({
-      where: { id: notificationId },
-      data: { status: 'FAILED', failReason: 'No user linked to case accommodation' },
-      select: { id: true },
     });
-    return { success: false, error: 'No user linked to case accommodation' };
-  }
 
-  const accessToken = await getValidAccessToken(userId);
-  if (!accessToken) {
-    await prisma.caseNotification.update({
-      where: { id: notificationId },
-      data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음' },
-      select: { id: true },
+    if (!notification) {
+      return { success: false, error: 'Notification not found' };
+    }
+
+    if (caseId && notification.caseId !== caseId) {
+      return { success: false, error: 'Notification does not belong to this case' };
+    }
+
+    if (notification.status !== 'FAILED') {
+      return { success: false, error: 'Only FAILED notifications can be retried' };
+    }
+
+    if (notification.retryCount >= notification.maxRetries) {
+      return { success: false, error: 'Max retries exceeded' };
+    }
+
+    // 원자적 claim(중복 발송 방지): 읽은 retryCount와 동일할 때만 FAILED→PENDING 전이
+    const claimed = await prisma.caseNotification.updateMany({
+      where: {
+        id: notificationId,
+        status: 'FAILED',
+        retryCount: notification.retryCount,
+      },
+      data: {
+        status: 'PENDING',
+        retryCount: { increment: 1 },
+        failReason: null,
+      },
     });
-    return { success: false, error: 'No valid Kakao token' };
+
+    if (claimed.count !== 1) {
+      return { success: false, error: 'Notification is already being retried' };
+    }
+
+    const userId = notification.case?.accommodation?.userId;
+    if (!userId) {
+      await prisma.caseNotification.updateMany({
+        where: { id: notificationId, status: 'PENDING' },
+        data: { status: 'FAILED', failReason: 'No user linked to case accommodation' },
+      });
+      return { success: false, error: 'No user linked to case accommodation' };
+    }
+
+    const accessToken = await getValidAccessToken(userId);
+    if (!accessToken) {
+      await prisma.caseNotification.updateMany({
+        where: { id: notificationId, status: 'PENDING' },
+        data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음' },
+      });
+      return { success: false, error: 'No valid Kakao token' };
+    }
+
+    const payload = notification.payload as Record<string, unknown>;
+    const sent = await sendKakaoMessage(payload, accessToken);
+
+    await prisma.caseNotification.updateMany({
+      where: { id: notificationId, status: 'PENDING' },
+      data: sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '재시도 전송 실패' },
+    });
+
+    return { success: sent };
+  } catch (error: unknown) {
+    const failReason = error instanceof Error ? error.message : 'Unknown error';
+    await markRetryFailed(failReason, error);
+    return { success: false, error: failReason };
   }
-
-  const payload = notification.payload as Record<string, unknown>;
-  const sent = await sendKakaoMessage(payload, accessToken);
-
-  await prisma.caseNotification.updateMany({
-    where: { id: notificationId, status: 'PENDING' },
-    data: sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '재시도 전송 실패' },
-  });
-
-  return { success: sent };
 }
 
 // ============================================================================
