@@ -21,6 +21,9 @@ export async function saveCheckLog(
   const parsed = parsePrice(result.price);
   const checkIn = new Date(input.checkIn);
   const checkOut = new Date(input.checkOut);
+  if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+    throw new Error(`Invalid stay dates: checkIn=${input.checkIn}, checkOut=${input.checkOut}`);
+  }
   const nights = nightsBetween(checkIn, checkOut);
   const pricePerNight = parsed && nights > 0 ? Math.round(parsed.amount / nights) : null;
 

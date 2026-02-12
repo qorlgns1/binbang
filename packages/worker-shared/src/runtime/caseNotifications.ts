@@ -95,7 +95,7 @@ export async function retryStaleCaseNotifications(
       where: {
         id: n.id,
         status: n.status,
-        retryCount: { lt: n.maxRetries },
+        retryCount: n.retryCount,
       },
       data: {
         status: 'PENDING',

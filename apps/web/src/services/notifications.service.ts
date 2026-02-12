@@ -16,10 +16,18 @@ export interface RetryNotificationResult {
 // ============================================================================
 
 export async function retryNotification(notificationId: string): Promise<RetryNotificationResult> {
+  return retryNotificationForCase(notificationId, null);
+}
+
+export async function retryNotificationForCase(
+  notificationId: string,
+  caseId: string | null,
+): Promise<RetryNotificationResult> {
   const notification = await prisma.caseNotification.findUnique({
     where: { id: notificationId },
     select: {
       id: true,
+      caseId: true,
       status: true,
       payload: true,
       retryCount: true,
@@ -38,6 +46,10 @@ export async function retryNotification(notificationId: string): Promise<RetryNo
     return { success: false, error: 'Notification not found' };
   }
 
+  if (caseId && notification.caseId !== caseId) {
+    return { success: false, error: 'Notification does not belong to this case' };
+  }
+
   if (notification.status !== 'FAILED') {
     return { success: false, error: 'Only FAILED notifications can be retried' };
   }
@@ -46,8 +58,31 @@ export async function retryNotification(notificationId: string): Promise<RetryNo
     return { success: false, error: 'Max retries exceeded' };
   }
 
+  // 원자적 claim(중복 발송 방지): 읽은 retryCount와 동일할 때만 FAILED→PENDING 전이
+  const claimed = await prisma.caseNotification.updateMany({
+    where: {
+      id: notificationId,
+      status: 'FAILED',
+      retryCount: notification.retryCount,
+    },
+    data: {
+      status: 'PENDING',
+      retryCount: { increment: 1 },
+      failReason: null,
+    },
+  });
+
+  if (claimed.count !== 1) {
+    return { success: false, error: 'Notification is already being retried' };
+  }
+
   const userId = notification.case?.accommodation?.userId;
   if (!userId) {
+    await prisma.caseNotification.update({
+      where: { id: notificationId },
+      data: { status: 'FAILED', failReason: 'No user linked to case accommodation' },
+      select: { id: true },
+    });
     return { success: false, error: 'No user linked to case accommodation' };
   }
 
@@ -55,7 +90,7 @@ export async function retryNotification(notificationId: string): Promise<RetryNo
   if (!accessToken) {
     await prisma.caseNotification.update({
       where: { id: notificationId },
-      data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음', retryCount: { increment: 1 } },
+      data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음' },
       select: { id: true },
     });
     return { success: false, error: 'No valid Kakao token' };
@@ -64,12 +99,9 @@ export async function retryNotification(notificationId: string): Promise<RetryNo
   const payload = notification.payload as Record<string, unknown>;
   const sent = await sendKakaoMessage(payload, accessToken);
 
-  await prisma.caseNotification.update({
-    where: { id: notificationId },
-    data: sent
-      ? { status: 'SENT', sentAt: new Date(), retryCount: { increment: 1 } }
-      : { status: 'FAILED', failReason: '재시도 전송 실패', retryCount: { increment: 1 } },
-    select: { id: true },
+  await prisma.caseNotification.updateMany({
+    where: { id: notificationId, status: 'PENDING' },
+    data: sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '재시도 전송 실패' },
   });
 
   return { success: sent };
@@ -107,6 +139,9 @@ async function getValidAccessToken(userId: string): Promise<string | null> {
 
 async function refreshKakaoToken(userId: string, refreshToken: string): Promise<string | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
     const response = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -116,7 +151,9 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
         client_secret: getEnv('KAKAO_CLIENT_SECRET'),
         refresh_token: refreshToken,
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) return null;
 
@@ -154,6 +191,9 @@ async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: s
   };
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
     const response = await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
       method: 'POST',
       headers: {
@@ -163,7 +203,9 @@ async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: s
       body: new URLSearchParams({
         template_object: JSON.stringify(template),
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) return false;
 

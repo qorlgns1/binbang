@@ -65,6 +65,9 @@ export async function sendNotificationIfNeeded(
     await prisma.checkLog.updateMany({
       where: {
         accommodationId: input.accommodationId,
+        userId: input.userId,
+        checkIn,
+        checkOut,
         notificationSent: false,
       },
       data: {

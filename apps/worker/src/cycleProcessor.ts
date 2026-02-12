@@ -50,9 +50,14 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       return;
     }
 
+    const expectedJobCount = accommodations.reduce((sum, acc) => {
+      const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
+      return sum + Math.max(1, caseLinks.length);
+    }, 0);
+
     const cycleId = await createCheckCycle({
       startedAt: new Date(startTime),
-      totalCount: accommodations.length,
+      totalCount: expectedJobCount,
       concurrency: settings.worker.concurrency,
       browserPoolSize: settings.worker.browserPoolSize,
       navigationTimeoutMs: settings.browser.navigationTimeoutMs,
@@ -93,6 +98,6 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
 
     await checkQueue.addBulk(jobs);
 
-    console.log(`${accommodations.length} check jobs queued for cycle ${cycleId}`);
+    console.log(`${jobs.length} check jobs queued for cycle ${cycleId}`);
   };
 }

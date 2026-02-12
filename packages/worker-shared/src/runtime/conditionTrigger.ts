@@ -31,13 +31,19 @@ export interface TriggerConditionMetResult {
 // Helpers
 // ============================================================================
 
+function isUniqueConstraintError(error: unknown): boolean {
+  return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
+}
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 function buildNotificationPayload(input: TriggerConditionMetInput): Record<string, unknown> {
   const checkIn = new Date(input.checkIn);
   const checkOut = new Date(input.checkOut);
-  const lines = [
-    `📍 ${input.accommodationName}`,
-    `📅 ${checkIn.toISOString().split('T')[0]} ~ ${checkOut.toISOString().split('T')[0]}`,
-  ];
+  const formatStayDate = (d: Date): string => (Number.isNaN(d.getTime()) ? 'N/A' : d.toISOString().split('T')[0]);
+  const lines = [`📍 ${input.accommodationName}`, `📅 ${formatStayDate(checkIn)} ~ ${formatStayDate(checkOut)}`];
   if (input.price) {
     lines.push(`💰 ${input.price}`);
   }
@@ -72,14 +78,25 @@ async function sendAndUpdateNotification(
       select: { id: true },
     });
   } catch (error) {
-    await prisma.caseNotification.update({
-      where: { id: notificationId },
-      data: {
-        status: 'FAILED',
-        failReason: error instanceof Error ? error.message : 'Unknown error',
-      },
-      select: { id: true },
-    });
+    const failReason = toErrorMessage(error);
+    console.error('sendAndUpdateNotification failed:', error);
+
+    try {
+      await prisma.caseNotification.update({
+        where: { id: notificationId },
+        data: {
+          status: 'FAILED',
+          failReason,
+        },
+        select: { id: true },
+      });
+    } catch (updateError) {
+      console.error('sendAndUpdateNotification: failed to update notification status after send error:', {
+        updateError,
+        originalError: error,
+        notificationId,
+      });
+    }
   }
 }
 
@@ -126,6 +143,8 @@ export async function triggerConditionMet(input: TriggerConditionMetInput): Prom
           caseId: input.caseId,
           type: 'CONDITION_MET_FEE',
           conditionMetEventId: evidence.id,
+          // NOTE: 현재 CONDITION_MET 알림은 무료(0원) 정책이다.
+          // input.price는 숙소 가격 문자열로, 알림/증거 용도로만 사용한다.
           amountKrw: 0,
           description: '조건 충족 수수료',
         },
@@ -185,8 +204,7 @@ export async function triggerConditionMet(input: TriggerConditionMetInput): Prom
 
     return result;
   } catch (error: unknown) {
-    const prismaError = error as { code?: string };
-    if (prismaError.code === 'P2002') {
+    if (isUniqueConstraintError(error)) {
       return {
         conditionMetEventId: '',
         billingEventId: '',

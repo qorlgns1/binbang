@@ -266,7 +266,12 @@ async function main() {
         statusChangedBy: statusChangedBy,
         statusChangedAt: caseData.statusChangedAt,
         note: caseData.note,
-        ambiguityResult: caseData.ambiguityResult ? json(caseData.ambiguityResult) : undefined,
+        ambiguityResult:
+          caseData.ambiguityResult === null
+            ? Prisma.DbNull
+            : caseData.ambiguityResult
+              ? json(caseData.ambiguityResult)
+              : undefined,
         clarificationResolvedAt: caseData.clarificationResolvedAt,
         paymentConfirmedAt: caseData.paymentConfirmedAt,
         paymentConfirmedBy: paymentConfirmedBy,
@@ -280,7 +285,12 @@ async function main() {
         statusChangedBy: statusChangedBy,
         statusChangedAt: caseData.statusChangedAt,
         note: caseData.note,
-        ambiguityResult: caseData.ambiguityResult ? json(caseData.ambiguityResult) : undefined,
+        ambiguityResult:
+          caseData.ambiguityResult === null
+            ? Prisma.DbNull
+            : caseData.ambiguityResult
+              ? json(caseData.ambiguityResult)
+              : undefined,
         clarificationResolvedAt: caseData.clarificationResolvedAt,
         paymentConfirmedAt: caseData.paymentConfirmedAt,
         paymentConfirmedBy: paymentConfirmedBy,

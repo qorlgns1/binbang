@@ -150,6 +150,11 @@ function resolveConsentEvidence(input: { formVersion: string | null; payloadCons
   };
 }
 
+function parseConsentTexts(value: unknown): ConsentTexts | null {
+  const result = consentTextsSchema.safeParse(value);
+  return result.success ? result.data : null;
+}
+
 function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
   return {
     id: row.id,
@@ -163,7 +168,7 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
     consentBillingOnConditionMet: row.consentBillingOnConditionMet,
     consentServiceScope: row.consentServiceScope,
     consentCapturedAt: row.consentCapturedAt?.toISOString() ?? null,
-    consentTexts: (row.consentTexts as ConsentTexts) ?? null,
+    consentTexts: parseConsentTexts(row.consentTexts),
     receivedAt: row.receivedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

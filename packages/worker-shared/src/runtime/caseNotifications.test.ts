@@ -87,7 +87,7 @@ describe('caseNotifications', (): void => {
     expect(result.failed).toBe(0);
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { id: 'n-1', status: 'FAILED', retryCount: { lt: 3 } },
+      where: { id: 'n-1', status: 'FAILED', retryCount: 0 },
       data: { status: 'PENDING', retryCount: { increment: 1 }, failReason: null },
     });
     expect(mockSendKakaoNotification).toHaveBeenCalledWith({

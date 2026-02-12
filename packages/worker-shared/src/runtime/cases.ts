@@ -23,7 +23,7 @@ export async function findActiveCaseLinks(): Promise<Map<string, ActiveCaseLink[
   const map = new Map<string, ActiveCaseLink[]>();
   for (const c of activeCases) {
     if (!c.accommodationId) continue;
-    const extracted = c.submission.extractedFields as Record<string, unknown> | null;
+    const extracted = (c.submission?.extractedFields as Record<string, unknown> | null) ?? null;
     const conditionDefinition =
       typeof extracted?.condition_definition === 'string' ? extracted.condition_definition : '';
     const arr = map.get(c.accommodationId) ?? [];
