@@ -16,18 +16,10 @@ export interface RetryNotificationResult {
 // ============================================================================
 
 export async function retryNotification(notificationId: string): Promise<RetryNotificationResult> {
-  return retryNotificationForCase(notificationId, null);
-}
-
-export async function retryNotificationForCase(
-  notificationId: string,
-  caseId: string | null,
-): Promise<RetryNotificationResult> {
   const notification = await prisma.caseNotification.findUnique({
     where: { id: notificationId },
     select: {
       id: true,
-      caseId: true,
       status: true,
       payload: true,
       retryCount: true,
@@ -44,10 +36,6 @@ export async function retryNotificationForCase(
 
   if (!notification) {
     return { success: false, error: 'Notification not found' };
-  }
-
-  if (caseId && notification.caseId !== caseId) {
-    return { success: false, error: 'Notification does not belong to this case' };
   }
 
   if (notification.status !== 'FAILED') {
@@ -119,9 +107,6 @@ async function getValidAccessToken(userId: string): Promise<string | null> {
 
 async function refreshKakaoToken(userId: string, refreshToken: string): Promise<string | null> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10_000);
-
     const response = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -131,9 +116,7 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
         client_secret: getEnv('KAKAO_CLIENT_SECRET'),
         refresh_token: refreshToken,
       }),
-      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
 
     if (!response.ok) return null;
 
@@ -171,9 +154,6 @@ async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: s
   };
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10_000);
-
     const response = await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
       method: 'POST',
       headers: {
@@ -183,9 +163,7 @@ async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: s
       body: new URLSearchParams({
         template_object: JSON.stringify(template),
       }),
-      signal: controller.signal,
     });
-    clearTimeout(timeoutId);
 
     if (!response.ok) return false;
 

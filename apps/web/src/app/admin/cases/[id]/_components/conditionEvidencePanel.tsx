@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-import Image from 'next/image';
 import { Camera, CheckCircle, Copy } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -45,13 +44,9 @@ export function ConditionEvidencePanel({ conditionMetEvents, currentStatus }: Pr
       evidenceSnapshot: event.evidenceSnapshot,
       capturedAt: event.capturedAt,
     };
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-      setCopiedId(event.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
-      console.error('클립보드 복사 실패:', error);
-    }
+    await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    setCopiedId(event.id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -100,13 +95,10 @@ export function ConditionEvidencePanel({ conditionMetEvents, currentStatus }: Pr
                       <DialogHeader>
                         <DialogTitle>증거 스크린샷 - {formatDateTime(evt.capturedAt)}</DialogTitle>
                       </DialogHeader>
-                      <Image
+                      <img
                         src={`data:image/png;base64,${evt.screenshotBase64}`}
                         alt='Evidence screenshot'
                         className='w-full rounded border'
-                        width={1200}
-                        height={800}
-                        unoptimized
                       />
                     </DialogContent>
                   </Dialog>

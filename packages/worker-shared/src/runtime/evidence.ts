@@ -1,9 +1,5 @@
 import { type Prisma, prisma } from '@workspace/db';
 
-function isUniqueConstraintError(error: unknown): boolean {
-  return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
-}
-
 export interface CreateConditionMetEventInput {
   caseId: string;
   checkLogId: string;
@@ -26,7 +22,8 @@ export async function createConditionMetEvent(input: CreateConditionMetEventInpu
     });
   } catch (error: unknown) {
     // @@unique([caseId, checkLogId]) 위반 시 무시 (멱등)
-    if (isUniqueConstraintError(error)) {
+    const prismaError = error as { code?: string };
+    if (prismaError.code === 'P2002') {
       return;
     }
     throw error;
