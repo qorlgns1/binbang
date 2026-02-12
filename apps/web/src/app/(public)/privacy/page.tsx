@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: '개인정보처리방침 | Binbang',
-  description: 'Binbang(빈방어때) 개인정보처리방침. 수집·이용·보관·삭제 등 개인정보 처리 방식을 안내합니다.',
+  description: 'Binbang(빈방) 개인정보처리방침. 수집·이용·보관·삭제 등 개인정보 처리 방식을 안내합니다.',
 };
 
 /** 정적 생성으로 항상 200 HTML 응답 보장 (OAuth 검증용). */
@@ -26,8 +26,8 @@ export default function PrivacyPage(): React.ReactElement {
       <p className='mt-2 text-sm text-muted-foreground'>최종 수정일: 2026년 2월 11일</p>
       <div className='prose prose-neutral mt-8 dark:prose-invert'>
         <p className='text-muted-foreground'>
-          Binbang(빈방어때)은 이용자의 개인정보를 소중히 다루며, 「개인정보 보호법」 등 관련 법령을 준수합니다. 본
-          방침은 Binbang 서비스 이용 시 수집되는 개인정보의 처리 방식을 안내합니다.
+          Binbang(빈방)은 이용자의 개인정보를 소중히 다루며, 「개인정보 보호법」 등 관련 법령을 준수합니다. 본 방침은
+          Binbang 서비스 이용 시 수집되는 개인정보의 처리 방식을 안내합니다.
         </p>
         <section className='mt-8'>
           <h2 className='text-xl font-medium text-foreground'>1. 수집하는 개인정보</h2>

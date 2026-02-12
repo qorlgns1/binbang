@@ -11,15 +11,15 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: '빈방어때 - 숙소 빈방 알림 서비스 | 에어비앤비·아고다 실시간 모니터링',
-    template: '%s - 빈방어때',
+    default: '빈방 - 숙소 빈방 알림 서비스 | 에어비앤비·아고다 실시간 모니터링',
+    template: '%s - 빈방',
   },
   description:
-    '원하는 숙소가 품절됐나요? 빈방어때가 1분마다 자동으로 체크해서 빈방이 생기면 즉시 카카오톡으로 알려드립니다. 에어비앤비, 아고다 지원. 무료로 시작하세요.',
+    '원하는 숙소가 품절됐나요? 빈방 서비스가 1분마다 자동으로 체크해서 빈방이 생기면 즉시 카카오톡으로 알려드립니다. 에어비앤비, 아고다 지원. 무료로 시작하세요.',
   keywords: ['숙소 빈방 알림', '숙소 예약 모니터링', '에어비앤비 알림', '아고다 알림', '숙소 가격 알림', '실시간 알림'],
-  authors: [{ name: '빈방어때' }],
-  creator: '빈방어때',
-  publisher: '빈방어때',
+  authors: [{ name: '빈방' }],
+  creator: '빈방',
+  publisher: '빈방',
   metadataBase: new URL('https://binbang.moodybeard.com'),
   alternates: {
     canonical: '/',
@@ -28,21 +28,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     url: 'https://binbang.moodybeard.com',
-    title: '빈방어때 - 당신의 휴식이 길을 잃지 않도록',
+    title: '빈방 - 당신의 휴식이 길을 잃지 않도록',
     description: '1분마다 체크하는 숙소 빈방 알림 서비스. 잠든 사이에도 당신을 지킵니다.',
-    siteName: '빈방어때',
+    siteName: '빈방',
     images: [
       {
         url: '/icon.png',
         width: 1024,
         height: 1024,
-        alt: '빈방어때 - 숙소 빈방 알림 서비스',
+        alt: '빈방 - 숙소 빈방 알림 서비스',
       },
     ],
   },
   twitter: {
     card: 'summary',
-    title: '빈방어때 - 숙소 빈방 알림 서비스',
+    title: '빈방 - 숙소 빈방 알림 서비스',
     description: '1분마다 체크하는 숙소 빈방 알림. 누구보다 빨리 전하는 가장 밝은 소식.',
     images: ['/icon.png'],
   },

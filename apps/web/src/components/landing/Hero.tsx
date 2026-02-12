@@ -24,7 +24,7 @@ export function Hero({ copy, lang }: HeroProps): React.ReactElement {
       <div className='absolute inset-0'>
         <Image
           src='https://images.unsplash.com/photo-1610029795220-e5afca4dc7ba?auto=format&fit=crop&w=1920&q=80'
-          alt='빈방어때 숙소 빈방 알림 서비스 - 밤바다를 비추는 등대'
+          alt='빈방 - 숙소 빈방 알림 서비스 - 밤바다를 비추는 등대'
           fill
           priority
           className='object-cover opacity-60'

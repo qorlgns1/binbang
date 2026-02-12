@@ -235,17 +235,17 @@ rg -n "@workspace/worker-shared/src" apps packages
 
 ---
 
-## 브랜드 정체성 (빈방어때)
+## 브랜드 정체성 (빈방)
 
 <!-- INJECT: docs/history/branding/brand-identity.md -->
-# Brand Identity Guide: 빈방어때
+# Brand Identity Guide: 빈방
 
 > 이 문서 수정 후 **`pnpm update:ai-context`** 실행 시 AI 컨텍스트에 반영됩니다.
 
 ## 1. 브랜드 개요 (Brand Overview)
 
-- **브랜드 이름**: 빈방어때
-- **슬로건**: 당신의 휴식이 길을 잃지 않도록, 빈방어때
+- **브랜드 이름**: 빈방
+- **슬로건**: 당신의 휴식이 길을 잃지 않도록, 빈방
 - **핵심 가치 (Core Value)**: 안도감, 신뢰, 정교함
 - **브랜드 상징 (Archetype)**: 어두운 밤바다에서 길을 비추는 **'등대'**
 
@@ -271,7 +271,7 @@ rg -n "@workspace/worker-shared/src" apps packages
 ### 메인 카피
 
 > **당신의 휴식이 길을 잃지 않도록,**
-> **빈방어때가 밤새 불을 밝혀둘게요.**
+> **빈방이 밤새 불을 밝혀둘게요.**
 
 ### 상세 설명
 
