@@ -1242,12 +1242,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-10 i18n 정합성 검사 스크립트
+- [x] WU-10 i18n 정합성 검사 스크립트
   - Scope: key set/ICU 파라미터/공유 namespace parity 검사
   - Allowed Files: `scripts/i18n/check.*`, 루트 `package.json` scripts
   - DoD: 실패 시 locale/namespace/key를 명확히 출력
   - Verify: `pnpm i18n:check`, `pnpm typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-11 i18n typegen 파이프라인
@@ -1285,6 +1285,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-07` 완료 — `i18n-runtime/server.ts`(resolveServerLocale: cookies+headers 자동 읽기, urlLocale/userPreferredLocale 파라미터) + 테스트 7개 통과, web test 164개 + typecheck 통과
 - `2026-02-12`: `WU-08` 완료 — `src/i18n/request.ts`(getNamespacesForRoute+loadMessages+getRequestMessages), route group→namespace 선언적 매핑, `messages/{locale}/{ns}.json` 구조, 테스트 9개 통과, web test 173개 + typecheck 통과
 - `2026-02-12`: `WU-09` 완료 — worker i18n runtime(loader+templates+userLocale), conditionTrigger 구조화 페이로드 전환, caseNotifications 레거시/구조화 양방향 호환, 메시지 ko/en notification.json, 테스트 11개 통과, ci:check 통과
+- `2026-02-12`: `WU-10` 완료 — `scripts/i18n/check.mjs`(key parity+param parity+빈 값 검사), apps/web+worker-shared messages 대상, `pnpm i18n:check` 스크립트 추가, ci:check 통과
 - `YYYY-MM-DD`: `-`
 
 ---
