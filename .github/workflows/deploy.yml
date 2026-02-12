@@ -140,7 +140,7 @@ jobs:
             # --- develop: 개발용 운영 서버 배포 (DB 마이그레이션·시드 후 컨테이너 기동) ---
             docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
             APP_ENV=development pnpm db:migrate:deploy
-            pnpm --filter @workspace/db exec prisma generate
+            pnpm with-env:development pnpm --filter @workspace/db exec prisma generate
             APP_ENV=development pnpm db:seed:deploy
             pnpm with-env:development pnpm --filter @workspace/db db:seed
             docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d
