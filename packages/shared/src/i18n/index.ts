@@ -13,12 +13,7 @@ export {
   resolveLocale,
 } from './resolveLocale';
 
-export {
-  type Messages,
-  type MessageLoader,
-  type MissingKeyPolicy,
-  type I18nOptions,
-} from './loaderTypes';
+export type { Messages, MessageLoader, MissingKeyPolicy, I18nOptions } from './loaderTypes';
 
 export { MissingKeyError, MessageFormatError } from './errors';
 

@@ -25,9 +25,7 @@ export interface ResolveServerLocaleInput {
  * Next.js 서버 컨텍스트(cookies, headers)에서 자동으로 cookie/Accept-Language를 읽고,
  * 호출자가 전달한 URL locale + DB preferredLocale과 함께 resolveLocale에 위임한다.
  */
-export async function resolveServerLocale(
-  input: ResolveServerLocaleInput = {},
-): Promise<ResolveLocaleResult> {
+export async function resolveServerLocale(input: ResolveServerLocaleInput = {}): Promise<ResolveLocaleResult> {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get(COOKIE_NAME)?.value ?? null;
 

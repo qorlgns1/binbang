@@ -79,12 +79,7 @@ export type CurrencyToken = keyof typeof currencyPresets;
  * @param token - 포맷 프리셋 토큰
  * @param timeZone - 타임존 (기본: Asia/Seoul)
  */
-export function formatDate(
-  locale: Locale,
-  date: Date,
-  token: DateToken,
-  timeZone: string = DEFAULT_TIMEZONE,
-): string {
+export function formatDate(locale: Locale, date: Date, token: DateToken, timeZone: string = DEFAULT_TIMEZONE): string {
   const options = { ...datePresets[token], timeZone };
   return new Intl.DateTimeFormat(locale, options).format(date);
 }
@@ -118,10 +113,6 @@ export function formatCurrency(locale: Locale, value: number, token: CurrencyTok
  * @param value - 상대값 (음수: 과거, 양수: 미래)
  * @param unit - 시간 단위
  */
-export function formatRelativeTime(
-  locale: Locale,
-  value: number,
-  unit: Intl.RelativeTimeFormatUnit,
-): string {
+export function formatRelativeTime(locale: Locale, value: number, unit: Intl.RelativeTimeFormatUnit): string {
   return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(value, unit);
 }
