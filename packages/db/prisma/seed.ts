@@ -10,13 +10,19 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';
 
-import { PrismaClient } from '@/generated/prisma/client';
+import { Prisma, PrismaClient } from '@/generated/prisma/client';
 
 import {
   SEED_ACCOMMODATIONS,
   SEED_ACCOUNTS,
+  SEED_BILLING_EVENTS,
+  SEED_CASES,
+  SEED_CASE_NOTIFICATIONS,
+  SEED_CASE_STATUS_LOGS,
   SEED_CHECK_CYCLES,
   SEED_CHECK_LOGS,
+  SEED_CONDITION_MET_EVENTS,
+  SEED_FORM_SUBMISSIONS,
   SEED_HEARTBEAT_HISTORY,
   SEED_NOW,
   SEED_SESSIONS,
@@ -191,6 +197,110 @@ async function main() {
   }
   console.log(`   ✓ Accommodations: ${SEED_ACCOMMODATIONS.length}`);
 
+  // ── Form Submissions ──
+  const json = (v: unknown): Prisma.InputJsonValue => v as Prisma.InputJsonValue;
+
+  for (const submission of SEED_FORM_SUBMISSIONS) {
+    await prisma.formSubmission.upsert({
+      where: { id: submission.id },
+      update: {
+        responseId: submission.responseId,
+        status: submission.status,
+        rawPayload: json(submission.rawPayload),
+        extractedFields:
+          submission.extractedFields === null
+            ? Prisma.DbNull
+            : submission.extractedFields
+              ? json(submission.extractedFields)
+              : undefined,
+        rejectionReason: submission.rejectionReason,
+        consentBillingOnConditionMet: submission.consentBillingOnConditionMet,
+        consentServiceScope: submission.consentServiceScope,
+        consentCapturedAt: submission.consentCapturedAt,
+        consentTexts:
+          submission.consentTexts === null
+            ? Prisma.DbNull
+            : submission.consentTexts
+              ? json(submission.consentTexts)
+              : undefined,
+      },
+      create: {
+        id: submission.id,
+        responseId: submission.responseId,
+        status: submission.status,
+        rawPayload: json(submission.rawPayload),
+        extractedFields:
+          submission.extractedFields === null
+            ? Prisma.DbNull
+            : submission.extractedFields
+              ? json(submission.extractedFields)
+              : undefined,
+        rejectionReason: submission.rejectionReason,
+        consentBillingOnConditionMet: submission.consentBillingOnConditionMet,
+        consentServiceScope: submission.consentServiceScope,
+        consentCapturedAt: submission.consentCapturedAt,
+        consentTexts:
+          submission.consentTexts === null
+            ? Prisma.DbNull
+            : submission.consentTexts
+              ? json(submission.consentTexts)
+              : undefined,
+        receivedAt: submission.receivedAt,
+      },
+    });
+  }
+  console.log(`   ✓ FormSubmissions: ${SEED_FORM_SUBMISSIONS.length}`);
+
+  // ── Cases ──
+  for (const caseData of SEED_CASES) {
+    const assignedTo = caseData.assignedToKey ? userIdByKey[caseData.assignedToKey] : null;
+    const statusChangedBy = caseData.statusChangedByKey ? userIdByKey[caseData.statusChangedByKey] : null;
+    const paymentConfirmedBy = caseData.paymentConfirmedByKey ? userIdByKey[caseData.paymentConfirmedByKey] : null;
+
+    await prisma.case.upsert({
+      where: { id: caseData.id },
+      update: {
+        submissionId: caseData.submissionId,
+        status: caseData.status,
+        assignedTo: assignedTo,
+        statusChangedBy: statusChangedBy,
+        statusChangedAt: caseData.statusChangedAt,
+        note: caseData.note,
+        ambiguityResult:
+          caseData.ambiguityResult === null
+            ? Prisma.DbNull
+            : caseData.ambiguityResult
+              ? json(caseData.ambiguityResult)
+              : undefined,
+        clarificationResolvedAt: caseData.clarificationResolvedAt,
+        paymentConfirmedAt: caseData.paymentConfirmedAt,
+        paymentConfirmedBy: paymentConfirmedBy,
+        accommodationId: caseData.accommodationId,
+      },
+      create: {
+        id: caseData.id,
+        submissionId: caseData.submissionId,
+        status: caseData.status,
+        assignedTo: assignedTo,
+        statusChangedBy: statusChangedBy,
+        statusChangedAt: caseData.statusChangedAt,
+        note: caseData.note,
+        ambiguityResult:
+          caseData.ambiguityResult === null
+            ? Prisma.DbNull
+            : caseData.ambiguityResult
+              ? json(caseData.ambiguityResult)
+              : undefined,
+        clarificationResolvedAt: caseData.clarificationResolvedAt,
+        paymentConfirmedAt: caseData.paymentConfirmedAt,
+        paymentConfirmedBy: paymentConfirmedBy,
+        accommodationId: caseData.accommodationId,
+        createdAt: caseData.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ Cases: ${SEED_CASES.length}`);
+
   // ── Check Cycles ──
   for (const cycle of SEED_CHECK_CYCLES) {
     await prisma.checkCycle.upsert({
@@ -271,6 +381,111 @@ async function main() {
     });
   }
   console.log(`   ✓ CheckLogs: ${SEED_CHECK_LOGS.length}`);
+
+  // ── Case Status Logs ──
+  for (const log of SEED_CASE_STATUS_LOGS) {
+    const changedById = userIdByKey[log.changedByKey];
+    await prisma.caseStatusLog.upsert({
+      where: { id: log.id },
+      update: {
+        caseId: log.caseId,
+        fromStatus: log.fromStatus,
+        toStatus: log.toStatus,
+        changedById,
+        reason: log.reason,
+      },
+      create: {
+        id: log.id,
+        caseId: log.caseId,
+        fromStatus: log.fromStatus,
+        toStatus: log.toStatus,
+        changedById,
+        reason: log.reason,
+        createdAt: log.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ CaseStatusLogs: ${SEED_CASE_STATUS_LOGS.length}`);
+
+  // ── Condition Met Events ──
+  for (const event of SEED_CONDITION_MET_EVENTS) {
+    await prisma.conditionMetEvent.upsert({
+      where: { id: event.id },
+      update: {
+        caseId: event.caseId,
+        checkLogId: event.checkLogId,
+        evidenceSnapshot: json(event.evidenceSnapshot),
+        screenshotBase64: event.screenshotBase64,
+        capturedAt: event.capturedAt,
+      },
+      create: {
+        id: event.id,
+        caseId: event.caseId,
+        checkLogId: event.checkLogId,
+        evidenceSnapshot: json(event.evidenceSnapshot),
+        screenshotBase64: event.screenshotBase64,
+        capturedAt: event.capturedAt,
+        createdAt: event.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ ConditionMetEvents: ${SEED_CONDITION_MET_EVENTS.length}`);
+
+  // ── Billing Events ──
+  for (const billing of SEED_BILLING_EVENTS) {
+    await prisma.billingEvent.upsert({
+      where: { id: billing.id },
+      update: {
+        caseId: billing.caseId,
+        type: billing.type,
+        conditionMetEventId: billing.conditionMetEventId,
+        amountKrw: billing.amountKrw,
+        description: billing.description,
+      },
+      create: {
+        id: billing.id,
+        caseId: billing.caseId,
+        type: billing.type,
+        conditionMetEventId: billing.conditionMetEventId,
+        amountKrw: billing.amountKrw,
+        description: billing.description,
+        createdAt: billing.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ BillingEvents: ${SEED_BILLING_EVENTS.length}`);
+
+  // ── Case Notifications ──
+  for (const notification of SEED_CASE_NOTIFICATIONS) {
+    await prisma.caseNotification.upsert({
+      where: { id: notification.id },
+      update: {
+        caseId: notification.caseId,
+        channel: notification.channel,
+        status: notification.status,
+        payload: json(notification.payload),
+        sentAt: notification.sentAt,
+        failReason: notification.failReason,
+        retryCount: notification.retryCount,
+        maxRetries: notification.maxRetries,
+        idempotencyKey: notification.idempotencyKey,
+      },
+      create: {
+        id: notification.id,
+        caseId: notification.caseId,
+        channel: notification.channel,
+        status: notification.status,
+        payload: json(notification.payload),
+        sentAt: notification.sentAt,
+        failReason: notification.failReason,
+        retryCount: notification.retryCount,
+        maxRetries: notification.maxRetries,
+        idempotencyKey: notification.idempotencyKey,
+        createdAt: notification.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ CaseNotifications: ${SEED_CASE_NOTIFICATIONS.length}`);
 
   // ── Worker Heartbeat ──
   await prisma.workerHeartbeat.upsert({

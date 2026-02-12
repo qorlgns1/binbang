@@ -16,6 +16,18 @@ export interface CreateFormSubmissionResult {
   created: boolean;
 }
 
+export interface ConsentTexts {
+  billing: string;
+  scope: string;
+}
+
+const FORM_CONSENT_MAP: Record<string, ConsentTexts> = {
+  default: {
+    billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
+    scope: '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
+  },
+} as const;
+
 export interface FormSubmissionOutput {
   id: string;
   responseId: string;
@@ -25,6 +37,10 @@ export interface FormSubmissionOutput {
   sourceIp: string | null;
   extractedFields: unknown;
   rejectionReason: string | null;
+  consentBillingOnConditionMet: boolean | null;
+  consentServiceScope: boolean | null;
+  consentCapturedAt: string | null;
+  consentTexts: ConsentTexts | null;
   receivedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +71,10 @@ const FORM_SUBMISSION_SELECT = {
   sourceIp: true,
   extractedFields: true,
   rejectionReason: true,
+  consentBillingOnConditionMet: true,
+  consentServiceScope: true,
+  consentCapturedAt: true,
+  consentTexts: true,
   receivedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -73,10 +93,19 @@ interface FormSubmissionRow {
   sourceIp: string | null;
   extractedFields: unknown;
   rejectionReason: string | null;
+  consentBillingOnConditionMet: boolean | null;
+  consentServiceScope: boolean | null;
+  consentCapturedAt: Date | null;
+  consentTexts: unknown;
   receivedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const consentTextsSchema = z.object({
+  billing: z.string().min(1),
+  scope: z.string().min(1),
+});
 
 function isValidFutureDate(value: string): boolean {
   const date = new Date(value);
@@ -95,10 +124,35 @@ const rawPayloadFieldsSchema = z.object({
   check_frequency: z.string().nullable().optional(),
   billing_consent: z.literal(true, { errorMap: () => ({ message: '비용 발생 동의가 필요합니다' }) }),
   scope_consent: z.literal(true, { errorMap: () => ({ message: '서비스 범위 동의가 필요합니다' }) }),
+  // Apps Script가 전달할 수 있는 옵션 메타/원문
+  form_version: z.string().min(1).optional(),
+  formVersion: z.string().min(1).optional(),
+  consent_texts: consentTextsSchema.optional(),
+  billing_consent_text: z.string().min(1).optional(),
+  scope_consent_text: z.string().min(1).optional(),
 });
 
 function isUniqueConstraintError(error: unknown): boolean {
   return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
+}
+
+function resolveConsentEvidence(input: { formVersion: string | null; payloadConsentTexts: ConsentTexts | null }): {
+  formVersion: string | null;
+  consentTexts: ConsentTexts;
+} {
+  const mapped =
+    (input.formVersion ? FORM_CONSENT_MAP[input.formVersion] : null) ??
+    FORM_CONSENT_MAP.default ??
+    ({ billing: '', scope: '' } as const);
+  return {
+    formVersion: input.formVersion,
+    consentTexts: input.payloadConsentTexts ?? mapped,
+  };
+}
+
+function parseConsentTexts(value: unknown): ConsentTexts | null {
+  const result = consentTextsSchema.safeParse(value);
+  return result.success ? result.data : null;
 }
 
 function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
@@ -111,6 +165,10 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
     sourceIp: row.sourceIp,
     extractedFields: row.extractedFields,
     rejectionReason: row.rejectionReason,
+    consentBillingOnConditionMet: row.consentBillingOnConditionMet,
+    consentServiceScope: row.consentServiceScope,
+    consentCapturedAt: row.consentCapturedAt?.toISOString() ?? null,
+    consentTexts: parseConsentTexts(row.consentTexts),
     receivedAt: row.receivedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -121,49 +179,65 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
 // Service Functions
 // ============================================================================
 
-async function validateAndExtractFields(submissionId: string, rawPayload: Record<string, unknown>): Promise<void> {
-  const result = rawPayloadFieldsSchema.safeParse(rawPayload);
-
-  if (result.success) {
-    await prisma.formSubmission.update({
-      where: { id: submissionId },
-      data: { extractedFields: result.data as unknown as Prisma.InputJsonValue },
-      select: { id: true },
-    });
-  } else {
-    const reasons = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
-    await prisma.formSubmission.update({
-      where: { id: submissionId },
-      data: {
-        status: 'REJECTED',
-        rejectionReason: reasons.join('; '),
-      },
-      select: { id: true },
-    });
-  }
-}
-
 export async function createFormSubmission(input: CreateFormSubmissionInput): Promise<CreateFormSubmissionResult> {
   try {
-    const created = await prisma.formSubmission.create({
-      data: {
-        responseId: input.responseId,
-        rawPayload: input.rawPayload as unknown as Prisma.InputJsonValue,
-        sourceIp: input.sourceIp,
-      },
-      select: FORM_SUBMISSION_SELECT,
+    const result = await prisma.$transaction(async (tx): Promise<FormSubmissionRow> => {
+      const created = await tx.formSubmission.create({
+        data: {
+          responseId: input.responseId,
+          rawPayload: input.rawPayload as unknown as Prisma.InputJsonValue,
+          sourceIp: input.sourceIp,
+        },
+        select: FORM_SUBMISSION_SELECT,
+      });
+
+      // rawPayload 검증/추출
+      const parseResult = rawPayloadFieldsSchema.safeParse(input.rawPayload);
+
+      if (parseResult.success) {
+        const payloadFormVersion = parseResult.data.formVersion ?? parseResult.data.form_version ?? null;
+        const payloadConsentTexts =
+          parseResult.data.consent_texts ??
+          (parseResult.data.billing_consent_text && parseResult.data.scope_consent_text
+            ? { billing: parseResult.data.billing_consent_text, scope: parseResult.data.scope_consent_text }
+            : null);
+        const consentEvidence = resolveConsentEvidence({
+          formVersion: payloadFormVersion,
+          payloadConsentTexts,
+        });
+
+        await tx.formSubmission.update({
+          where: { id: created.id },
+          data: {
+            extractedFields: parseResult.data as unknown as Prisma.InputJsonValue,
+            formVersion: consentEvidence.formVersion,
+            status: 'PROCESSED',
+            consentBillingOnConditionMet: parseResult.data.billing_consent,
+            consentServiceScope: parseResult.data.scope_consent,
+            consentCapturedAt: new Date(),
+            consentTexts: consentEvidence.consentTexts as unknown as Prisma.InputJsonValue,
+          },
+          select: { id: true },
+        });
+      } else {
+        const reasons = parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
+        await tx.formSubmission.update({
+          where: { id: created.id },
+          data: {
+            status: 'REJECTED',
+            rejectionReason: reasons.join('; '),
+          },
+          select: { id: true },
+        });
+      }
+
+      return tx.formSubmission.findUniqueOrThrow({
+        where: { id: created.id },
+        select: FORM_SUBMISSION_SELECT,
+      });
     });
 
-    // 신규 생성 후 rawPayload 검증/추출
-    await validateAndExtractFields(created.id, input.rawPayload);
-
-    // 검증 결과가 반영된 최신 상태 조회
-    const updated = await prisma.formSubmission.findUnique({
-      where: { id: created.id },
-      select: FORM_SUBMISSION_SELECT,
-    });
-
-    return { submission: toOutput(updated ?? created), created: true };
+    return { submission: toOutput(result), created: true };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       const existing = await prisma.formSubmission.findUnique({

@@ -72,6 +72,7 @@ jobs:
     name: Deploy to OCI
     needs: docker
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
     permissions:
       contents: read
     steps:
@@ -85,6 +86,28 @@ jobs:
           script: |
             set -e
             cd ~/workspace/binbang
+
+            # --- 서버 셸 환경 (non-interactive에서도 node/pnpm 사용 가능하도록) ---
+            [ -f ~/.profile ] && . ~/.profile
+            [ -f ~/.bashrc ] && . ~/.bashrc
+            export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            export CI=true
+            if command -v corepack >/dev/null 2>&1; then
+              corepack enable
+              corepack prepare pnpm@10.28.0 --activate
+            fi
+            if ! command -v pnpm >/dev/null 2>&1 && [ -x ./node_modules/.bin/pnpm ]; then
+              export PATH="$PWD/node_modules/.bin:$PATH"
+            fi
+            if ! command -v pnpm >/dev/null 2>&1; then
+              echo "ERROR: pnpm not found on server. Check PATH and Node/pnpm setup." >&2
+              echo "PATH=$PATH" && echo "NVM_DIR=$NVM_DIR"
+              command -v node >/dev/null 2>&1 && echo "node=$(command -v node)" || echo "node=not found"
+              exit 1
+            fi
+
+            # --- 리포 최신화 ---
             BRANCH="${{ github.ref_name }}"
             git fetch origin "$BRANCH"
             git checkout -B "$BRANCH" "origin/$BRANCH"
@@ -93,29 +116,43 @@ jobs:
             update_env_var() {
               key="$1"
               value="$2"
-              if grep -q "^${key}=" .env.production; then
-                sed -i "s|^${key}=.*|${key}=${value}|" .env.production
+              file="$3"
+              # sed replacement safety: escape delimiter(|), backslash, and &
+              escaped_value=$(printf '%s' "$value" | sed -e 's/[\\&|]/\\&/g')
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                sed -i "s|^${key}=.*|${key}=${escaped_value}|" "$file"
               else
-                echo "${key}=${value}" >> .env.production
+                echo "${key}=${value}" >> "$file"
               fi
             }
 
+            # --- main: 프로덕션 배포 (셸은 .env.production.local, 컨테이너는 .env.production, seed 없음) ---
             if [ "${{ github.ref_name }}" = "main" ]; then
               IMAGE_TAG=${{ needs.docker.outputs.image_tag }}
               WEB_DIGEST=${{ needs.docker.outputs.web_digest }}
               WORKER_DIGEST=${{ needs.docker.outputs.worker_digest }}
-              DEPLOY_SHA=${{ github.sha }}
-              DEPLOYED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+              update_env_var IMAGE_TAG "$IMAGE_TAG" .env.production
+              update_env_var IMAGE_WEB_DIGEST "$WEB_DIGEST" .env.production
+              update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST" .env.production
+              update_env_var DEPLOY_SHA "${{ github.sha }}" .env.production
+              update_env_var DEPLOYED_AT "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" .env.production
+              if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+                update_env_var DATABASE_URL "${{ secrets.DATABASE_URL }}" .env.production.local
+              fi
 
-              update_env_var IMAGE_TAG "$IMAGE_TAG"
-              update_env_var IMAGE_WEB_DIGEST "$WEB_DIGEST"
-              update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST"
-              update_env_var DEPLOY_SHA "$DEPLOY_SHA"
-              update_env_var DEPLOYED_AT "$DEPLOYED_AT"
+              pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
+              pnpm with-env:production:host pnpm --filter @workspace/db exec prisma generate
+              pnpm with-env:production:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
 
               docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
               docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
-            else
-              docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
-              docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d
+              exit 0
             fi
+
+            # --- develop: 셸에서는 .env.development.local(DATABASE_URL) 사용, 컨테이너는 .env.development만 사용 ---
+            docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
+            pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate deploy
+            pnpm with-env:development:host pnpm --filter @workspace/db exec prisma generate
+            pnpm with-env:development:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
+            pnpm with-env:development:host pnpm --filter @workspace/db db:seed
+            docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d

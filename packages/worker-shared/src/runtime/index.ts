@@ -33,5 +33,36 @@ export {
 } from './selectors';
 export type { PlatformSelectorCache, SelectorConfig } from './selectors';
 
+// Evidence
+export { createConditionMetEvent } from './evidence';
+export type { CreateConditionMetEventInput } from './evidence';
+
+// Condition trigger (atomic billing + notification)
+export { triggerConditionMet } from './conditionTrigger';
+export type { TriggerConditionMetInput, TriggerConditionMetResult } from './conditionTrigger';
+
+// Case notifications (retry queue)
+export { retryStaleCaseNotifications } from './caseNotifications';
+export type { RetryCaseNotificationsOptions, RetryCaseNotificationsResult } from './caseNotifications';
+
+// Cases
+export { findActiveCaseLinks } from './cases';
+export type { ActiveCaseLink } from './cases';
+
+// Status utilities
+export { determineStatus, nightsBetween, isSameStayDates, shouldSendAvailabilityNotification } from './status';
+
+// Check log
+export { saveCheckLog } from './checkLog';
+export type { SaveCheckLogInput } from './checkLog';
+
+// Post-check operations
+export { sendNotificationIfNeeded, updateAccommodationStatus } from './postCheck';
+export type { SendNotificationInput } from './postCheck';
+
+// Cycle management
+export { findActiveAccommodations, createCheckCycle, finalizeCycleCounter } from './cycle';
+export type { ActiveAccommodation, CreateCheckCycleInput } from './cycle';
+
 // BullMQ types (re-exported for consumer convenience)
 export type { Queue, Worker, Job } from 'bullmq';

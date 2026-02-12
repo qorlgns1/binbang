@@ -24,8 +24,20 @@ export interface CaseItem {
   note: string | null;
   ambiguityResult: AmbiguityResult | null;
   clarificationResolvedAt: string | null;
+  paymentConfirmedAt: string | null;
+  paymentConfirmedBy: string | null;
+  accommodationId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConditionMetEvent {
+  id: string;
+  checkLogId: string;
+  evidenceSnapshot: unknown;
+  screenshotBase64: string | null;
+  capturedAt: string;
+  createdAt: string;
 }
 
 export interface CaseDetail extends CaseItem {
@@ -36,6 +48,10 @@ export interface CaseDetail extends CaseItem {
     rawPayload: unknown;
     extractedFields: unknown;
     rejectionReason: string | null;
+    consentBillingOnConditionMet: boolean | null;
+    consentServiceScope: boolean | null;
+    consentCapturedAt: string | null;
+    consentTexts: { billing: string; scope: string } | null;
     receivedAt: string;
   };
   statusLogs: {
@@ -46,6 +62,7 @@ export interface CaseDetail extends CaseItem {
     reason: string | null;
     createdAt: string;
   }[];
+  conditionMetEvents: ConditionMetEvent[];
 }
 
 export interface CasesResponse {

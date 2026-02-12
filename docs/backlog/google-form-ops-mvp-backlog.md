@@ -1,8 +1,10 @@
 # 구글폼 운영형 MVP 백로그 (조건 충족/열림 확인 과금 모델)
 
 > 작성일: 2026-02-11  
+> 수정일: 2026-02-12  
 > 목적: 웹사이트 없이 구글폼만으로 운영하는 현재 구조에서, 분쟁 없이 반복 가능한 운영 시스템을 만든다.
 > 운영 정책/상품 기준: `docs/guides/google-form-service-operations.md`
+> 테스트 가이드: `docs/guides/google-form-ops-mvp-test-guide.md`
 
 ## 0. 제품 원칙 (고정)
 
@@ -132,65 +134,125 @@
   - `apps/web/src/app/admin/cases/[id]/_components/clarificationPanel.tsx` — 모호성 패널
   - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 상태 전이 다이얼로그
 
-## P0-4. Q7 동의 2종 체크 증거화
+## P0-4. Q7 동의 2종 체크 증거화 ✅ 완료 (2026-02-11)
 
-- 목표: “비용 발생 동의”와 “열림 여부만 확인” 동의를 계약 데이터로 고정
+- 목표: "비용 발생 동의"와 "열림 여부만 확인" 동의를 계약 데이터로 고정
 - 구현
-  - Q7 항목을 분리 필드(`consentBillingOnConditionMet`, `consentServiceScope`)로 저장
-  - 둘 다 true가 아니면 접수 무효 처리
-  - 동의 시각/원문/폼 응답 ID를 함께 저장
+  - `FormSubmission` 모델에 명시적 동의 컬럼 4개 추가: `consentBillingOnConditionMet`, `consentServiceScope`, `consentCapturedAt`, `consentTexts`
+  - 폼 검증 성공 시 동의값(Boolean) + 캡처 시각 + 체크박스 원문(JSON)을 DB에 저장
+  - 동의 체크박스 원문 상수 정의 (운영 가이드 Q7: "설명문보다 체크 문장 자체를 계약 근거로 취급")
+  - 둘 다 true가 아니면 접수 무효(`REJECTED`) 처리 (P0-1A에서 구현, 유지)
+  - 관리자 케이스 상세 페이지에 Q7 동의 증거 패널 추가
 - 완료조건(DoD)
-  - 관리자 상세에서 Q7 동의 스냅샷 즉시 조회 가능
+  - 관리자 상세에서 Q7 동의 스냅샷(동의 여부 + 체크박스 원문 + 캡처 시각 + 응답 ID) 즉시 조회 가능
   - 동의 누락 건은 자동 `REJECTED`
+  - 동의값이 JSON(`extractedFields`)뿐 아니라 명시적 DB 컬럼으로도 저장
 - 구현 위치
-  - `packages/db/prisma/schema.prisma`
-  - `apps/web/src/services/intake.service.ts`
+  - `packages/db/prisma/schema.prisma` — `FormSubmission`에 동의 4컬럼 추가
+  - `apps/web/src/services/intake.service.ts` — `CONSENT_TEXTS` 상수, `validateAndExtractFields`에서 동의 저장, Output 타입 확장
+  - `apps/web/src/services/intake.service.test.ts` — 동의 증거 테스트 3건 추가 (총 21개)
+  - `apps/web/src/services/cases.service.ts` — `CASE_DETAIL_SELECT` submission에 동의 필드 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `CaseDetail.submission` 타입 확장
+  - `apps/web/src/app/admin/cases/[id]/_components/consentEvidencePanel.tsx` — Q7 동의 증거 패널
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 패널 통합
 
-## P0-5. 결제 확인 전 시작 차단(하드 게이트)
+## P0-5. 결제 확인 전 시작 차단(하드 게이트) ✅ 완료 (2026-02-11)
 
-- 목표: 운영 원칙 “결제 전 시작 금지”를 시스템으로 강제
+- 목표: 운영 원칙 "결제 전 시작 금지"를 시스템으로 강제
 - 구현
-  - `paymentConfirmedAt` nullable 필드 추가
-  - 결제 확인 액션 전에는 워커 잡 enqueue 금지
-  - 결제 확인 시점과 확인자(운영자) 감사 로그 저장
+  - `Case` 모델에 `paymentConfirmedAt`(DateTime?), `paymentConfirmedBy`(String?) 필드 추가
+  - `confirmPayment()` 서비스 함수: WAITING_PAYMENT 상태에서만 결제 확인 가능, 이미 확인된 경우 에러
+  - 결제 확인 시 감사 로그(`CaseStatusLog`): `WAITING_PAYMENT → WAITING_PAYMENT` + reason 기록 (상태 변경 없이 이력 보존)
+  - 결제 가드: `paymentConfirmedAt`가 null이면 `WAITING_PAYMENT → ACTIVE_MONITORING` 전이 차단
+  - 관리자 UI: 결제 확인 버튼 (WAITING_PAYMENT + 미확인 시 표시), 확인 완료 상태 표시
+  - 상태 전이 다이얼로그: 결제 미확인 시 "모니터링 시작" 옵션 비활성화 + 안내 메시지
 - 완료조건(DoD)
-  - 결제 미확인 케이스의 시작 API 호출은 4xx로 실패
+  - 결제 미확인 케이스의 `ACTIVE_MONITORING` 전이 API 호출은 에러로 실패
   - 결제 확인 후에만 `ACTIVE_MONITORING` 전이 가능
+  - 결제 확인 시점/확인자가 DB에 영구 저장
 - 구현 위치
-  - `apps/web/src/services/payments.service.ts` (신규)
-  - `apps/web/src/services/cases.service.ts`
-  - `packages/worker-shared/src/runtime/**` (enqueue 가드)
+  - `packages/db/prisma/schema.prisma` — `Case`에 `paymentConfirmedAt`/`paymentConfirmedBy` 추가
+  - `apps/web/src/services/cases.service.ts` — `confirmPayment()` + 결제 가드 + 타입/select 확장
+  - `apps/web/src/services/cases.service.test.ts` — 결제 가드 + confirmPayment 테스트 6건 추가 (총 36개)
+  - `apps/web/src/app/api/admin/cases/[id]/payment/route.ts` — 결제 확인 API (POST)
+  - `apps/web/src/features/admin/cases/mutations.ts` — `useConfirmPaymentMutation` 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `CaseItem` 타입에 결제 필드 추가
+  - `apps/web/src/app/admin/cases/[id]/_components/paymentConfirmButton.tsx` — 결제 확인 버튼
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 결제 버튼 통합
+  - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 결제 미확인 시 비활성화
 
-## P0-6. 조건 충족(열림 확인) 이벤트 증거 패킷
+## P0-6. 조건 충족(열림 확인) 이벤트 증거 패킷 ✅ 완료 (2026-02-11)
 
-- 목표: “봤다/못 봤다” 논쟁을 증거 패킷으로 종결
+- 목표: "봤다/못 봤다" 논쟁을 증거 패킷으로 종결
 - 구현
-  - 조건 충족 시점에 이벤트 생성(`ConditionMetEvent`)
-  - 필수 증거 저장: 체크 시각, 플랫폼, 체크 결과, 가격/옵션, 스크린샷 경로
-  - 이벤트 멱등키(`caseId + checkLogId`)로 중복 과금 방지
+  - `Case.accommodationId` 추가: 관리자가 케이스에 숙소를 수동 연결
+  - `ConditionMetEvent` 모델: `evidenceSnapshot`(JSON) + `screenshotBase64`(Text) + 멱등키(`@@unique([caseId, checkLogId])`)
+  - 워커 자동 감지: ACTIVE_MONITORING Case에 연결된 숙소가 AVAILABLE 전환 시 증거 자동 생성
+  - 스크린샷 캡처: `captureScreenshot` 플래그로 Case-linked 체크에서만 스크린샷 촬영
+  - 가드 2종: WAITING_PAYMENT → ACTIVE_MONITORING 시 숙소 연결 필수, ACTIVE_MONITORING → CONDITION_MET 시 증거 1건 이상 필수
+  - 관리자 UI: 숙소 연결 버튼, 증거 패킷 패널(스크린샷 뷰어 + JSON 복사)
+- 리팩토링 (rules.md 기준 개선)
+  - **Rule 8 위반 수정**: `apps/worker/src/cycleProcessor.ts`에서 `prisma.case.findMany()` 직접 호출(DB 로직)을 `packages/worker-shared/src/runtime/cases.ts`의 `findActiveCaseLinks()` 함수로 분리하여 Rule 8("DB logic MUST NOT live in apps/worker") 준수
+  - **코드 중복 제거**: `formatDateTime()` 함수가 `caseDetailView.tsx`, `conditionEvidencePanel.tsx`, `paymentConfirmButton.tsx`, `consentEvidencePanel.tsx` 4곳에 중복 정의되어 있던 것을 `formatDateTime.ts` 공용 유틸리티로 추출 (3곳 적용, `consentEvidencePanel.tsx`는 `second` 옵션 포함으로 별도 유지)
 - 완료조건(DoD)
-  - 케이스당 동일 체크에 대한 이벤트 1건만 생성
-  - 운영자 화면에서 증거 패킷 다운로드/복사 가능
+  - 케이스당 동일 체크에 대한 이벤트 1건만 생성 (멱등키 + P2002 무시)
+  - 운영자 화면에서 증거 패킷 조회/스크린샷 확인/메타데이터 복사 가능
+  - 숙소 미연결/증거 미존재 시 상태 전이 차단
 - 구현 위치
-  - `packages/db/prisma/schema.prisma`
-  - `packages/worker-shared/src/runtime/notifications/**`
-  - `apps/web/src/services/evidence.service.ts` (신규)
+  - `packages/db/prisma/schema.prisma` — `Case.accommodationId`, `ConditionMetEvent` 모델, `CheckLog` 역관계
+  - `packages/shared/src/types/checker.ts` — `CheckResult.screenshotBase64` 추가
+  - `packages/worker-shared/src/jobs/types.ts` — `CheckJobPayload.caseId`/`conditionDefinition` 추가
+  - `packages/worker-shared/src/browser/baseChecker.ts` — `captureScreenshot` 플래그 + 스크린샷 캡처 로직
+  - `packages/worker-shared/src/runtime/evidence.ts` — `createConditionMetEvent()` (멱등)
+  - `packages/worker-shared/src/runtime/cases.ts` — `findActiveCaseLinks()` (Rule 8 준수를 위한 DB 쿼리 분리)
+  - `packages/worker-shared/src/runtime/index.ts` — evidence/cases export 추가
+  - `apps/worker/src/cycleProcessor.ts` — `findActiveCaseLinks()` 호출 + caseId payload 추가
+  - `apps/worker/src/checkProcessor.ts` — `saveCheckLog` 반환값 변경 + 증거 생성 로직
+  - `apps/web/src/services/cases.service.ts` — `linkAccommodation()` + 가드 + 타입/select 확장
+  - `apps/web/src/services/cases.service.test.ts` — 숙소 연결 + 증거 가드 테스트 6건 추가 (총 42개)
+  - `apps/web/src/app/api/admin/cases/[id]/accommodation/route.ts` — 숙소 연결 API (PATCH)
+  - `apps/web/src/features/admin/cases/mutations.ts` — `useLinkAccommodationMutation` 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `ConditionMetEvent`/`accommodationId` 타입 추가
+  - `apps/web/src/app/admin/cases/[id]/_components/accommodationLinkButton.tsx` — 숙소 연결 버튼
+  - `apps/web/src/app/admin/cases/[id]/_components/conditionEvidencePanel.tsx` — 증거 패킷 패널
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 패널/버튼 통합
+  - `apps/web/src/app/admin/cases/[id]/_components/statusTransitionDialog.tsx` — 숙소/증거 가드 비활성화
+  - `apps/web/src/app/admin/cases/[id]/_components/formatDateTime.ts` — 공용 날짜 포맷 유틸리티 (중복 제거)
 
-## P0-7. 알림 + 과금 이벤트 원자적 트리거
+## P0-7. 알림 + 과금 이벤트 원자적 트리거 ✅ 완료 (2026-02-12)
 
 - 목표: 조건 충족 알림과 비용 발생 기록의 불일치 제거
 - 구현
-  - 단일 트랜잭션에서
-    - `ConditionMetEvent` 생성
-    - 고객 알림 발송 시도 기록
-    - `BillingEvent` 생성
-  - 실패 시 재시도 큐(최대 N회) + 중복 방지 키 사용
+  - Schema/마이그레이션: `NotificationStatus`, `BillingEventType` enum + `CaseNotification`, `BillingEvent` 모델 추가
+  - `triggerConditionMet` 함수:
+    - TX 내부: 증거(`ConditionMetEvent`) + 과금(`BillingEvent`) + 알림 시도 기록(`CaseNotification: PENDING`) + Case 전이 + 상태 로그
+    - TX 외부: 카카오 발송 + 결과 업데이트(`SENT`/`FAILED`)
+  - 워커 체크 처리 리팩토링:
+    - Case 연결 숙소(= `caseId` 포함)에서 `AVAILABLE` 감지 시 `triggerConditionMet()` 실행
+    - Case 미연결 숙소만 기존 “숙소 알림” 흐름을 유지
+  - 케이스 상세 조회 확장: `CaseDetail`에 `notifications`/`billingEvent` 포함(관리자 UI에서 증거/발송/과금 단일 화면 확인)
+  - 알림 재시도
+    - 수동: 관리자 API로 FAILED 알림 재시도 가능
+    - 자동: FAILED + 오래된 PENDING(stale) 알림을 주기적으로 재시도하는 워커 잡 추가
+  - 시드 데이터: `CONDITION_MET` 상태 케이스 1건에 `BillingEvent` 1건 + `CaseNotification(SENT)` 1건 포함
 - 완료조건(DoD)
   - 동일 케이스에서 `BillingEvent` 중복 생성 0건
   - 알림 실패 시 수동 재시도 가능
+  - 재시도(자동/수동) 시 `retryCount` 증가 + `maxRetries` 초과 시 차단
 - 구현 위치
-  - `packages/worker-shared/src/runtime/notifications/**`
-  - `apps/web/src/services/billing.service.ts` (신규)
+  - `packages/db/prisma/schema.prisma` — `NotificationStatus`, `BillingEventType`, `CaseNotification`, `BillingEvent`
+  - `packages/db/prisma/migrations/20260212081302_add_billing_event_and_case_notification/migration.sql`
+  - `packages/worker-shared/src/runtime/conditionTrigger.ts` — `triggerConditionMet()` (원자 트리거)
+  - `apps/worker/src/checkProcessor.ts` — Case-linked 숙소에서 `triggerConditionMet()` 호출
+  - `apps/web/src/services/cases.service.ts` — `CaseDetail`에 `notifications`/`billingEvent` select + mapper
+  - (수동 재시도) `apps/web/src/services/notifications.service.ts` — `retryNotification()`
+  - (수동 재시도) `apps/web/src/app/api/admin/cases/[id]/notifications/[notificationId]/retry/route.ts`
+  - (자동 재시도) `packages/worker-shared/src/runtime/caseNotifications.ts` — `retryStaleCaseNotifications()`
+  - (자동 재시도) `packages/worker-shared/src/runtime/scheduler.ts` — `notification-retry` repeatable job
+  - (자동 재시도) `apps/worker/src/cycleProcessor.ts` — `notification-retry` 처리
+  - (테스트) `packages/worker-shared/src/runtime/caseNotifications.test.ts`
+  - (시드) `packages/db/prisma/constants/index.ts` — `SEED_BILLING_EVENTS`, `SEED_CASE_NOTIFICATIONS`
+  - (시드) `packages/db/prisma/seed.ts` — upsert 적용
 
 ## P0-8. 운영자 액션 로그 + 분쟁 대응 템플릿
 

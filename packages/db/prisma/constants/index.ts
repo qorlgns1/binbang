@@ -1,4 +1,13 @@
-import { AvailabilityStatus, PatternType, Platform, SelectorCategory } from '@/generated/prisma/enums';
+import {
+  AvailabilityStatus,
+  BillingEventType,
+  CaseStatus,
+  FormSubmissionStatus,
+  NotificationStatus,
+  PatternType,
+  Platform,
+  SelectorCategory,
+} from '@/generated/prisma/enums';
 
 import { parseAccommodationUrl } from './url-parser';
 
@@ -451,6 +460,519 @@ export const SEED_SETTINGS_CHANGE_LOGS: SeedSettingsChangeLog[] = [
     newValue: '2',
     changedByKey: 'admin',
     createdAt: addMinutes(SEED_NOW, -90),
+  },
+];
+
+// ============================================
+// Form Submissions, Cases, Status Logs, Evidence
+// ============================================
+
+const CONSENT_TEXTS_SEED = {
+  billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
+  scope: '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
+};
+
+export interface SeedFormSubmission {
+  id: string;
+  responseId: string;
+  status: FormSubmissionStatus;
+  rawPayload: Record<string, unknown>;
+  extractedFields: Record<string, unknown> | null;
+  rejectionReason: string | null;
+  consentBillingOnConditionMet: boolean | null;
+  consentServiceScope: boolean | null;
+  consentCapturedAt: Date | null;
+  consentTexts: Record<string, string> | null;
+  receivedAt: Date;
+}
+
+export interface SeedCase {
+  id: string;
+  submissionId: string;
+  status: CaseStatus;
+  assignedToKey: SeedUserKey | null;
+  statusChangedByKey: SeedUserKey | null;
+  note: string | null;
+  ambiguityResult: Record<string, unknown> | null;
+  clarificationResolvedAt: Date | null;
+  paymentConfirmedAt: Date | null;
+  paymentConfirmedByKey: SeedUserKey | null;
+  accommodationId: string | null;
+  statusChangedAt: Date;
+  createdAt: Date;
+}
+
+export interface SeedCaseStatusLog {
+  id: string;
+  caseId: string;
+  fromStatus: CaseStatus;
+  toStatus: CaseStatus;
+  changedByKey: SeedUserKey;
+  reason: string | null;
+  createdAt: Date;
+}
+
+export interface SeedConditionMetEvent {
+  id: string;
+  caseId: string;
+  checkLogId: string;
+  evidenceSnapshot: Record<string, unknown>;
+  screenshotBase64: string | null;
+  capturedAt: Date;
+  createdAt: Date;
+}
+
+export interface SeedBillingEvent {
+  id: string;
+  caseId: string;
+  type: BillingEventType;
+  conditionMetEventId: string;
+  amountKrw: number;
+  description: string | null;
+  createdAt: Date;
+}
+
+export interface SeedCaseNotification {
+  id: string;
+  caseId: string;
+  channel: string;
+  status: NotificationStatus;
+  payload: Record<string, unknown>;
+  sentAt: Date | null;
+  failReason: string | null;
+  retryCount: number;
+  maxRetries: number;
+  idempotencyKey: string;
+  createdAt: Date;
+}
+
+function makeSubmissionPayload(
+  targetUrl: string,
+  conditionDefinition: string,
+): { rawPayload: Record<string, unknown>; extractedFields: Record<string, unknown> } {
+  const fields = {
+    contact_channel: '카카오톡',
+    contact_value: 'user_kakao_test',
+    target_url: targetUrl,
+    condition_definition: conditionDefinition,
+    request_window: '2026-03-01',
+    check_frequency: '30분',
+    billing_consent: true,
+    scope_consent: true,
+  };
+  return { rawPayload: fields, extractedFields: fields };
+}
+
+// 6건: 5 PROCESSED + 1 REJECTED
+export const SEED_FORM_SUBMISSIONS: SeedFormSubmission[] = (() => {
+  const recvTime = addMinutes(SEED_NOW, -7 * 24 * 60);
+
+  const s1 = makeSubmissionPayload(
+    SEED_ACCOMMODATIONS[0].url,
+    '2인 기준 파리 에어비앤비 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
+  );
+  const s2 = makeSubmissionPayload(SEED_ACCOMMODATIONS[1].url, '적당한 가격에 파리 숙소 2인 예약 가능하면 알려주세요');
+  const s3 = makeSubmissionPayload(
+    SEED_ACCOMMODATIONS[2].url,
+    '2인 기준 아고다 파리 호텔 1박 20만원 이하로 예약 가능하면 알려주세요',
+  );
+  const s4 = makeSubmissionPayload(
+    SEED_ACCOMMODATIONS[0].url,
+    '성인 2명 기준 1박 25만원 이하로 빈 방 나오면 바로 알림 부탁드립니다',
+  );
+  const s5 = makeSubmissionPayload(
+    SEED_ACCOMMODATIONS[1].url,
+    '2인 기준 파리 호텔 총 3박 60만원 이하로 예약 가능해지면 알려주세요',
+  );
+
+  return [
+    {
+      id: 'seed_submission_1',
+      responseId: 'seed_response_1',
+      status: FormSubmissionStatus.PROCESSED,
+      ...s1,
+      rejectionReason: null,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: recvTime,
+      consentTexts: CONSENT_TEXTS_SEED,
+      receivedAt: recvTime,
+    },
+    {
+      id: 'seed_submission_2',
+      responseId: 'seed_response_2',
+      status: FormSubmissionStatus.PROCESSED,
+      ...s2,
+      rejectionReason: null,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: addMinutes(recvTime, 5),
+      consentTexts: CONSENT_TEXTS_SEED,
+      receivedAt: addMinutes(recvTime, 5),
+    },
+    {
+      id: 'seed_submission_3',
+      responseId: 'seed_response_3',
+      status: FormSubmissionStatus.PROCESSED,
+      ...s3,
+      rejectionReason: null,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: addMinutes(recvTime, 10),
+      consentTexts: CONSENT_TEXTS_SEED,
+      receivedAt: addMinutes(recvTime, 10),
+    },
+    {
+      id: 'seed_submission_4',
+      responseId: 'seed_response_4',
+      status: FormSubmissionStatus.PROCESSED,
+      ...s4,
+      rejectionReason: null,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: addMinutes(recvTime, 15),
+      consentTexts: CONSENT_TEXTS_SEED,
+      receivedAt: addMinutes(recvTime, 15),
+    },
+    {
+      id: 'seed_submission_5',
+      responseId: 'seed_response_5',
+      status: FormSubmissionStatus.PROCESSED,
+      ...s5,
+      rejectionReason: null,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: addMinutes(recvTime, 20),
+      consentTexts: CONSENT_TEXTS_SEED,
+      receivedAt: addMinutes(recvTime, 20),
+    },
+    {
+      id: 'seed_submission_6',
+      responseId: 'seed_response_6',
+      status: FormSubmissionStatus.REJECTED,
+      rawPayload: {
+        contact_channel: '카카오톡',
+        contact_value: 'user_kakao_rejected',
+        target_url: SEED_ACCOMMODATIONS[3].url,
+        condition_definition: '파리 숙소 아무거나 빈 방 있으면 알려주세요',
+        request_window: '2026-03-01',
+        check_frequency: '30분',
+        billing_consent: false,
+        scope_consent: true,
+      },
+      extractedFields: null,
+      rejectionReason: 'billing_consent: Expected literal `true`, received `false`',
+      consentBillingOnConditionMet: null,
+      consentServiceScope: null,
+      consentCapturedAt: null,
+      consentTexts: null,
+      receivedAt: addMinutes(recvTime, 25),
+    },
+  ];
+})();
+
+// 5건: 각 파이프라인 단계별 1건씩
+export const SEED_CASES: SeedCase[] = [
+  {
+    id: 'seed_case_1',
+    submissionId: 'seed_submission_1',
+    status: CaseStatus.RECEIVED,
+    assignedToKey: null,
+    statusChangedByKey: 'admin',
+    note: null,
+    ambiguityResult: { severity: 'GREEN', missingSlots: [], ambiguousTerms: [] },
+    clarificationResolvedAt: null,
+    paymentConfirmedAt: null,
+    paymentConfirmedByKey: null,
+    accommodationId: null,
+    statusChangedAt: addMinutes(SEED_NOW, -6 * 24 * 60),
+    createdAt: addMinutes(SEED_NOW, -6 * 24 * 60),
+  },
+  {
+    id: 'seed_case_2',
+    submissionId: 'seed_submission_2',
+    status: CaseStatus.NEEDS_CLARIFICATION,
+    assignedToKey: 'admin',
+    statusChangedByKey: 'admin',
+    note: '모호 표현 "적당한" — 구체적 가격 범위 확인 필요',
+    ambiguityResult: { severity: 'AMBER', missingSlots: ['가격 조건'], ambiguousTerms: ['적당한'] },
+    clarificationResolvedAt: null,
+    paymentConfirmedAt: null,
+    paymentConfirmedByKey: null,
+    accommodationId: null,
+    statusChangedAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
+  },
+  {
+    id: 'seed_case_3',
+    submissionId: 'seed_submission_3',
+    status: CaseStatus.WAITING_PAYMENT,
+    assignedToKey: 'admin',
+    statusChangedByKey: 'admin',
+    note: null,
+    ambiguityResult: { severity: 'GREEN', missingSlots: [], ambiguousTerms: [] },
+    clarificationResolvedAt: null,
+    paymentConfirmedAt: null,
+    paymentConfirmedByKey: null,
+    accommodationId: null,
+    statusChangedAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 120),
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
+  },
+  {
+    id: 'seed_case_4',
+    submissionId: 'seed_submission_4',
+    status: CaseStatus.ACTIVE_MONITORING,
+    assignedToKey: 'admin',
+    statusChangedByKey: 'admin',
+    note: null,
+    ambiguityResult: { severity: 'GREEN', missingSlots: [], ambiguousTerms: [] },
+    clarificationResolvedAt: null,
+    paymentConfirmedAt: addMinutes(SEED_NOW, -3 * 24 * 60),
+    paymentConfirmedByKey: 'admin',
+    accommodationId: 'seed_acc_1',
+    statusChangedAt: addMinutes(SEED_NOW, -3 * 24 * 60 + 60),
+    createdAt: addMinutes(SEED_NOW, -3 * 24 * 60 - 2 * 24 * 60),
+  },
+  {
+    id: 'seed_case_5',
+    submissionId: 'seed_submission_5',
+    status: CaseStatus.CONDITION_MET,
+    assignedToKey: 'admin',
+    statusChangedByKey: 'admin',
+    note: '조건 충족 확인 — 증거 패킷 생성됨',
+    ambiguityResult: { severity: 'GREEN', missingSlots: [], ambiguousTerms: [] },
+    clarificationResolvedAt: null,
+    paymentConfirmedAt: addMinutes(SEED_NOW, -4 * 24 * 60),
+    paymentConfirmedByKey: 'admin',
+    accommodationId: 'seed_acc_2',
+    statusChangedAt: addMinutes(SEED_NOW, -2 * 24 * 60),
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 - 3 * 24 * 60),
+  },
+];
+
+export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
+  // Case 1: RECEIVED only
+  {
+    id: 'seed_cslog_1_1',
+    caseId: 'seed_case_1',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.RECEIVED,
+    changedByKey: 'admin',
+    reason: '케이스 생성',
+    createdAt: addMinutes(SEED_NOW, -6 * 24 * 60),
+  },
+  // Case 2: RECEIVED → REVIEWING → NEEDS_CLARIFICATION
+  {
+    id: 'seed_cslog_2_1',
+    caseId: 'seed_case_2',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.RECEIVED,
+    changedByKey: 'admin',
+    reason: '케이스 생성',
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
+  },
+  {
+    id: 'seed_cslog_2_2',
+    caseId: 'seed_case_2',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.REVIEWING,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 60),
+  },
+  {
+    id: 'seed_cslog_2_3',
+    caseId: 'seed_case_2',
+    fromStatus: CaseStatus.REVIEWING,
+    toStatus: CaseStatus.NEEDS_CLARIFICATION,
+    changedByKey: 'admin',
+    reason: 'AMBER: 모호 표현 감지 — 명확화 요청',
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
+  },
+  // Case 3: RECEIVED → REVIEWING → WAITING_PAYMENT
+  {
+    id: 'seed_cslog_3_1',
+    caseId: 'seed_case_3',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.RECEIVED,
+    changedByKey: 'admin',
+    reason: '케이스 생성',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
+  },
+  {
+    id: 'seed_cslog_3_2',
+    caseId: 'seed_case_3',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.REVIEWING,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 60),
+  },
+  {
+    id: 'seed_cslog_3_3',
+    caseId: 'seed_case_3',
+    fromStatus: CaseStatus.REVIEWING,
+    toStatus: CaseStatus.WAITING_PAYMENT,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 120),
+  },
+  // Case 4: RECEIVED → REVIEWING → WAITING_PAYMENT → payment → ACTIVE_MONITORING
+  {
+    id: 'seed_cslog_4_1',
+    caseId: 'seed_case_4',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.RECEIVED,
+    changedByKey: 'admin',
+    reason: '케이스 생성',
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
+  },
+  {
+    id: 'seed_cslog_4_2',
+    caseId: 'seed_case_4',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.REVIEWING,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 60),
+  },
+  {
+    id: 'seed_cslog_4_3',
+    caseId: 'seed_case_4',
+    fromStatus: CaseStatus.REVIEWING,
+    toStatus: CaseStatus.WAITING_PAYMENT,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
+  },
+  {
+    id: 'seed_cslog_4_4',
+    caseId: 'seed_case_4',
+    fromStatus: CaseStatus.WAITING_PAYMENT,
+    toStatus: CaseStatus.WAITING_PAYMENT,
+    changedByKey: 'admin',
+    reason: '결제 확인',
+    createdAt: addMinutes(SEED_NOW, -3 * 24 * 60),
+  },
+  {
+    id: 'seed_cslog_4_5',
+    caseId: 'seed_case_4',
+    fromStatus: CaseStatus.WAITING_PAYMENT,
+    toStatus: CaseStatus.ACTIVE_MONITORING,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -3 * 24 * 60 + 60),
+  },
+  // Case 5: RECEIVED → REVIEWING → WAITING_PAYMENT → payment → ACTIVE_MONITORING → CONDITION_MET
+  {
+    id: 'seed_cslog_5_1',
+    caseId: 'seed_case_5',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.RECEIVED,
+    changedByKey: 'admin',
+    reason: '케이스 생성',
+    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60),
+  },
+  {
+    id: 'seed_cslog_5_2',
+    caseId: 'seed_case_5',
+    fromStatus: CaseStatus.RECEIVED,
+    toStatus: CaseStatus.REVIEWING,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60 + 60),
+  },
+  {
+    id: 'seed_cslog_5_3',
+    caseId: 'seed_case_5',
+    fromStatus: CaseStatus.REVIEWING,
+    toStatus: CaseStatus.WAITING_PAYMENT,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60 + 120),
+  },
+  {
+    id: 'seed_cslog_5_4',
+    caseId: 'seed_case_5',
+    fromStatus: CaseStatus.WAITING_PAYMENT,
+    toStatus: CaseStatus.WAITING_PAYMENT,
+    changedByKey: 'admin',
+    reason: '결제 확인',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
+  },
+  {
+    id: 'seed_cslog_5_5',
+    caseId: 'seed_case_5',
+    fromStatus: CaseStatus.WAITING_PAYMENT,
+    toStatus: CaseStatus.ACTIVE_MONITORING,
+    changedByKey: 'admin',
+    reason: null,
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 60),
+  },
+  {
+    id: 'seed_cslog_5_6',
+    caseId: 'seed_case_5',
+    fromStatus: CaseStatus.ACTIVE_MONITORING,
+    toStatus: CaseStatus.CONDITION_MET,
+    changedByKey: 'admin',
+    reason: '조건 충족 증거 확인',
+    createdAt: addMinutes(SEED_NOW, -2 * 24 * 60),
+  },
+];
+
+// Case 5 (CONDITION_MET) — 증거 1건
+// checkLogId: seed_log_seed_cycle_1_seed_acc_2 (AVAILABLE status, seed_acc_2)
+export const SEED_CONDITION_MET_EVENTS: SeedConditionMetEvent[] = [
+  {
+    id: 'seed_evidence_1',
+    caseId: 'seed_case_5',
+    checkLogId: 'seed_log_seed_cycle_1_seed_acc_2',
+    evidenceSnapshot: {
+      checkUrl: SEED_ACCOMMODATIONS[1].url,
+      platform: 'AGODA',
+      status: 'AVAILABLE',
+      price: '₩93,000',
+      checkIn: SEED_ACCOMMODATIONS[1].checkIn.toISOString(),
+      checkOut: SEED_ACCOMMODATIONS[1].checkOut.toISOString(),
+      conditionDefinition: '2인 기준 파리 호텔 총 3박 60만원 이하로 예약 가능해지면 알려주세요',
+    },
+    screenshotBase64: null,
+    capturedAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+    createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+  },
+];
+
+export const SEED_BILLING_EVENTS: SeedBillingEvent[] = [
+  {
+    id: 'seed_billing_1',
+    caseId: 'seed_case_5',
+    type: BillingEventType.CONDITION_MET_FEE,
+    conditionMetEventId: 'seed_evidence_1',
+    amountKrw: 0,
+    description: '조건 충족 수수료',
+    createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+  },
+];
+
+export const SEED_CASE_NOTIFICATIONS: SeedCaseNotification[] = [
+  {
+    id: 'seed_notification_1',
+    caseId: 'seed_case_5',
+    channel: 'KAKAO',
+    status: NotificationStatus.SENT,
+    payload: {
+      title: '숙소 예약 가능! 🎉',
+      description: `📍 ${SEED_ACCOMMODATIONS[1].name}\n📅 ${SEED_ACCOMMODATIONS[1].checkIn.toISOString().split('T')[0]} ~ ${SEED_ACCOMMODATIONS[1].checkOut.toISOString().split('T')[0]}\n💰 ₩93,000\n\n지금 바로 확인하세요!`,
+      buttonText: '예약하러 가기',
+      buttonUrl: SEED_ACCOMMODATIONS[1].url,
+      userId: '',
+    },
+    sentAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 29),
+    failReason: null,
+    retryCount: 0,
+    maxRetries: 3,
+    idempotencyKey: 'seed_case_5:seed_log_seed_cycle_1_seed_acc_2',
+    createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
   },
 ];
 

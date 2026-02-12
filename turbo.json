@@ -5,7 +5,9 @@
     ".env",
     ".env.local",
     ".env.development",
-    ".env.production"
+    ".env.development.local",
+    ".env.production",
+    ".env.production.local"
   ],
   "globalPassThroughEnv": ["DATABASE_URL", "REDIS_URL"],
   "tasks": {

@@ -20,6 +20,9 @@ import { useTransitionCaseStatusMutation } from '@/features/admin/cases';
 interface Props {
   caseId: string;
   currentStatus: string;
+  paymentConfirmedAt: string | null;
+  accommodationId: string | null;
+  conditionMetEventsCount: number;
 }
 
 const TRANSITIONS: Record<string, { value: string; label: string }[]> = {
@@ -43,7 +46,13 @@ const TRANSITIONS: Record<string, { value: string; label: string }[]> = {
   BILLED: [{ value: 'CLOSED', label: '완료 처리' }],
 };
 
-export function StatusTransitionDialog({ caseId, currentStatus }: Props) {
+export function StatusTransitionDialog({
+  caseId,
+  currentStatus,
+  paymentConfirmedAt,
+  accommodationId,
+  conditionMetEventsCount,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState('');
   const [reason, setReason] = useState('');
@@ -93,11 +102,32 @@ export function StatusTransitionDialog({ caseId, currentStatus }: Props) {
                 <SelectValue placeholder='상태 선택' />
               </SelectTrigger>
               <SelectContent>
-                {availableTransitions.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
+                {availableTransitions.map((t) => {
+                  let disabled = false;
+                  let hint = '';
+
+                  if (t.value === 'ACTIVE_MONITORING') {
+                    if (!paymentConfirmedAt) {
+                      disabled = true;
+                      hint = ' (결제 확인 필요)';
+                    } else if (!accommodationId) {
+                      disabled = true;
+                      hint = ' (숙소 연결 필요)';
+                    }
+                  }
+
+                  if (t.value === 'CONDITION_MET' && conditionMetEventsCount === 0) {
+                    disabled = true;
+                    hint = ' (증거 없음)';
+                  }
+
+                  return (
+                    <SelectItem key={t.value} value={t.value} disabled={disabled}>
+                      {t.label}
+                      {hint}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

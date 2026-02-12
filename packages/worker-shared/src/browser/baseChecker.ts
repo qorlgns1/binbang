@@ -50,6 +50,7 @@ export interface CheckerRuntimeConfig {
   patternRetryMs: number;
   retryDelayMs: number;
   blockResourceTypes: string;
+  captureScreenshot?: boolean;
 }
 
 export async function baseCheck(
@@ -286,6 +287,17 @@ export async function baseCheck(
         };
       }
 
+      // 조건 충족 시 스크린샷 캡처 (page.close() 전에 실행)
+      let screenshotBase64: string | undefined;
+      if (runtimeConfig.captureScreenshot && result.available && page) {
+        try {
+          const buffer = await page.screenshot({ fullPage: false });
+          screenshotBase64 = buffer.toString('base64');
+        } catch {
+          // 스크린샷 실패가 체크 결과를 차단하면 안 됨
+        }
+      }
+
       return {
         available: result.available,
         price: result.price,
@@ -296,6 +308,7 @@ export async function baseCheck(
         matchedSelectors: result.matchedSelectors,
         matchedPatterns: result.matchedPatterns,
         testableElements,
+        screenshotBase64,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

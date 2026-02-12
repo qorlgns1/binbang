@@ -1,9 +1,26 @@
-import { prisma } from '@workspace/db';
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
-import { getSettings, loadSettings, updateHeartbeat, type Job, type Queue } from '@workspace/worker-shared/runtime';
+import {
+  createCheckCycle,
+  findActiveCaseLinks,
+  findActiveAccommodations,
+  getSettings,
+  loadSettings,
+  retryStaleCaseNotifications,
+  updateHeartbeat,
+  type Job,
+  type Queue,
+} from '@workspace/worker-shared/runtime';
 
 export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<void> {
-  return async (_job: Job): Promise<void> => {
+  return async (job: Job): Promise<void> => {
+    if (job.name === 'notification-retry') {
+      const retryResult = await retryStaleCaseNotifications({ batchSize: 25, pendingStaleMs: 2 * 60_000 });
+      console.log(
+        `\n[notification-retry] scanned=${retryResult.scanned} claimed=${retryResult.claimed} sent=${retryResult.sent} failed=${retryResult.failed} skipped=${retryResult.skipped}`,
+      );
+      return;
+    }
+
     await loadSettings().catch((err: unknown): void => console.warn('Settings refresh failed, using cache:', err));
 
     const settings = getSettings();
@@ -17,25 +34,15 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
 
     const startTime = Date.now();
 
-    const accommodations = await prisma.accommodation.findMany({
-      where: {
-        isActive: true,
-        checkIn: { gte: new Date() },
-      },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-        platform: true,
-        checkIn: true,
-        checkOut: true,
-        adults: true,
-        lastStatus: true,
-        user: { select: { id: true, kakaoAccessToken: true } },
-      },
-    });
+    const accommodations = await findActiveAccommodations();
+
+    // ACTIVE_MONITORING 상태 Case 중 숙소가 연결된 것들을 조회
+    const caseByAccommodationId = await findActiveCaseLinks();
 
     console.log(`Accommodations to check: ${accommodations.length}`);
+    if (caseByAccommodationId.size > 0) {
+      console.log(`Active cases with linked accommodations: ${caseByAccommodationId.size}`);
+    }
 
     if (accommodations.length === 0) {
       console.log('No accommodations to check.\n');
@@ -43,23 +50,26 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       return;
     }
 
-    const cycle = await prisma.checkCycle.create({
-      data: {
-        startedAt: new Date(startTime),
-        totalCount: accommodations.length,
-        concurrency: settings.worker.concurrency,
-        browserPoolSize: settings.worker.browserPoolSize,
-        navigationTimeoutMs: settings.browser.navigationTimeoutMs,
-        contentWaitMs: settings.browser.contentWaitMs,
-        maxRetries: settings.checker.maxRetries,
-      },
-      select: { id: true },
+    const expectedJobCount = accommodations.reduce((sum, acc) => {
+      const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
+      return sum + Math.max(1, caseLinks.length);
+    }, 0);
+
+    const cycleId = await createCheckCycle({
+      startedAt: new Date(startTime),
+      totalCount: expectedJobCount,
+      concurrency: settings.worker.concurrency,
+      browserPoolSize: settings.worker.browserPoolSize,
+      navigationTimeoutMs: settings.browser.navigationTimeoutMs,
+      contentWaitMs: settings.browser.contentWaitMs,
+      maxRetries: settings.checker.maxRetries,
     });
 
-    const jobs = accommodations.map((acc): { name: string; data: CheckJobPayload } => ({
-      name: 'check',
-      data: {
-        cycleId: cycle.id,
+    const jobs = accommodations.flatMap((acc): { name: string; data: CheckJobPayload }[] => {
+      const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
+
+      const baseData = {
+        cycleId,
         accommodationId: acc.id,
         name: acc.name,
         url: acc.url,
@@ -70,11 +80,24 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
         userId: acc.user.id,
         kakaoAccessToken: acc.user.kakaoAccessToken,
         lastStatus: acc.lastStatus,
-      } satisfies CheckJobPayload,
-    }));
+      } satisfies CheckJobPayload;
+
+      if (caseLinks.length === 0) {
+        return [{ name: 'check', data: baseData }];
+      }
+
+      return caseLinks.map((caseLink) => ({
+        name: 'check',
+        data: {
+          ...baseData,
+          caseId: caseLink.caseId,
+          conditionDefinition: caseLink.conditionDefinition,
+        } satisfies CheckJobPayload,
+      }));
+    });
 
     await checkQueue.addBulk(jobs);
 
-    console.log(`${accommodations.length} check jobs queued for cycle ${cycle.id}`);
+    console.log(`${jobs.length} check jobs queued for cycle ${cycleId}`);
   };
 }

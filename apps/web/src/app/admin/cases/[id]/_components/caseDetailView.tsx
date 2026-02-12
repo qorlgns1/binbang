@@ -10,21 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCaseDetailQuery } from '@/features/admin/cases';
 
+import { AccommodationLinkButton } from './accommodationLinkButton';
 import { ClarificationPanel } from './clarificationPanel';
+import { ConditionEvidencePanel } from './conditionEvidencePanel';
+import { ConsentEvidencePanel } from './consentEvidencePanel';
+import { formatDateTime } from './formatDateTime';
+import { PaymentConfirmButton } from './paymentConfirmButton';
 import { StatusTransitionDialog } from './statusTransitionDialog';
 
 interface Props {
   caseId: string;
-}
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 export function CaseDetailView({ caseId }: Props) {
@@ -77,7 +72,13 @@ export function CaseDetailView({ caseId }: Props) {
             <CardHeader>
               <CardTitle className='flex items-center justify-between'>
                 <span>기본 정보</span>
-                <StatusTransitionDialog caseId={caseId} currentStatus={caseData.status} />
+                <StatusTransitionDialog
+                  caseId={caseId}
+                  currentStatus={caseData.status}
+                  paymentConfirmedAt={caseData.paymentConfirmedAt}
+                  accommodationId={caseData.accommodationId}
+                  conditionMetEventsCount={caseData.conditionMetEvents.length}
+                />
               </CardTitle>
             </CardHeader>
             <CardContent className='space-y-3'>
@@ -87,6 +88,17 @@ export function CaseDetailView({ caseId }: Props) {
               <InfoRow label='최종 변경' value={formatDateTime(caseData.statusChangedAt)} />
               {caseData.assignedTo && <InfoRow label='담당자' value={caseData.assignedTo} />}
               {caseData.note && <InfoRow label='메모' value={caseData.note} />}
+              <PaymentConfirmButton
+                caseId={caseId}
+                currentStatus={caseData.status}
+                paymentConfirmedAt={caseData.paymentConfirmedAt}
+                paymentConfirmedBy={caseData.paymentConfirmedBy}
+              />
+              <AccommodationLinkButton
+                caseId={caseId}
+                currentStatus={caseData.status}
+                accommodationId={caseData.accommodationId}
+              />
             </CardContent>
           </Card>
 
@@ -117,6 +129,16 @@ export function CaseDetailView({ caseId }: Props) {
             ambiguityResult={caseData.ambiguityResult}
             clarificationResolvedAt={caseData.clarificationResolvedAt}
           />
+
+          <ConsentEvidencePanel
+            responseId={caseData.submission.responseId}
+            consentBillingOnConditionMet={caseData.submission.consentBillingOnConditionMet}
+            consentServiceScope={caseData.submission.consentServiceScope}
+            consentCapturedAt={caseData.submission.consentCapturedAt}
+            consentTexts={caseData.submission.consentTexts}
+          />
+
+          <ConditionEvidencePanel conditionMetEvents={caseData.conditionMetEvents} currentStatus={caseData.status} />
 
           <Card>
             <CardHeader>

@@ -18,6 +18,18 @@ export interface TransitionCaseStatusInput {
   reason?: string;
 }
 
+export interface ConfirmPaymentInput {
+  caseId: string;
+  confirmedById: string;
+  note?: string;
+}
+
+export interface LinkAccommodationInput {
+  caseId: string;
+  accommodationId: string;
+  changedById: string;
+}
+
 export interface CaseOutput {
   id: string;
   submissionId: string;
@@ -28,8 +40,40 @@ export interface CaseOutput {
   note: string | null;
   ambiguityResult: AmbiguityResult | null;
   clarificationResolvedAt: string | null;
+  paymentConfirmedAt: string | null;
+  paymentConfirmedBy: string | null;
+  accommodationId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConditionMetEventOutput {
+  id: string;
+  checkLogId: string;
+  evidenceSnapshot: unknown;
+  screenshotBase64: string | null;
+  capturedAt: string;
+  createdAt: string;
+}
+
+export interface CaseNotificationOutput {
+  id: string;
+  channel: string;
+  status: string;
+  payload: unknown;
+  sentAt: string | null;
+  failReason: string | null;
+  retryCount: number;
+  maxRetries: number;
+  createdAt: string;
+}
+
+export interface BillingEventOutput {
+  id: string;
+  type: string;
+  amountKrw: number;
+  description: string | null;
+  createdAt: string;
 }
 
 export interface CaseDetailOutput extends CaseOutput {
@@ -40,9 +84,16 @@ export interface CaseDetailOutput extends CaseOutput {
     rawPayload: unknown;
     extractedFields: unknown;
     rejectionReason: string | null;
+    consentBillingOnConditionMet: boolean | null;
+    consentServiceScope: boolean | null;
+    consentCapturedAt: string | null;
+    consentTexts: { billing: string; scope: string } | null;
     receivedAt: string;
   };
   statusLogs: CaseStatusLogOutput[];
+  conditionMetEvents: ConditionMetEventOutput[];
+  notifications: CaseNotificationOutput[];
+  billingEvent: BillingEventOutput | null;
 }
 
 export interface CaseStatusLogOutput {
@@ -102,6 +153,9 @@ const CASE_SELECT = {
   note: true,
   ambiguityResult: true,
   clarificationResolvedAt: true,
+  paymentConfirmedAt: true,
+  paymentConfirmedBy: true,
+  accommodationId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -125,12 +179,50 @@ const CASE_DETAIL_SELECT = {
       rawPayload: true,
       extractedFields: true,
       rejectionReason: true,
+      consentBillingOnConditionMet: true,
+      consentServiceScope: true,
+      consentCapturedAt: true,
+      consentTexts: true,
       receivedAt: true,
     },
   },
   statusLogs: {
     select: CASE_STATUS_LOG_SELECT,
     orderBy: { createdAt: 'desc' as const },
+  },
+  conditionMetEvents: {
+    select: {
+      id: true,
+      checkLogId: true,
+      evidenceSnapshot: true,
+      screenshotBase64: true,
+      capturedAt: true,
+      createdAt: true,
+    },
+    orderBy: { capturedAt: 'desc' as const },
+  },
+  notifications: {
+    select: {
+      id: true,
+      channel: true,
+      status: true,
+      payload: true,
+      sentAt: true,
+      failReason: true,
+      retryCount: true,
+      maxRetries: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
+  billingEvent: {
+    select: {
+      id: true,
+      type: true,
+      amountKrw: true,
+      description: true,
+      createdAt: true,
+    },
   },
 } as const;
 
@@ -148,6 +240,9 @@ interface CaseRow {
   note: string | null;
   ambiguityResult: unknown;
   clarificationResolvedAt: Date | null;
+  paymentConfirmedAt: Date | null;
+  paymentConfirmedBy: string | null;
+  accommodationId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +258,9 @@ function toCaseOutput(row: CaseRow): CaseOutput {
     note: row.note,
     ambiguityResult: (row.ambiguityResult as AmbiguityResult) ?? null,
     clarificationResolvedAt: row.clarificationResolvedAt?.toISOString() ?? null,
+    paymentConfirmedAt: row.paymentConfirmedAt?.toISOString() ?? null,
+    paymentConfirmedBy: row.paymentConfirmedBy,
+    accommodationId: row.accommodationId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -176,6 +274,10 @@ interface CaseDetailRow extends CaseRow {
     rawPayload: unknown;
     extractedFields: unknown;
     rejectionReason: string | null;
+    consentBillingOnConditionMet: boolean | null;
+    consentServiceScope: boolean | null;
+    consentCapturedAt: Date | null;
+    consentTexts: unknown;
     receivedAt: Date;
   };
   statusLogs: {
@@ -186,6 +288,32 @@ interface CaseDetailRow extends CaseRow {
     reason: string | null;
     createdAt: Date;
   }[];
+  conditionMetEvents: {
+    id: string;
+    checkLogId: string;
+    evidenceSnapshot: unknown;
+    screenshotBase64: string | null;
+    capturedAt: Date;
+    createdAt: Date;
+  }[];
+  notifications: {
+    id: string;
+    channel: string;
+    status: string;
+    payload: unknown;
+    sentAt: Date | null;
+    failReason: string | null;
+    retryCount: number;
+    maxRetries: number;
+    createdAt: Date;
+  }[];
+  billingEvent: {
+    id: string;
+    type: string;
+    amountKrw: number;
+    description: string | null;
+    createdAt: Date;
+  } | null;
 }
 
 function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
@@ -198,6 +326,10 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
       rawPayload: row.submission.rawPayload,
       extractedFields: row.submission.extractedFields,
       rejectionReason: row.submission.rejectionReason,
+      consentBillingOnConditionMet: row.submission.consentBillingOnConditionMet,
+      consentServiceScope: row.submission.consentServiceScope,
+      consentCapturedAt: row.submission.consentCapturedAt?.toISOString() ?? null,
+      consentTexts: (row.submission.consentTexts as { billing: string; scope: string }) ?? null,
       receivedAt: row.submission.receivedAt.toISOString(),
     },
     statusLogs: row.statusLogs.map(
@@ -210,6 +342,38 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
         createdAt: log.createdAt.toISOString(),
       }),
     ),
+    conditionMetEvents: row.conditionMetEvents.map(
+      (evt): ConditionMetEventOutput => ({
+        id: evt.id,
+        checkLogId: evt.checkLogId,
+        evidenceSnapshot: evt.evidenceSnapshot,
+        screenshotBase64: evt.screenshotBase64,
+        capturedAt: evt.capturedAt.toISOString(),
+        createdAt: evt.createdAt.toISOString(),
+      }),
+    ),
+    notifications: row.notifications.map(
+      (n): CaseNotificationOutput => ({
+        id: n.id,
+        channel: n.channel,
+        status: n.status,
+        payload: n.payload,
+        sentAt: n.sentAt?.toISOString() ?? null,
+        failReason: n.failReason,
+        retryCount: n.retryCount,
+        maxRetries: n.maxRetries,
+        createdAt: n.createdAt.toISOString(),
+      }),
+    ),
+    billingEvent: row.billingEvent
+      ? {
+          id: row.billingEvent.id,
+          type: row.billingEvent.type,
+          amountKrw: row.billingEvent.amountKrw,
+          description: row.billingEvent.description,
+          createdAt: row.billingEvent.createdAt.toISOString(),
+        }
+      : null,
   };
 }
 
@@ -283,7 +447,15 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
   const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
     const current = await tx.case.findUnique({
       where: { id: input.caseId },
-      select: { id: true, status: true, ambiguityResult: true, clarificationResolvedAt: true },
+      select: {
+        id: true,
+        status: true,
+        ambiguityResult: true,
+        clarificationResolvedAt: true,
+        paymentConfirmedAt: true,
+        accommodationId: true,
+        _count: { select: { conditionMetEvents: true } },
+      },
     });
 
     if (!current) {
@@ -299,6 +471,23 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
       const ambiguity = current.ambiguityResult as AmbiguityResult | null;
       if (ambiguity && ambiguity.severity !== 'GREEN' && !current.clarificationResolvedAt) {
         throw new Error('Ambiguity must be resolved before payment');
+      }
+    }
+
+    // Guard: WAITING_PAYMENT → ACTIVE_MONITORING requires payment confirmation + accommodation link
+    if (current.status === 'WAITING_PAYMENT' && input.toStatus === 'ACTIVE_MONITORING') {
+      if (!current.paymentConfirmedAt) {
+        throw new Error('Payment must be confirmed before monitoring start');
+      }
+      if (!current.accommodationId) {
+        throw new Error('Accommodation must be linked before monitoring start');
+      }
+    }
+
+    // Guard: ACTIVE_MONITORING → CONDITION_MET requires at least one evidence
+    if (current.status === 'ACTIVE_MONITORING' && input.toStatus === 'CONDITION_MET') {
+      if (current._count.conditionMetEvents === 0) {
+        throw new Error('At least one condition met evidence is required');
       }
     }
 
@@ -326,6 +515,104 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
         toStatus: input.toStatus,
         changedById: input.changedById,
         reason: input.reason,
+      },
+      select: { id: true },
+    });
+
+    return tx.case.findUniqueOrThrow({
+      where: { id: input.caseId },
+      select: CASE_DETAIL_SELECT,
+    });
+  });
+
+  return toCaseDetailOutput(result);
+}
+
+export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDetailOutput> {
+  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
+    const current = await tx.case.findUnique({
+      where: { id: input.caseId },
+      select: { id: true, status: true, paymentConfirmedAt: true },
+    });
+
+    if (!current) {
+      throw new Error('Case not found');
+    }
+
+    if (current.status !== 'WAITING_PAYMENT') {
+      throw new Error(`Payment confirmation requires WAITING_PAYMENT status, current: ${current.status}`);
+    }
+
+    if (current.paymentConfirmedAt) {
+      throw new Error('Payment already confirmed');
+    }
+
+    await tx.case.update({
+      where: { id: input.caseId },
+      data: {
+        paymentConfirmedAt: new Date(),
+        paymentConfirmedBy: input.confirmedById,
+      },
+      select: { id: true },
+    });
+
+    await tx.caseStatusLog.create({
+      data: {
+        caseId: input.caseId,
+        fromStatus: 'WAITING_PAYMENT',
+        toStatus: 'WAITING_PAYMENT',
+        changedById: input.confirmedById,
+        reason: input.note ?? '결제 확인',
+      },
+      select: { id: true },
+    });
+
+    return tx.case.findUniqueOrThrow({
+      where: { id: input.caseId },
+      select: CASE_DETAIL_SELECT,
+    });
+  });
+
+  return toCaseDetailOutput(result);
+}
+
+export async function linkAccommodation(input: LinkAccommodationInput): Promise<CaseDetailOutput> {
+  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
+    const current = await tx.case.findUnique({
+      where: { id: input.caseId },
+      select: { id: true, status: true, accommodationId: true },
+    });
+
+    if (!current) {
+      throw new Error('Case not found');
+    }
+
+    if (current.status !== 'WAITING_PAYMENT') {
+      throw new Error(`Accommodation link requires WAITING_PAYMENT status, current: ${current.status}`);
+    }
+
+    const accommodation = await tx.accommodation.findUnique({
+      where: { id: input.accommodationId },
+      select: { id: true },
+    });
+
+    if (!accommodation) {
+      throw new Error('Accommodation not found');
+    }
+
+    await tx.case.update({
+      where: { id: input.caseId },
+      data: { accommodationId: input.accommodationId },
+      select: { id: true },
+    });
+
+    await tx.caseStatusLog.create({
+      data: {
+        caseId: input.caseId,
+        fromStatus: 'WAITING_PAYMENT',
+        toStatus: 'WAITING_PAYMENT',
+        changedById: input.changedById,
+        reason: `숙소 연결: ${input.accommodationId}`,
       },
       select: { id: true },
     });

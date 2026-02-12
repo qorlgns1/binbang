@@ -19,6 +19,16 @@ interface TransitionCaseStatusVariables {
   reason?: string;
 }
 
+interface ConfirmPaymentVariables {
+  caseId: string;
+  note?: string;
+}
+
+interface LinkAccommodationVariables {
+  caseId: string;
+  accommodationId: string;
+}
+
 interface CreateCaseResponse {
   case: CaseDetail;
 }
@@ -27,11 +37,25 @@ interface TransitionCaseStatusResponse {
   case: CaseDetail;
 }
 
+interface ConfirmPaymentResponse {
+  case: CaseDetail;
+}
+
+interface LinkAccommodationResponse {
+  case: CaseDetail;
+}
+
 export type UseCreateCaseMutationResult = UseMutationResult<CreateCaseResponse, Error, CreateCaseVariables>;
 export type UseTransitionCaseStatusMutationResult = UseMutationResult<
   TransitionCaseStatusResponse,
   Error,
   TransitionCaseStatusVariables
+>;
+export type UseConfirmPaymentMutationResult = UseMutationResult<ConfirmPaymentResponse, Error, ConfirmPaymentVariables>;
+export type UseLinkAccommodationMutationResult = UseMutationResult<
+  LinkAccommodationResponse,
+  Error,
+  LinkAccommodationVariables
 >;
 
 // ============================================================================
@@ -68,6 +92,35 @@ async function transitionCaseStatus({
   return res.json();
 }
 
+async function confirmPayment({ caseId, note }: ConfirmPaymentVariables): Promise<ConfirmPaymentResponse> {
+  const res = await fetch(`/api/admin/cases/${caseId}/payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || '결제 확인에 실패했습니다');
+  }
+  return res.json();
+}
+
+async function linkAccommodation({
+  caseId,
+  accommodationId,
+}: LinkAccommodationVariables): Promise<LinkAccommodationResponse> {
+  const res = await fetch(`/api/admin/cases/${caseId}/accommodation`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accommodationId }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || '숙소 연결에 실패했습니다');
+  }
+  return res.json();
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -88,6 +141,30 @@ export function useTransitionCaseStatusMutation(): UseTransitionCaseStatusMutati
 
   return useMutation({
     mutationFn: transitionCaseStatus,
+    onSuccess: (_data, variables): void => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    },
+  });
+}
+
+export function useConfirmPaymentMutation(): UseConfirmPaymentMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: confirmPayment,
+    onSuccess: (_data, variables): void => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    },
+  });
+}
+
+export function useLinkAccommodationMutation(): UseLinkAccommodationMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: linkAccommodation,
     onSuccess: (_data, variables): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
       queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });

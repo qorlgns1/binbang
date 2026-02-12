@@ -2,31 +2,38 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createFormSubmission, getFormSubmissionById, getFormSubmissions } from './intake.service';
 
-const { mockCreate, mockFindUnique, mockFindMany, mockCount, mockUpdate } = vi.hoisted(
-  (): {
-    mockCreate: ReturnType<typeof vi.fn>;
-    mockFindUnique: ReturnType<typeof vi.fn>;
-    mockFindMany: ReturnType<typeof vi.fn>;
-    mockCount: ReturnType<typeof vi.fn>;
-    mockUpdate: ReturnType<typeof vi.fn>;
-  } => ({
-    mockCreate: vi.fn(),
-    mockFindUnique: vi.fn(),
-    mockFindMany: vi.fn(),
-    mockCount: vi.fn(),
-    mockUpdate: vi.fn(),
-  }),
-);
+const { mockCreate, mockFindUnique, mockFindUniqueOrThrow, mockFindMany, mockCount, mockUpdate, mockTransaction } =
+  vi.hoisted(
+    (): {
+      mockCreate: ReturnType<typeof vi.fn>;
+      mockFindUnique: ReturnType<typeof vi.fn>;
+      mockFindUniqueOrThrow: ReturnType<typeof vi.fn>;
+      mockFindMany: ReturnType<typeof vi.fn>;
+      mockCount: ReturnType<typeof vi.fn>;
+      mockUpdate: ReturnType<typeof vi.fn>;
+      mockTransaction: ReturnType<typeof vi.fn>;
+    } => ({
+      mockCreate: vi.fn(),
+      mockFindUnique: vi.fn(),
+      mockFindUniqueOrThrow: vi.fn(),
+      mockFindMany: vi.fn(),
+      mockCount: vi.fn(),
+      mockUpdate: vi.fn(),
+      mockTransaction: vi.fn(),
+    }),
+  );
 
 vi.mock('@workspace/db', () => ({
   prisma: {
     formSubmission: {
       create: mockCreate,
       findUnique: mockFindUnique,
+      findUniqueOrThrow: mockFindUniqueOrThrow,
       findMany: mockFindMany,
       count: mockCount,
       update: mockUpdate,
     },
+    $transaction: mockTransaction,
   },
 }));
 
@@ -57,6 +64,10 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
     sourceIp: '1.2.3.4',
     extractedFields: null,
     rejectionReason: null,
+    consentBillingOnConditionMet: null,
+    consentServiceScope: null,
+    consentCapturedAt: null,
+    consentTexts: null,
     receivedAt: NOW,
     createdAt: NOW,
     updatedAt: NOW,
@@ -64,10 +75,25 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+function setupTransactionMock(): void {
+  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+    const tx = {
+      formSubmission: {
+        create: mockCreate,
+        findUnique: mockFindUnique,
+        findUniqueOrThrow: mockFindUniqueOrThrow,
+        update: mockUpdate,
+      },
+    };
+    return fn(tx);
+  });
+}
+
 describe('intake.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
     mockUpdate.mockResolvedValue({ id: 'sub-1' });
+    setupTransactionMock();
   });
 
   // ==========================================================================
@@ -81,7 +107,7 @@ describe('intake.service', (): void => {
       const updatedRow = makeRow({ rawPayload: payload, extractedFields: payload });
 
       mockCreate.mockResolvedValue(row);
-      mockFindUnique.mockResolvedValue(updatedRow);
+      mockFindUniqueOrThrow.mockResolvedValue(updatedRow);
 
       const result = await createFormSubmission({
         responseId: 'resp-abc',
@@ -94,7 +120,7 @@ describe('intake.service', (): void => {
       expect(result.submission.extractedFields).toEqual(payload);
       expect(mockCreate).toHaveBeenCalledOnce();
       expect(mockUpdate).toHaveBeenCalledOnce();
-      expect(mockFindUnique).toHaveBeenCalledOnce();
+      expect(mockFindUniqueOrThrow).toHaveBeenCalledOnce();
     });
 
     it('rejects submission with invalid payload and sets rejectionReason', async (): Promise<void> => {
@@ -107,7 +133,7 @@ describe('intake.service', (): void => {
       });
 
       mockCreate.mockResolvedValue(row);
-      mockFindUnique.mockResolvedValue(rejectedRow);
+      mockFindUniqueOrThrow.mockResolvedValue(rejectedRow);
 
       const result = await createFormSubmission({
         responseId: 'resp-abc',
@@ -176,11 +202,7 @@ describe('intake.service', (): void => {
     function setupCreateWithPayload(payload: Record<string, unknown>) {
       const row = makeRow({ rawPayload: payload });
       mockCreate.mockResolvedValue(row);
-      // findUnique will be called after update to return the latest state
-      mockFindUnique.mockImplementation(({ where }: { where: { id?: string; responseId?: string } }) => {
-        if (where.id) return Promise.resolve(row);
-        return Promise.resolve(null);
-      });
+      mockFindUniqueOrThrow.mockResolvedValue(row);
     }
 
     it('rejects when billing_consent is false', async (): Promise<void> => {
@@ -298,6 +320,80 @@ describe('intake.service', (): void => {
           }),
         }),
       );
+    });
+
+    it('stores consent evidence fields when all validations pass', async (): Promise<void> => {
+      const payload = makeValidPayload();
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-1', rawPayload: payload });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            consentBillingOnConditionMet: true,
+            consentServiceScope: true,
+            consentCapturedAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('stores consent texts with checkbox originals when valid', async (): Promise<void> => {
+      const payload = makeValidPayload();
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-2', rawPayload: payload });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            consentTexts: {
+              billing: '조건 충족(열림 확인) 시 비용이 발생함에 동의합니다',
+              scope:
+                '서비스는 Q4에 명시된 조건의 충족(열림) 여부만 확인하며, 예약 완료나 결제를 보장하지 않음에 동의합니다',
+            },
+          }),
+        }),
+      );
+    });
+
+    it('stores consent texts from payload when provided', async (): Promise<void> => {
+      const payload = makeValidPayload({
+        form_version: 'v_test_1',
+        consent_texts: {
+          billing: '동의문구(원문) - billing',
+          scope: '동의문구(원문) - scope',
+        },
+      });
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-payload-1', rawPayload: payload });
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            formVersion: 'v_test_1',
+            consentTexts: {
+              billing: '동의문구(원문) - billing',
+              scope: '동의문구(원문) - scope',
+            },
+          }),
+        }),
+      );
+    });
+
+    it('does not store consent fields when validation fails', async (): Promise<void> => {
+      const payload = makeValidPayload({ billing_consent: false });
+      setupCreateWithPayload(payload);
+
+      await createFormSubmission({ responseId: 'resp-consent-3', rawPayload: payload });
+
+      const updateCall = mockUpdate.mock.calls[0][0];
+      expect(updateCall.data.status).toBe('REJECTED');
+      expect(updateCall.data.consentBillingOnConditionMet).toBeUndefined();
+      expect(updateCall.data.consentServiceScope).toBeUndefined();
+      expect(updateCall.data.consentCapturedAt).toBeUndefined();
     });
   });
 
