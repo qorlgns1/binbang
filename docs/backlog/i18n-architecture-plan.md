@@ -1202,12 +1202,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-05 `format.*` 토큰 유틸 구현
+- [x] WU-05 `format.*` 토큰 유틸 구현
   - Scope: 날짜/숫자/통화/상대시간 토큰 API
   - Allowed Files: `packages/shared/src/i18n/format.ts`, 관련 테스트 파일
   - DoD: 동일 locale + 동일 토큰 입력 시 결정적 출력
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-06 Web middleware 1차 협상 적용
@@ -1280,6 +1280,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-02` 완료 — `resolveLocale.ts`(URL>userProfile>cookie>acceptLanguage>default 우선순위) + 테스트 14개 통과, typecheck 통과
 - `2026-02-12`: `WU-03` 완료 — `loaderTypes.ts`(MessageLoader/I18nOptions/MissingKeyPolicy) + `errors.ts`(MissingKeyError/MessageFormatError), typecheck 통과
 - `2026-02-12`: `WU-04` 완료 — `createI18n.ts`(t() key 조회/파라미터 치환/missing-key error+fallback 정책/fallbackMessages/onMissingKey 콜백) + 테스트 16개 통과, typecheck 통과
+- `2026-02-12`: `WU-05` 완료 — `format.ts`(formatDate/formatNumber/formatCurrency/formatRelativeTime + 토큰 프리셋) + 테스트 23개 통과, typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---

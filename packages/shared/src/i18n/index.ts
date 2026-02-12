@@ -23,3 +23,13 @@ export {
 export { MissingKeyError, MessageFormatError } from './errors.ts';
 
 export { type TranslateFunction, type I18nInstance, createI18n } from './createI18n.ts';
+
+export {
+  type DateToken,
+  type NumberToken,
+  type CurrencyToken,
+  formatDate,
+  formatNumber,
+  formatCurrency,
+  formatRelativeTime,
+} from './format.ts';
