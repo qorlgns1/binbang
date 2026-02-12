@@ -21,3 +21,5 @@ export {
 } from './loaderTypes.ts';
 
 export { MissingKeyError, MessageFormatError } from './errors.ts';
+
+export { type TranslateFunction, type I18nInstance, createI18n } from './createI18n.ts';

@@ -1194,12 +1194,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-04 `createI18n()` + `t()` 최소 구현
+- [x] WU-04 `createI18n()` + `t()` 최소 구현
   - Scope: key 조회, 파라미터 치환, missing-key 정책(Dev/CI fail, Prod fallback)
   - Allowed Files: `packages/shared/src/i18n/createI18n.ts`, 관련 테스트 파일
   - DoD: 핵심 경로 단위테스트 통과
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-05 `format.*` 토큰 유틸 구현
@@ -1279,6 +1279,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-01` 완료 — `locale.ts`(Locale/SUPPORTED_LOCALES/DEFAULT_LOCALE/isSupportedLocale/normalizeLocale) + `./i18n` export + 테스트 18개 통과, typecheck 통과
 - `2026-02-12`: `WU-02` 완료 — `resolveLocale.ts`(URL>userProfile>cookie>acceptLanguage>default 우선순위) + 테스트 14개 통과, typecheck 통과
 - `2026-02-12`: `WU-03` 완료 — `loaderTypes.ts`(MessageLoader/I18nOptions/MissingKeyPolicy) + `errors.ts`(MissingKeyError/MessageFormatError), typecheck 통과
+- `2026-02-12`: `WU-04` 완료 — `createI18n.ts`(t() key 조회/파라미터 치환/missing-key error+fallback 정책/fallbackMessages/onMissingKey 콜백) + 테스트 16개 통과, typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---
