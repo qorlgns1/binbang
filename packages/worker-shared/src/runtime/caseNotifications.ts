@@ -1,5 +1,6 @@
 import { prisma, type Prisma } from '@workspace/db';
 
+import { type StructuredNotificationPayload, getUserLocale, isStructuredPayload, renderNotification } from './i18n';
 import { sendKakaoNotification } from './notifications';
 
 export interface RetryCaseNotificationsOptions {
@@ -114,18 +115,41 @@ export async function retryStaleCaseNotifications(
     const payload = extractPayload(n.payload as Prisma.JsonValue);
     const userId = (isNonEmptyString(payload.userId) ? payload.userId : null) ?? n.case?.accommodation?.userId ?? null;
 
-    const title = isNonEmptyString(payload.title) ? payload.title : null;
-    const description = isNonEmptyString(payload.description) ? payload.description : null;
-    const buttonText = isNonEmptyString(payload.buttonText) ? payload.buttonText : '확인하기';
-    const buttonUrl = isNonEmptyString(payload.buttonUrl) ? payload.buttonUrl : '';
-
-    if (!userId || !title || !description) {
+    if (!userId) {
       await prisma.caseNotification.update({
         where: { id: n.id },
-        data: {
-          status: 'FAILED',
-          failReason: 'payload(userId/title/description) 누락',
-        },
+        data: { status: 'FAILED', failReason: 'payload(userId) 누락' },
+        select: { id: true },
+      });
+      result.failed += 1;
+      continue;
+    }
+
+    // 구조화된 페이로드: 발송 직전 locale 조회 + i18n 렌더링
+    // 레거시 페이로드: 기존 렌더링된 텍스트 사용
+    let title: string | null;
+    let description: string | null;
+    let buttonText: string;
+    let buttonUrl: string;
+
+    if (isStructuredPayload(payload)) {
+      const locale = await getUserLocale(userId);
+      const rendered = renderNotification(locale, payload as unknown as StructuredNotificationPayload);
+      title = rendered.title;
+      description = rendered.description;
+      buttonText = rendered.buttonText;
+      buttonUrl = rendered.buttonUrl;
+    } else {
+      title = isNonEmptyString(payload.title) ? payload.title : null;
+      description = isNonEmptyString(payload.description) ? payload.description : null;
+      buttonText = isNonEmptyString(payload.buttonText) ? payload.buttonText : '확인하기';
+      buttonUrl = isNonEmptyString(payload.buttonUrl) ? payload.buttonUrl : '';
+    }
+
+    if (!title || !description) {
+      await prisma.caseNotification.update({
+        where: { id: n.id },
+        data: { status: 'FAILED', failReason: 'payload(title/description) 누락' },
         select: { id: true },
       });
       result.failed += 1;

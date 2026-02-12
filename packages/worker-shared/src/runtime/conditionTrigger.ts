@@ -1,5 +1,6 @@
 import { type Prisma, prisma } from '@workspace/db';
 
+import { type StructuredNotificationPayload, getUserLocale, renderNotification } from './i18n';
 import { sendKakaoNotification } from './notifications';
 
 // ============================================================================
@@ -39,37 +40,37 @@ function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
-function buildNotificationPayload(input: TriggerConditionMetInput): Record<string, unknown> {
-  const checkIn = new Date(input.checkIn);
-  const checkOut = new Date(input.checkOut);
-  const formatStayDate = (d: Date): string => (Number.isNaN(d.getTime()) ? 'N/A' : d.toISOString().split('T')[0]);
-  const lines = [`📍 ${input.accommodationName}`, `📅 ${formatStayDate(checkIn)} ~ ${formatStayDate(checkOut)}`];
-  if (input.price) {
-    lines.push(`💰 ${input.price}`);
-  }
-  lines.push('', `🔗 ${input.checkUrl}`, '', '지금 바로 확인하세요!');
-
+/**
+ * 구조화된 알림 페이로드를 생성한다.
+ * locale 고정 텍스트 없이 데이터만 저장하여 발송 시점에 i18n 렌더링한다.
+ */
+function buildNotificationPayload(input: TriggerConditionMetInput): StructuredNotificationPayload {
   return {
-    title: '숙소 예약 가능! 🎉',
-    description: lines.join('\n'),
-    buttonText: '예약하러 가기',
-    buttonUrl: input.checkUrl,
+    type: 'conditionMet',
     userId: input.userId,
+    accommodationName: input.accommodationName,
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    price: input.price,
+    checkUrl: input.checkUrl,
   };
 }
 
 async function sendAndUpdateNotification(
   notificationId: string,
   userId: string,
-  payload: Record<string, unknown>,
+  payload: StructuredNotificationPayload,
 ): Promise<void> {
   try {
+    const locale = await getUserLocale(userId);
+    const rendered = renderNotification(locale, payload);
+
     const sent = await sendKakaoNotification({
       userId,
-      title: payload.title as string,
-      description: payload.description as string,
-      buttonText: payload.buttonText as string,
-      buttonUrl: payload.buttonUrl as string,
+      title: rendered.title,
+      description: rendered.description,
+      buttonText: rendered.buttonText,
+      buttonUrl: rendered.buttonUrl,
     });
 
     await prisma.caseNotification.update({
@@ -157,7 +158,7 @@ export async function triggerConditionMet(input: TriggerConditionMetInput): Prom
           caseId: input.caseId,
           channel: 'KAKAO',
           status: 'PENDING',
-          payload: notificationPayload as Prisma.InputJsonValue,
+          payload: notificationPayload as unknown as Prisma.InputJsonValue,
           idempotencyKey,
           maxRetries: 3,
         },

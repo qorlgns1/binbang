@@ -1234,12 +1234,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-09 Worker i18n runtime 적용
+- [x] WU-09 Worker i18n runtime 적용
   - Scope: 발송 직전 locale 조회 + `email`/`notification` 렌더링
   - Allowed Files: `packages/worker-shared/src/runtime/i18n/**`, 필요 시 `packages/worker-shared/src/runtime/evidence.ts`
   - DoD: payload locale 고정 의존 없이 렌더링
   - Verify: `pnpm --filter @workspace/worker-shared test`, `pnpm --filter @workspace/worker-shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-10 i18n 정합성 검사 스크립트
@@ -1284,6 +1284,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-06` 완료 — `middleware.ts` 리팩터(shared i18n 코어 사용: parseLocaleFromPath+negotiateLocale), `.ts` 확장자 제거(cross-package 호환), web test 157개 + typecheck 통과
 - `2026-02-12`: `WU-07` 완료 — `i18n-runtime/server.ts`(resolveServerLocale: cookies+headers 자동 읽기, urlLocale/userPreferredLocale 파라미터) + 테스트 7개 통과, web test 164개 + typecheck 통과
 - `2026-02-12`: `WU-08` 완료 — `src/i18n/request.ts`(getNamespacesForRoute+loadMessages+getRequestMessages), route group→namespace 선언적 매핑, `messages/{locale}/{ns}.json` 구조, 테스트 9개 통과, web test 173개 + typecheck 통과
+- `2026-02-12`: `WU-09` 완료 — worker i18n runtime(loader+templates+userLocale), conditionTrigger 구조화 페이로드 전환, caseNotifications 레거시/구조화 양방향 호환, 메시지 ko/en notification.json, 테스트 11개 통과, ci:check 통과
 - `YYYY-MM-DD`: `-`
 
 ---
