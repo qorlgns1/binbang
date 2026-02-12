@@ -33,7 +33,7 @@ export default function NotFound(): React.ReactElement {
           <h1 className='mb-4 text-6xl font-bold text-foreground'>404</h1>
           <h2 className='mb-4 text-2xl font-semibold text-foreground md:text-3xl'>길을 잃으셨나요?</h2>
           <p className='mb-8 max-w-md text-lg text-muted-foreground'>
-            빈방어때가 안내해드릴게요.
+            빈방이 안내해드릴게요.
             <br />
             아래에서 원하시는 곳으로 이동하실 수 있습니다.
           </p>

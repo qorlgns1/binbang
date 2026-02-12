@@ -1,4 +1,4 @@
-# 빈방어때
+# 빈방
 
 > binbang — Airbnb · Agoda 빈방 모니터링 & 알림 서비스
 
