@@ -1,56 +1,71 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import type { Lang } from '@/lib/i18n/config';
+import { DEFAULT_LOCALE, type Locale, isSupportedLocale } from '@workspace/shared/i18n';
+
 import { checkRateLimit, cleanupStore, getClientIp, getRateLimit } from '@/lib/rateLimit';
 
 /**
- * Determine the request language preference using cookie, then Accept-Language header, defaulting to `ko`.
+ * URL pathname에서 locale prefix를 파싱한다.
  *
- * @param request - The incoming Next.js request whose cookies and headers are inspected for language preference
- * @returns `'ko'` or `'en'` — chosen from the `binbang-lang` cookie if present and valid, otherwise from the request's `Accept-Language` primary tag, or `'ko'` if neither yields a supported language
+ * @example parseLocaleFromPath("/ko/landing") → "ko"
+ * @example parseLocaleFromPath("/dashboard") → null
  */
-function detectLang(request: NextRequest): Lang {
+function parseLocaleFromPath(pathname: string): Locale | null {
+  const segment = pathname.split('/')[1];
+  return segment && isSupportedLocale(segment) ? segment : null;
+}
+
+/**
+ * Edge-safe 1차 locale 협상 (DB 접근 금지).
+ *
+ * 우선순위: cookie(`binbang-lang`) > Accept-Language > DEFAULT_LOCALE
+ * DB(`preferredLocale`)는 서버 2차 확정에서 반영한다 (ADR-2).
+ */
+function negotiateLocale(request: NextRequest): Locale {
   // 1순위: 쿠키
-  const langCookie = request.cookies.get('binbang-lang');
-  if (langCookie?.value === 'ko' || langCookie?.value === 'en') {
-    return langCookie.value;
+  const cookieLocale = request.cookies.get('binbang-lang')?.value;
+  if (cookieLocale && isSupportedLocale(cookieLocale)) {
+    return cookieLocale;
   }
 
   // 2순위: Accept-Language
   const acceptLanguage = request.headers.get('accept-language');
   if (acceptLanguage) {
-    const preferredLang = acceptLanguage.split(',')[0]?.split('-')[0];
-    if (preferredLang === 'ko') return 'ko';
-    if (preferredLang === 'en') return 'en';
+    const primary = acceptLanguage.split(',')[0]?.split('-')[0];
+    if (primary && isSupportedLocale(primary)) {
+      return primary;
+    }
   }
 
   // 3순위: 기본값
-  return 'ko';
+  return DEFAULT_LOCALE;
 }
 
 /**
- * Handles root-path language redirects and enforces rate limits for API routes.
+ * Locale 협상 + Rate Limiting middleware.
  *
- * Depending on the request path, this middleware either redirects the root path to a language-prefixed URL, bypasses rate limiting for non-API paths, rejects requests that exceed the rate limit, or forwards allowed requests while attaching rate-limit headers.
- *
- * @returns A NextResponse that is one of:
- *  - a 302 redirect to "/{lang}" for the root path;
- *  - a 429 JSON response `{ error: 'Too many requests' }` with `Retry-After`, `X-RateLimit-Limit`, and `X-RateLimit-Remaining: 0` when the client is rate limited;
- *  - or a next response with `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers for allowed requests (or a plain next response for paths not subject to rate limiting).
+ * - URL에 locale prefix가 있으면 통과
+ * - root "/" → locale 협상 후 redirect
+ * - API 경로 → rate limit 적용
  */
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  // / 경로: 언어 감지 후 302 redirect
+  // 1) URL에 locale prefix가 있으면 통과
+  if (parseLocaleFromPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // 2) root "/" → locale 협상 후 redirect
   if (pathname === '/') {
-    const lang = detectLang(request);
+    const locale = negotiateLocale(request);
     const url = request.nextUrl.clone();
-    url.pathname = `/${lang}`;
+    url.pathname = `/${locale}`;
     return NextResponse.redirect(url, { status: 302 });
   }
 
-  // Rate limit 체크 (API 경로만)
+  // 3) Rate limit 체크 (API 경로만)
   const limit = getRateLimit(pathname);
   if (limit === null) {
     return NextResponse.next();
@@ -82,5 +97,5 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/', '/api/:path*'],
+  matcher: ['/', '/ko/:path*', '/en/:path*', '/api/:path*'],
 };

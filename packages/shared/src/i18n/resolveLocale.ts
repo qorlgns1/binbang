@@ -5,7 +5,7 @@
  *
  * 순수(universal) 코드. Node built-in/env/네트워크 I/O 금지.
  */
-import { DEFAULT_LOCALE, type Locale, isSupportedLocale } from './locale.ts';
+import { DEFAULT_LOCALE, type Locale, isSupportedLocale } from './locale';
 
 /** locale 결정 근거 (디버깅/관측용) */
 export type LocaleSource = 'url' | 'userProfile' | 'cookie' | 'acceptLanguage' | 'default';

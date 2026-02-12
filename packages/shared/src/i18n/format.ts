@@ -6,7 +6,7 @@
  *
  * 순수(universal) 코드. Node built-in/env/네트워크 I/O 금지.
  */
-import type { Locale } from './locale.ts';
+import type { Locale } from './locale';
 
 // ── 기본값 ──
 

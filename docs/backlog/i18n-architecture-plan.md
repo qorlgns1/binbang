@@ -1210,12 +1210,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-06 Web middleware 1차 협상 적용
+- [x] WU-06 Web middleware 1차 협상 적용
   - Scope: Edge-safe 협상(cookie/header/default) + redirect, DB 접근 금지
   - Allowed Files: `apps/web/src/middleware.ts`, 관련 테스트 파일
   - DoD: URL locale가 있으면 pass, 없으면 1차 협상 redirect
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-07 Web 서버 2차 확정(DB 포함)
@@ -1281,6 +1281,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-03` 완료 — `loaderTypes.ts`(MessageLoader/I18nOptions/MissingKeyPolicy) + `errors.ts`(MissingKeyError/MessageFormatError), typecheck 통과
 - `2026-02-12`: `WU-04` 완료 — `createI18n.ts`(t() key 조회/파라미터 치환/missing-key error+fallback 정책/fallbackMessages/onMissingKey 콜백) + 테스트 16개 통과, typecheck 통과
 - `2026-02-12`: `WU-05` 완료 — `format.ts`(formatDate/formatNumber/formatCurrency/formatRelativeTime + 토큰 프리셋) + 테스트 23개 통과, typecheck 통과
+- `2026-02-12`: `WU-06` 완료 — `middleware.ts` 리팩터(shared i18n 코어 사용: parseLocaleFromPath+negotiateLocale), `.ts` 확장자 제거(cross-package 호환), web test 157개 + typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---

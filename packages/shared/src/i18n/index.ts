@@ -4,25 +4,25 @@ export {
   DEFAULT_LOCALE,
   isSupportedLocale,
   normalizeLocale,
-} from './locale.ts';
+} from './locale';
 
 export {
   type LocaleSource,
   type ResolveLocaleInput,
   type ResolveLocaleResult,
   resolveLocale,
-} from './resolveLocale.ts';
+} from './resolveLocale';
 
 export {
   type Messages,
   type MessageLoader,
   type MissingKeyPolicy,
   type I18nOptions,
-} from './loaderTypes.ts';
+} from './loaderTypes';
 
-export { MissingKeyError, MessageFormatError } from './errors.ts';
+export { MissingKeyError, MessageFormatError } from './errors';
 
-export { type TranslateFunction, type I18nInstance, createI18n } from './createI18n.ts';
+export { type TranslateFunction, type I18nInstance, createI18n } from './createI18n';
 
 export {
   type DateToken,
@@ -32,4 +32,4 @@ export {
   formatNumber,
   formatCurrency,
   formatRelativeTime,
-} from './format.ts';
+} from './format';

@@ -5,8 +5,8 @@
  *
  * 순수(universal) 코드. Node built-in/env/네트워크 I/O 금지.
  */
-import { MissingKeyError } from './errors.ts';
-import type { I18nOptions } from './loaderTypes.ts';
+import { MissingKeyError } from './errors';
+import type { I18nOptions } from './loaderTypes';
 
 /** t() 함수 시그니처 */
 export type TranslateFunction = (key: string, params?: Record<string, string | number>) => string;
