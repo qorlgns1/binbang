@@ -12,3 +12,12 @@ export {
   type ResolveLocaleResult,
   resolveLocale,
 } from './resolveLocale.ts';
+
+export {
+  type Messages,
+  type MessageLoader,
+  type MissingKeyPolicy,
+  type I18nOptions,
+} from './loaderTypes.ts';
+
+export { MissingKeyError, MessageFormatError } from './errors.ts';

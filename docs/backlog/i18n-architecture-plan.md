@@ -1186,12 +1186,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-03 Loader/에러 타입 정의
+- [x] WU-03 Loader/에러 타입 정의
   - Scope: 런타임 독립 인터페이스/에러 타입 확정
   - Allowed Files: `packages/shared/src/i18n/loaderTypes.ts`, `packages/shared/src/i18n/errors.ts`
   - DoD: Node/Browser/Worker에서 공용 타입으로 import 가능
   - Verify: `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-04 `createI18n()` + `t()` 최소 구현
@@ -1278,6 +1278,7 @@ packages/worker-shared/src/runtime/i18n/
 
 - `2026-02-12`: `WU-01` 완료 — `locale.ts`(Locale/SUPPORTED_LOCALES/DEFAULT_LOCALE/isSupportedLocale/normalizeLocale) + `./i18n` export + 테스트 18개 통과, typecheck 통과
 - `2026-02-12`: `WU-02` 완료 — `resolveLocale.ts`(URL>userProfile>cookie>acceptLanguage>default 우선순위) + 테스트 14개 통과, typecheck 통과
+- `2026-02-12`: `WU-03` 완료 — `loaderTypes.ts`(MessageLoader/I18nOptions/MissingKeyPolicy) + `errors.ts`(MissingKeyError/MessageFormatError), typecheck 통과
 - `YYYY-MM-DD`: `-`
 
 ---
