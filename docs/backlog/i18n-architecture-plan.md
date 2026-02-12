@@ -1250,12 +1250,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-11 i18n typegen 파이프라인
-  - Scope: 메시지 key 타입 생성(`packages/shared/generated/i18n/**`, 비커밋)
+- [x] WU-11 i18n typegen 파이프라인
+  - Scope: 메시지 key 타입 생성(`packages/shared/src/generated/i18n/**`, 비커밋)
   - Allowed Files: `scripts/i18n/typegen.*`, 루트 `package.json`, `.gitignore`(필요 시)
   - DoD: key 오타가 typecheck에서 실패
   - Verify: `pnpm i18n:typegen`, `pnpm typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
 - [ ] WU-12 CI 게이트 + 레거시 경로 차단
@@ -1286,6 +1286,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-08` 완료 — `src/i18n/request.ts`(getNamespacesForRoute+loadMessages+getRequestMessages), route group→namespace 선언적 매핑, `messages/{locale}/{ns}.json` 구조, 테스트 9개 통과, web test 173개 + typecheck 통과
 - `2026-02-12`: `WU-09` 완료 — worker i18n runtime(loader+templates+userLocale), conditionTrigger 구조화 페이로드 전환, caseNotifications 레거시/구조화 양방향 호환, 메시지 ko/en notification.json, 테스트 11개 통과, ci:check 통과
 - `2026-02-12`: `WU-10` 완료 — `scripts/i18n/check.mjs`(key parity+param parity+빈 값 검사), apps/web+worker-shared messages 대상, `pnpm i18n:check` 스크립트 추가, ci:check 통과
+- `2026-02-12`: `WU-11` 완료 — `scripts/i18n/typegen.mjs`(ko 기준 namespace별 key union 타입 생성), 출력 `packages/shared/src/generated/i18n/messages.ts`(gitignored), `pnpm i18n:typegen` 스크립트 추가, WebMessages/WorkerMessages/TypedTranslateFunction 타입 제공, ci:check 통과
 - `YYYY-MM-DD`: `-`
 
 ---
