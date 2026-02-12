@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
+import { isValidLang, supportedLangs } from '@/lib/i18n/landing';
 
 export const metadata: Metadata = {
   title: '개인정보처리방침 | Binbang',
@@ -9,15 +12,26 @@ export const metadata: Metadata = {
 /** 정적 생성으로 항상 200 HTML 응답 보장 (OAuth 검증용). */
 export const dynamic = 'force-static';
 
+export async function generateStaticParams() {
+  return supportedLangs.map((lang) => ({ lang }));
+}
+
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
+
 /**
  * Public privacy policy page. Accessible without authentication.
  * Required by Google OAuth verification: responsive, same domain, clearly linked to app (Binbang).
  */
-export default function PrivacyPage(): React.ReactElement {
+export default async function PrivacyPage({ params }: PageProps): Promise<React.ReactElement> {
+  const { lang } = await params;
+  if (!isValidLang(lang)) notFound();
+
   return (
     <main className='mx-auto max-w-3xl px-4 py-12'>
       <Link
-        href='/'
+        href={`/${lang}`}
         className='mb-8 inline-block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
       >
         ← 홈으로
@@ -59,10 +73,13 @@ export default function PrivacyPage(): React.ReactElement {
         </section>
       </div>
       <div className='mt-12 flex gap-4'>
-        <Link href='/terms' className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link
+          href={`/${lang}/terms`}
+          className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'
+        >
           서비스 약관
         </Link>
-        <Link href='/' className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link href={`/${lang}`} className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
           홈으로 돌아가기
         </Link>
       </div>

@@ -3,7 +3,7 @@
 import { type FormEvent, useState } from 'react';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
 import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function SignupPage(): React.ReactElement {
+  const { lang } = useParams<{ lang: string }>();
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -47,7 +48,7 @@ export default function SignupPage(): React.ReactElement {
         return;
       }
 
-      router.push('/login');
+      router.push(`/${lang}/login`);
     } catch {
       setError('서버 오류가 발생했습니다');
     } finally {
@@ -58,7 +59,7 @@ export default function SignupPage(): React.ReactElement {
   return (
     <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel ctaLabel='로그인으로 이동' ctaHref='/login' />
+        <AuthBrandPanel ctaLabel='로그인으로 이동' ctaHref={`/${lang}/login`} />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
@@ -138,7 +139,7 @@ export default function SignupPage(): React.ReactElement {
             <p className='text-center text-sm text-muted-foreground'>
               이미 계정이 있으신가요?{' '}
               <Link
-                href='/login'
+                href={`/${lang}/login`}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
                 로그인
@@ -147,21 +148,21 @@ export default function SignupPage(): React.ReactElement {
 
             <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-center'>
               <Link
-                href='/pricing'
+                href={`/${lang}/pricing`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 요금제 보기
               </Link>
               <span className='text-muted-foreground'>·</span>
               <Link
-                href='/privacy'
+                href={`/${lang}/privacy`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 개인정보처리방침
               </Link>
               <span className='text-muted-foreground'>·</span>
               <Link
-                href='/terms'
+                href={`/${lang}/terms`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 서비스 약관

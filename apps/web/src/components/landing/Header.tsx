@@ -23,7 +23,7 @@ export function Header({ lang, copy }: HeaderProps): React.ReactElement {
   return (
     <header className='fixed inset-x-0 top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur'>
       <div className='mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4'>
-        <Link href='/' className='flex items-center gap-2'>
+        <Link href={`/${lang}`} className='flex items-center gap-2'>
           <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
             <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
           </span>
@@ -37,10 +37,16 @@ export function Header({ lang, copy }: HeaderProps): React.ReactElement {
           <a href='#status' className='landing-header-link text-sm text-muted-foreground hover:text-primary'>
             {copy.nav.status}
           </a>
-          <Link href='/pricing' className='landing-header-link text-sm text-muted-foreground hover:text-primary'>
+          <Link
+            href={`/${lang}/pricing`}
+            className='landing-header-link text-sm text-muted-foreground hover:text-primary'
+          >
             {copy.nav.pricing}
           </Link>
-          <Link href='/privacy' className='landing-header-link text-sm text-muted-foreground hover:text-primary'>
+          <Link
+            href={`/${lang}/privacy`}
+            className='landing-header-link text-sm text-muted-foreground hover:text-primary'
+          >
             {copy.footer.privacy}
           </Link>
 
@@ -52,14 +58,14 @@ export function Header({ lang, copy }: HeaderProps): React.ReactElement {
             variant='outline'
             className='border-primary/50 bg-transparent text-primary hover:bg-primary/10 hover:text-primary'
           >
-            <Link href='/login'>{copy.nav.login}</Link>
+            <Link href={`/${lang}/login`}>{copy.nav.login}</Link>
           </Button>
         </nav>
 
         <div className='flex items-center gap-2 md:hidden'>
           <ThemeToggle lang={lang} variant='mobile' />
           <LangToggle currentLang={lang} variant='mobile' />
-          <MobileMenu copy={copy} />
+          <MobileMenu copy={copy} lang={lang} />
         </div>
       </div>
     </header>

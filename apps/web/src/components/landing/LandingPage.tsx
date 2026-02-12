@@ -33,7 +33,7 @@ export function LandingPage({ lang, copy, baseUrl }: LandingPageProps): React.Re
       <main>
         <LegalLinksBar copy={copy} baseUrl={baseUrl} />
         <Hero copy={copy} lang={lang} />
-        <AppPurpose copy={copy} />
+        <AppPurpose copy={copy} lang={lang} />
         <Features copy={copy} />
         <Footer copy={copy} lang={lang} />
       </main>

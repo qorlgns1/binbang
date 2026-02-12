@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { LandingCopy } from '@/lib/i18n/landing';
+import type { LandingCopy, Lang } from '@/lib/i18n/landing';
 
 const Sheet = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.Sheet })), { ssr: false });
 const SheetContent = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.SheetContent })), {
@@ -18,6 +18,7 @@ const SheetTrigger = dynamic(() => import('@/components/ui/sheet').then((mod) =>
 
 interface MobileMenuProps {
   copy: LandingCopy;
+  lang: Lang;
 }
 
 /**
@@ -26,7 +27,7 @@ interface MobileMenuProps {
  * @param copy - Localized copy for navigation labels; should provide `nav.features`, `nav.status`, `nav.pricing`, and `nav.login`
  * @returns A React element containing a Sheet-based mobile menu with navigation links and a login button
  */
-export function MobileMenu({ copy }: MobileMenuProps): React.ReactElement {
+export function MobileMenu({ copy, lang }: MobileMenuProps): React.ReactElement {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -42,14 +43,14 @@ export function MobileMenu({ copy }: MobileMenuProps): React.ReactElement {
           <Link href='#status' className='text-base text-foreground'>
             {copy.nav.status}
           </Link>
-          <Link href='/pricing' className='text-base text-foreground'>
+          <Link href={`/${lang}/pricing`} className='text-base text-foreground'>
             {copy.nav.pricing}
           </Link>
-          <Link href='/privacy' className='text-base text-foreground'>
+          <Link href={`/${lang}/privacy`} className='text-base text-foreground'>
             {copy.footer.privacy}
           </Link>
           <Button asChild className='mt-2 bg-primary text-primary-foreground hover:bg-primary/90'>
-            <Link href='/login'>{copy.nav.login}</Link>
+            <Link href={`/${lang}/login`}>{copy.nav.login}</Link>
           </Button>
         </div>
       </SheetContent>

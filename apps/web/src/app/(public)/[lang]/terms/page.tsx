@@ -1,14 +1,28 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
+import { isValidLang, supportedLangs } from '@/lib/i18n/landing';
+
+export async function generateStaticParams() {
+  return supportedLangs.map((lang) => ({ lang }));
+}
+
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 /**
  * Public terms of service page. Accessible without authentication.
  * Replace placeholder content with your actual terms of service text.
  */
-export default function TermsPage(): React.ReactElement {
+export default async function TermsPage({ params }: PageProps): Promise<React.ReactElement> {
+  const { lang } = await params;
+  if (!isValidLang(lang)) notFound();
+
   return (
     <main className='mx-auto max-w-3xl px-4 py-12'>
       <Link
-        href='/'
+        href={`/${lang}`}
         className='mb-8 inline-block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
       >
         ← 홈으로
@@ -55,10 +69,13 @@ export default function TermsPage(): React.ReactElement {
         </section>
       </div>
       <div className='mt-12 flex gap-4'>
-        <Link href='/privacy' className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link
+          href={`/${lang}/privacy`}
+          className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'
+        >
           개인정보처리방침
         </Link>
-        <Link href='/' className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link href={`/${lang}`} className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
           홈으로 돌아가기
         </Link>
       </div>

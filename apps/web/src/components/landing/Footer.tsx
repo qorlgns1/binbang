@@ -32,7 +32,7 @@ export function Footer({ copy, lang }: FooterProps): React.ReactElement {
           <h2 className='text-3xl font-semibold text-foreground md:text-4xl'>{copy.footer.title}</h2>
           <p className='mx-auto mt-5 max-w-2xl text-lg text-muted-foreground'>{copy.footer.description}</p>
           <Link
-            href='/signup'
+            href={`/${lang}/signup`}
             className='mt-10 inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
             onClick={handleCTAClick}
           >
@@ -44,11 +44,11 @@ export function Footer({ copy, lang }: FooterProps): React.ReactElement {
       <footer className='border-t border-border bg-background px-4 py-7 text-center text-sm text-muted-foreground'>
         <span>{copy.footer.copyright}</span>
         <span className='mx-2'>·</span>
-        <Link href='/privacy' className='underline underline-offset-4 hover:text-foreground'>
+        <Link href={`/${lang}/privacy`} className='underline underline-offset-4 hover:text-foreground'>
           {copy.footer.privacy}
         </Link>
         <span className='mx-2'>·</span>
-        <Link href='/terms' className='underline underline-offset-4 hover:text-foreground'>
+        <Link href={`/${lang}/terms`} className='underline underline-offset-4 hover:text-foreground'>
           {copy.footer.terms}
         </Link>
       </footer>

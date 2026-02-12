@@ -1400,12 +1400,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-14 Public 라우팅 구조 정렬(`(public)/[lang]/**`)
+- [x] WU-14 Public 라우팅 구조 정렬(`(public)/[lang]/**`)
   - Scope: Public 페이지 파일 구조를 `[lang]` prefix 기준으로 통일
   - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/middleware.ts`, 관련 테스트 파일
   - DoD: pricing/login/signup/terms/privacy의 canonical 경로가 `/[lang]/...`로 정렬
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-13`
   - Blocker: `-`
 
 - [ ] WU-15 비어드민 페이지 언어 변경 동작 완료
@@ -1436,12 +1436,12 @@ packages/worker-shared/src/runtime/i18n/
 
 | 페이지 | 현재 라우트 파일 | 목표 라우트 파일 | 라우팅 구조 정렬([lang]) | Public 공통 헤더(언어 변경) | 텍스트 i18n 적용 | 언어 변경 동작 | SEO 최적화(마지막) | 비고 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `landing`, `common` |
-| Pricing | `apps/web/src/app/(public)/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `landing/pricing`, `common` |
-| Login | `apps/web/src/app/(public)/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `auth`, `common` |
-| Signup | `apps/web/src/app/(public)/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `auth`, `common` |
-| Terms | `apps/web/src/app/(public)/terms/page.tsx` | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `legal`, `common` |
-| Privacy | `apps/web/src/app/(public)/privacy/page.tsx` | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | [ ] | [ ] | [ ] | [ ] | [ ] | `legal`, `common` |
+| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [x] | [ ] | [ ] | [ ] | [ ] | `landing`, `common` |
+| Pricing | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [x] | [ ] | [ ] | [ ] | [ ] | `landing/pricing`, `common` |
+| Login | `apps/web/src/app/(public)/[lang]/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [x] | [ ] | [ ] | [ ] | [ ] | `auth`, `common` |
+| Signup | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [x] | [ ] | [ ] | [ ] | [ ] | `auth`, `common` |
+| Terms | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | [x] | [ ] | [ ] | [ ] | [ ] | `legal`, `common` |
+| Privacy | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | [x] | [ ] | [ ] | [ ] | [ ] | `legal`, `common` |
 | Dashboard | `apps/web/src/app/(app)/dashboard/page.tsx` | `apps/web/src/app/(app)/dashboard/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
 | Accommodations New | `apps/web/src/app/(app)/accommodations/new/page.tsx` | `apps/web/src/app/(app)/accommodations/new/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
 | Accommodation Detail | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
@@ -1462,6 +1462,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-11` 완료 — `scripts/i18n/typegen.mjs`(ko 기준 namespace별 key union 타입 생성), 출력 `packages/shared/src/generated/i18n/messages.ts`(gitignored), `pnpm i18n:typegen` 스크립트 추가, WebMessages/WorkerMessages/TypedTranslateFunction 타입 제공, ci:check 통과
 - `2026-02-12`: `WU-12` 완료 — `scripts/i18n/check-legacy.mjs`(레거시 경로 변경 차단, EOL 2026-06-30), `pnpm i18n:ci`(typegen+check+check-legacy 통합), `.github/workflows/ci.yml`에 `pnpm i18n:ci` 단계 추가, ci:check 통과
 - `2026-02-12`: `WU-13` 완료 — `apps/web/public/locales/` 삭제, `landing.json` → `messages/{ko,en}/landing.json` 이동, `getLandingCopy()` 경로 업데이트, i18n:check(common 13 + landing 40 keys), ci:check 통과
+- `2026-02-13`: `WU-14` 완료 — Public 페이지(login/signup/pricing/terms/privacy) `(public)/[lang]/` 하위로 이동, middleware에 locale 협상 redirect 추가(PUBLIC_PATHS), 모든 내부 링크 `/${lang}/...` 패턴으로 통일(landing 6개 컴포넌트 + 3개 client 페이지), `generateStaticParams` 추가, ci:check 통과
 - `YYYY-MM-DD`: `-`
 
 ---

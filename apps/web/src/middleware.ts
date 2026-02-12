@@ -42,11 +42,14 @@ function negotiateLocale(request: NextRequest): Locale {
   return DEFAULT_LOCALE;
 }
 
+/** locale prefix 없이 접근 가능한 public 경로 (redirect 대상) */
+const PUBLIC_PATHS = ['/login', '/signup', '/pricing', '/terms', '/privacy'];
+
 /**
  * Locale 협상 + Rate Limiting middleware.
  *
  * - URL에 locale prefix가 있으면 통과
- * - root "/" → locale 협상 후 redirect
+ * - root "/" 또는 public 경로 → locale 협상 후 redirect
  * - API 경로 → rate limit 적용
  */
 export function middleware(request: NextRequest): NextResponse {
@@ -57,11 +60,11 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.next();
   }
 
-  // 2) root "/" → locale 협상 후 redirect
-  if (pathname === '/') {
+  // 2) root "/" 또는 public 경로 → locale 협상 후 redirect
+  if (pathname === '/' || PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     const locale = negotiateLocale(request);
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}`;
+    url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`;
     return NextResponse.redirect(url, { status: 302 });
   }
 
@@ -97,5 +100,5 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/', '/ko/:path*', '/en/:path*', '/api/:path*'],
+  matcher: ['/', '/ko/:path*', '/en/:path*', '/api/:path*', '/login', '/signup', '/pricing', '/terms', '/privacy'],
 };

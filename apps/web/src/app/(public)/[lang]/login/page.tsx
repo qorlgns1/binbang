@@ -4,7 +4,7 @@ import { type FormEvent, Suspense, useState } from 'react';
 
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
 function LoginForm(): React.ReactElement {
+  const { lang } = useParams<{ lang: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
@@ -54,7 +55,7 @@ function LoginForm(): React.ReactElement {
   return (
     <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel ctaLabel='랜딩 페이지 보기' ctaHref='/' />
+        <AuthBrandPanel ctaLabel='랜딩 페이지 보기' ctaHref={`/${lang}`} />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
@@ -106,7 +107,7 @@ function LoginForm(): React.ReactElement {
             <p className='text-center text-sm text-muted-foreground'>
               계정이 없으신가요?{' '}
               <Link
-                href='/signup'
+                href={`/${lang}/signup`}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
                 회원가입
@@ -163,7 +164,7 @@ function LoginForm(): React.ReactElement {
 
             <div className='text-center pt-1'>
               <Link
-                href='/pricing'
+                href={`/${lang}/pricing`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 요금제 보기

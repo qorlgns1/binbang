@@ -1,10 +1,12 @@
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 import { ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { authOptions } from '@/lib/auth';
+import { isValidLang, supportedLangs } from '@/lib/i18n/landing';
 
 import { PricingCards } from './_components/pricingCards';
 
@@ -19,7 +21,18 @@ export const metadata = {
   },
 };
 
-export default async function PricingPage(): Promise<React.ReactElement> {
+export async function generateStaticParams() {
+  return supportedLangs.map((lang) => ({ lang }));
+}
+
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
+
+export default async function PricingPage({ params }: PageProps): Promise<React.ReactElement> {
+  const { lang } = await params;
+  if (!isValidLang(lang)) notFound();
+
   const session = await getServerSession(authOptions);
   const isLoggedIn = !!session?.user;
 
@@ -39,11 +52,11 @@ export default async function PricingPage(): Promise<React.ReactElement> {
           <div className='mx-auto flex max-w-7xl items-center justify-between px-4 py-4'>
             <div className='flex items-center gap-4'>
               <Button variant='ghost' size='icon' asChild>
-                <Link href={isLoggedIn ? '/dashboard' : '/'}>
+                <Link href={isLoggedIn ? '/dashboard' : `/${lang}`}>
                   <ArrowLeft className='size-5' />
                 </Link>
               </Button>
-              <Link href='/' className='flex items-center gap-2'>
+              <Link href={`/${lang}`} className='flex items-center gap-2'>
                 <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
                   <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
                 </span>
@@ -60,10 +73,10 @@ export default async function PricingPage(): Promise<React.ReactElement> {
             ) : (
               <div className='flex items-center gap-2'>
                 <Button variant='outline' asChild>
-                  <Link href='/login'>로그인</Link>
+                  <Link href={`/${lang}/login`}>로그인</Link>
                 </Button>
                 <Button asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                  <Link href='/signup'>무료로 시작하기</Link>
+                  <Link href={`/${lang}/signup`}>무료로 시작하기</Link>
                 </Button>
               </div>
             )}

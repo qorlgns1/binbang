@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 import { Check, Clock, Home, Zap } from 'lucide-react';
 
@@ -16,7 +17,15 @@ function formatPrice(price: number): string {
   return `₩${price.toLocaleString()}`;
 }
 
-function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: boolean }): React.ReactElement {
+function PlanCard({
+  plan,
+  isCurrentPlan,
+  lang,
+}: {
+  plan: PlanInfo;
+  isCurrentPlan: boolean;
+  lang: string;
+}): React.ReactElement {
   const isPopular = plan.name === 'PRO';
 
   return (
@@ -82,7 +91,7 @@ function PlanCard({ plan, isCurrentPlan }: { plan: PlanInfo; isCurrentPlan: bool
           </Button>
         ) : plan.price === 0 ? (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
-            <Link href='/signup'>무료로 시작하기</Link>
+            <Link href={`/${lang}/signup`}>무료로 시작하기</Link>
           </Button>
         ) : (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
@@ -121,6 +130,7 @@ function PricingCardsSkeleton(): React.ReactElement {
 }
 
 export function PricingCards(): React.ReactElement {
+  const { lang } = useParams<{ lang: string }>();
   const { data: plans, isLoading, isError } = usePlans();
   const { data: userQuota } = useUserQuota();
 
@@ -137,7 +147,7 @@ export function PricingCards(): React.ReactElement {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12 max-w-5xl mx-auto px-4 pt-4'>
       {plans.map((plan) => (
-        <PlanCard key={plan.id} plan={plan} isCurrentPlan={plan.name === currentPlanName} />
+        <PlanCard key={plan.id} plan={plan} isCurrentPlan={plan.name === currentPlanName} lang={lang} />
       ))}
     </div>
   );
