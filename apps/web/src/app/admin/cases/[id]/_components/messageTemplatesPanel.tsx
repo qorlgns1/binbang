@@ -115,12 +115,13 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
   const messageMutation = useCreateCaseMessageMutation();
 
   const selectedTemplate = TEMPLATES.find((t) => t.key === selectedKey);
+  const price = Number.parseInt(priceInput, 10);
+  const isPriceValid = !Number.isNaN(price) && price > 0;
 
   const getPreviewContent = (): string => {
     if (!selectedTemplate) return '';
     if (selectedTemplate.key === 'price_quote') {
-      const price = parseInt(priceInput, 10);
-      return selectedTemplate.buildContent({ finalPrice: Number.isNaN(price) ? 0 : price });
+      return selectedTemplate.buildContent({ finalPrice: isPriceValid ? price : 0 });
     }
     return selectedTemplate.buildContent();
   };
@@ -128,6 +129,11 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
   const handleCopyAndLog = async () => {
     const content = getPreviewContent();
     if (!content) return;
+
+    if (selectedTemplate?.key === 'price_quote' && !isPriceValid) {
+      setCopyError('최종 금액을 입력해 주세요.');
+      return;
+    }
 
     try {
       await navigator.clipboard.writeText(content);
@@ -204,14 +210,21 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
                   type='number'
                   placeholder='예: 43000'
                   value={priceInput}
-                  onChange={(e) => setPriceInput(e.target.value)}
+                  onChange={(e) => {
+                    setPriceInput(e.target.value);
+                    setCopyError(null);
+                  }}
                 />
               </div>
             )}
 
             <pre className='whitespace-pre-wrap text-sm bg-muted p-2 rounded-md'>{getPreviewContent()}</pre>
 
-            <Button size='sm' onClick={handleCopyAndLog} disabled={messageMutation.isPending}>
+            <Button
+              size='sm'
+              onClick={handleCopyAndLog}
+              disabled={messageMutation.isPending || (selectedTemplate?.key === 'price_quote' && !isPriceValid)}
+            >
               {copied ? (
                 <>
                   <Check className='size-3.5 mr-1.5' />
