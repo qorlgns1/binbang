@@ -141,8 +141,6 @@ jobs:
               pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
               pnpm with-env:production:host pnpm --filter @workspace/db exec prisma generate
               pnpm with-env:production:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
-
-              
               docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
               exit 0
             fi
