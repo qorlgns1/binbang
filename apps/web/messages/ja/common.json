@@ -27,6 +27,10 @@
     "title": "データを読み込めませんでした",
     "description": "ネットワークを確認して、もう一度お試しください。"
   },
+  "structuredData": {
+    "organizationDescription": "Binbangは宿泊予約サイトの空室を監視し、空室ができたときにメールでお知らせするサービスです。",
+    "websiteDescription": "宿泊予約サイトの空室アラートサービス。空室が出たらお知らせします。"
+  },
   "tutorial": {
     "step1": {
       "title": "Binbangを始めましょう",

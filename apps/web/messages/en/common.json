@@ -27,6 +27,10 @@
     "title": "We couldn't load the data",
     "description": "Please check your network and try again."
   },
+  "structuredData": {
+    "organizationDescription": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available.",
+    "websiteDescription": "Vacancy alert service for accommodation booking sites. Get notified when a room becomes available."
+  },
   "tutorial": {
     "step1": {
       "title": "Get started with Binbang",

@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { getTranslations } from 'next-intl/server';
 import Script from 'next/script';
 
 import { GoogleAnalytics } from '@/components/analytics';
 import { Providers } from '@/components/providers';
 import { getLocaleForHtmlLang } from '@/lib/i18n-runtime/server';
+import { SUPPORT_EMAIL } from '@/lib/support';
 
 import './globals.css';
 
@@ -40,9 +42,43 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLocaleForHtmlLang();
+  const t = await getTranslations({ locale: lang, namespace: 'common' });
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${BASE_URL}/#organization`,
+        name: 'Binbang',
+        url: BASE_URL,
+        logo: `${BASE_URL}/icon.png`,
+        description: t('structuredData.organizationDescription'),
+        contactPoint: {
+          '@type': 'ContactPoint',
+          email: SUPPORT_EMAIL,
+          contactType: 'customer service',
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${BASE_URL}/#website`,
+        name: 'Binbang',
+        url: BASE_URL,
+        description: t('structuredData.websiteDescription'),
+        publisher: { '@id': `${BASE_URL}/#organization` },
+        inLanguage: ['ko', 'en', 'ja', 'zh-CN', 'es-419'],
+      },
+    ],
+  };
   return (
     <html lang={lang}>
       <head>
+        {/* JSON-LD: locale-specific descriptions from common messages */}
+        <script
+          type='application/ld+json'
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD from i18n messages
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         <Script id='theme-init' strategy='beforeInteractive'>{`
           (function() {
             try {

@@ -27,6 +27,10 @@
     "title": "No se pudieron cargar los datos",
     "description": "Comprueba tu conexión e inténtalo de nuevo."
   },
+  "structuredData": {
+    "organizationDescription": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva y envía notificaciones por correo cuando hay habitación.",
+    "websiteDescription": "Servicio de alertas de disponibilidad para alojamientos. Te avisamos cuando hay habitación."
+  },
   "tutorial": {
     "step1": {
       "title": "Empezar con Binbang",
