@@ -59,16 +59,17 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
       <SelectTrigger
         className={cn(
           'min-w-30 text-xs font-medium',
-          variant === 'desktop' && 'rounded-full border-border px-3 py-2 hover:border-primary/60 hover:bg-primary/5 hover:text-primary',
+          variant === 'desktop' &&
+            'rounded-full border-border px-3 py-2 hover:border-primary/60 hover:bg-primary/5 hover:text-primary',
           variant === 'mobile' && 'min-w-24 rounded-md px-2.5 py-1.5',
           className,
         )}
-        aria-label="Select language"
+        aria-label='Select language'
       >
-        {variant === 'desktop' && <Globe className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+        {variant === 'desktop' && <Globe className='size-4 shrink-0 text-muted-foreground' aria-hidden />}
         <SelectValue>{LOCALE_LABELS[currentLang]}</SelectValue>
       </SelectTrigger>
-      <SelectContent className="z-100" position="popper">
+      <SelectContent className='z-100' position='popper'>
         {SUPPORTED_LOCALES.map((locale) => (
           <SelectItem key={locale} value={locale}>
             {LOCALE_LABELS[locale]}
