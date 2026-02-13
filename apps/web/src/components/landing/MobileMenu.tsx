@@ -78,7 +78,10 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
             </Link>
           </nav>
           <hr className='my-4 border-border/60' />
-          <Button asChild className='h-11 w-full rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/90'>
+          <Button
+            asChild
+            className='h-11 w-full rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/90'
+          >
             <Link href={`/${lang}/login`} onClick={closeSheet}>
               {t('nav.login')}
             </Link>

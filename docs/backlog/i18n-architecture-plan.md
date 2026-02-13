@@ -12,9 +12,49 @@
 
 - **지원 locale**: 계획 1차 지원은 `ko`, `en`, `ja`, `zh-CN`, `es-419`이나, **현재 구현은 `ko`, `en`만** 적용됨. `packages/shared` `SUPPORTED_LOCALES`, `apps/web` `Lang`/`supportedLangs`, `messages/` 디렉터리, middleware matcher, `LangToggle` 모두 ko/en 기준.
 - **Public 라우팅**: `(public)/[lang]/**` 구조 정렬 완료(WU-14). middleware에서 `/`, `/login`, `/signup`, `/pricing`, `/terms`, `/privacy` 접근 시 locale 협상 후 `/{locale}/...` 로 redirect.
-- **Public 언어 변경**: `(public)/[lang]/layout.tsx`에서 **공통 헤더(PublicHeader)** 주입 — 브랜드 링크 + `LangToggle`. 전환 시 path/query 유지. landing은 추가 네비 바(네비 링크/테마/로그인), pricing은 뒤로/액션 바만 페이지별 유지.
-- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. 랜딩 페이지는 `getLandingCopy(lang)`으로 `landing.json` 직접 로드, 나머지 Public 페이지는 next-intl `getTranslations`/`useTranslations` 사용.
-- **request.ts**: locale은 `(public)/[lang]`에서는 URL param, `(app)`에서는 cookie fallback. 메시지는 **전체 namespace**(common, landing, legal, auth, pricing) 일괄 로드. route별 namespace slicing(`namespaces.ts` 매핑)은 아직 request.ts에 미적용.
+- **Public 헤더(단일·한 줄)**: `(public)/[lang]/layout.tsx`에서 **PublicHeader** 한 개만 주입. layout에서 `lang` props 전달, pathname으로 variant 자동 판단.
+  - **landing** (`/[lang]`): 브랜드 | 네비(기능/상태/요금제/개인정보) | 테마 | 언어 | 로그인. 모바일은 브랜드 | 테마 | 언어 | 햄버거(시트 내 네비·로그인).
+  - **pricing** (`/[lang]/pricing`): 브랜드 | 뒤로 | 언어 | (로그인 시 대시보드, 비로그인 시 로그인·가입). `useSession()` 연동.
+  - **auth** (`/[lang]/login`, `/[lang]/signup`): 브랜드 | 언어.
+  - **legal** (`/[lang]/terms`, `/[lang]/privacy`): 브랜드 | 홈으로 | 언어.
+  - **default**: 브랜드 | 언어.
+  - 랜딩은 별도 네비 바 없음(Landing Header 제거). pricing/terms/privacy는 페이지 내 헤더·뒤로가기 제거, 모두 PublicHeader 한 줄로 통합.
+- **MobileMenu**: `useTranslations('landing')` 기반, `copy` prop 제거. 터치 타겟 44px+, 시트 내 계층·구분선·접근성. 링크/버튼 클릭 시 시트 닫기; #features/#status는 `scrollToAndClose`(시트 닫힌 뒤 350ms 지연 scrollIntoView로 포커스 복원에 의한 상단 스크롤 방지).
+- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. 랜딩 페이지는 `getLandingCopy(lang)`으로 `landing.json` 직접 로드, 나머지 Public 페이지는 next-intl 사용.
+- **request.ts**: locale은 `(public)/[lang]`에서는 URL param, `(app)`에서는 cookie fallback. 메시지는 **전체 namespace** 일괄 로드. route별 namespace slicing은 아직 request.ts에 미적용.
+- **Public SEO(WU-16 완료)**: `sitemap.ts`는 locale 접두어(`/ko`, `/en`, `/ko/pricing` 등) URL + 항목별 `alternates.languages`(hreflang) 출력. Public 각 페이지(landing, pricing, login, signup, terms, privacy)는 `generateMetadata`/layout에서 `alternates.canonical`(절대 URL) 및 `alternates.languages`(ko/en) 설정. 헬퍼: `apps/web/src/lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates).
+
+---
+
+## 앞으로 구현할 사항
+
+### 우선순위 높음 (Public / SEO)
+
+| # | 항목 | 설명 | 참고 |
+|---|------|------|------|
+| 1 | **랜딩 텍스트 i18n 전환** | 랜딩 페이지가 현재 `getLandingCopy(landing.json)` 직접 로드. next-intl `getTranslations('landing')` 기반으로 통일하면 17.3 매트릭스 "텍스트 i18n 적용" [부분] → [x] 완료. | 17.3 Landing 행 |
+| 2 | **(완료) WU-16 Public SEO** | hreflang/canonical/sitemap 적용 완료. | 17.2, 17.3 |
+
+### 우선순위 중간 (아키텍처·품질)
+
+| # | 항목 | 설명 | 참고 |
+|---|------|------|------|
+| 3 | **request.ts namespace slicing** | route/그룹별로 필요한 namespace만 로드하도록 `namespaces.ts` 매핑을 request.ts에 반영. 현재는 전체 namespace 일괄 로드. | 5.8, 현재 구현 상태 요약 |
+| 4 | **사용자 preferredLocale 저장·반영** | 사용자 프로필에 `preferredLocale` 저장, Web 2차 확정·Worker/이메일 발송 시 반영. (DB 스키마·마이그레이션 별도.) | ADR-2, ADR-4, 7.5 |
+| 5 | **Missing-key 관측(Prod)** | missing-key 발생 시 메트릭/로그 수집, SLO·알람 설계. | 12.4, 12.7 |
+
+### 우선순위 낮음 / 확장
+
+| # | 항목 | 설명 | 참고 |
+|---|------|------|------|
+| 6 | **지원 locale 확장** | 현재 ko/en만. 계획 1차: ja, zh-CN, es-419 추가 시 messages·middleware·Lang 타입·LangToggle 확장. | 2.1, ADR-9 |
+| 7 | **App(비공개) 페이지 i18n** | Dashboard, Accommodations, Subscription Settings 등에 텍스트 i18n 적용 및 언어 변경 동작. (SEO 비대상.) | 17.3 매트릭스 |
+| 8 | **포맷 토큰 통일** | Admin/Email/Worker 등에서 날짜·숫자·통화 포맷을 `@workspace/shared` 포맷 토큰으로 통일. | 9.4 |
+
+### 선택·장기
+
+- **레거시 경로 EOL(2026-06-30)**: `apps/web/public/locales/**` 참조 완전 제거(이미 메시지는 `messages/**` 단일화됨, CI 차단만 유지).
+- **i18n messages payload 측정/CI 게이트**: route별 client messages 크기 측정, 임계치 초과 시 실패. (13.4)
 
 ---
 
@@ -38,6 +78,7 @@
 16. [부록: 추천 디렉터리/파일 레이아웃](#16-부록-추천-디렉터리파일-레이아웃)
 17. [LLM 실행 운영 가이드(이 문서 단독)](#17-llm-실행-운영-가이드이-문서-단독)
 18. [관련 문서](#18-관련-문서)
+19. [앞으로 구현할 사항](#앞으로-구현할-사항)
 
 ---
 
@@ -1428,12 +1469,12 @@ packages/worker-shared/src/runtime/i18n/
   - Done Date: `2026-02-13`
   - Blocker: `-`
 
-- [ ] WU-16 Public SEO 최적화 마무리(최종 단계)
+- [x] WU-16 Public SEO 최적화 마무리(최종 단계)
   - Scope: `hreflang`/`canonical`/sitemap 정합성 마무리
   - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/lib/i18n-runtime/seo.ts`, sitemap 관련 코드, 관련 테스트
   - DoD: 17.3의 Public 페이지에서 `SEO 최적화(마지막)` 체크 완료
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`, `pnpm ci:check`
-  - Done Date: `-`
+  - Done Date: `2026-02-13`
   - Blocker: `-`
 
 ### 17.3 비어드민 페이지별 적용 매트릭스(체크박스)
@@ -1448,12 +1489,12 @@ packages/worker-shared/src/runtime/i18n/
 
 | 페이지 | 현재 라우트 파일 | 목표 라우트 파일 | 라우팅 구조 정렬([lang]) | Public 공통 헤더(언어 변경) | 텍스트 i18n 적용 | 언어 변경 동작 | SEO 최적화(마지막) | 비고 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [x] | [x] | [부분] | [x] | [ ] | layout 공통 헤더 + Landing 전용 네비 바 |
-| Pricing | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [x] | [x] | [x] | [x] | [ ] | layout 공통 헤더 + 뒤로/액션 바 |
-| Login | `apps/web/src/app/(public)/[lang]/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [x] | [x] | [x] | [x] | [ ] | layout 공통 헤더 |
-| Signup | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [x] | [x] | [x] | [x] | [ ] | layout 공통 헤더 |
-| Terms | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | [x] | [x] | [x] | [x] | [ ] | layout 공통 헤더 |
-| Privacy | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | [x] | [x] | [x] | [x] | [ ] | layout 공통 헤더 |
+| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [x] | [x] | [부분] | [x] | [x] | PublicHeader variant=landing 한 줄, 모바일 햄버거 |
+| Pricing | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=pricing 한 줄, useSession |
+| Login | `apps/web/src/app/(public)/[lang]/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=auth |
+| Signup | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=auth |
+| Terms | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=legal, 홈으로 |
+| Privacy | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=legal, 홈으로 |
 | Dashboard | `apps/web/src/app/(app)/dashboard/page.tsx` | `apps/web/src/app/(app)/dashboard/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
 | Accommodations New | `apps/web/src/app/(app)/accommodations/new/page.tsx` | `apps/web/src/app/(app)/accommodations/new/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
 | Accommodation Detail | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
@@ -1477,6 +1518,8 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-13`: `WU-14` 완료 — Public 페이지(login/signup/pricing/terms/privacy) `(public)/[lang]/` 하위로 이동, middleware에 locale 협상 redirect 추가(PUBLIC_PATHS), 모든 내부 링크 `/${lang}/...` 패턴으로 통일(landing 6개 컴포넌트 + 3개 client 페이지), `generateStaticParams` 추가, ci:check 통과
 - `2026-02-13`: 구현 상태 반영 — Public 전 페이지에 LangToggle 적용(경로 유지 전환), pricing/login/signup/terms/privacy는 next-intl(auth, legal, pricing namespace) 적용, 랜딩은 getLandingCopy(landing.json) 유지. 지원 언어 ko/en. 공통 헤더는 layout 주입 없이 페이지별 구성. request.ts는 전체 namespace 일괄 로드.
 - `2026-02-13`: `WU-15` 완료 — Public 공통 헤더 `PublicHeader`(브랜드+LangToggle)를 `(public)/[lang]/layout.tsx`에서 주입. pricing/terms/privacy/login/signup에서 중복 브랜드·LangToggle 제거. Landing Header는 브랜드·LangToggle 제거 후 네비/테마/로그인만 유지(sticky top-14). web test 173개 + typecheck 통과.
+- `2026-02-13`: PublicHeader 단일·한 줄 통합 — `lang`/`variant` props, pathname 기반 variant(landing/pricing/auth/legal/default). 랜딩: Landing Header 제거, LandingPage는 layout PublicHeader만 사용. pricing/terms/privacy: 페이지 내 헤더·뒤로가기 제거, PublicHeader 한 줄로 통합(pricing은 useSession으로 대시보드/로그인·가입 분기). MobileMenu: useTranslations 기반(copy 제거), 터치 44px·접근성·시트 닫힌 뒤 scrollIntoView 350ms 지연(포커스 복원으로 인한 상단 스크롤 방지).
+- `2026-02-13`: `WU-16` 완료 — Public SEO: `lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates), sitemap locale prefix + alternates.languages, Public 각 페이지(landing/pricing/login/signup/terms/privacy) canonical + alternates.languages(ko/en). login/signup은 layout generateMetadata. 17.3 SEO 열 [x] 처리.
 - `YYYY-MM-DD`: `-`
 
 ---

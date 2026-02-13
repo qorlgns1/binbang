@@ -2,6 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { isValidLang } from '@/lib/i18n/landing';
+import type { Lang } from '@/lib/i18n/config';
+import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 import { PricingCards } from './_components/pricingCards';
 
@@ -13,14 +15,20 @@ export async function generateMetadata({ params }: PageProps) {
   const { lang } = await params;
   if (!isValidLang(lang)) return {};
   const t = await getTranslations({ locale: lang, namespace: 'pricing' });
+  const { canonical, languages } = buildPublicAlternates(lang as Lang, '/pricing');
   return {
-    title: t('nav.brand') + ' – Pricing',
+    title: `${t('nav.brand')} + – Pricing`,
     description:
       'View Binbang plans. Start free, upgrade anytime. 1-min checks, real-time KakaoTalk alerts, price trend analysis.',
+    alternates: { canonical, languages },
     openGraph: {
-      title: t('nav.brand') + ' – Pricing',
+      type: 'website',
+      locale: getOgLocale(lang as Lang),
+      url: canonical,
+      siteName: 'Binbang',
+      title: `${t('nav.brand')} – Pricing`,
       description: 'Start free. 1-min checks, real-time alerts.',
-      url: '/pricing',
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }
