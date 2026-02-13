@@ -36,7 +36,6 @@ function getStateBadgeClass(state: QueueJobState): string {
     case 'failed':
       return 'bg-status-error text-status-error-foreground';
     case 'waiting':
-      return 'bg-status-neutral text-status-neutral-foreground';
     case 'delayed':
     case 'paused':
       return 'bg-status-neutral text-status-neutral-foreground';
@@ -47,7 +46,9 @@ function getStateBadgeClass(state: QueueJobState): string {
 
 function formatDateTime(value: string | null): string {
   if (!value) return '-';
-  return new Date(value).toLocaleString('ko-KR', {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString('ko-KR', {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -181,7 +182,7 @@ export function QueueJobsTable({ cycleJobs, checkJobs, isLoading, isError, error
             <div className='space-y-1'>
               <p className='text-xs text-muted-foreground'>데이터 미리보기</p>
               <pre className='rounded-md bg-muted p-3 text-xs overflow-x-auto'>
-                {JSON.stringify(selectedJob.dataPreview, null, 2)}
+                {selectedJob.dataPreview != null ? JSON.stringify(selectedJob.dataPreview, null, 2) : '-'}
               </pre>
             </div>
           </div>
@@ -223,7 +224,7 @@ function QueueJobsGrid({ rows, selectedJobKey, onSelectJob }: QueueJobsGridProps
             tabIndex={0}
             aria-selected={selectedJobKey === job.rowKey}
             onClick={() => onSelectJob(job.rowKey)}
-            className={`cursor-pointer ${selectedJobKey === job.rowKey ? 'bg-muted/60' : ''}`}
+            className={`cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${selectedJobKey === job.rowKey ? 'bg-muted/60' : ''}`}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
@@ -243,7 +244,10 @@ function QueueJobsGrid({ rows, selectedJobKey, onSelectJob }: QueueJobsGridProps
             </TableCell>
             <TableCell className='text-xs text-muted-foreground'>{formatDateTime(job.createdAt)}</TableCell>
             <TableCell className='text-xs text-muted-foreground'>{formatDateTime(job.finishedAt)}</TableCell>
-            <TableCell className='max-w-[260px] truncate text-xs text-muted-foreground' title={job.failedReason ?? ''}>
+            <TableCell
+              className='max-w-[260px] truncate text-xs text-muted-foreground'
+              title={job.failedReason || undefined}
+            >
               {job.failedReason ?? '-'}
             </TableCell>
           </TableRow>
