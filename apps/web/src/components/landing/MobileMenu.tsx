@@ -34,15 +34,6 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
 
   const closeSheet = () => setOpen(false);
 
-  const scrollToAndClose = (id: string) => {
-    closeSheet();
-    // 시트가 닫힌 뒤 포커스가 트리거(햄버거)로 복원되며 상단으로 스크롤되므로, 스크롤을 지연시켜 그 다음에 실행.
-    const scrollDelayMs = 350;
-    setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    }, scrollDelayMs);
-  };
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -64,12 +55,6 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
             {lang === 'ko' ? '메뉴' : 'Menu'}
           </p>
           <nav className='flex flex-col gap-0.5' aria-label='Mobile navigation'>
-            <button type='button' className={navItemClass} onClick={() => scrollToAndClose('features')}>
-              {t('nav.features')}
-            </button>
-            <button type='button' className={navItemClass} onClick={() => scrollToAndClose('status')}>
-              {t('nav.status')}
-            </button>
             <Link href={`/${lang}/pricing`} className={navItemClass} onClick={closeSheet}>
               {t('nav.pricing')}
             </Link>
