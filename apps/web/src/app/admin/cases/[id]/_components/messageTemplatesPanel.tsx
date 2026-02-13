@@ -111,6 +111,7 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const messageMutation = useCreateCaseMessageMutation();
 
   const selectedTemplate = TEMPLATES.find((t) => t.key === selectedKey);
@@ -128,7 +129,13 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
     const content = getPreviewContent();
     if (!content) return;
 
-    await navigator.clipboard.writeText(content);
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopyError(null);
+    } catch {
+      setCopyError('클립보드 복사에 실패했습니다.');
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
 
@@ -218,6 +225,7 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
               )}
             </Button>
 
+            {copyError && <p className='text-sm text-destructive'>{copyError}</p>}
             {messageMutation.isError && <p className='text-sm text-destructive'>{messageMutation.error.message}</p>}
           </div>
         )}

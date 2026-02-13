@@ -491,6 +491,9 @@ async function main() {
   // ── Case Messages ──
   for (const msg of SEED_CASE_MESSAGES) {
     const sentById = userIdByKey[msg.sentByKey];
+    if (!sentById) {
+      throw new Error(`Seed user id missing for CaseMessage sentByKey="${msg.sentByKey}"`);
+    }
     await prisma.caseMessage.upsert({
       where: { id: msg.id },
       update: {

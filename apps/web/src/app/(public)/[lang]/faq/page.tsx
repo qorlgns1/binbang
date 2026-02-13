@@ -86,7 +86,7 @@ export default async function FaqPage({ params }: PageProps): Promise<React.Reac
             t('title.subline')
           ) : (
             <>
-              {lang === 'ko' ? '더 궁금한 점이 있으신가요? ' : 'Still have questions? '}
+              {t('footer.stillHaveQuestions')}
               <a
                 href={`mailto:${SUPPORT_EMAIL}`}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
@@ -101,13 +101,13 @@ export default async function FaqPage({ params }: PageProps): Promise<React.Reac
             href={`/${lang}/privacy`}
             className='text-muted-foreground underline underline-offset-4 hover:text-foreground'
           >
-            {lang === 'ko' ? '개인정보처리방침' : 'Privacy Policy'}
+            {t('footer.privacyPolicy')}
           </Link>
           <Link
             href={`/${lang}/pricing`}
             className='text-muted-foreground underline underline-offset-4 hover:text-foreground'
           >
-            {lang === 'ko' ? '요금제' : 'Pricing'}
+            {t('footer.pricing')}
           </Link>
         </div>
       </footer>

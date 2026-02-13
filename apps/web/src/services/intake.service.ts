@@ -230,15 +230,19 @@ function toFormDateString(value: unknown): string | null {
     return null;
   }
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    return text;
+  const isoPrefix = text.match(/^\d{4}-\d{2}-\d{2}/);
+  if (isoPrefix) {
+    return isoPrefix[0];
   }
 
   const parsed = new Date(text);
   if (Number.isNaN(parsed.getTime())) {
     return text;
   }
-  return parsed.toISOString().slice(0, 10);
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function readAnswersFromRawPayload(rawPayload: Record<string, unknown>): AnswersItem[] {

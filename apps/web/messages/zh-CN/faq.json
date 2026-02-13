@@ -41,5 +41,10 @@
     "a1": "Binbang仅通过Google OAuth收集最少的必要信息。邮箱仅用于账户识别和发送提醒。详情请查看隐私政策。",
     "q2": "如何联系客服？",
     "a2": "请发送邮件至support@binbang.moodybeard.com，我们会尽快回复。"
+  },
+  "footer": {
+    "stillHaveQuestions": "还有其他问题？ ",
+    "privacyPolicy": "隐私政策",
+    "pricing": "价格方案"
   }
 }

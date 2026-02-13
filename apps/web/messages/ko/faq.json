@@ -41,5 +41,10 @@
     "a1": "빈방은 Google OAuth를 통해 최소한의 정보만 수집하며, 수집된 이메일은 회원 식별 및 알림 발송 용도로만 사용됩니다. 자세한 내용은 개인정보처리방침을 확인해주세요.",
     "q2": "문의는 어떻게 하나요?",
     "a2": "이메일(support@binbang.moodybeard.com)로 문의해주시면 빠르게 답변 드리겠습니다."
+  },
+  "footer": {
+    "stillHaveQuestions": "더 궁금한 점이 있으신가요? ",
+    "privacyPolicy": "개인정보처리방침",
+    "pricing": "요금제"
   }
 }

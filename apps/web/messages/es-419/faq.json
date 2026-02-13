@@ -41,5 +41,10 @@
     "a1": "Binbang solo recopila información mínima a través de Google OAuth. Tu correo se usa exclusivamente para identificación y alertas. Consulta nuestra Política de Privacidad para más detalles.",
     "q2": "¿Cómo puedo contactar al soporte?",
     "a2": "Envíanos un correo a support@binbang.moodybeard.com y te responderemos a la brevedad."
+  },
+  "footer": {
+    "stillHaveQuestions": "¿Aún tienes preguntas? ",
+    "privacyPolicy": "Política de privacidad",
+    "pricing": "Precios"
   }
 }

@@ -68,6 +68,7 @@ model User {
   updatedSelectors     PlatformSelector[]  @relation("SelectorUpdatedBy")
   createdPatterns      PlatformPattern[]   @relation("PatternCreatedBy")
   selectorChangeLogs   SelectorChangeLog[] @relation("SelectorChangeLogBy")
+  caseMessages        CaseMessage[]
 
   // 튜토리얼
   tutorialCompletedAt DateTime?
@@ -626,6 +627,7 @@ model CaseMessage {
   channel     String
   content     String   @db.Text
   sentById    String
+  sentBy      User     @relation(fields: [sentById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdAt   DateTime @default(now())
 
   @@index([caseId])
