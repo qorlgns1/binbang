@@ -12,6 +12,7 @@
 | v1.0 | 2026-02-14 | 초기 작성 — 28개 섹션 + 6개 부록 | Claude |
 | v1.1 | 2026-02-14 | 피드백 반영: 용어 일관성, 의존성 맵, KPI baseline, 문화적 적합성, Mermaid 다이어그램 | Claude |
 | v1.2 | 2026-02-14 | 섹션별 구체 피드백 반영: 성숙도 근거 연결, i18n 우선순위 근거, OKR 재구성, 법적/비용/컴플라이언스 보강 | Codex |
+| v1.3 | 2026-02-14 | P0-9/P0-10/KPI 정밀화: SoT 지표 정의, 30일 실측 baseline, UTC/KST 시간대 원칙, PriceQuote/매출 SoT 명시 | Codex |
 
 ---
 
@@ -168,7 +169,7 @@
 
 | 기능 | 상태 | 우선순위 | 비고 |
 |------|------|----------|------|
-| 운영 퍼널 대시보드 (P0-9) | ⬜ 미구현 | P0 | 클릭/제출/결제 KPI |
+| 운영 퍼널 대시보드 (P0-9) | ⬜ 미구현 | P0 | 제출/처리/결제확인/조건충족 KPI (클릭은 2차) |
 | 견적 산식 엔진 (P0-10) | ⬜ 미구현 | P0 | 가격 일관성 |
 | 요청 기간 자동 만료 (P1-1) | ⬜ 미구현 | P1 | 미충족 → EXPIRED |
 | 알림 채널 이중화 (P1-2) | ⬜ 미구현 | P1 | 카톡 실패 → 이메일 |
@@ -374,23 +375,58 @@ graph LR
 
 ### 5.1 [P0-9] 운영 퍼널 대시보드
 
-- **목표**: 클릭/제출/결제 전환율을 한 화면에서 확인
+- **목표**: 1차 릴리즈는 **서버 SoT(제출/처리/결제확인/조건충족)** 기반 퍼널을 고정하고, 클릭 지표는 2차(트래킹 저장 완료 후)로 분리한다.
 - **구현 범위**:
-  - KPI 카드 3개: 폼 제출 수, 결제 확인 수, 조건 충족 수
-  - 단계별 전환율: 제출→결제, 결제→조건충족
+  - KPI 카드 4개: 제출 수, 처리 수, 결제 확인 수, 조건 충족 수
+  - 단계별 전환율: 제출→처리, 처리→결제확인, 결제확인→조건충족, 제출→조건충족(전체)
   - 기간 필터: 오늘/7일/30일/전체
-  - 트렌드 차트: 일별 접수/결제/충족 추이
-  - 목표선 표시: 전환율 목표치(예: 제출→결제 20%, 결제→충족 50%) 설정/표시
+  - 트렌드 차트: 일별 제출/처리/결제확인/조건충족 추이
+  - 목표선 표시: Baseline(최근 30일 실측) 대비 단계별 Target 표시
+  - 2차 확장 항목: 클릭 퍼널(landing CTA/event 저장 완료 후 연동)
+- **지표 정의 (SoT/기준 시각/중복 규칙)**:
+
+| 지표 | Source of Truth | 기준 시각 | 중복/집계 규칙 |
+|------|------------------|-----------|----------------|
+| 제출(접수) | `FormSubmission` | `createdAt` | `responseId` unique로 중복 제출 방지 |
+| 처리 | `FormSubmission.status='PROCESSED'` | `updatedAt` | 상태 변경 시각 기준, `count(distinct id)` |
+| 결제 확인 | `Case.paymentConfirmedAt IS NOT NULL` | `paymentConfirmedAt` | `count(distinct case.id)` |
+| 조건 충족 | `BillingEvent` | `createdAt` | 케이스당 1개 unique, 조인 시 `count(distinct caseId)` 권장 |
+
+- **전환율 정의 (1차 릴리즈 고정)**:
+  - 제출→처리 = `처리 수 / 제출 수`
+  - 처리→결제확인 = `결제 확인 수 / 처리 수`
+  - 결제확인→조건충족 = `조건 충족 수 / 결제 확인 수`
+  - 제출→조건충족 = `조건 충족 수 / 제출 수`
+
+- **Baseline (최근 30일 실측, 2026-01-14 ~ 2026-02-13 UTC)**:
+  - 제출 `7`, 처리 `6`, 결제확인 `2`, 조건충족 `1`
+  - 제출→처리 `85.7%` (`6/7`)
+  - 처리→결제확인 `33.3%` (`2/6`)
+  - 결제확인→조건충족 `50.0%` (`1/2`)
+  - 제출→조건충족 `14.3%` (`1/7`)
+
+### 5.1.1 Admin 시간대 정책 (P0-9 동시 적용)
+
+- **원칙**:
+  - 저장/필터: UTC 유지
+  - Admin 표시: `Asia/Seoul` 강제 (KST)
+- **표준 포맷**:
+  - `Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', ... })`
+- **주의 사항**:
+  - 표시를 사용자 로컬 타임존에 의존하면 기간 필터 경계(일자 시작/종료) 불일치 버그가 발생할 수 있으므로 금지
 - **구현 위치**:
   - `apps/web/src/services/admin/funnel.service.ts` (신규)
   - `apps/web/src/app/api/admin/funnel/route.ts` (신규)
   - `apps/web/src/app/admin/funnel/page.tsx` (신규)
   - `apps/web/src/app/admin/funnel/_components/` (신규)
 - **완료조건(DoD)**:
-  - 최소 3개 KPI 카드가 실시간 DB 데이터 기반으로 표시
+  - 4개 KPI 카드(제출/처리/결제확인/조건충족)가 실시간 DB 데이터 기반으로 표시
   - 기간 필터 변경 시 즉시 업데이트
   - AdminNav에 "퍼널" 메뉴 추가
   - 목표 대비 실적(Actual vs Target) 색상 구분 표시
+  - 지표 정의서(SoT/중복/기준 시각)가 문서에 고정
+  - 최근 30일 스냅샷 수치가 검증 쿼리/테스트로 재현 가능
+  - 시간대 정책(저장/필터 UTC, 표시 KST)이 코드/화면에 적용
 - **예상 공수**: 2~3일
 
 ### 5.2 [P0-10] 숫자형 가격 산식 엔진
@@ -399,8 +435,18 @@ graph LR
 - **구현 범위**:
   - 가격 입력 요소: `baseFee`, `durationWeight`, `difficultyWeight`, `urgencyWeight`, `frequencyWeight`
   - 계산 규칙: 1,000원 반올림 + 하한(10,000)/상한(500,000) 적용
-  - 케이스별 가격 근거 스냅샷 저장 (누가/언제/어떤 가중치)
+  - 케이스별 가격 근거 스냅샷 저장 (누가/언제/어떤 가중치/어떤 정책 버전)
+  - `PriceQuote` 필수 필드:
+    - `pricingPolicyVersion`
+    - `inputsSnapshot` (intake 입력 스냅샷)
+    - `weightsSnapshot` (`baseFee + weights`)
+    - `computedAmountKrw`, `roundedAmountKrw`
+    - `changeReason` (필수)
+    - `isActive` (선택, 케이스 현재 적용 quote)
   - 관리자 UI: 산식 입력 → 미리보기 → 저장
+- **SoT 주석**:
+  - 현 단계 `BillingEvent`는 **조건충족 이벤트 기록**(현재 `amountKrw=0`)이며 매출 SoT가 아니다.
+  - 매출 SoT는 Phase 2 `Payment` 모델 도입 이후 확정한다.
 - **구현 위치**:
   - `packages/db/prisma/schema.prisma` — PriceQuote 모델
   - `apps/web/src/services/pricing.service.ts` (신규)
@@ -1243,10 +1289,14 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 
 | Key Result | Baseline (현재) | 3개월 Target | 6개월 Target | 측정 방법 |
 |------------|-----------------|-------------|-------------|-----------|
-| KR1. 월 접수 건 수 확대 | ~10건 | 50건 | 200건 | FormSubmission.count/월 |
-| KR2. 접수→결제 전환율 개선 | ~20% (추정) | 30% | 50% | (WAITING_PAYMENT→이후)/전체 접수 |
-| KR3. 월 매출 성장 | ~₩100,000 (추정) | ₩500,000 | ₩2,000,000 | BillingEvent.sum/월 |
+| KR1. 월 접수 건 수 확대 | 7건 (최근 30일 실측) | 50건 | 200건 | `count(FormSubmission)` (`createdAt` 기준) |
+| KR2. 접수→결제 전환율 개선 | 28.6% (`2/7`) | 35% | 50% | Cohort 기준: 기간 내 접수된 `FormSubmission` 중 `Case.paymentConfirmedAt IS NOT NULL` 비율 |
+| KR3. 월 매출 성장 | 매출 SoT 미확정 (현 단계 `BillingEvent.amountKrw=0`) | ₩500,000* | ₩2,000,000* | *Phase 2 `Payment` 모델(`paidAt`, `amount`) 도입 후 확정 |
 | KR4. 평균 응답 시간 단축 | ~2시간 (추정) | <30분 | <15분 | RECEIVED→REVIEWING 평균 시간차 |
+| KR5. 결제확인→조건충족 비율 (보조지표) | 50.0% (`1/2`) | 55% | 65% | `count(BillingEvent)` / `count(Case where paymentConfirmedAt is not null)` |
+
+> **KR2 측정 원칙(고정)**: 분모는 기간 내 접수 cohort(`FormSubmission.createdAt`), 분자는 해당 cohort에서 결제확인(`paymentConfirmedAt`)된 건으로 계산한다.
+> **매출 SoT 주석**: 현 단계 `BillingEvent`는 조건충족 이벤트 기록용이며, 매출 지표는 Phase 2 `Payment` 모델에서 확정한다.
 
 ### 19.2 Objective 2 — 신뢰 가능한 제품 품질/운영 안정성 확보
 
@@ -1256,7 +1306,9 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 | KR2. 워커 체크 성공률 향상 | ~90% | 95% | 98% | successCount/totalCount |
 | KR3. 알림 도달률 향상 | ~80% | 95% | 99% | SENT/(SENT+FAILED) |
 | KR4. MTTR 단축 | 미측정 | <1시간 | <30분 | 장애 감지→복구 시간 |
-| KR5. 분쟁 발생률 통제 | 미측정 | <5% | <3% | 분쟁 케이스/전체 BILLED |
+| KR5. 분쟁 발생률 통제 | 운영 분쟁 1건(해석 단계), 과금 후 분쟁 0건 | <5% | <3% | 분쟁=`CaseMessage.templateKey LIKE 'dispute_%'`; 과금 후 분쟁율=`(paymentConfirmedAt IS NOT NULL AND dispute)`/`전체 BILLED` |
+
+> **분쟁 데이터 해석 주석**: 현재 확인된 1건은 `dispute_termination`이며 과금 후 분쟁이 아니라 해석 단계(`CANCELLED`, `paymentConfirmedAt=null`) 종료 건이다.
 
 ### 19.3 Objective 3 — 성장 채널과 재방문 기반 구축
 
@@ -2500,18 +2552,22 @@ Jobs:
 
 ```prisma
 model PriceQuote {
-  id           String   @id @default(cuid())
-  caseId       String
-  baseFee      Int
-  weights      Json     // { duration, difficulty, urgency, frequency }
-  calculatedPrice Int
-  roundedPrice Int
-  createdBy    String
-  createdAt    DateTime @default(now())
+  id                    String   @id @default(cuid())
+  caseId                String
+  pricingPolicyVersion  String   // 예: "v1.0.0"
+  inputsSnapshot        Json     // FormSubmission.extractedFields 스냅샷
+  weightsSnapshot       Json     // { baseFee, duration, difficulty, urgency, frequency }
+  computedAmountKrw     Int
+  roundedAmountKrw      Int
+  changeReason          String   // 필수
+  isActive              Boolean  @default(true) // 케이스 현재 적용 quote
+  createdBy             String
+  createdAt             DateTime @default(now())
 
   case Case @relation(fields: [caseId], references: [id])
 
   @@index([caseId])
+  @@index([caseId, isActive])
 }
 ```
 
