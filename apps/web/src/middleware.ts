@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import { DEFAULT_LOCALE, type Locale, isSupportedLocale } from '@workspace/shared/i18n';
+import { DEFAULT_LOCALE, type Locale, isSupportedLocale, mapToSupportedLocale } from '@workspace/shared/i18n';
 
 import { checkRateLimit, cleanupStore, getClientIp, getRateLimit } from '@/lib/rateLimit';
 
@@ -21,24 +21,22 @@ function parseLocaleFromPath(pathname: string): Locale | null {
  *
  * 우선순위: cookie(`binbang-lang`) > Accept-Language > DEFAULT_LOCALE
  * DB(`preferredLocale`)는 서버 2차 확정에서 반영한다 (ADR-2).
+ * zh-* → zh-CN, es-* → es-419 매핑 적용 (ADR-9).
  */
 function negotiateLocale(request: NextRequest): Locale {
-  // 1순위: 쿠키
-  const cookieLocale = request.cookies.get('binbang-lang')?.value;
-  if (cookieLocale && isSupportedLocale(cookieLocale)) {
-    return cookieLocale;
-  }
+  const cookieRaw = request.cookies.get('binbang-lang')?.value;
+  const cookieLocale = cookieRaw ? mapToSupportedLocale(cookieRaw) : null;
+  if (cookieLocale) return cookieLocale;
 
-  // 2순위: Accept-Language
   const acceptLanguage = request.headers.get('accept-language');
   if (acceptLanguage) {
-    const primary = acceptLanguage.split(',')[0]?.split('-')[0];
-    if (primary && isSupportedLocale(primary)) {
-      return primary;
-    }
+    const primary = acceptLanguage.split(',')[0]?.trim();
+    const headerLocale = primary
+      ? (mapToSupportedLocale(primary) ?? mapToSupportedLocale(primary.split('-')[0]))
+      : null;
+    if (headerLocale) return headerLocale;
   }
 
-  // 3순위: 기본값
   return DEFAULT_LOCALE;
 }
 
@@ -107,5 +105,18 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/', '/ko/:path*', '/en/:path*', '/api/:path*', '/login', '/signup', '/pricing', '/terms', '/privacy'],
+  matcher: [
+    '/',
+    '/ko/:path*',
+    '/en/:path*',
+    '/ja/:path*',
+    '/zh-CN/:path*',
+    '/es-419/:path*',
+    '/api/:path*',
+    '/login',
+    '/signup',
+    '/pricing',
+    '/terms',
+    '/privacy',
+  ],
 };

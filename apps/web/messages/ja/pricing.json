@@ -1,0 +1,40 @@
+{
+  "nav": { "brand": "Binbang", "login": "ログイン", "getStarted": "無料で始める", "dashboard": "ダッシュボード" },
+  "title": {
+    "heading": "ご自身に合ったプランをお選びください",
+    "subline1": "複雑な部分はお任せください。",
+    "subline2": "次の旅の計画に集中できます。"
+  },
+  "plan": {
+    "free": "無料",
+    "perMonth": "月",
+    "perYear": "年",
+    "popular": "人気",
+    "currentPlan": "現在のプラン",
+    "accommodations": "{count}件の宿泊施設",
+    "checkInterval": "価格チェック {minutes}分ごと",
+    "kakaoAlert": "リアルタイムカカオトークアラート",
+    "priceChart": "価格推移グラフ",
+    "prioritySupport": "優先サポート",
+    "currentPlanButton": "現在のプラン",
+    "getStartedFree": "無料で始める",
+    "upgradeInquiry": "アップグレードのお問い合わせ",
+    "upgradeInquirySubject": "{planName}プラン アップグレードのお問い合わせ",
+    "plans": {
+      "FREE": { "name": "無料プラン", "description": "宿泊施設1件、30分チェック。まずはお試しに。" },
+      "PRO": { "name": "Proプラン", "description": "より多くの宿泊施設と高速チェック。本格利用向け。" },
+      "BIZ": { "name": "ビジネスプラン", "description": "一括登録と優先サポート。チーム・法人向け。" }
+    }
+  },
+  "faq": {
+    "title": "よくある質問",
+    "q1": "プランはいつでも変更できますか？",
+    "a1": "はい、いつでもアップグレードまたはダウングレードできます。",
+    "q2": "支払い方法は？",
+    "a2": "現在はメールでお問い合わせください。自動請求の導入を予定しています。",
+    "q3": "返金ポリシーは？",
+    "a3": "お支払いから7日以内のご請求で全額返金いたします。"
+  },
+  "footer": { "contact": "お問い合わせ: rlgns0610@gmail.com" },
+  "loadError": "プラン情報を読み込めませんでした。"
+}

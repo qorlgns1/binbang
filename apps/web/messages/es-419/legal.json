@@ -1,0 +1,34 @@
+{
+  "privacy": {
+    "title": "Política de privacidad de Binbang",
+    "lastUpdated": "Última actualización: 11 de febrero de 2026",
+    "intro": "Binbang valora tu privacidad y cumple con las leyes aplicables, incluida la ley de protección de datos personales. Esta política explica cómo recopilamos y tratamos la información personal cuando usas los servicios de Binbang.",
+    "section1Title": "1. Información personal que recopilamos",
+    "section1Body": "Al registrarte recopilamos tu nombre, correo electrónico y contraseña. También guardamos las URL de alojamientos y la configuración de alertas que registres al usar el servicio. Esta información es necesaria para ofrecer el servicio de alertas de disponibilidad.",
+    "section2Title": "2. Uso de la información personal",
+    "section2Body": "La información recopilada se usa solo para gestión de cuenta, envío de alertas de disponibilidad, mejora del servicio y atención al cliente. No usamos tu información personal para otros fines ni la compartimos con terceros.",
+    "section3Title": "3. Conservación y eliminación",
+    "section3Body": "La información personal se elimina una vez cumplido el propósito de uso. Cuando la ley exija un período de conservación, la guardamos de forma segura durante ese período y luego la eliminamos. Al eliminar tu cuenta también se elimina la información personal asociada.",
+    "section4Title": "4. Tus derechos",
+    "section4Body": "Puedes acceder, corregir o eliminar tu información personal en cualquier momento. Para consultas o para ejercer tus derechos sobre información personal, contáctanos mediante la función de contacto del servicio y responderemos con prontitud.",
+    "termsLink": "Términos del servicio",
+    "homeLink": "Volver al inicio"
+  },
+  "terms": {
+    "title": "Términos del servicio",
+    "lastUpdated": "Última actualización: 11 de febrero de 2026",
+    "intro": "Gracias por usar Binbang. Estos términos aplican cuando usas nuestro servicio.",
+    "section1Title": "1. Aceptación de los términos",
+    "section1Body": "Al registrarte o usar el servicio se entiende que aceptas estos términos. Podemos actualizar los términos cuando sea necesario y avisaremos antes de que los cambios entren en vigor.",
+    "section2Title": "2. Descripción del servicio",
+    "section2Body": "Binbang monitorea la información de disponibilidad en sitios de reserva de alojamiento y te envía alertas cuando hay vacante según tu configuración. El servicio se mejora con el tiempo y las funciones o la operación pueden cambiar con aviso previo.",
+    "section3Title": "3. Uso del servicio",
+    "section3Body": "Usa el servicio conforme a las leyes aplicables y estos términos. No puedes usar la cuenta de otra persona ni realizar acciones que alteren el funcionamiento normal del servicio.",
+    "section4Title": "4. Limitaciones",
+    "section4Body": "Las alertas pueden retrasarse o no enviarse por cambios o fallos en los sitios de reserva. Confirma la disponibilidad en el sitio de reserva. No somos responsables de perjuicios derivados de esas circunstancias.",
+    "section5Title": "5. Contacto",
+    "section5Body": "Para dudas o soporte al usar el servicio, usa la función de contacto del servicio o contacta al operador.",
+    "privacyLink": "Política de privacidad",
+    "homeLink": "Volver al inicio"
+  }
+}

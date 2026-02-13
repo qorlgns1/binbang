@@ -8,7 +8,7 @@
  */
 import { cookies, headers } from 'next/headers';
 
-import { type ResolveLocaleResult, resolveLocale } from '@workspace/shared/i18n';
+import { mapToSupportedLocale, type ResolveLocaleResult, resolveLocale } from '@workspace/shared/i18n';
 
 const COOKIE_NAME = 'binbang-lang';
 
@@ -27,11 +27,15 @@ export interface ResolveServerLocaleInput {
  */
 export async function resolveServerLocale(input: ResolveServerLocaleInput = {}): Promise<ResolveLocaleResult> {
   const cookieStore = await cookies();
-  const cookieLocale = cookieStore.get(COOKIE_NAME)?.value ?? null;
+  const cookieRaw = cookieStore.get(COOKIE_NAME)?.value ?? null;
+  const cookieLocale = cookieRaw ? (mapToSupportedLocale(cookieRaw) ?? null) : null;
 
   const headerStore = await headers();
   const acceptLanguage = headerStore.get('accept-language');
-  const headerLocale = acceptLanguage?.split(',')[0]?.split('-')[0] ?? null;
+  const primaryRaw = acceptLanguage?.split(',')[0]?.trim() ?? null;
+  const headerLocale = primaryRaw
+    ? (mapToSupportedLocale(primaryRaw) ?? mapToSupportedLocale(primaryRaw.split('-')[0]) ?? null)
+    : null;
 
   return resolveLocale({
     url: input.urlLocale,

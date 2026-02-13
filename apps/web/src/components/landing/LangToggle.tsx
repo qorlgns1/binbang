@@ -5,7 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
 
 import { trackLocaleToggled } from '@/lib/analytics/landing-tracker';
-import type { Locale } from '@workspace/shared/i18n';
+import { SUPPORTED_LOCALES, type Locale } from '@workspace/shared/i18n';
+import { cn } from '@/lib/utils';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface LangToggleProps {
   currentLang: Locale;
@@ -13,65 +16,65 @@ interface LangToggleProps {
   variant?: 'desktop' | 'mobile';
 }
 
+/** Public pathname의 locale prefix (SUPPORTED_LOCALES와 동기화) */
+const LOCALE_PATH_REGEX = /^\/(ko|en|ja|zh-CN|es-419)(\/.*)?$/;
+
+/** 언어 선택 시 트리거/옵션에 표시할 짧은 라벨 */
+const LOCALE_LABELS: Record<Locale, string> = {
+  ko: '한국어',
+  en: 'English',
+  ja: '日本語',
+  'zh-CN': '简体中文',
+  'es-419': 'Español',
+};
+
 /**
- * Render a language toggle button that switches the site language between Korean and English.
+ * 5개국어(ko, en, ja, zh-CN, es-419) 선택 컨트롤.
  *
- * Activating the button sets a one-year cookie (`binbang-lang`), records the toggle via analytics,
- * and navigates the browser to the selected language root (`/ko` or `/en`).
- *
- * @param currentLang - Current language code, either `'ko'` or `'en'`
- * @param className - Additional CSS classes applied to the button
- * @param variant - Rendering variant; `'desktop'` shows an icon and pill styling, `'mobile'` shows a compact label. Defaults to `'desktop'`
- * @returns A button element that toggles the site language when clicked
+ * 선택 시 쿠키(`binbang-lang`) 저장, analytics 기록, Public이면 locale prefix만 교체해 이동, App이면 refresh.
  */
 export function LangToggle({ currentLang, className = '', variant = 'desktop' }: LangToggleProps): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleToggle = (): void => {
-    const newLang: Locale = currentLang === 'ko' ? 'en' : 'ko';
+  const handleChange = (newLang: string): void => {
+    const locale = newLang as Locale;
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
-    // 쿠키 저장
-    // biome-ignore lint/suspicious/noDocumentCookie: language preference cookie must be set for server-side locale routing
-    document.cookie = `binbang-lang=${newLang}; path=/; max-age=31536000`;
+    // biome-ignore lint/suspicious/noDocumentCookie: language preference cookie for server-side locale routing
+    document.cookie = `binbang-lang=${locale}; path=/; max-age=31536000`;
 
-    // 트래킹
-    trackLocaleToggled(newLang, theme);
+    trackLocaleToggled(locale, theme);
 
-    // SPA 방식 네비게이션
-    const localeMatch = pathname.match(/^\/(ko|en)(\/.*)?$/);
+    const localeMatch = pathname.match(LOCALE_PATH_REGEX);
     if (localeMatch) {
-      // Public page: swap locale prefix, preserve rest of path
-      router.push(`/${newLang}${localeMatch[2] || ''}`);
+      router.push(`/${locale}${localeMatch[2] || ''}`);
     } else {
-      // App page: cookie set above, refresh server components
       router.refresh();
     }
   };
 
-  if (variant === 'mobile') {
-    return (
-      <button
-        type='button'
-        onClick={handleToggle}
-        aria-label={currentLang === 'ko' ? 'Switch to English' : '한국어로 전환'}
-        className={`min-h-9 min-w-9 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
-      >
-        {currentLang === 'ko' ? 'EN' : 'KR'}
-      </button>
-    );
-  }
-
   return (
-    <button
-      type='button'
-      onClick={handleToggle}
-      aria-label={currentLang === 'ko' ? 'Switch to English' : '한국어로 전환'}
-      className={`flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-2 text-xs font-medium text-foreground outline-none transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
-    >
-      <Globe className='size-4 shrink-0 text-muted-foreground' aria-hidden />
-      <span>{currentLang === 'ko' ? 'EN' : 'KR'}</span>
-    </button>
+    <Select value={currentLang} onValueChange={handleChange}>
+      <SelectTrigger
+        className={cn(
+          'min-w-30 text-xs font-medium',
+          variant === 'desktop' && 'rounded-full border-border px-3 py-2 hover:border-primary/60 hover:bg-primary/5 hover:text-primary',
+          variant === 'mobile' && 'min-w-24 rounded-md px-2.5 py-1.5',
+          className,
+        )}
+        aria-label="Select language"
+      >
+        {variant === 'desktop' && <Globe className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+        <SelectValue>{LOCALE_LABELS[currentLang]}</SelectValue>
+      </SelectTrigger>
+      <SelectContent className="z-100" position="popper">
+        {SUPPORTED_LOCALES.map((locale) => (
+          <SelectItem key={locale} value={locale}>
+            {LOCALE_LABELS[locale]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

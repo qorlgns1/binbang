@@ -73,7 +73,7 @@ describe('resolveServerLocale', () => {
     mockCookies({ 'binbang-lang': 'en' });
     mockHeaders({});
 
-    const result = await resolveServerLocale({ userPreferredLocale: 'ja' });
+    const result = await resolveServerLocale({ userPreferredLocale: 'fr' });
     expect(result).toEqual({ locale: 'en', source: 'cookie' });
   });
 

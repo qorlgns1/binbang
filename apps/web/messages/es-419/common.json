@@ -1,0 +1,17 @@
+{
+  "brand": "Binbang",
+  "loading": "Cargando...",
+  "error": "Ocurrió un error.",
+  "retry": "Reintentar",
+  "save": "Guardar",
+  "saving": "Guardando...",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "delete": "Eliminar",
+  "deleting": "Eliminando...",
+  "edit": "Editar",
+  "back": "Volver",
+  "next": "Siguiente",
+  "login": "Iniciar sesión",
+  "logout": "Cerrar sesión"
+}

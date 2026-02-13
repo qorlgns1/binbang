@@ -11,7 +11,7 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies, headers } from 'next/headers';
 
-import { DEFAULT_LOCALE, type Locale, isSupportedLocale } from '@workspace/shared/i18n';
+import { DEFAULT_LOCALE, type Locale, isSupportedLocale, mapToSupportedLocale } from '@workspace/shared/i18n';
 
 import { getAllNamespaces, getNamespacesForPathname } from './namespaces';
 
@@ -27,11 +27,12 @@ const loaders: Record<string, (locale: Locale) => Promise<Record<string, unknown
 export default getRequestConfig(async ({ requestLocale }) => {
   let locale = await requestLocale;
 
-  // (app) routes without [lang] param: fallback to cookie
+  // (app) routes without [lang] param: fallback to cookie (map raw to supported locale)
   if (!locale || !isSupportedLocale(locale)) {
     const cookieStore = await cookies();
-    const cookieLang = cookieStore.get('binbang-lang')?.value;
-    locale = cookieLang && isSupportedLocale(cookieLang) ? cookieLang : DEFAULT_LOCALE;
+    const cookieRaw = cookieStore.get('binbang-lang')?.value;
+    const cookieLocale = cookieRaw ? mapToSupportedLocale(cookieRaw) : null;
+    locale = cookieLocale ?? DEFAULT_LOCALE;
   }
 
   const validLocale = locale as Locale;

@@ -1,0 +1,43 @@
+{
+  "nav": { "brand": "Binbang", "login": "Iniciar sesión", "getStarted": "Comenzar gratis", "dashboard": "Panel" },
+  "title": {
+    "heading": "Elige el plan que te convenga",
+    "subline1": "Nosotros manejamos la complejidad.",
+    "subline2": "Tú puedes concentrarte en planear tu próximo viaje."
+  },
+  "plan": {
+    "free": "Gratis",
+    "perMonth": "mes",
+    "perYear": "año",
+    "popular": "Popular",
+    "currentPlan": "Plan actual",
+    "accommodations": "{count} alojamientos",
+    "checkInterval": "Revisión de precio cada {minutes} min",
+    "kakaoAlert": "Alertas en tiempo real por KakaoTalk",
+    "priceChart": "Gráfico de tendencia de precios",
+    "prioritySupport": "Soporte prioritario",
+    "currentPlanButton": "Plan actual",
+    "getStartedFree": "Comenzar gratis",
+    "upgradeInquiry": "Consultar mejora",
+    "upgradeInquirySubject": "Consulta de mejora al plan {planName}",
+    "plans": {
+      "FREE": { "name": "Plan gratuito", "description": "1 alojamiento, revisión cada 30 min. Ideal para empezar." },
+      "PRO": { "name": "Plan Pro", "description": "Más alojamientos y revisiones más rápidas. Para uso serio." },
+      "BIZ": {
+        "name": "Plan Business",
+        "description": "Registro masivo y soporte prioritario. Para equipos y negocios."
+      }
+    }
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "q1": "¿Puedo cambiar de plan en cualquier momento?",
+    "a1": "Sí, puedes mejorar o bajar de plan cuando quieras.",
+    "q2": "¿Cómo pago?",
+    "a2": "Por ahora contáctanos por correo. Planeamos introducir facturación automática pronto.",
+    "q3": "¿Cuál es la política de reembolso?",
+    "a3": "Reembolso completo si se solicita dentro de los 7 días del pago."
+  },
+  "footer": { "contact": "Contacto: rlgns0610@gmail.com" },
+  "loadError": "No se pudo cargar la información del plan."
+}

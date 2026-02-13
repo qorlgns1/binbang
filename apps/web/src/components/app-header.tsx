@@ -12,6 +12,7 @@ import { Home, LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
 import { LangToggle } from '@/components/landing/LangToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import type { Locale } from '@workspace/shared/i18n';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -23,7 +24,7 @@ interface AppHeaderProps {
   userName: string | null;
   userImage?: string | null;
   isAdmin?: boolean;
-  locale?: string;
+  locale?: Locale;
 }
 
 export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.ReactElement {
@@ -105,7 +106,7 @@ export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.
             {isDark ? <Sun className='size-3.5' /> : <Moon className='size-3.5' />}
             {isDark ? 'Light' : 'Dark'}
           </button>
-          {locale && <LangToggle currentLang={locale as 'ko' | 'en'} />}
+          {locale && <LangToggle currentLang={locale} />}
           <span className='text-sm text-muted-foreground'>{userName}</span>
           <Button variant='ghost' size='sm' onClick={() => signOut({ callbackUrl: '/login' })}>
             {t('logout')}
@@ -188,7 +189,7 @@ export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.
                   {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
                   {isDark ? '라이트 모드' : '다크 모드'}
                 </button>
-                {locale && <LangToggle currentLang={locale as 'ko' | 'en'} variant='mobile' />}
+                {locale && <LangToggle currentLang={locale} variant='mobile' />}
                 <Button
                   variant='ghost'
                   className='w-full justify-start text-destructive hover:text-destructive'

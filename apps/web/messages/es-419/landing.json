@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "brand": "Binbang",
+    "features": "Funciones",
+    "status": "Estado del sistema",
+    "pricing": "Precios",
+    "login": "Iniciar sesión"
+  },
+  "hero": {
+    "headline": "Para que tu descanso no pierda el rumbo,",
+    "headlineMobile": ["Para que tu descanso", "no pierda el rumbo,"],
+    "subheadline": "Binbang mantiene el faro encendido toda la noche.",
+    "subheadlineMobile": ["Binbang mantiene el faro", "encendido toda la noche."],
+    "description": "¿Cansado de actualizar sin parar? Binbang vigila mientras duermes y detecta la vacante de tu alojamiento soñado antes que nadie.",
+    "aboutApp": "Binbang es un servicio de alertas de disponibilidad; al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas.",
+    "cta": "Comenzar alertas de disponibilidad",
+    "secondaryCta": "Ver funciones",
+    "statusLabel": "Estado del sistema en vivo"
+  },
+  "features": {
+    "f1Title": "Noticias más claras, primero",
+    "f1Subtitle": "Menos espera, más emoción",
+    "f1Desc": "La optimización del navegador encuentra habitaciones disponibles hasta 4 veces más rápido que las revisiones habituales. Sé el primero en saberlo y asegura tu estancia ideal antes que los demás.",
+    "f2Title": "Claro a través de cualquier niebla",
+    "f2Subtitle": "Precisión inquebrantable ante cada cambio",
+    "f2Desc": "Los selectores dinámicos se adaptan a los cambios de interfaz de los sitios de reserva sin redesplegar código. Aunque las plataformas evolucionen, la visión de Binbang no pierde el rumbo.",
+    "f3Title": "Un faro que no se apaga",
+    "f3Subtitle": "Protección constante, incluso mientras duermes",
+    "f3Desc": "Los registros de latido por minuto mantienen el monitoreo estable y transparente todo el día. El sistema detecta y recupera cualquier fallo automáticamente, para que tu vigilancia no termine.",
+    "learnMore": "Saber más"
+  },
+  "trust": {
+    "title": "Operación en vivo",
+    "operational": "Operativo",
+    "uptime": "Tiempo activo",
+    "activeMonitors": "Monitores activos",
+    "response": "Respuesta promedio",
+    "emptyLogs": "No hay actividad del sistema en los últimos 5 minutos.",
+    "errorMessage": "No se pudo cargar el estado en vivo. Reintentando en 5 segundos.",
+    "retry": "Reintentar"
+  },
+  "footer": {
+    "title": "Nosotros manejamos la complejidad.",
+    "description": "Tú puedes concentrarte en planear tu próximo viaje.",
+    "cta": "Recibir novedades de disponibilidad",
+    "copyright": "© 2026 Binbang. Todos los derechos reservados.",
+    "privacy": "Política de privacidad",
+    "terms": "Términos del servicio"
+  },
+  "appPurpose": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva de alojamiento y envía notificaciones por correo cuando hay habitación disponible. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas de disponibilidad.",
+  "mockLogs": [
+    { "id": 1, "message": "Disponible: Park Hyatt Seoul (Suite Premium)", "location": "Seúl" },
+    { "id": 2, "message": "Disponible: Grand Hyatt Jeju (Deluxe Vista al mar)", "location": "Jeju" },
+    { "id": 3, "message": "Revisión completada: 2.847 objetivos escaneados", "location": "Sistema" },
+    { "id": 4, "message": "Disponible: Shilla Stay Gwanghwamun (Ejecutivo)", "location": "Seúl" },
+    { "id": 5, "message": "Alerta enviada: entregada a 3 usuarios", "location": "Sistema" },
+    { "id": 6, "message": "Disponible: Lotte Hotel Busan (Premier Océano)", "location": "Busan" },
+    { "id": 7, "message": "Disponible: Four Seasons Seoul (Corner King)", "location": "Seúl" },
+    { "id": 8, "message": "Revisión completada: 1.923 objetivos escaneados", "location": "Sistema" },
+    { "id": 9, "message": "Disponible: Maison Glad Jeju (Doble estándar)", "location": "Jeju" },
+    { "id": 10, "message": "Disponible: Ananti Cove (Deluxe Oceanhill)", "location": "Busan" },
+    { "id": 11, "message": "Disponible: Conrad Seoul (Ejecutivo)", "location": "Seúl" },
+    { "id": 12, "message": "Alerta enviada: entregada a 7 usuarios", "location": "Sistema" },
+    { "id": 13, "message": "Disponible: Banyan Tree Club & Spa (Villa con piscina)", "location": "Jeju" },
+    { "id": 14, "message": "Revisión completada: 3.421 objetivos escaneados", "location": "Sistema" },
+    { "id": 15, "message": "Disponible: Seamarq Hotel (Twin vista al mar)", "location": "Gangneung" }
+  ]
+}

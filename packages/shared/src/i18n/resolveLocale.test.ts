@@ -58,7 +58,7 @@ describe('resolveLocale', () => {
   describe('무효한 값 건너뛰기', () => {
     it('URL이 지원하지 않는 locale이면 다음 소스로 넘어간다', () => {
       const result = resolveLocale({
-        url: 'ja',
+        url: 'fr',
         userPreferredLocale: 'en',
       });
       expect(result).toEqual({ locale: 'en', source: 'userProfile' });
@@ -69,7 +69,7 @@ describe('resolveLocale', () => {
         url: 'fr',
         userPreferredLocale: 'zh',
         cookie: 'de',
-        acceptLanguage: 'ja',
+        acceptLanguage: 'pt',
       });
       expect(result).toEqual({ locale: 'ko', source: 'default' });
     });
@@ -97,10 +97,14 @@ describe('resolveLocale', () => {
     it('URL만 있는 경우', () => {
       expect(resolveLocale({ url: 'ko' })).toEqual({ locale: 'ko', source: 'url' });
       expect(resolveLocale({ url: 'en' })).toEqual({ locale: 'en', source: 'url' });
+      expect(resolveLocale({ url: 'ja' })).toEqual({ locale: 'ja', source: 'url' });
+      expect(resolveLocale({ url: 'zh-CN' })).toEqual({ locale: 'zh-CN', source: 'url' });
+      expect(resolveLocale({ url: 'es-419' })).toEqual({ locale: 'es-419', source: 'url' });
     });
 
     it('userPreferredLocale만 있는 경우', () => {
       expect(resolveLocale({ userPreferredLocale: 'en' })).toEqual({ locale: 'en', source: 'userProfile' });
+      expect(resolveLocale({ userPreferredLocale: 'ja' })).toEqual({ locale: 'ja', source: 'userProfile' });
     });
 
     it('cookie만 있는 경우', () => {
@@ -109,6 +113,7 @@ describe('resolveLocale', () => {
 
     it('acceptLanguage만 있는 경우', () => {
       expect(resolveLocale({ acceptLanguage: 'en' })).toEqual({ locale: 'en', source: 'acceptLanguage' });
+      expect(resolveLocale({ acceptLanguage: 'zh-CN' })).toEqual({ locale: 'zh-CN', source: 'acceptLanguage' });
     });
   });
 });
