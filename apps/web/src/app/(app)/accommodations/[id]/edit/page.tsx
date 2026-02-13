@@ -33,6 +33,10 @@ export default function EditAccommodationPage(): React.ReactElement {
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [adults, setAdults] = useState(2);
+  const [dateError, setDateError] = useState('');
+
+  const now = new Date();
+  const today = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
 
   // 원본 URL (변경 감지용)
   const [originalUrl, setOriginalUrl] = useState('');
@@ -78,6 +82,12 @@ export default function EditAccommodationPage(): React.ReactElement {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setDateError('');
+
+    if (checkIn < today) {
+      setDateError('체크인 날짜는 오늘 이후여야 합니다');
+      return;
+    }
 
     // URL이 변경되었으면 기본 URL 사용
     const submitUrl = url !== originalUrl && parsedInfo?.baseUrl ? parsedInfo.baseUrl : url;
@@ -96,7 +106,7 @@ export default function EditAccommodationPage(): React.ReactElement {
     );
   }
 
-  const errorMessage = fetchError?.message || updateMutation.error?.message || '';
+  const errorMessage = dateError || fetchError?.message || updateMutation.error?.message || '';
 
   if (fetching) {
     return (
@@ -132,7 +142,14 @@ export default function EditAccommodationPage(): React.ReactElement {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} onChange={() => updateMutation.reset()} className='space-y-6'>
+          <form
+            onSubmit={handleSubmit}
+            onChange={() => {
+              updateMutation.reset();
+              setDateError('');
+            }}
+            className='space-y-6'
+          >
             {/* URL 입력 */}
             <div className='space-y-2'>
               <Label htmlFor='url'>숙소 URL *</Label>
@@ -192,6 +209,7 @@ export default function EditAccommodationPage(): React.ReactElement {
                   id='checkIn'
                   name='checkIn'
                   required
+                  min={today}
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                 />

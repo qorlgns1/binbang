@@ -29,6 +29,10 @@ export default function NewAccommodationPage(): React.ReactElement {
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [adults, setAdults] = useState(2);
+  const [dateError, setDateError] = useState('');
+
+  const now = new Date();
+  const today = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
 
   // URL 변경 시 자동 파싱
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional, runs only on url changes
@@ -67,6 +71,12 @@ export default function NewAccommodationPage(): React.ReactElement {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
+    setDateError('');
+
+    if (checkIn < today) {
+      setDateError('체크인 날짜는 오늘 이후여야 합니다');
+      return;
+    }
 
     // URL에서 플랫폼 자동 감지
     let platform = 'AIRBNB';
@@ -119,11 +129,11 @@ export default function NewAccommodationPage(): React.ReactElement {
           <CardDescription>모든 필수 항목(*)을 입력해주세요</CardDescription>
         </CardHeader>
         <CardContent>
-          {createMutation.error && (
+          {(createMutation.error || dateError) && (
             <Alert variant='destructive' className='mb-6'>
               <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
               <AlertDescription>
-                <p>{createMutation.error.message}</p>
+                <p>{dateError || createMutation.error?.message}</p>
                 {createMutation.error instanceof QuotaExceededError && (
                   <Button asChild variant='outline' size='sm' className='mt-3'>
                     <Link href='/pricing'>플랜 업그레이드</Link>
@@ -133,7 +143,14 @@ export default function NewAccommodationPage(): React.ReactElement {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} onChange={() => createMutation.reset()} className='space-y-6'>
+          <form
+            onSubmit={handleSubmit}
+            onChange={() => {
+              createMutation.reset();
+              setDateError('');
+            }}
+            className='space-y-6'
+          >
             {/* URL 입력 */}
             <div className='space-y-2'>
               <Label htmlFor='url'>숙소 URL *</Label>
@@ -201,6 +218,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                   id='checkIn'
                   name='checkIn'
                   required
+                  min={today}
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                   className='bg-background/80 transition-all focus:bg-background'

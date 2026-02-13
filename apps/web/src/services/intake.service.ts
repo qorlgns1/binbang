@@ -155,7 +155,7 @@ function isValidFutureDate(value: string): boolean {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return false;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   return date >= today;
 }
 

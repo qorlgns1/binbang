@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { ExternalLink, Pencil } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Pencil } from 'lucide-react';
 
 import { STATUS_DOT_STYLES } from '@/app/(app)/dashboard/_lib/constants';
 import type { StatusType } from '@/app/(app)/dashboard/_lib/types';
@@ -28,6 +28,8 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
   const { id, name, platform, checkIn, checkOut, lastCheck, lastStatus, isActive } = accommodation;
   const displayStatus: StatusType = !isActive ? 'PAUSED' : lastStatus;
   const hasProblem = lastStatus === 'ERROR' || lastStatus === 'UNKNOWN';
+  const today = new Date().toISOString().split('T')[0];
+  const isCheckInExpired = checkIn.split('T')[0] < today;
 
   return (
     <div
@@ -48,7 +50,8 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
           <StatusBadge status={lastStatus} isPaused={!isActive} />
         </div>
         <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground'>
-          <span>
+          <span className={cn(isCheckInExpired && 'text-destructive')}>
+            {isCheckInExpired && <AlertTriangle className='mr-1 inline size-3' />}
             {checkIn.split('T')[0]} ~ {checkOut.split('T')[0]}
           </span>
           {lastCheck && (

@@ -4,9 +4,10 @@ import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { buildAccommodationUrl } from '@workspace/shared';
-import { ArrowLeft, Calendar, ExternalLink, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Calendar, ExternalLink, Users } from 'lucide-react';
 
 import { LocalDateTime } from '@/components/LocalDateTime';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,6 +54,10 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
 
   const t = await getTranslations('common');
 
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const isCheckInExpired = accommodation.checkIn < today;
+
   return (
     <main className='mx-auto max-w-4xl px-4 py-8'>
       {/* 뒤로 가기 */}
@@ -64,6 +69,18 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
           </Link>
         </Button>
       </div>
+
+      {/* 체크인 만료 경고 (실제 일시정지된 경우에만 표시) */}
+      {isCheckInExpired && !accommodation.isActive && (
+        <Alert variant='destructive' className='mb-8'>
+          <AlertTriangle className='size-4' />
+          <AlertTitle>체크인 날짜가 지났습니다</AlertTitle>
+          <AlertDescription>
+            체크인 날짜({accommodation.checkIn.toISOString().split('T')[0]})가 이미 지났습니다. 모니터링이 자동으로
+            일시정지되었습니다. 새로운 날짜로 수정해주세요.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* 히어로 섹션 */}
       <div className='mb-8'>
