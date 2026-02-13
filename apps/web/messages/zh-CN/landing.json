@@ -42,6 +42,7 @@
     "terms": "服务条款"
   },
   "appPurpose": "Binbang 是监控住宿预订网站空房并在有空房时通过邮件通知您的服务。使用 Google 登录时，我们仅将您的邮箱用于账户识别和空房提醒发送。",
+  "appPurposeAriaLabel": "应用目的与数据使用",
   "mockLogs": [
     { "id": 1, "message": "发现空房：首尔柏悦酒店（豪华套房）", "location": "首尔" },
     { "id": 2, "message": "发现空房：济州君悦酒店（海景豪华房）", "location": "济州" },

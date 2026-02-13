@@ -11,7 +11,7 @@ export function AppPurpose(): React.ReactElement {
   const locale = useLocale();
 
   return (
-    <section className='border-t border-border bg-muted/40 px-4 py-6 text-center' aria-label='앱 목적 및 데이터 사용'>
+    <section className='border-t border-border bg-muted/40 px-4 py-6 text-center' aria-label={t('appPurposeAriaLabel')}>
       <p className='mx-auto max-w-2xl text-sm leading-relaxed text-muted-foreground'>
         {t('appPurpose')}{' '}
         <Link

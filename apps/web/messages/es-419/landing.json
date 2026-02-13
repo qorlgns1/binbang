@@ -48,6 +48,7 @@
     "terms": "Términos del servicio"
   },
   "appPurpose": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva de alojamiento y envía notificaciones por correo cuando hay habitación disponible. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas de disponibilidad.",
+  "appPurposeAriaLabel": "Propósito de la app y uso de datos",
   "mockLogs": [
     { "id": 1, "message": "Disponible: Park Hyatt Seoul (Suite Premium)", "location": "Seúl" },
     { "id": 2, "message": "Disponible: Grand Hyatt Jeju (Deluxe Vista al mar)", "location": "Jeju" },
