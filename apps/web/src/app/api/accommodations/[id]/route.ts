@@ -8,20 +8,25 @@ import { authOptions } from '@/lib/auth';
 import { deleteAccommodation, getAccommodationById, updateAccommodation } from '@/services/accommodations.service';
 import type { RouteParams } from '@/types/api';
 
-const updateAccommodationSchema = z.object({
-  name: z.string().min(1).optional(),
-  url: z.string().url().optional(),
-  checkIn: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  checkOut: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  adults: z.number().min(1).max(20).optional(),
-  isActive: z.boolean().optional(),
-});
+const updateAccommodationSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    url: z.string().url().optional(),
+    checkIn: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    checkOut: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    adults: z.number().min(1).max(20).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => !data.checkIn || data.checkIn >= new Date().toISOString().split('T')[0], {
+    message: '체크인 날짜는 오늘 이후여야 합니다',
+    path: ['checkIn'],
+  });
 
 // GET: 숙소 상세 조회
 export async function GET(_request: NextRequest, { params }: RouteParams): Promise<Response> {

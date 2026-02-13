@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
+import { pauseExpiredAccommodations } from '@/services/accommodations.service';
 import { hasKakaoToken } from '@/services/user.service';
 
 import { SectionSkeleton } from './_components/section-skeleton';
@@ -25,8 +26,11 @@ export const metadata = {
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const session = await getServerSession(authOptions);
 
-  // 카카오 토큰 확인 (Action Center용)
+  // 만료된 숙소 자동 일시정지 + 카카오 토큰 확인 (Action Center용)
   const hasKakao = session?.user?.id ? await hasKakaoToken(session.user.id) : false;
+  if (session?.user?.id) {
+    await pauseExpiredAccommodations(session.user.id);
+  }
 
   return (
     <main className='mx-auto max-w-7xl px-4 py-8'>

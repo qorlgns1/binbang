@@ -7,14 +7,19 @@ import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { checkUserQuota, createAccommodation, getAccommodationsByUserId } from '@/services/accommodations.service';
 
-const createAccommodationSchema = z.object({
-  name: z.string().min(1, '이름을 입력해주세요'),
-  platform: z.enum(['AIRBNB', 'AGODA']),
-  url: z.string().url('올바른 URL을 입력해주세요'),
-  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
-  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
-  adults: z.number().min(1).max(20).default(2),
-});
+const createAccommodationSchema = z
+  .object({
+    name: z.string().min(1, '이름을 입력해주세요'),
+    platform: z.enum(['AIRBNB', 'AGODA']),
+    url: z.string().url('올바른 URL을 입력해주세요'),
+    checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
+    checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
+    adults: z.number().min(1).max(20).default(2),
+  })
+  .refine((data) => data.checkIn >= new Date().toISOString().split('T')[0], {
+    message: '체크인 날짜는 오늘 이후여야 합니다',
+    path: ['checkIn'],
+  });
 
 // GET: 숙소 목록 조회
 export async function GET(): Promise<Response> {
