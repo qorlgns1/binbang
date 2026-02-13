@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useCreateCaseMutation } from '@/features/admin/cases';
 import { type SubmissionItem, useSubmissionsQuery } from '@/features/admin/submissions';
 
 // ============================================================================
@@ -45,6 +47,14 @@ function formatDate(iso: string): string {
   });
 }
 
+function canCreateCase(submission: SubmissionItem): boolean {
+  if (submission.status === 'PROCESSED' || submission.status === 'REJECTED') {
+    return false;
+  }
+
+  return submission.extractedFields != null;
+}
+
 // ============================================================================
 // Detail Panel
 // ============================================================================
@@ -52,7 +62,7 @@ function formatDate(iso: string): string {
 function SubmissionDetail({ submission }: { submission: SubmissionItem }) {
   return (
     <TableRow>
-      <TableCell colSpan={5} className='bg-muted/50 p-4'>
+      <TableCell colSpan={6} className='bg-muted/50 p-4'>
         <div className='space-y-3 text-sm'>
           {submission.rejectionReason && (
             <div>
@@ -93,12 +103,27 @@ function SubmissionDetail({ submission }: { submission: SubmissionItem }) {
 export function SubmissionManagement() {
   const [status, setStatus] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [creatingSubmissionId, setCreatingSubmissionId] = useState<string | null>(null);
 
   const filters = useMemo(() => (status !== 'all' ? { status } : {}), [status]);
-  const { data, isLoading, isError } = useSubmissionsQuery(filters);
+  const { data, isLoading, isError, refetch } = useSubmissionsQuery(filters);
+  const createCaseMutation = useCreateCaseMutation();
 
   function toggleRow(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
+  }
+
+  async function handleCreateCase(submissionId: string): Promise<void> {
+    try {
+      setCreatingSubmissionId(submissionId);
+      const result = await createCaseMutation.mutateAsync({ submissionId });
+      await refetch();
+      alert(`케이스를 생성했습니다. (${result.case.id})`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '케이스 생성에 실패했습니다');
+    } finally {
+      setCreatingSubmissionId(null);
+    }
   }
 
   return (
@@ -130,13 +155,14 @@ export function SubmissionManagement() {
               <TableHead>거부 사유</TableHead>
               <TableHead>접수일</TableHead>
               <TableHead>IP</TableHead>
+              <TableHead className='text-right'>액션</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading &&
               [0, 1, 2, 3, 4].map((row) => (
                 <TableRow key={`skeleton-row-${row}`}>
-                  {[0, 1, 2, 3, 4].map((col) => (
+                  {[0, 1, 2, 3, 4, 5].map((col) => (
                     <TableCell key={`skeleton-cell-${row}-${col}`}>
                       <Skeleton className='h-4 w-20' />
                     </TableCell>
@@ -145,21 +171,21 @@ export function SubmissionManagement() {
               ))}
             {isError && (
               <TableRow>
-                <TableCell colSpan={5} className='text-center text-destructive'>
+                <TableCell colSpan={6} className='text-center text-destructive'>
                   데이터를 불러오는 데 실패했습니다
                 </TableCell>
               </TableRow>
             )}
             {data?.submissions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className='text-center text-muted-foreground'>
+                <TableCell colSpan={6} className='text-center text-muted-foreground'>
                   제출 내역이 없습니다
                 </TableCell>
               </TableRow>
             )}
             {data?.submissions.map((s) => (
-              <>
-                <TableRow key={s.id} className='cursor-pointer' onClick={() => toggleRow(s.id)}>
+              <Fragment key={s.id}>
+                <TableRow className='cursor-pointer' onClick={() => toggleRow(s.id)}>
                   <TableCell className='font-mono text-xs'>{s.responseId}</TableCell>
                   <TableCell>
                     <Badge variant={STATUS_VARIANT[s.status] ?? 'outline'}>{statusLabel(s.status)}</Badge>
@@ -169,9 +195,23 @@ export function SubmissionManagement() {
                   </TableCell>
                   <TableCell className='text-sm'>{formatDate(s.receivedAt)}</TableCell>
                   <TableCell className='font-mono text-xs'>{s.sourceIp ?? '-'}</TableCell>
+                  <TableCell className='text-right'>
+                    <Button
+                      type='button'
+                      size='sm'
+                      variant='outline'
+                      disabled={!canCreateCase(s) || creatingSubmissionId === s.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void handleCreateCase(s.id);
+                      }}
+                    >
+                      {creatingSubmissionId === s.id ? '생성 중...' : 'Case 생성'}
+                    </Button>
+                  </TableCell>
                 </TableRow>
-                {expandedId === s.id && <SubmissionDetail key={`detail-${s.id}`} submission={s} />}
-              </>
+                {expandedId === s.id && <SubmissionDetail submission={s} />}
+              </Fragment>
             ))}
           </TableBody>
         </Table>
