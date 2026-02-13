@@ -15,6 +15,7 @@ import { type SubmissionItem, useSubmissionsQuery } from '@/features/admin/submi
 const STATUS_OPTIONS = [
   { value: 'all', label: '전체 상태' },
   { value: 'RECEIVED', label: '접수됨' },
+  { value: 'NEEDS_REVIEW', label: '검토 필요' },
   { value: 'PROCESSED', label: '처리됨' },
   { value: 'REJECTED', label: '거부됨' },
 ] as const;

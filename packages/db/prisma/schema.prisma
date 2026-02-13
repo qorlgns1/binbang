@@ -439,6 +439,17 @@ model SelectorChangeLog {
 
 // ── Google Form Intake ──
 
+enum FormQuestionField {
+  CONTACT_CHANNEL
+  CONTACT_VALUE
+  TARGET_URL
+  CONDITION_DEFINITION
+  REQUEST_WINDOW
+  CHECK_FREQUENCY
+  BILLING_CONSENT
+  SCOPE_CONSENT
+}
+
 enum FormSubmissionStatus {
   RECEIVED
   NEEDS_REVIEW
@@ -467,6 +478,22 @@ model FormSubmission {
 
   @@index([status])
   @@index([receivedAt])
+}
+
+model FormQuestionMapping {
+  id             String            @id @default(cuid())
+  formKey        String            @default("*")
+  field          FormQuestionField
+  questionItemId String?
+  questionTitle  String
+  expectedAnswer String?
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([formKey, field])
+  @@index([formKey, isActive])
+  @@index([isActive])
 }
 
 // ── Case Pipeline (운영 상태 머신) ──

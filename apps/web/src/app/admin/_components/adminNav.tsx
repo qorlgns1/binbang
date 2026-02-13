@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/admin/throughput', label: 'Throughput' },
   { href: '/admin/selectors', label: 'Selectors' },
   { href: '/admin/submissions', label: 'Submissions' },
+  { href: '/admin/intake-mappings', label: 'Intake Maps' },
   { href: '/admin/cases', label: 'Cases' },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/plans', label: 'Plans' },

@@ -79,6 +79,13 @@ export const adminKeys = {
     [...adminKeys.all, 'submissions', filters ?? {}] as const,
   submissionDetail: (id: string): readonly ['admin', 'submissions', string] =>
     [...adminKeys.all, 'submissions', id] as const,
+  // Intake form question mappings
+  formQuestionMappings: (): readonly ['admin', 'formQuestionMappings'] =>
+    [...adminKeys.all, 'formQuestionMappings'] as const,
+  formQuestionMappingList: (
+    filters?: Record<string, string>,
+  ): readonly ['admin', 'formQuestionMappings', 'list', Record<string, string>] =>
+    [...adminKeys.formQuestionMappings(), 'list', filters ?? {}] as const,
   // Cases
   cases: (filters?: Record<string, string>): readonly ['admin', 'cases', Record<string, string>] =>
     [...adminKeys.all, 'cases', filters ?? {}] as const,
