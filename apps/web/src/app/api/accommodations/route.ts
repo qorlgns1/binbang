@@ -16,10 +16,18 @@ const createAccommodationSchema = z
     checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
     adults: z.number().min(1).max(20).default(2),
   })
-  .refine((data) => data.checkIn >= new Date().toISOString().split('T')[0], {
-    message: '체크인 날짜는 오늘 이후여야 합니다',
-    path: ['checkIn'],
-  });
+  .refine(
+    (data) => {
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const checkInDate = new Date(data.checkIn);
+      return checkInDate >= today;
+    },
+    {
+      message: '체크인 날짜는 오늘 이후여야 합니다',
+      path: ['checkIn'],
+    },
+  );
 
 // GET: 숙소 목록 조회
 export async function GET(): Promise<Response> {

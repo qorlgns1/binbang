@@ -237,7 +237,7 @@ export async function getAccommodationLogs(input: GetLogsInput): Promise<GetLogs
 
 export async function pauseExpiredAccommodations(userId: string): Promise<number> {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
 
   const result = await prisma.accommodation.updateMany({
     where: {

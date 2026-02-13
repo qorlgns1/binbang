@@ -23,10 +23,19 @@ const updateAccommodationSchema = z
     adults: z.number().min(1).max(20).optional(),
     isActive: z.boolean().optional(),
   })
-  .refine((data) => !data.checkIn || data.checkIn >= new Date().toISOString().split('T')[0], {
-    message: '체크인 날짜는 오늘 이후여야 합니다',
-    path: ['checkIn'],
-  });
+  .refine(
+    (data) => {
+      if (!data.checkIn) return true;
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const checkInDate = new Date(data.checkIn);
+      return checkInDate >= today;
+    },
+    {
+      message: '체크인 날짜는 오늘 이후여야 합니다',
+      path: ['checkIn'],
+    },
+  );
 
 // GET: 숙소 상세 조회
 export async function GET(_request: NextRequest, { params }: RouteParams): Promise<Response> {

@@ -55,7 +55,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
   const t = await getTranslations('common');
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   const isCheckInExpired = accommodation.checkIn < today;
 
   return (
@@ -70,8 +70,8 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
         </Button>
       </div>
 
-      {/* 체크인 만료 경고 */}
-      {isCheckInExpired && (
+      {/* 체크인 만료 경고 (실제 일시정지된 경우에만 표시) */}
+      {isCheckInExpired && !accommodation.isActive && (
         <Alert variant='destructive' className='mb-8'>
           <AlertTriangle className='size-4' />
           <AlertTitle>체크인 날짜가 지났습니다</AlertTitle>

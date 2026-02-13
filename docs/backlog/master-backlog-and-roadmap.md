@@ -5,6 +5,29 @@
 > 목적: 프로젝트의 현재 상태를 360도 분석하고, 기술/제품/비즈니스 관점의 종합 TODO 리스트와 장기 방향성을 정의한다.
 > 관련 문서: `improvement-plan.md`, `google-form-ops-mvp-backlog.md`, `i18n-architecture-plan.md`, `throughput-and-analysis.md`
 
+### 변경 이력
+
+| 버전 | 날짜 | 변경 내용 | 작성자 |
+|------|------|-----------|--------|
+| v1.0 | 2026-02-14 | 초기 작성 — 28개 섹션 + 6개 부록 | Claude |
+| v1.1 | 2026-02-14 | 피드백 반영: 용어 일관성, 의존성 맵, KPI baseline, 문화적 적합성, Mermaid 다이어그램 | Claude |
+| v1.2 | 2026-02-14 | 섹션별 구체 피드백 반영: 성숙도 근거 연결, i18n 우선순위 근거, OKR 재구성, 법적/비용/컴플라이언스 보강 | Codex |
+
+---
+
+## 1페이지 요약 (Quick Reference)
+
+| 영역 | 현재 | 3개월 목표 | 6개월 목표 |
+|------|------|-----------|-----------|
+| **핵심 기능** | MVP 운영 중 (수동 파이프라인) | 운영 자동화 (견적 엔진, 자동 만료) | 셀프서비스 (웹 접수, PG 결제) |
+| **테스트** | 324+ 단위 테스트 (커버리지 ~40%) | 70% 커버리지, Worker 테스트 추가 | 80% + 통합/E2E 테스트 |
+| **관측성** | console.error + Heartbeat | pino 구조화 로거 + Slack 알림 | Grafana + 메트릭 대시보드 |
+| **i18n** | Public 5개국어 완료 | App 페이지 완료 | Admin 페이지 완료 |
+| **플랫폼** | Airbnb, Agoda (2개) | 동일 (안정화) | + Booking.com (3개) |
+| **비즈니스** | Google Form 접수, 수동 견적 | 견적 자동화, 퍼널 KPI | 웹 접수 + PG 결제 자동화 |
+| **운영 경계(금지)** | 예약 대행/결제 보장 미제공 | 랜딩/상태 페이지 고지 일원화 | 법적 분쟁 0건 유지 |
+| **최우선 과제** | P0-9 퍼널 대시보드, P0-10 견적 엔진, 도메인 에러 타입 |||
+
 ---
 
 ## 목차
@@ -47,8 +70,10 @@
 ### 비즈니스 모델
 
 - **과금 기준**: 조건 충족(빈방 확인) 시점에만 비용 발생
-- **금지 사항**: 예약 대행/결제 보장 아님
+- **금지 사항**: 예약 대행/결제 보장 아님 (약관/랜딩/상태 페이지 동일 문구 고정)
 - **운영 방식**: Google Forms 접수 → 관리자 검토 → 결제 확인 → 자동 모니터링 → 조건 충족 알림
+
+> **법적 리스크 방지 고지(필수)**: 빈방은 "알림 서비스"이며 "예약 대행/완료 보장 서비스"가 아니다. 고객 접점 문구를 단일 표준으로 관리해 분쟁 가능성을 낮춘다.
 
 ### 기술 스택 요약
 
@@ -67,17 +92,19 @@
 
 ### 프로젝트 성숙도
 
-| 영역 | 점수 | 비고 |
-|------|------|------|
-| 아키텍처 | 9/10 | 모노레포 경계 엄격, rules.md로 강제 |
-| 코드 품질 | 8/10 | Biome 강제, TypeScript strict |
-| 테스트 | 5/10 | 서비스 단위 테스트 있음, E2E/통합 없음 |
-| 문서화 | 9/10 | 규칙/아키텍처/운영 가이드 충실 |
-| 보안 | 7/10 | Auth/RBAC/감사 있음, CORS/CSP 보강 필요 |
-| 관측성 | 5/10 | Heartbeat 있음, 구조화 로깅 없음 |
-| CI/CD | 8/10 | 자동 빌드/테스트/배포, 캐시 최적화 |
-| 국제화 | 7/10 | 5개국어 Public 완료, App/Admin 미완 |
-| 비즈니스 | 6/10 | MVP 운영 중, 자동화/셀프서비스 필요 |
+| 영역 | 점수 | 근거(연결 섹션) |
+|------|------|------------------|
+| 아키텍처 | 9/10 | 3.1 강점: 모노레포 경계/서비스 레이어 분리 |
+| 코드 품질 | 8/10 | strict TS + Biome 강제, 규칙 기반 리뷰 체계 |
+| 테스트 | 5/10 | 2.5 테스트 갭: E2E/API/통합 부재, Worker 프로세서 무테스트 |
+| 문서화 | 9/10 | 22/23/24절 상세 명세 + 운영 가이드 충실 |
+| 보안 | 7/10 | 12.1 현황: Auth/RBAC/감사 완성, CORS/CSP 보강 필요 |
+| 관측성 | 5/10 | 14.1 현재: Heartbeat 중심, 구조화 로거/메트릭 부족 |
+| CI/CD | 8/10 | GitHub Actions 자동화 + Turbo 캐시 최적화 |
+| 국제화 | 7/10 | Public 5개국어 완료, App/Admin 미완(2.2/6.6/8.5) |
+| 비즈니스 | 6/10 | 4.1 수동 운영 병목, 셀프서비스 전환 전 단계 |
+
+> 테스트 5/10 평점은 2.5 테스트 갭 분석의 정량 근거(E2E 0, 통합 0, API 라우트 51개 무테스트)를 기준으로 산정한다.
 
 ---
 
@@ -147,12 +174,15 @@
 | 알림 채널 이중화 (P1-2) | ⬜ 미구현 | P1 | 카톡 실패 → 이메일 |
 | 운영 SLA 타이머 (P1-4) | ⬜ 미구현 | P1 | 응답 지연 경고 |
 | 고객 상태 페이지 (P2-1) | ⬜ 미구현 | P2 | 비로그인 읽기전용 |
-| App 페이지 i18n | 🔲 일부 | P1 | Dashboard/Settings |
-| Admin 페이지 i18n | ⬜ 미구현 | P2 | Admin 전체 |
+| App 페이지 i18n | ⏳ 일부 | P1 | Dashboard/Settings |
+| Admin 페이지 i18n | ⬜ 미구현 | P2 | Admin 전체 (운영자 내부 화면) |
 | 구조화 로깅 | ⬜ 미구현 | P1 | pino/winston |
 | API 문서화 | ⬜ 미구현 | P2 | OpenAPI |
 | E2E 테스트 | ⬜ 미구현 | P2 | Playwright |
 | 도메인 에러 타입 | ⬜ 미구현 | P1 | AppError 계층 |
+
+> **우선순위 기준**: P1은 "최종 사용자 노출도 + 전환/매출 영향"이 높은 항목 우선.  
+> App i18n은 사용자 대시보드/설정 UX에 직접 영향이 있어 P1, Admin i18n은 내부 운영 효율 개선 성격이라 P2로 배치.
 
 ### 2.3 데이터베이스 현황
 
@@ -173,6 +203,8 @@
 ### 2.4 API 엔드포인트 현황
 
 #### 총 51개 API 라우트
+
+> API 수가 많아 운영/온보딩/통합 비용이 급증할 수 있으므로, **7.4 API 문서화(OpenAPI)는 선택이 아니라 필수 게이트**로 관리한다.
 
 | 카테고리 | 수량 | 예시 |
 |----------|------|------|
@@ -236,7 +268,7 @@
 
 1. **에러 처리**: 일반 `Error` 사용, 도메인 에러 타입 부재 → HTTP 상태 매핑 불안정
 2. **로깅**: `console.error` 의존, 요청 ID/컨텍스트 부족 → 프로덕션 디버깅 어려움
-3. **캐싱 전략**: roles/plans 등 정적 데이터 매 요청 조회
+3. **캐싱 전략**: roles/plans 등 정적 데이터 매 요청 조회 (→ [7.6 정적 참조 데이터 캐싱](#76-정적-참조-데이터-캐싱))
 4. **API 문서화**: 51개 엔드포인트에 문서 없음
 5. **Worker 프로세서**: `apps/worker/src/`에 일부 비즈니스 로직 잔존
 6. **분석 연동**: landing-tracker가 console.log만 사용, 실제 analytics 미연동
@@ -303,6 +335,7 @@ Google Form 접수 → 관리자 검토 → 견적 산정 (수동) → 결제 �
 3. **고급 분석**: 가격 예측, 최적 예약 시점 추천, 지역별 패턴 분석
 4. **B2B 모델**: 여행사/호텔 관리업체 대상 API/화이트라벨
 5. **구독 모델 전환**: 건당 과금 → 월/연 구독 기반 SaaS
+6. **경쟁 연동 포지셔닝**: [17절 경쟁 분석](#17-경쟁-환경-및-차별화-전략) 기준으로 "24시간 빈방 자동 모니터링 + 운영 증거 제공"을 B2B 핵심 USP로 고정
 
 ### 4.5 시장 확장 로드맵
 
@@ -322,6 +355,23 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 
 > 목표: 현재 운영 파이프라인의 완성도를 높이고, 가장 시급한 기술 부채를 해소한다.
 
+### 작업 의존성 맵 (Phase 1)
+
+```mermaid
+graph LR
+    A[5.5 next.config 정리] --> |독립| Z[완료]
+    B[5.4 처리량 차트 개선] --> |독립| Z
+    C[5.3 도메인 에러 타입] --> |독립| Z
+    D[5.1 P0-9 퍼널 대시보드] --> |독립| Z
+    E[5.2 P0-10 견적 엔진] --> |Prisma 마이그레이션 필요| F[PriceQuote 모델 추가]
+    F --> Z
+
+    style E fill:#ff9,stroke:#333
+    style F fill:#f96,stroke:#333
+```
+
+> **리스크**: P0-10 견적 엔진은 Prisma 스키마 변경(PriceQuote 모델)을 수반합니다. 마이그레이션 전 스테이징 환경에서 테스트 필수. 나머지 항목은 독립적으로 병렬 진행 가능합니다.
+
 ### 5.1 [P0-9] 운영 퍼널 대시보드
 
 - **목표**: 클릭/제출/결제 전환율을 한 화면에서 확인
@@ -330,6 +380,7 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
   - 단계별 전환율: 제출→결제, 결제→조건충족
   - 기간 필터: 오늘/7일/30일/전체
   - 트렌드 차트: 일별 접수/결제/충족 추이
+  - 목표선 표시: 전환율 목표치(예: 제출→결제 20%, 결제→충족 50%) 설정/표시
 - **구현 위치**:
   - `apps/web/src/services/admin/funnel.service.ts` (신규)
   - `apps/web/src/app/api/admin/funnel/route.ts` (신규)
@@ -339,6 +390,7 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
   - 최소 3개 KPI 카드가 실시간 DB 데이터 기반으로 표시
   - 기간 필터 변경 시 즉시 업데이트
   - AdminNav에 "퍼널" 메뉴 추가
+  - 목표 대비 실적(Actual vs Target) 색상 구분 표시
 - **예상 공수**: 2~3일
 
 ### 5.2 [P0-10] 숫자형 가격 산식 엔진
@@ -691,6 +743,9 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 - **가치**: "지금 기다리면 가격이 내려갈 확률 73%" 같은 인사이트 제공
 - **필요 데이터**: 최소 6개월 이상의 가격/가용성 히스토리
 - **기술**: Python ML 서비스 (별도 마이크로서비스) 또는 LLM 기반 분석
+- **비용 추정**:
+  - PoC(6~8주): 약 ₩15,000,000 ~ ₩30,000,000 (모델링/특성 엔지니어링/평가)
+  - 운영(월): 약 ₩1,000,000 ~ ₩3,000,000 (추론 인프라 + 데이터 파이프라인)
 
 ### 9.2 B2B API / 화이트라벨
 
@@ -701,12 +756,16 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
   - 화이트라벨: 커스텀 브랜딩으로 재판매
   - 대시보드: 파트너별 사용량/과금 현황
 - **비즈니스 모델**: API 호출 건당 과금 또는 월 구독
+- **비용 추정**:
+  - 초기 구축(8~12주): 약 ₩20,000,000 ~ ₩40,000,000 (인증/과금/파트너 포털 포함)
+  - 운영(월): 약 ₩1,500,000 ~ ₩4,000,000 (API 게이트웨이, 모니터링, 파트너 지원)
 
 ### 9.3 모바일 앱 (React Native)
 
 - **개요**: 빈방 알림을 모바일 푸시로 받는 전용 앱
 - **가치**: 카카오톡 의존 탈피, 앱 내 직접 예약 연결, 더 풍부한 알림 UX
 - **기술**: React Native (Expo) + 기존 API 재사용
+- **비용 추정**: MVP 1플랫폼 기준 약 ₩25,000,000 ~ ₩50,000,000, 운영(월) 약 ₩500,000 ~ ₩1,500,000
 
 ### 9.4 구독 기반 SaaS 모델
 
@@ -717,6 +776,7 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
   - Pro (₩29,900/월): 숙소 10개, 15분 간격, 가격 알림
   - Business (₩99,900/월): 무제한, API 접근, 우선 지원
 - **필요 인프라**: Stripe/토스 반복결제, 사용량 미터링, 업/다운그레이드
+- **비용 추정**: 결제/미터링 인프라 구축 약 ₩10,000,000 ~ ₩20,000,000 + 결제 수수료(매출 연동)
 
 ### 9.5 커뮤니티/리뷰 기능
 
@@ -735,27 +795,29 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 
 ## 10. 기술 부채 상세
 
+> 본 섹션은 기술 부채의 **등록 및 추적**을 담당한다. 각 항목의 **상세 구현 계획**은 해당 Phase를 참조한다.
+
 ### 10.1 코드 레벨
 
-| # | 항목 | 위치 | 심각도 | 설명 |
-|---|------|------|--------|------|
-| TD-1 | 일반 Error throw | 서비스 전체 | 높음 | `throw new Error('...')` → AppError 계층 필요 |
-| TD-2 | console.error 로깅 | 전체 | 높음 | 구조화 로거(pino) 전환 필요 |
-| TD-3 | Puppeteer 참조 잔존 | `next.config.ts` | 낮음 | serverExternalPackages에서 제거 |
-| TD-4 | TODO/FIXME 미정리 | 3개 파일 | 낮음 | analytics tracker, hooks/index.ts |
-| TD-5 | analytics console.log | `landing-tracker.ts` | 중간 | 실제 GA/Mixpanel 연동 필요 |
-| TD-6 | formatDateTime 중복 | admin/cases 4개 파일 | 낮음 | 공용 유틸 추출 완료, consentPanel만 별도 |
-| TD-7 | useEffect import 불필요 | 정리 완료 | 완료 | app-header.tsx ThemeToggle 전환으로 해결 |
+| # | 항목 | 위치 | 심각도 | 해결 Phase | 설명 |
+|---|------|------|--------|-----------|------|
+| TD-1 | 일반 Error throw | 서비스 전체 | 높음 | → [5.3 도메인 에러 타입](#53-도메인-에러-타입-도입) (Phase 1 주차 1 필수) | `throw new Error('...')` → AppError 계층 + HTTP 매핑 통일 필요 |
+| TD-2 | console.error 로깅 | 전체 | 높음 | → [6.5 구조화 로깅](#65-구조화된-로깅-시스템) | 구조화 로거(pino) 전환 필요 |
+| TD-3 | Puppeteer 참조 잔존 | `next.config.ts` | 낮음 | → [5.5 레거시 정리](#55-nextconfigts-레거시-정리) | serverExternalPackages에서 제거 |
+| TD-4 | TODO/FIXME 미정리 | 4개 파일 | 낮음 | → [부록 D](#부록-d-파일별-todofixme-목록) | analytics tracker, hooks/index.ts 등 |
+| TD-5 | analytics console.log | `landing-tracker.ts` | 중간 | → [27.2 SEO 전략](#272-seo-전략) | 실제 GA/Mixpanel 연동 필요 |
+| TD-6 | formatDateTime 중복 | admin/cases 4개 파일 | 낮음 | — | 공용 유틸 추출 완료, consentPanel만 별도 |
+| TD-7 | useEffect import 불필요 | 정리 완료 | ✅ 완료 | — | app-header.tsx ThemeToggle 전환으로 해결 |
 
 ### 10.2 아키텍처 레벨
 
-| # | 항목 | 심각도 | 설명 |
-|---|------|--------|------|
-| TD-8 | API 라우트 에러 핸들링 패턴 불일치 | 높음 | 각 route.ts마다 try/catch 패턴이 다름 → 공통 에러 핸들러 필요 |
-| TD-9 | 정적 데이터 매 요청 조회 | 중간 | roles, plans 등 거의 변하지 않는 데이터 캐싱 없음 |
-| TD-10 | Worker 프로세서 비즈니스 로직 | 중간 | cycleProcessor/checkProcessor에 일부 로직 잔존 → runtime으로 이관 |
-| TD-11 | CORS 미설정 | 중간 | Next.js 기본 동작 의존 |
-| TD-12 | CSP(Content Security Policy) 미설정 | 중간 | XSS 방어 헤더 부재 |
+| # | 항목 | 심각도 | 해결 Phase | 설명 |
+|---|------|--------|-----------|------|
+| TD-8 | API 라우트 에러 핸들링 패턴 불일치 | 높음 | → [22.3 API-1](#223-api-개선-로드맵) | 각 route.ts마다 try/catch 패턴이 다름 → 공통 에러 핸들러 필요 |
+| TD-9 | 정적 데이터 매 요청 조회 | 중간 | → [7.6 참조 데이터 캐싱](#76-정적-참조-데이터-캐싱) | roles, plans 등 거의 변하지 않는 데이터 캐싱 없음 |
+| TD-10 | Worker 프로세서 비즈니스 로직 | 중간 | → [23.4 WRK-1](#234-worker-개선-todo) | cycleProcessor/checkProcessor에 일부 로직 잔존 → runtime으로 이관 |
+| TD-11 | CORS 미설정 | 중간 | → [12.2 SEC-1](#122-보안-강화-항목) | Next.js 기본 동작 의존 |
+| TD-12 | CSP(Content Security Policy) 미설정 | 중간 | → [12.2 SEC-2](#122-보안-강화-항목) | XSS 방어 헤더 부재 |
 
 ### 10.3 인프라 레벨
 
@@ -785,6 +847,8 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
        │  (200+)       │
        └──────────────┘
 ```
+
+- **Vitest 커버리지 게이트**: 3개월 70%+, 6개월 80%+, 장기 85% (statements/branches/functions/lines 모두 최소 80% 목표)
 
 ### 11.2 단위 테스트 확장 계획
 
@@ -880,7 +944,7 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 | SEC-5 | API 키 인증 (B2B) | P3 | 향후 API 공개 시 |
 | SEC-6 | 보안 헤더 강화 | P2 | X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
 | SEC-7 | 의존성 감사 자동화 | P2 | `pnpm audit` CI 통합 |
-| SEC-8 | 스크린샷 데이터 암호화 | P3 | screenshotBase64 at-rest 암호화 |
+| SEC-8 | 스크린샷 데이터 암호화 | P3 | screenshotBase64 at-rest 암호화 + GDPR 관점 개인정보(이름/연락처 노출 가능성) 최소보관/보호 |
 
 ---
 
@@ -906,7 +970,7 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 | # | 항목 | 영향도 | 설명 |
 |---|------|--------|------|
 | PERF-1 | 정적 데이터 서버 캐시 | 높음 | roles/plans 5분 메모리 캐시 |
-| PERF-2 | DB 쿼리 최적화 | 중간 | N+1 쿼리 감지, 복합 인덱스 추가 |
+| PERF-2 | DB 쿼리 최적화 | 중간 | N+1 쿼리 감지, 복합 인덱스 추가 (예: 케이스 목록에서 각 row별 latest CheckLog 개별 조회 패턴 제거) |
 | PERF-3 | 번들 사이즈 분석 | 중간 | @next/bundle-analyzer 도입 |
 | PERF-4 | 이미지 최적화 | 낮음 | Next Image + WebP 전면 적용 |
 | PERF-5 | API 응답 압축 | 낮음 | gzip/brotli 확인/설정 |
@@ -939,11 +1003,13 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 - Grafana + Loki 로그 수집
 - Prometheus 메트릭 엔드포인트
 - 대시보드: API 응답시간, 에러율, 워커 성능
+- 비용 가드레일: Grafana Cloud 사용 시 월 ₩150,000 ~ ₩600,000 범위 내 예산 상한 관리
 
 **Phase 4+ (3개월+)**:
 - OpenTelemetry 분산 추적
 - 알림 규칙: P95 응답시간 > 2초, 에러율 > 5%
 - SLO/SLI 정의 및 모니터링
+- 비용 최적화: 로그 샘플링/보존 기간 분리(핫 7~14일, 아카이브 90일+)로 월 비용 20~40% 절감
 
 ---
 
@@ -969,6 +1035,17 @@ Phase 1 (현재)     Phase 2 (3~6개월)     Phase 3 (6~12개월)     Phase 4 (1
 - GA4 연동 완료 → 랜딩 전환율 측정
 - 운영 퍼널 KPI: 접수→결제→충족 전환율
 - 가격 데이터 백필: 기존 문자열 → 숫자 변환 (이미 priceAmount/priceCurrency 존재)
+  - 예시 마이그레이션 스크립트 (`packages/db/prisma/migrations/20260214_price_backfill/migration.sql`):
+
+```sql
+-- 문자열 가격(CheckLog.price)을 숫자(CheckLog.priceAmount)로 백필
+UPDATE "CheckLog"
+SET
+  "priceAmount" = NULLIF(regexp_replace("price", '[^0-9]', '', 'g'), '')::int,
+  "priceCurrency" = COALESCE("priceCurrency", 'KRW')
+WHERE "price" IS NOT NULL
+  AND "priceAmount" IS NULL;
+```
 
 **중기 (3~6개월)**:
 - 가용성 패턴 분석: 시간대별/요일별/시즌별 빈방 발생 패턴
@@ -1039,6 +1116,15 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 - 제휴 수수료 (예약 플랫폼 연결)
 - 프리미엄 분석 (가격 예측, 시장 리포트)
 
+### 16.5 ARPU(고객당 평균 수익) 예측
+
+| 단계 | 가정 | 월 ARPU(예상) | 비고 |
+|------|------|---------------|------|
+| 현재 (건당 중심) | 월 1~2건 결제 사용자 중심 | ₩8,000 ~ ₩12,000 | 이벤트성 수익 변동 큼 |
+| 단기 (웹 자동화) | 결제 전환율 개선 + 이탈 감소 | ₩12,000 ~ ₩18,000 | 운영 지연 감소 효과 반영 |
+| 중기 (하이브리드) | 구독 + 초과 사용 과금 | ₩20,000 ~ ₩35,000 | 플랜 업셀링 본격화 |
+| 장기 (플랫폼) | B2C + B2B 혼합 | ₩40,000+ | 파트너 API 매출 포함 |
+
 ---
 
 ## 17. 경쟁 환경 및 차별화 전략
@@ -1047,6 +1133,7 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 
 | 경쟁 유형 | 예시 | 차별점 |
 |----------|------|--------|
+| 플랫폼 자체 기본 알림 | 일반 OTA의 위시리스트/가격 알림 | 가격 알림 중심, "조건 기반 빈방" 24시간 감시는 제한적 |
 | 직접 수동 확인 | 사용자 본인 | 24시간 자동 모니터링 |
 | 가격 비교 사이트 | Kayak, Skyscanner | 실시간 빈방 감지 + 즉시 알림 |
 | 호텔 알림 서비스 | Hotelscombined | 가격 변동 알림 (빈방 특화 아님) |
@@ -1054,7 +1141,7 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 
 ### 17.2 핵심 차별화 요소
 
-1. **빈방 특화**: 가격이 아닌 "가용성" 모니터링에 집중
+1. **24시간 빈방 자동 모니터링**: 가격 알림이 아닌 "가용성/취소 좌석" 탐지에 집중
 2. **즉시 알림**: 카카오톡 실시간 푸시 (한국 시장 최적화)
 3. **증거 기반 투명성**: 스크린샷 + 증거 패킷으로 분쟁 방지
 4. **동적 셀렉터**: 플랫폼 UI 변경에 코드 배포 없이 즉시 대응
@@ -1063,6 +1150,7 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 ### 17.3 경쟁 우위 강화 전략
 
 - **기술 해자**: 동적 셀렉터 + 브라우저 자동화 노하우
+- **B2B 해자**: 파트너 API + 증거 패킷(감사 가능 로그)로 운영 신뢰성 제공
 - **데이터 해자**: 가격/가용성 이력 데이터 축적 → 분석/예측 서비스
 - **사용자 경험**: 접수부터 알림까지 원스톱, 다국어 지원
 - **신뢰**: 증거 패킷, 감사 로그, 동의 기록으로 투명한 운영
@@ -1101,42 +1189,85 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 | 견적 불일치 분쟁 | 중간 | 중간 | 산식 엔진 + 스냅샷 |
 | 환불 요청 증가 | 낮음 | 중간 | 명확한 약관 + 동의 증거 |
 
+### 18.4 핵심 리스크 Contingency Plan
+
+#### RISK-CP1: 관리자 1인 병목 (확률 높음 / 영향 높음)
+
+**현재 상황**: 접수 검토, 견적, 결제 확인, 분쟁 대응 모두 관리자 1인 수작업
+
+**단계별 대응:**
+
+| 단계 | 트리거 | 대응 |
+|------|--------|------|
+| 예방 (Phase 1) | 일 접수 > 5건 | P0-10 견적 자동화 + P1-4 SLA 타이머로 수작업 70% 감소 |
+| 경고 (Phase 2) | 일 접수 > 15건 | 자동 만료(P1-1) + 알림 이중화(P1-2)로 야간 무인 운영 |
+| 전환 (Phase 3) | 일 접수 > 30건 | 셀프서비스 전환으로 관리자 개입 최소화 (접수/결제 자동) |
+| 확장 (Phase 4+) | 일 접수 > 100건 | 운영 인력 추가 채용 또는 파트타임 CS |
+
+**최악의 경우**: 관리자 장기 부재 시 → 자동 만료 + 신규 접수 일시 중단 안내 자동화
+
+#### RISK-CP2: 플랫폼 봇 차단 (확률 중간 / 영향 높음)
+
+**단계별 대응:**
+
+| 단계 | 트리거 | 대응 |
+|------|--------|------|
+| 감지 | 체크 에러율 > 30% | 관리자 Slack/카카오 자동 알림 |
+| 1차 대응 | 특정 플랫폼 실패 | 동적 셀렉터 긴급 업데이트 (코드 배포 불필요) |
+| 2차 대응 | 셀렉터 업데이트 무효 | 체크 간격 확대 (30분→2시간), User-Agent 로테이션 |
+| 3차 대응 | 지속적 차단 | 해당 플랫폼 일시 중단 + 고객 안내 + 대안 조사 |
+
+#### RISK-CP3: DB/인프라 장애 (확률 중간 / 영향 높음)
+
+| 단계 | 트리거 | 대응 |
+|------|--------|------|
+| 예방 | — | 일 1회 자동 백업 (→ INFRA-1), Redis AOF 영속성 (→ INFRA-2) |
+| 감지 | 헬스체크 실패 | 하트비트 시스템으로 1분 내 감지 |
+| 복구 | 서버 장애 | Docker 자동 재시작 (`unless-stopped`), 최대 복구 목표 < 30분 |
+| 최악 | DB 손실 | 백업에서 복구 (최대 24시간 데이터 손실 허용) → 장기적으로 WAL 아카이빙 |
+
+### 18.5 법적/컴플라이언스 리스크
+
+| 리스크 | 확률 | 영향 | 대응 |
+|--------|------|------|------|
+| 플랫폼 ToS 위반 해석 가능성 | 중간 | 높음 | 플랫폼별 ToS 검토 체크리스트 운영, 고빈도 접근 금지 기본값 적용 |
+| 개인정보 포함 스크린샷 보관 | 중간 | 높음 | SEC-8 암호화 + 마스킹 + 보존기간 단축(기본 6개월) |
+| 국가별 데이터 규제(GDPR 등) 미준수 | 낮음 | 높음 | 동의 문구 표준화, 삭제 요청 절차(DSR) 정의, 접근 로그 보존 |
+| 법령/정책 변경 대응 지연 | 중간 | 중간 | 분기별 법률 점검, 외부 자문 슬롯 사전 확보 |
+
 ---
 
 ## 19. KPI 및 성공 지표
 
-### 19.1 비즈니스 KPI
+### 19.1 Objective 1 — 운영 자동화로 매출 전환율 개선
 
-| KPI | 현재 추정 | 3개월 목표 | 6개월 목표 |
-|-----|-----------|------------|------------|
-| 월 접수 건 수 | ? | 50건 | 200건 |
-| 접수→결제 전환율 | ? | 30% | 50% |
-| 결제→조건충족 비율 | ? | 60% | 70% |
-| 월 매출 | ? | ₩500,000 | ₩2,000,000 |
-| 고객 분쟁 발생률 | ? | <5% | <3% |
-| 평균 응답 시간 (RECEIVED→REVIEWING) | ? | <30분 | <15분 |
-| 고객 재이용률 | ? | 20% | 30% |
+| Key Result | Baseline (현재) | 3개월 Target | 6개월 Target | 측정 방법 |
+|------------|-----------------|-------------|-------------|-----------|
+| KR1. 월 접수 건 수 확대 | ~10건 | 50건 | 200건 | FormSubmission.count/월 |
+| KR2. 접수→결제 전환율 개선 | ~20% (추정) | 30% | 50% | (WAITING_PAYMENT→이후)/전체 접수 |
+| KR3. 월 매출 성장 | ~₩100,000 (추정) | ₩500,000 | ₩2,000,000 | BillingEvent.sum/월 |
+| KR4. 평균 응답 시간 단축 | ~2시간 (추정) | <30분 | <15분 | RECEIVED→REVIEWING 평균 시간차 |
 
-### 19.2 기술 KPI
+### 19.2 Objective 2 — 신뢰 가능한 제품 품질/운영 안정성 확보
 
-| KPI | 현재 | 3개월 목표 | 6개월 목표 |
-|-----|------|------------|------------|
-| 테스트 커버리지 | ~40% (추정) | 70% | 80% |
-| CI 파이프라인 성공률 | ~95% | 98% | 99% |
-| API 응답시간 (P95) | 미측정 | <500ms | <300ms |
-| 워커 체크 성공률 | ~90% (추정) | 95% | 98% |
-| 알림 도달률 | ~80% (추정) | 95% | 99% |
-| 장애 복구 시간 (MTTR) | 미측정 | <1시간 | <30분 |
-| 배포 빈도 | 주 2~3회 | 주 3~5회 | 일 1~2회 |
+| Key Result | Baseline (현재) | 3개월 Target | 6개월 Target | 측정 방법 |
+|------------|-----------------|-------------|-------------|-----------|
+| KR1. Vitest 커버리지 확보 | ~40% (추정) | 70%+ | 80%+ | `vitest --coverage` |
+| KR2. 워커 체크 성공률 향상 | ~90% | 95% | 98% | successCount/totalCount |
+| KR3. 알림 도달률 향상 | ~80% | 95% | 99% | SENT/(SENT+FAILED) |
+| KR4. MTTR 단축 | 미측정 | <1시간 | <30분 | 장애 감지→복구 시간 |
+| KR5. 분쟁 발생률 통제 | 미측정 | <5% | <3% | 분쟁 케이스/전체 BILLED |
 
-### 19.3 SEO/마케팅 KPI
+### 19.3 Objective 3 — 성장 채널과 재방문 기반 구축
 
-| KPI | 현재 | 3개월 목표 | 6개월 목표 |
-|-----|------|------------|------------|
-| 월 유기적 트래픽 | ? | 1,000 | 5,000 |
-| 랜딩 → 가입 전환율 | ? | 5% | 10% |
-| 검색 노출 키워드 수 | ? | 50 | 200 |
-| 5개국어 SEO 점수 | 85+ (추정) | 90+ | 95+ |
+| Key Result | Baseline (현재) | 3개월 Target | 6개월 Target | 측정 방법 |
+|------------|-----------------|-------------|-------------|-----------|
+| KR1. 월 유기적 트래픽 확보 | 미측정 | 1,000 | 5,000 | GA4 organic sessions |
+| KR2. 랜딩→가입 전환율 확보 | 미측정 | 5% | 10% | signup 완료/랜딩 방문 |
+| KR3. 검색 노출 키워드 확대 | 미측정 | 50 | 200 | Search Console |
+| KR4. 고객 재이용률 확보 | 미측정 | 20% | 30% | 재접수 고객/전체 고객 |
+
+> **측정 우선 과제**: P0-9 퍼널 대시보드와 GA4 이벤트가 먼저 배포되어야 Baseline 추정값을 실측값으로 치환할 수 있다.
 
 ---
 
@@ -1289,11 +1420,11 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 
 | 라우트 | 파일 | 설명 | i18n |
 |--------|------|------|------|
-| `/dashboard` | `(app)/dashboard/page.tsx` | 대시보드 홈 | 🔲 일부 |
-| `/accommodations/new` | `(app)/accommodations/new/page.tsx` | 숙소 등록 | 🔲 일부 |
-| `/accommodations/[id]` | `(app)/accommodations/[id]/page.tsx` | 숙소 상세 | 🔲 일부 |
-| `/accommodations/[id]/edit` | `(app)/accommodations/[id]/edit/page.tsx` | 숙소 수정 | 🔲 일부 |
-| `/settings/subscription` | `(app)/settings/subscription/page.tsx` | 구독/플랜 관리 | 🔲 일부 |
+| `/dashboard` | `(app)/dashboard/page.tsx` | 대시보드 홈 | ⏳ 일부 |
+| `/accommodations/new` | `(app)/accommodations/new/page.tsx` | 숙소 등록 | ⏳ 일부 |
+| `/accommodations/[id]` | `(app)/accommodations/[id]/page.tsx` | 숙소 상세 | ⏳ 일부 |
+| `/accommodations/[id]/edit` | `(app)/accommodations/[id]/edit/page.tsx` | 숙소 수정 | ⏳ 일부 |
+| `/settings/subscription` | `(app)/settings/subscription/page.tsx` | 구독/플랜 관리 | ⏳ 일부 |
 
 #### 관리자 페이지 (Admin Routes — `/admin/`)
 
@@ -2290,6 +2421,41 @@ Jobs:
 | `muted-foreground` on `background` | ⚠️ 검증 필요 | — |
 | `primary` on `background` | ⚠️ 검증 필요 | — |
 
+### 25.3 문화적 적합성 (Cultural Localization)
+
+> 5개국어 지원이 강점이므로, WCAG 접근성 외에 시장별 문화적 UX 차이도 고려한다.
+
+#### 시장별 알림 채널 매핑
+
+| 시장 | 주요 채널 | 보조 채널 | 문화적 고려 |
+|------|----------|----------|------------|
+| 한국 | 카카오톡 (현재) | 이메일, SMS | 카톡 친구톡 vs 알림톡 구분, 야간 발송 제한 (21~08시) |
+| 일본 | 라인 | 이메일 | 경어(敬語) 사용 필수, 시간 표기 24시 → 12시 선호 |
+| 중국 | 위챗 | 이메일, SMS | 간체/번체 구분 (현재 zh-CN 간체만), 위안화 표시 |
+| 동남아 | 텔레그램, WhatsApp | 이메일 | 다중 통화 (THB, SGD, MYR 등), 영어 혼용 |
+| 중남미 | WhatsApp | 이메일 | es-419 (라틴 스페인어), 현지 결제 수단 |
+
+#### 시장별 UI/UX 고려사항
+
+| 항목 | 한국 | 일본 | 글로벌 |
+|------|------|------|--------|
+| **날짜 형식** | YYYY.MM.DD | YYYY年MM月DD日 | locale별 `Intl.DateTimeFormat` |
+| **통화 형식** | ₩10,000 | ¥10,000 | locale별 `Intl.NumberFormat` |
+| **주소 형식** | 도/시/구/동 순서 | 県/市/区 역순 | 플랫폼별 자동 파싱 |
+| **색상 문화** | 빨강=위험, 녹색=안전 | 동일 (대체로 보편적) | 색상 의미 보편적 체계 유지 |
+| **결제 수단** | 카카오페이, 토스 | PayPay, 라쿠텐페이 | Stripe (글로벌 통합) |
+| **신뢰 요소** | 사업자등록번호, 이용약관 | 特定商取引法 표시 | 현지 법률 요건 준수 |
+
+#### 문화적 적합성 TODO
+
+| # | 항목 | Phase | 설명 |
+|---|------|-------|------|
+| CL-1 | 알림 메시지 톤 가이드 | 2 | 시장별 경어/반말, 이모지 사용 가이드 |
+| CL-2 | 날짜/통화 포맷 통합 | 2 | `Intl` API 기반 자동 포맷 (현재 일부 하드코딩) |
+| CL-3 | 일본 시장 라인 연동 | 4 | Line Messaging API + 일본어 알림 템플릿 |
+| CL-4 | 중국 시장 위챗 연동 | 5 | WeChat Official Account + zh-TW 번체 추가 |
+| CL-5 | 현지 결제 수단 | 3~4 | Stripe 글로벌 또는 현지 PG 파트너 |
+
 ---
 
 ## 26. 데이터베이스 스키마 진화 계획
@@ -2630,21 +2796,18 @@ enum Platform {
 
 ## 부록 E: Turborepo 태스크 의존성 그래프
 
-```
-                    db:generate
-                    ┌────┴────┐
-                    │         │
-                  build    typecheck
-               ┌───┤         │
-               │   │         │
-             ^build│       dev
-               │   │
-             test  │
-                   │
-                 start
-                   │
-                  lint (독립)
-                  format:check (독립)
+```mermaid
+graph TD
+    A[db:generate] --> B[build]
+    A --> C[typecheck]
+    A --> D[dev]
+    B --> E[start]
+    F[^build] --> B
+    F --> G[test]
+    H[lint]:::independent
+    I[format:check]:::independent
+
+    classDef independent fill:#f5f5f5,stroke:#999,stroke-dasharray: 4 4;
 ```
 
 **태스크별 캐시 설정:**
@@ -2664,31 +2827,53 @@ enum Platform {
 
 ## 부록 F: 서비스 의존성 매트릭스
 
-```
-                    ┌──────────────────────────────────────────────────────┐
-                    │                   Route Handlers                     │
-                    │    (51개 API 라우트 — 인증/검증 → 서비스 호출)       │
-                    └──────────┬───────────────────────────────────────────┘
-                               │
-                    ┌──────────▼───────────────────────────────────────────┐
-                    │              Service Layer (21개 서비스)              │
-                    │                                                      │
-                    │  auth ─── user ─── accommodations ─── logs           │
-                    │    │                    │                             │
-                    │  cases ── intake ── messages ── notifications        │
-                    │    │                                                  │
-                    │  condition-parser ── pricing (미구현)                 │
-                    │                                                      │
-                    │  admin/users ── admin/plans ── admin/settings        │
-                    │  admin/selectors ── admin/patterns                    │
-                    │  admin/monitoring ── admin/throughput ── admin/audit  │
-                    │  admin/submissions ── admin/intake-mappings          │
-                    └──────────┬───────────────────────────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   @workspace/db     │
-                    │   (Prisma Client)   │
-                    └─────────────────────┘
+```mermaid
+graph TD
+    subgraph "Route Handlers (51개 API 라우트)"
+        RH[인증/검증 → 서비스 호출]
+    end
+
+    subgraph "Service Layer — 사용자 도메인"
+        AUTH[auth.service]
+        USER[user.service]
+        ACCOM[accommodations.service]
+        LOGS[logs.service]
+        CASES[cases.service]
+        INTAKE[intake.service]
+        MSGS[messages.service]
+        NOTIF[notifications.service]
+        COND[condition-parser.service]
+        PRICE[pricing.service ⬜]
+    end
+
+    subgraph "Service Layer — 관리자 도메인"
+        AU[admin/users]
+        AP[admin/plans]
+        AS[admin/settings]
+        ASEL[admin/selectors]
+        APAT[admin/patterns]
+        AMON[admin/monitoring]
+        ATHR[admin/throughput]
+        AAUD[admin/audit]
+        ASUB[admin/submissions]
+        AIM[admin/intake-mappings]
+    end
+
+    subgraph "Data Layer"
+        DB["@workspace/db (Prisma Client)"]
+    end
+
+    RH --> AUTH & USER & ACCOM & LOGS & CASES & INTAKE & MSGS & NOTIF
+    RH --> AU & AP & AS & ASEL & APAT & AMON & ATHR & AAUD & ASUB & AIM
+
+    CASES --> COND
+    CASES --> PRICE
+    INTAKE --> CASES
+
+    AUTH & USER & ACCOM & LOGS & CASES & INTAKE & MSGS & NOTIF --> DB
+    AU & AP & AS & ASEL & APAT & AMON & ATHR & AAUD & ASUB & AIM --> DB
+
+    style PRICE fill:#ff9,stroke:#333
 ```
 
 **의존 방향 규칙 (rules.md):**
@@ -2699,5 +2884,65 @@ enum Platform {
 
 ---
 
+## 부록 G: Phase 간 의존성 다이어그램
+
+```mermaid
+graph LR
+    subgraph "Phase 1 (0~2주)"
+        P09[P0-9 퍼널 대시보드]
+        P010[P0-10 견적 엔진]
+        ERR[도메인 에러 타입]
+        LEGACY[next.config 정리]
+        CHART[처리량 차트 개선]
+    end
+
+    subgraph "Phase 2 (2~6주)"
+        P11[P1-1 자동 만료]
+        P12[P1-2 알림 이중화]
+        P14[P1-4 SLA 타이머]
+        ENV[환경변수 검증]
+        LOG[구조화 로깅]
+        I18N_APP[App i18n]
+        WTEST[Worker 테스트]
+    end
+
+    subgraph "Phase 3 (1~3개월)"
+        SELF[셀프서비스 접수]
+        PG[PG 결제 연동]
+        STATUS[고객 상태 페이지]
+        API_DOC[API 문서화]
+        INT_TEST[통합 테스트]
+    end
+
+    subgraph "Phase 4 (3~6개월)"
+        BOOKING[Booking.com]
+        DOMESTIC[야놀자/여기어때]
+        E2E[E2E 테스트]
+        I18N_ADMIN[Admin i18n]
+    end
+
+    %% Phase 1 → Phase 2 의존성
+    ERR --> LOG
+    P09 --> P14
+    P010 --> PG
+
+    %% Phase 2 → Phase 3 의존성
+    P12 --> SELF
+    LOG --> INT_TEST
+    I18N_APP --> I18N_ADMIN
+
+    %% Phase 3 → Phase 4 의존성
+    SELF --> PG
+    INT_TEST --> E2E
+    API_DOC --> BOOKING
+
+    style P09 fill:#f96
+    style P010 fill:#f96
+    style ERR fill:#f96
+```
+
+---
+
 > 이 문서는 빈방 프로젝트의 살아있는 문서(Living Document)로, 프로젝트 진행에 따라 지속적으로 업데이트한다.
+> 변경 이력은 문서 상단의 **변경 이력** 표를 참조한다.
 > 최종 업데이트: 2026-02-14
