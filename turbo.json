@@ -9,14 +9,26 @@
     ".env.production",
     ".env.production.local"
   ],
-  "globalPassThroughEnv": ["DATABASE_URL", "REDIS_URL"],
+  "globalPassThroughEnv": ["APP_ENV", "WEB_PORT"],
   "tasks": {
     "db:generate": {
       "cache": false,
-      "outputs": ["generated/**"]
+      "outputs": ["generated/**"],
+      "passThroughEnv": ["DATABASE_URL"]
     },
     "build": {
       "dependsOn": ["^build", "@workspace/db#db:generate"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET",
+        "GOOGLE_FORM_WEBHOOK_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "KAKAO_CLIENT_ID",
+        "KAKAO_CLIENT_SECRET"
+      ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
@@ -27,6 +39,17 @@
     },
     "dev": {
       "dependsOn": ["@workspace/db#db:generate"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET",
+        "GOOGLE_FORM_WEBHOOK_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "KAKAO_CLIENT_ID",
+        "KAKAO_CLIENT_SECRET"
+      ],
       "cache": false,
       "persistent": true
     },

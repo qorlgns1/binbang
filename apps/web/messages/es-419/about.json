@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "title": "Binbang – Sobre nosotros",
+    "description": "Binbang monitorea automáticamente sitios de reserva de alojamiento y envía alertas de disponibilidad.",
+    "ogDescription": "Sobre Binbang – servicio de alertas de disponibilidad."
+  },
+  "title": {
+    "heading": "Sobre Binbang",
+    "subline": "Un faro que permanece encendido toda la noche para que tu descanso no pierda el rumbo."
+  },
+  "mission": {
+    "title": "Nuestra misión",
+    "description": "Reservar alojamiento debería ser emocionante, no estresante. Binbang fue creado para liberarte de la actualización interminable y la guerra de reservas. En el momento en que aparece una vacante en tu alojamiento soñado, te avisamos primero."
+  },
+  "howItWorks": {
+    "title": "¿Cómo funciona?",
+    "step1Title": "Registra el alojamiento",
+    "step1Desc": "Agrega la URL del alojamiento que deseas de Airbnb, Agoda y más.",
+    "step2Title": "Monitoreo automático",
+    "step2Desc": "Binbang verifica la disponibilidad las 24 horas. Los planes Pro verifican cada minuto.",
+    "step3Title": "Alertas instantáneas",
+    "step3Desc": "Cuando se abre una habitación, te notificamos al instante por correo y KakaoTalk."
+  },
+  "values": {
+    "title": "Valores fundamentales",
+    "v1Title": "Velocidad",
+    "v1Desc": "Tecnología optimizada para navegador que detecta vacantes hasta 4 veces más rápido.",
+    "v2Title": "Confiabilidad",
+    "v2Desc": "Sistema heartbeat que garantiza monitoreo ininterrumpido 24/7.",
+    "v3Title": "Precisión",
+    "v3Desc": "Selectores dinámicos que se adaptan al instante a los cambios en sitios de reserva."
+  },
+  "cta": {
+    "title": "Comienza hoy",
+    "description": "Deja la competencia de reservas a Binbang y enfócate en planificar tu próximo viaje.",
+    "button": "Comenzar gratis"
+  }
+}

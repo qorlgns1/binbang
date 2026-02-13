@@ -136,6 +136,7 @@ function makeCaseDetailRow(overrides: Partial<Record<string, unknown>> = {}) {
     conditionMetEvents: [],
     notifications: [],
     billingEvent: null,
+    messages: [],
     ...overrides,
   };
 }

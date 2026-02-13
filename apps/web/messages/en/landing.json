@@ -6,9 +6,9 @@
   },
   "nav": {
     "brand": "Binbang",
-    "features": "Features",
-    "status": "System Status",
     "pricing": "Pricing",
+    "faq": "FAQ",
+    "about": "About",
     "login": "Login"
   },
   "hero": {
@@ -17,7 +17,6 @@
     "subheadline": "Binbang keeps the lighthouse on all night.",
     "subheadlineMobile": ["'Binbang' keeps the lighthouse", "on all night."],
     "description": "Tired of endless refreshing? Binbang keeps watch while you sleep and catches the vacancy at your dream stay first.",
-    "aboutApp": "Binbang is a vacancy alert service; when you sign in with Google we use your email only for account identification and sending alerts.",
     "cta": "Start Vacancy Alerts",
     "secondaryCta": "See Features",
     "statusLabel": "Live System Status"

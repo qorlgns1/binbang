@@ -254,19 +254,27 @@
   - (시드) `packages/db/prisma/constants/index.ts` — `SEED_BILLING_EVENTS`, `SEED_CASE_NOTIFICATIONS`
   - (시드) `packages/db/prisma/seed.ts` — upsert 적용
 
-## P0-8. 운영자 액션 로그 + 분쟁 대응 템플릿
+## P0-8. 운영자 액션 로그 + 분쟁 대응 템플릿 ✅ 완료 (2026-02-13)
 
 - 목표: 이의제기 대응 문구를 표준화하고 기록을 남김
 - 구현
-  - 템플릿 3종 저장(접수/진행가능+비용/결제확인후시작)
-  - 분쟁 대응 표준문장 3종 원클릭 삽입
-  - 템플릿 발송 이력(누가, 언제, 어떤 채널) 저장
+  - 운영 템플릿 3종(접수 확인/비용 안내/결제확인+시작) + 분쟁 대응 템플릿 3종(범위 안내/증거 패킷 제공/즉시 종료) = 총 6종
+  - 템플릿 1클릭 복사 + 자동 발송 기록(누가, 언제, 어떤 채널, 어떤 템플릿)
+  - 케이스 상세 페이지에 "고객 커뮤니케이션" 패널 추가 (템플릿 선택/미리보기/발송 이력 타임라인)
+  - `CaseMessage` 모델로 운영자별 메시지 이력 영구 저장
 - 완료조건(DoD)
   - 케이스 타임라인에서 모든 고객 커뮤니케이션 추적 가능
   - 운영자별 템플릿 사용 로그 조회 가능
 - 구현 위치
-  - `apps/web/src/services/messages.service.ts` (신규)
-  - `apps/web/src/app/admin/cases/_components/message-templates.tsx` (신규)
+  - `packages/db/prisma/schema.prisma` — `CaseMessage` 모델, `Case.messages` relation
+  - `apps/web/src/services/messages.service.ts` — 템플릿 상수 6종 + 메시지 생성/조회/통계 서비스
+  - `apps/web/src/services/messages.service.test.ts` — 단위 테스트 (13개 통과)
+  - `apps/web/src/app/api/admin/cases/[id]/messages/route.ts` — 메시지 목록(GET) + 생성(POST) API
+  - `apps/web/src/services/cases.service.ts` — `CaseDetail`에 `messages` select/타입/매퍼 추가
+  - `apps/web/src/features/admin/cases/queries.ts` — `CaseMessageItem` 타입, `CaseDetail.messages` 추가
+  - `apps/web/src/features/admin/cases/mutations.ts` — `useCreateCaseMessageMutation` 추가
+  - `apps/web/src/app/admin/cases/[id]/_components/messageTemplatesPanel.tsx` — 고객 커뮤니케이션 패널
+  - `apps/web/src/app/admin/cases/[id]/_components/caseDetailView.tsx` — 패널 통합
 
 ## P0-9. 운영 대시보드(구글폼 전용 퍼널)
 

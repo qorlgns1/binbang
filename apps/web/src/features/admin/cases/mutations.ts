@@ -3,7 +3,7 @@
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { adminKeys } from '@/lib/queryKeys';
-import type { CaseDetail } from './queries';
+import type { CaseDetail, CaseMessageItem } from './queries';
 
 // ============================================================================
 // Types
@@ -45,6 +45,17 @@ interface LinkAccommodationResponse {
   case: CaseDetail;
 }
 
+interface CreateCaseMessageVariables {
+  caseId: string;
+  templateKey: string;
+  channel: string;
+  content: string;
+}
+
+interface CreateCaseMessageResponse {
+  message: CaseMessageItem;
+}
+
 export type UseCreateCaseMutationResult = UseMutationResult<CreateCaseResponse, Error, CreateCaseVariables>;
 export type UseTransitionCaseStatusMutationResult = UseMutationResult<
   TransitionCaseStatusResponse,
@@ -56,6 +67,11 @@ export type UseLinkAccommodationMutationResult = UseMutationResult<
   LinkAccommodationResponse,
   Error,
   LinkAccommodationVariables
+>;
+export type UseCreateCaseMessageMutationResult = UseMutationResult<
+  CreateCaseMessageResponse,
+  Error,
+  CreateCaseMessageVariables
 >;
 
 // ============================================================================
@@ -121,6 +137,24 @@ async function linkAccommodation({
   return res.json();
 }
 
+async function createCaseMessage({
+  caseId,
+  templateKey,
+  channel,
+  content,
+}: CreateCaseMessageVariables): Promise<CreateCaseMessageResponse> {
+  const res = await fetch(`/api/admin/cases/${caseId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ templateKey, channel, content }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || '메시지 기록에 실패했습니다');
+  }
+  return res.json();
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -167,6 +201,17 @@ export function useLinkAccommodationMutation(): UseLinkAccommodationMutationResu
     mutationFn: linkAccommodation,
     onSuccess: (_data, variables): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    },
+  });
+}
+
+export function useCreateCaseMessageMutation(): UseCreateCaseMessageMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCaseMessage,
+    onSuccess: (_data, variables): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
     },
   });

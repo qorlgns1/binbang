@@ -235,6 +235,22 @@ export async function getAccommodationLogs(input: GetLogsInput): Promise<GetLogs
   };
 }
 
+export async function pauseExpiredAccommodations(userId: string): Promise<number> {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  const result = await prisma.accommodation.updateMany({
+    where: {
+      userId,
+      isActive: true,
+      checkIn: { lt: today },
+    },
+    data: { isActive: false },
+  });
+
+  return result.count;
+}
+
 export async function verifyAccommodationOwnership(id: string, userId: string): Promise<boolean> {
   const accommodation = await prisma.accommodation.findFirst({
     where: { id, userId },

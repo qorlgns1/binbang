@@ -2,6 +2,7 @@ import {
   AvailabilityStatus,
   BillingEventType,
   CaseStatus,
+  FormQuestionField,
   FormSubmissionStatus,
   NotificationStatus,
   PatternType,
@@ -973,6 +974,124 @@ export const SEED_CASE_NOTIFICATIONS: SeedCaseNotification[] = [
     maxRetries: 3,
     idempotencyKey: 'seed_case_5:seed_log_seed_cycle_1_seed_acc_2',
     createdAt: addMinutes(SEED_NOW, -2 * 24 * 60 - 30),
+  },
+];
+
+export interface SeedCaseMessage {
+  id: string;
+  caseId: string;
+  templateKey: string;
+  channel: string;
+  content: string;
+  sentByKey: SeedUserKey;
+  createdAt: Date;
+}
+
+export const SEED_CASE_MESSAGES: SeedCaseMessage[] = [
+  {
+    id: 'seed_msg_1',
+    caseId: 'seed_case_3',
+    templateKey: 'intake_confirm',
+    channel: 'MANUAL_COPY',
+    content: '요청이 접수되었습니다.\n조건(Q4)을 검토한 뒤 진행 가능 여부와 비용을 안내드리겠습니다.',
+    sentByKey: 'admin',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 30),
+  },
+  {
+    id: 'seed_msg_2',
+    caseId: 'seed_case_3',
+    templateKey: 'price_quote',
+    channel: 'MANUAL_COPY',
+    content:
+      '요청 조건 기준으로 진행 가능하며,\n조건 충족(열림 확인) 시 1회 비용은 24,000원입니다.\n해당 요청은 조건 충족 1회만 유효하며, 최초 충족 시점에만 비용이 발생합니다.',
+    sentByKey: 'admin',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 90),
+  },
+  {
+    id: 'seed_msg_3',
+    caseId: 'seed_case_5',
+    templateKey: 'payment_start',
+    channel: 'MANUAL_COPY',
+    content:
+      '결제 확인되었습니다.\n이제부터 설정하신 조건에 맞춰 모니터링을 시작합니다.\nQ4에 명시된 조건이 충족되면 알림으로 알려드리겠습니다.',
+    sentByKey: 'admin',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 70),
+  },
+];
+
+export interface SeedFormQuestionMapping {
+  formKey: string;
+  field: FormQuestionField;
+  questionItemId: string | null;
+  questionTitle: string;
+  expectedAnswer: string | null;
+  isActive: boolean;
+}
+
+export const SEED_FORM_QUESTION_MAPPINGS: SeedFormQuestionMapping[] = [
+  {
+    formKey: '*',
+    field: FormQuestionField.CONTACT_CHANNEL,
+    questionItemId: '213884063',
+    questionTitle: 'Q1. 연락 받을 방법 (필수)',
+    expectedAnswer: null,
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.CONTACT_VALUE,
+    questionItemId: '1829594974',
+    questionTitle: 'Q2. 카카오톡 아이디 또는 이메일 (필수)',
+    expectedAnswer: null,
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.TARGET_URL,
+    questionItemId: '1796020129',
+    questionTitle: 'Q3. 확인할 링크(URL)를 붙여주세요',
+    expectedAnswer: null,
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.CONDITION_DEFINITION,
+    questionItemId: '2147170575',
+    questionTitle: 'Q4. 어떤 상태가 되면 ‘조건 충족(열림 확인)’으로 볼지 정확히 써주세요',
+    expectedAnswer: null,
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.REQUEST_WINDOW,
+    questionItemId: '497499214',
+    questionTitle: 'Q5. 언제까지 확인하면 되나요? (필수)',
+    expectedAnswer: null,
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.CHECK_FREQUENCY,
+    questionItemId: '987005071',
+    questionTitle: 'Q6. 확인 빈도',
+    expectedAnswer: null,
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.BILLING_CONSENT,
+    questionItemId: '1953936343',
+    questionTitle: 'Q7. 조건 충족(열림 확인) 시 비용 발생에 대한 동의',
+    expectedAnswer: '요청한 조건이 충족된 시점(열림 확인)에 비용이 발생하는 것에 동의합니다.',
+    isActive: true,
+  },
+  {
+    formKey: '*',
+    field: FormQuestionField.SCOPE_CONSENT,
+    questionItemId: '1953936343',
+    questionTitle: 'Q7. 조건 충족(열림 확인) 시 비용 발생에 대한 동의',
+    expectedAnswer: 'Q4에 제가 작성한 조건을 기준으로 ‘열림 여부만 확인’하는 서비스임을 이해합니다.',
+    isActive: true,
   },
 ];
 

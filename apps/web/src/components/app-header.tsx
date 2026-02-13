@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { Home, LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
+import { Home, LogOut, Menu, Settings, User } from 'lucide-react';
 
 import { LangToggle } from '@/components/landing/LangToggle';
+import { ThemeToggle } from '@/components/landing/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import type { Locale } from '@workspace/shared/i18n';
@@ -31,24 +32,6 @@ export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.
   const t = useTranslations('common');
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [isDark, setIsDark] = useState<boolean | null>(null);
-
-  // 초기 테마 로드
-  useEffect(() => {
-    const initialDark = document.documentElement.classList.contains('dark');
-    setIsDark(initialDark);
-  }, []);
-
-  // 테마 적용
-  useEffect(() => {
-    if (isDark === null) return;
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('binbang-theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
-
-  const toggleTheme = (): void => {
-    setIsDark((prev) => !(prev ?? document.documentElement.classList.contains('dark')));
-  };
 
   return (
     <header className='bg-background/80 backdrop-blur-sm border-b sticky top-0 z-40'>
@@ -96,18 +79,10 @@ export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.
         </div>
 
         {/* 우측: 데스크톱 유저 정보 */}
-        <div className='hidden md:flex items-center gap-4'>
-          <button
-            type='button'
-            onClick={toggleTheme}
-            aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
-            className='flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary'
-          >
-            {isDark ? <Sun className='size-3.5' /> : <Moon className='size-3.5' />}
-            {isDark ? 'Light' : 'Dark'}
-          </button>
+        <div className='hidden md:flex items-center gap-2'>
+          <ThemeToggle lang={locale ?? 'ko'} />
           {locale && <LangToggle currentLang={locale} />}
-          <span className='text-sm text-muted-foreground'>{userName}</span>
+          <span className='ml-2 text-sm text-muted-foreground'>{userName}</span>
           <Button variant='ghost' size='sm' onClick={() => signOut({ callbackUrl: '/login' })}>
             {t('logout')}
           </Button>
@@ -181,14 +156,11 @@ export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.
 
               {/* 하단 액션 */}
               <div className='border-t pt-4 space-y-2'>
-                <button
-                  type='button'
-                  onClick={toggleTheme}
-                  className='flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
-                >
-                  {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
-                  {isDark ? '라이트 모드' : '다크 모드'}
-                </button>
+                <ThemeToggle
+                  lang={locale ?? 'ko'}
+                  variant='mobile'
+                  className='w-full justify-start gap-3 px-3 py-2 text-sm text-muted-foreground'
+                />
                 {locale && <LangToggle currentLang={locale} variant='mobile' />}
                 <Button
                   variant='ghost'
