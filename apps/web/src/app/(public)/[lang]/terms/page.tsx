@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const t = await getTranslations({ locale: lang, namespace: 'legal' });
   const { canonical, languages } = buildPublicAlternates(lang as Locale, '/terms');
   const title = `${t('terms.title')} | Binbang`;
-  const description = 'Binbang(빈방) 이용약관. 서비스 이용에 관한 약관을 안내합니다.';
+  const description = t('terms.metaDescription');
   return {
     title,
     description,

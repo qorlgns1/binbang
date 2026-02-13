@@ -1,4 +1,9 @@
 {
+  "meta": {
+    "title": "Binbang – Servicio de alertas de disponibilidad",
+    "description": "Binbang monitorea sitios de reserva de alojamiento y envía alertas por correo. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas.",
+    "twitterDescription": "Alertas de disponibilidad cada minuto. Te avisamos cuando hay habitación."
+  },
   "nav": {
     "brand": "Binbang",
     "features": "Funciones",

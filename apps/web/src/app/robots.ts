@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 
+import { getBaseUrl } from '@/lib/i18n-runtime/seo';
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -9,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/dashboard', '/accommodations/', '/settings/', '/admin/'],
       },
     ],
-    sitemap: 'https://binbang.moodybeard.com/sitemap.xml',
+    sitemap: `${getBaseUrl()}/sitemap.xml`,
   };
 }

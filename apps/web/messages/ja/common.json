@@ -15,6 +15,14 @@
   "login": "ログイン",
   "logout": "ログアウト",
   "finish": "完了",
+  "notFound": {
+    "title": "ページが見つかりません",
+    "description": "お探しのページが見つかりません。ダッシュボードまたはホームへ移動してください。",
+    "heading": "道に迷いましたか？",
+    "subline": "Binbangがご案内します。下のリンクからお進みください。",
+    "ctaDashboard": "ダッシュボードに戻る",
+    "ctaHome": "ホームへ"
+  },
   "sectionError": {
     "title": "データを読み込めませんでした",
     "description": "ネットワークを確認して、もう一度お試しください。"

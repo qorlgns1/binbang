@@ -1,4 +1,9 @@
 {
+  "meta": {
+    "title": "Binbang – 空室アラートサービス",
+    "description": "Binbangは宿泊予約サイトの空室を監視し、メールでアラートを送信します。Googleでサインインする際、メールアドレスはアカウント識別とアラート送信にのみ使用します。",
+    "twitterDescription": "1分ごとにチェックする空室アラート。空室が出たらお知らせします。"
+  },
   "nav": {
     "brand": "Binbang",
     "features": "機能紹介",

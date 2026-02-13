@@ -15,6 +15,14 @@
   "login": "Iniciar sesión",
   "logout": "Cerrar sesión",
   "finish": "Finalizar",
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "No encontramos la página solicitada. Ve al panel o al inicio.",
+    "heading": "¿Perdido?",
+    "subline": "Binbang te guía. Usa los enlaces de abajo para continuar.",
+    "ctaDashboard": "Volver al panel",
+    "ctaHome": "Ir al inicio"
+  },
   "sectionError": {
     "title": "No se pudieron cargar los datos",
     "description": "Comprueba tu conexión e inténtalo de nuevo."

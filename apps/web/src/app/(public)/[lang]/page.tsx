@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
+import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { LandingPage } from '@/components/landing/LandingPage';
@@ -15,10 +16,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   if (!isSupportedLocale(lang)) return {};
   const langTyped = lang as Locale;
+  const t = await getTranslations({ locale: lang, namespace: 'landing' });
   const { canonical, languages } = buildPublicAlternates(langTyped, '');
-  const title = 'Binbang – 빈방 알림 서비스';
-  const description =
-    'Binbang(빈방)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다. Google 로그인 시 이메일은 회원 식별 및 알림 발송에만 사용됩니다.';
+  const title = t('meta.title');
+  const description = t('meta.description');
   return {
     title,
     description,
@@ -35,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card: 'summary',
       title,
-      description: '1분마다 체크하는 숙소 빈방 알림. 빈방 나오면 알려드립니다.',
+      description: t('meta.twitterDescription'),
       images: ['/icon.png'],
     },
   };

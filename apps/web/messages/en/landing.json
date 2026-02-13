@@ -1,4 +1,9 @@
 {
+  "meta": {
+    "title": "Binbang – Vacancy Alert Service",
+    "description": "Binbang monitors accommodation booking sites for vacancies and sends email alerts. When you sign in with Google we use your email only for account identification and sending alerts.",
+    "twitterDescription": "Vacancy alerts checked every minute. We notify you when a room becomes available."
+  },
   "nav": {
     "brand": "Binbang",
     "features": "Features",

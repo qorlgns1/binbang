@@ -15,6 +15,14 @@
   "login": "Login",
   "logout": "Logout",
   "finish": "Finish",
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you requested could not be found. Go to dashboard or home.",
+    "heading": "Lost?",
+    "subline": "Binbang can guide you. Use the links below to get where you need.",
+    "ctaDashboard": "Back to dashboard",
+    "ctaHome": "Go to home"
+  },
   "sectionError": {
     "title": "We couldn't load the data",
     "description": "Please check your network and try again."

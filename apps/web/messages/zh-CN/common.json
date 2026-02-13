@@ -15,6 +15,14 @@
   "login": "登录",
   "logout": "退出登录",
   "finish": "完成",
+  "notFound": {
+    "title": "页面未找到",
+    "description": "无法找到您请求的页面。请前往控制台或首页。",
+    "heading": "迷路了吗？",
+    "subline": "Binbang 为您指路。请使用下方链接前往。",
+    "ctaDashboard": "返回控制台",
+    "ctaHome": "前往首页"
+  },
   "sectionError": {
     "title": "无法加载数据",
     "description": "请检查网络后重试。"

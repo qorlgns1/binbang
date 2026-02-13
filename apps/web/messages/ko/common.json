@@ -15,6 +15,14 @@
   "login": "로그인",
   "logout": "로그아웃",
   "finish": "완료",
+  "notFound": {
+    "title": "페이지를 찾을 수 없습니다",
+    "description": "요청하신 페이지를 찾을 수 없습니다. 대시보드 또는 홈으로 이동하세요.",
+    "heading": "길을 잃으셨나요?",
+    "subline": "빈방이 안내해드릴게요. 아래에서 원하시는 곳으로 이동하실 수 있습니다.",
+    "ctaDashboard": "대시보드로 돌아가기",
+    "ctaHome": "홈으로 가기"
+  },
   "sectionError": {
     "title": "데이터를 불러오지 못했습니다",
     "description": "네트워크 상태를 확인하고 다시 시도해주세요"

@@ -10,9 +10,14 @@ import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
+const BASE_URL =
+  typeof process.env.NEXT_PUBLIC_APP_URL === 'string' && process.env.NEXT_PUBLIC_APP_URL.length > 0
+    ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '')
+    : 'https://binbang.moodybeard.com';
+
 export const metadata: Metadata = {
   title: { default: '빈방', template: '%s | 빈방' },
-  metadataBase: new URL('https://binbang.moodybeard.com'),
+  metadataBase: new URL(BASE_URL),
   // Title, description, openGraph, twitter are set per-route (Public pages use generateMetadata with locale/URL).
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,

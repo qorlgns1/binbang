@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
@@ -11,9 +12,10 @@ interface LayoutProps {
 export async function generateMetadata({ params }: LayoutProps): Promise<Metadata> {
   const { lang } = await params;
   if (!isSupportedLocale(lang)) return {};
+  const t = await getTranslations({ locale: lang, namespace: 'auth' });
   const { canonical, languages } = buildPublicAlternates(lang as Locale, '/login');
-  const title = '로그인 | Binbang';
-  const description = 'Binbang(빈방) 로그인. 이메일 또는 소셜 로그인으로 서비스를 이용하세요.';
+  const title = t('login.metaTitle');
+  const description = t('login.metaDescription');
   return {
     title,
     description,
