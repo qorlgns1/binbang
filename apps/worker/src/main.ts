@@ -13,6 +13,7 @@ import {
   createCheckWorker,
   createCycleQueue,
   createCycleWorker,
+  buildQueueSnapshot,
   createRedisConnection,
   getPlatformSelectors,
   getSettings,
@@ -129,6 +130,9 @@ async function main(): Promise<void> {
   // HTTP Control Server
   // ============================================
   const server = createServer((req, res): void => {
+    const requestUrl = new URL(req.url ?? '/', 'http://localhost');
+    const pathname = requestUrl.pathname;
+
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -139,7 +143,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    if (req.url === '/restart' && req.method === 'POST') {
+    if (pathname === '/restart' && req.method === 'POST') {
       console.log('Worker restart requested');
 
       setTimeout((): void => {
@@ -157,7 +161,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    if (req.url === '/health' && req.method === 'GET') {
+    if (pathname === '/health' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
@@ -169,8 +173,30 @@ async function main(): Promise<void> {
       return;
     }
 
+    if (pathname === '/queue/snapshot' && req.method === 'GET') {
+      void (async (): Promise<void> => {
+        try {
+          const rawLimit = requestUrl.searchParams.get('limit');
+          const parsedLimit = rawLimit ? Number.parseInt(rawLimit, 10) : undefined;
+          const snapshot = await buildQueueSnapshot(cycleQueue, checkQueue, parsedLimit);
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(snapshot));
+        } catch (error) {
+          console.error('Queue snapshot failed:', error);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }),
+          );
+        }
+      })();
+      return;
+    }
+
     // 셀렉터 캐시 무효화 엔드포인트
-    if (req.url === '/cache/invalidate' && req.method === 'POST') {
+    if (pathname === '/cache/invalidate' && req.method === 'POST') {
       let body = '';
       req.on('data', (chunk): void => {
         body += chunk.toString();
@@ -213,7 +239,7 @@ async function main(): Promise<void> {
     }
 
     // 셀렉터 테스트 엔드포인트
-    if (req.url === '/test' && req.method === 'POST') {
+    if (pathname === '/test' && req.method === 'POST') {
       let body = '';
       req.on('data', (chunk): void => {
         body += chunk.toString();

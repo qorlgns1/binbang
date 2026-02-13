@@ -34,6 +34,48 @@ export interface MonitoringSummary {
   activeAccommodations: number;
 }
 
+export interface QueueStatsInfo {
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+  paused: number;
+}
+
+export type QueueJobState = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown';
+
+export interface QueueJobSummary {
+  id: string;
+  name: string;
+  state: QueueJobState;
+  attemptsMade: number;
+  attemptsMax: number;
+  createdAt: string | null;
+  processedAt: string | null;
+  finishedAt: string | null;
+  failedReason: string | null;
+  dataPreview: {
+    accommodationId?: string;
+    cycleId?: string;
+    caseId?: string;
+    platform?: string;
+    name?: string;
+  };
+}
+
+export interface QueueSnapshotResponse {
+  timestamp: string;
+  queues: {
+    cycle: QueueStatsInfo;
+    check: QueueStatsInfo;
+  };
+  recentJobs: {
+    cycle: QueueJobSummary[];
+    check: QueueJobSummary[];
+  };
+}
+
 export interface MonitoringLogEntry {
   id: string;
   createdAt: string;

@@ -7,10 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useWorkerQueueQuery } from '@/features/admin/monitoring';
 import { useHeartbeatStatus } from '@/hooks/useHeartbeatStatus';
 import { useWorkerControl } from '@/hooks/useWorkerControl';
 
 import { HeartbeatTimeline } from './_components/HeartbeatTimeline';
+import { QueueJobsTable } from './_components/QueueJobsTable';
+import { QueueOverviewCard } from './_components/QueueOverviewCard';
+import { WorkerFlowGuide } from './_components/WorkerFlowGuide';
 
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return '-';
@@ -88,7 +92,6 @@ function StatusCard() {
             </Badge>
           </div>
 
-          {/* 🆕 Progress Bar 통합 */}
           <Separator />
           <HeartbeatTimeline />
         </div>
@@ -133,6 +136,35 @@ function WorkerControlCard() {
   );
 }
 
+function QueueMonitoringSection() {
+  const { data: queueSnapshot, isLoading, isError, error } = useWorkerQueueQuery(20);
+  const errorMessage = error instanceof Error ? error.message : undefined;
+
+  return (
+    <section className='space-y-6'>
+      <div>
+        <h2 className='text-2xl font-bold'>큐 모니터링</h2>
+        <p className='text-muted-foreground mt-2'>워커 큐 상태와 최근 작업 흐름을 실시간으로 확인합니다. (3초 주기)</p>
+      </div>
+
+      <WorkerFlowGuide snapshot={queueSnapshot} isLoading={isLoading} isError={isError} />
+
+      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
+        <QueueOverviewCard title='Cycle Queue 상태' stats={queueSnapshot?.queues.cycle ?? null} isLoading={isLoading} />
+        <QueueOverviewCard title='Check Queue 상태' stats={queueSnapshot?.queues.check ?? null} isLoading={isLoading} />
+      </div>
+
+      <QueueJobsTable
+        cycleJobs={queueSnapshot?.recentJobs.cycle ?? []}
+        checkJobs={queueSnapshot?.recentJobs.check ?? []}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={errorMessage}
+      />
+    </section>
+  );
+}
+
 export default function HeartbeatPage() {
   return (
     <main className='max-w-7xl mx-auto px-4 py-8'>
@@ -152,6 +184,9 @@ export default function HeartbeatPage() {
             <WorkerControlCard />
           </div>
         </div>
+
+        <Separator />
+        <QueueMonitoringSection />
       </div>
     </main>
   );

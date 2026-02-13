@@ -53,6 +53,8 @@ export const adminKeys = {
     filters?: Record<string, string>,
   ): readonly ['admin', 'throughput', 'compare', Record<string, string>] =>
     [...adminKeys.throughput(), 'compare', filters ?? {}] as const,
+  workerQueue: (filters?: Record<string, string>): readonly ['admin', 'worker', 'queue', Record<string, string>] =>
+    [...adminKeys.all, 'worker', 'queue', filters ?? {}] as const,
   // Platform Selectors
   selectors: (): readonly ['admin', 'selectors'] => [...adminKeys.all, 'selectors'] as const,
   selectorList: (filters?: Record<string, string>): readonly ['admin', 'selectors', 'list', Record<string, string>] =>
