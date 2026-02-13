@@ -20,9 +20,18 @@
     "description": "Please check your network and try again."
   },
   "tutorial": {
-    "step1": { "title": "Get started with Binbang", "body": "Register accommodations to receive KakaoTalk alerts when a vacancy appears." },
-    "step2": { "title": "Add your first accommodation", "body": "Add a URL from Airbnb, Agoda, etc. and we'll check availability for you." },
-    "step3": { "title": "KakaoTalk alerts", "body": "Connect your Kakao account to receive instant alerts when a vacancy is found." },
+    "step1": {
+      "title": "Get started with Binbang",
+      "body": "Register accommodations to receive KakaoTalk alerts when a vacancy appears."
+    },
+    "step2": {
+      "title": "Add your first accommodation",
+      "body": "Add a URL from Airbnb, Agoda, etc. and we'll check availability for you."
+    },
+    "step3": {
+      "title": "KakaoTalk alerts",
+      "body": "Connect your Kakao account to receive instant alerts when a vacancy is found."
+    },
     "step4": { "title": "All set!", "body": "We'll monitor availability 24/7. Sit back and relax!" },
     "skip": "Skip",
     "finish": "Finish"

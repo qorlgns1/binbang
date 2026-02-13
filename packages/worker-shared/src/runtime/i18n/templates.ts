@@ -64,9 +64,7 @@ export function renderNotification(locale: Locale, payload: StructuredNotificati
  * 구조화 형식: type === 'conditionMet' 및 필수 필드 존재.
  * 레거시 형식: title 등 렌더링된 텍스트 직접 저장.
  */
-export function isStructuredPayload(
-  payload: Record<string, unknown>,
-): payload is StructuredNotificationPayload {
+export function isStructuredPayload(payload: Record<string, unknown>): payload is StructuredNotificationPayload {
   if (payload.type !== 'conditionMet') return false;
   return (
     typeof payload.userId === 'string' &&
