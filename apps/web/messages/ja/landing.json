@@ -17,7 +17,6 @@
     "subheadline": "Binbangが一晩中灯台の灯りを灯します。",
     "subheadlineMobile": ["Binbangが一晩中", "灯台の灯りを灯します。"],
     "description": "終わりのない更新に疲れていませんか？Binbangはあなたが眠っている間も見張り、希望の宿の空室をいち早くキャッチします。",
-    "aboutApp": "Binbangは空室アラートサービスです。Googleでサインインする際、メールアドレスはアカウント識別とアラート送信にのみ使用します。",
     "cta": "空室アラートを始める",
     "secondaryCta": "機能を見る",
     "statusLabel": "ライブシステム状態"

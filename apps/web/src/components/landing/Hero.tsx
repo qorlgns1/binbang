@@ -1,8 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { useMessages, useTranslations } from 'next-intl';
 
 import { CTAButtons } from './CTAButtons';
@@ -14,7 +12,6 @@ import { StatusDashboardSlot } from './StatusDashboardSlot';
 export function Hero(): React.ReactElement {
   const t = useTranslations('landing');
   const messages = useMessages();
-  const lang = useParams().lang as string;
   const headlineMobile = (messages.landing as { hero?: { headlineMobile?: string[] } })?.hero?.headlineMobile ?? [];
   const subheadlineMobile =
     (messages.landing as { hero?: { subheadlineMobile?: string[] } })?.hero?.subheadlineMobile ?? [];
@@ -66,21 +63,8 @@ export function Hero(): React.ReactElement {
             </span>
           </span>
         </h1>
-
         <p className='mt-7 max-w-3xl text-base leading-[26px] text-muted-foreground'>{t('hero.description')}</p>
-
-        <p className='mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground'>
-          {t('hero.aboutApp')}{' '}
-          <Link
-            href={`/${lang}/privacy`}
-            className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
-          >
-            {t('footer.privacy')}
-          </Link>
-        </p>
-
         <CTAButtons />
-
         <div className='mt-16 w-full'>
           <StatusDashboardSlot />
         </div>
