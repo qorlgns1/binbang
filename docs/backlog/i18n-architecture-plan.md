@@ -8,7 +8,7 @@
 
 ---
 
-## 현재 구현 상태 요약 (2026-02-14)
+## 현재 구현 상태 요약 (2026-02-13)
 
 - **지원 locale**: 계획 1차 지원은 `ko`, `en`, `ja`, `zh-CN`, `es-419`이나, **현재 구현은 `ko`, `en`만** 적용됨. `packages/shared` `SUPPORTED_LOCALES`가 단일 소스이며, `apps/web` 전체가 `@workspace/shared/i18n`의 `Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`을 사용. 레거시 `Lang`/`supportedLangs`/`isValidLang`(`apps/web/src/lib/i18n/config.ts`)은 제거됨.
 - **Public 라우팅**: `(public)/[lang]/**` 구조 정렬 완료(WU-14). middleware에서 `/`, `/login`, `/signup`, `/pricing`, `/terms`, `/privacy` 접근 시 locale 협상 후 `/{locale}/...` 로 redirect.
@@ -494,7 +494,7 @@ export async function resolveLocaleOnServer(input: {
 - 번역 리소스는 `apps/web/messages/{locale}/{namespace}.json`에서 로딩
 - “필요한 namespace만” 조립해서 `next-intl`에 제공 (namespace slicing)
 
-**구현 완료(2026-02-14)**: `middleware.ts`가 `x-pathname` 헤더를 전달하고, `request.ts`가 이를 읽어 `getNamespacesForPathname()`으로 필요한 namespace만 동적 `import()`한다. 전체 로드 fallback은 pathname 헤더가 없을 때(`getAllNamespaces()`)만 사용.
+**구현 완료(2026-02-13)**: `middleware.ts`가 `x-pathname` 헤더를 전달하고, `request.ts`가 이를 읽어 `getNamespacesForPathname()`으로 필요한 namespace만 동적 `import()`한다. 전체 로드 fallback은 pathname 헤더가 없을 때(`getAllNamespaces()`)만 사용.
 
 ```ts
 // apps/web/src/i18n/request.ts
@@ -1521,8 +1521,8 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-13`: PublicHeader 단일·한 줄 통합 — `lang`/`variant` props, pathname 기반 variant(landing/pricing/auth/legal/default). 랜딩: Landing Header 제거, LandingPage는 layout PublicHeader만 사용. pricing/terms/privacy: 페이지 내 헤더·뒤로가기 제거, PublicHeader 한 줄로 통합(pricing은 useSession으로 대시보드/로그인·가입 분기). MobileMenu: useTranslations 기반(copy 제거), 터치 44px·접근성·시트 닫힌 뒤 scrollIntoView 350ms 지연(포커스 복원으로 인한 상단 스크롤 방지).
 - `2026-02-13`: `WU-16` 완료 — Public SEO: `lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates), sitemap locale prefix + alternates.languages, Public 각 페이지(landing/pricing/login/signup/terms/privacy) canonical + alternates.languages(ko/en). login/signup은 layout generateMetadata. 17.3 SEO 열 [x] 처리.
 - `2026-02-13`: 랜딩 텍스트 i18n 전환 — `getLandingCopy` 제거, `lib/i18n/landing.ts`는 config 재export만. LandingPage 및 Hero/Features/Footer/CTAButtons/AppPurpose/StatusDashboard/StatusDashboardSlot은 `useTranslations('landing')`·`useMessages()`·`useParams()` 사용. 17.3 Landing 행 텍스트 i18n [x].
-- `2026-02-14`: Locale 타입 통일 — `apps/web/src/lib/i18n/config.ts`(`Lang`/`supportedLangs`/`isValidLang`) 제거, 15개 소비 파일을 `@workspace/shared/i18n`(`Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`)로 이전. ci:check 통과(291 tests).
-- `2026-02-14`: Namespace slicing 적용 — `namespaces.ts` 순수 함수 재작성(fs 의존 제거), middleware `x-pathname` 헤더 전달, `request.ts`에서 pathname 기반 최소 namespace만 동적 `import()`. 테스트 13개 추가. ci:check 통과(295 tests).
+- `2026-02-13`: Locale 타입 통일 — `apps/web/src/lib/i18n/config.ts`(`Lang`/`supportedLangs`/`isValidLang`) 제거, 15개 소비 파일을 `@workspace/shared/i18n`(`Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`)로 이전. ci:check 통과(291 tests).
+- `2026-02-13`: Namespace slicing 적용 — `namespaces.ts` 순수 함수 재작성(fs 의존 제거), middleware `x-pathname` 헤더 전달, `request.ts`에서 pathname 기반 최소 namespace만 동적 `import()`. 테스트 13개 추가. ci:check 통과(295 tests).
 - `YYYY-MM-DD`: `-`
 
 ---
