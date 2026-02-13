@@ -64,6 +64,10 @@
       "dependsOn": ["@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+    "@workspace/worker-shared#typecheck": {
+      "dependsOn": ["@workspace/shared#build", "@workspace/db#build", "@workspace/db#db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
+    },
     "@workspace/web#typecheck": {
       "dependsOn": ["@workspace/web#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]

@@ -106,8 +106,7 @@ async function getQueueJobs(queue: Queue, limit: number): Promise<QueueJobSummar
     allJobs.push(...jobs);
   }
   const dedupedJobs = dedupeJobsById(allJobs);
-  const sortTs = (job: Job): number =>
-    job.finishedOn ?? job.processedOn ?? job.timestamp ?? 0;
+  const sortTs = (job: Job): number => job.finishedOn ?? job.processedOn ?? job.timestamp ?? 0;
   dedupedJobs.sort((a, b) => sortTs(b) - sortTs(a));
   const limited = dedupedJobs.slice(0, limit);
 
