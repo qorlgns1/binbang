@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -52,6 +53,7 @@ interface FirstUserTutorialDialogProps {
 // ============================================================================
 
 export function FirstUserTutorialDialog({ open }: FirstUserTutorialDialogProps): React.ReactElement {
+  const t = useTranslations('common');
   const [step, setStep] = useState(0);
   const completeMutation = useCompleteTutorialMutation();
   const dismissMutation = useDismissTutorialMutation();
@@ -120,7 +122,7 @@ export function FirstUserTutorialDialog({ open }: FirstUserTutorialDialogProps):
               </Button>
             ) : (
               <Button size='sm' onClick={handleNext} disabled={isMutating} aria-label='다음 단계'>
-                다음
+                {t('next')}
               </Button>
             )}
           </div>

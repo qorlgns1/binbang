@@ -1,5 +1,7 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
+
 import { Globe } from 'lucide-react';
 
 import { trackLocaleToggled } from '@/lib/analytics/landing-tracker';
@@ -23,6 +25,9 @@ interface LangToggleProps {
  * @returns A button element that toggles the site language when clicked
  */
 export function LangToggle({ currentLang, className = '', variant = 'desktop' }: LangToggleProps): React.ReactElement {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const handleToggle = (): void => {
     const newLang: Lang = currentLang === 'ko' ? 'en' : 'ko';
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
@@ -34,8 +39,15 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
     // 트래킹
     trackLocaleToggled(newLang, theme);
 
-    // URL 이동
-    window.location.href = `/${newLang}`;
+    // SPA 방식 네비게이션
+    const localeMatch = pathname.match(/^\/(ko|en)(\/.*)?$/);
+    if (localeMatch) {
+      // Public page: swap locale prefix, preserve rest of path
+      router.push(`/${newLang}${localeMatch[2] || ''}`);
+    } else {
+      // App page: cookie set above, refresh server components
+      router.refresh();
+    }
   };
 
   if (variant === 'mobile') {

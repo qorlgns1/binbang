@@ -5,7 +5,9 @@ import { type FormEvent, Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
+import { LangToggle } from '@/components/landing/LangToggle';
 import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,7 @@ function LoginForm(): React.ReactElement {
   const { lang } = useParams<{ lang: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('auth');
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
   const [email, setEmail] = useState('');
@@ -39,28 +42,31 @@ function LoginForm(): React.ReactElement {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || '로그인에 실패했습니다');
+        setError(data.error || t('errors.loginFailed'));
         return;
       }
 
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      setError('서버 오류가 발생했습니다');
+      setError(t('errors.serverError'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
+    <main className='relative flex flex-1 items-center justify-center p-4 md:p-8'>
+      <div className='absolute right-4 top-4'>
+        <LangToggle currentLang={lang as 'ko' | 'en'} />
+      </div>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel ctaLabel='랜딩 페이지 보기' ctaHref={`/${lang}`} />
+        <AuthBrandPanel ctaLabel={t('login.ctaLanding')} ctaHref={`/${lang}`} />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
-            <CardTitle className='text-2xl'>로그인</CardTitle>
-            <CardDescription>빈방 소식을 받기 위한 계정으로 접속하세요</CardDescription>
+            <CardTitle className='text-2xl'>{t('login.title')}</CardTitle>
+            <CardDescription>{t('login.description')}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
             {error && (
@@ -71,7 +77,7 @@ function LoginForm(): React.ReactElement {
 
             <form onSubmit={handleCredentialsLogin} className='space-y-3'>
               <div className='space-y-1.5'>
-                <Label htmlFor='email'>이메일</Label>
+                <Label htmlFor='email'>{t('login.email')}</Label>
                 <Input
                   id='email'
                   type='email'
@@ -84,7 +90,7 @@ function LoginForm(): React.ReactElement {
                 />
               </div>
               <div className='space-y-1.5'>
-                <Label htmlFor='password'>비밀번호</Label>
+                <Label htmlFor='password'>{t('login.password')}</Label>
                 <Input
                   id='password'
                   type='password'
@@ -100,23 +106,23 @@ function LoginForm(): React.ReactElement {
                 className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
                 disabled={loading}
               >
-                {loading ? '로그인 중...' : '로그인'}
+                {loading ? t('login.submitting') : t('login.submit')}
               </Button>
             </form>
 
             <p className='text-center text-sm text-muted-foreground'>
-              계정이 없으신가요?{' '}
+              {t('login.noAccount')}{' '}
               <Link
                 href={`/${lang}/signup`}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
-                회원가입
+                {t('login.signup')}
               </Link>
             </p>
 
             <div className='relative flex items-center gap-3'>
               <Separator className='flex-1' />
-              <span className='text-xs text-muted-foreground'>또는</span>
+              <span className='text-xs text-muted-foreground'>{t('login.or')}</span>
               <Separator className='flex-1' />
             </div>
 
@@ -125,10 +131,10 @@ function LoginForm(): React.ReactElement {
               className='w-full justify-center gap-3 bg-[#FEE500] text-[#191919] hover:bg-[#FDD800]'
             >
               <svg width='24' height='24' viewBox='0 0 24 24' fill='currentColor'>
-                <title>카카오</title>
+                <title>Kakao</title>
                 <path d='M12 3C6.477 3 2 6.463 2 10.742c0 2.782 1.86 5.22 4.656 6.585-.145.525-.936 3.385-1.008 3.623 0 0-.02.168.089.233.109.065.236.031.236.031.313-.043 3.624-2.363 4.193-2.766.588.082 1.2.125 1.834.125 5.523 0 10-3.463 10-7.742S17.523 3 12 3z' />
               </svg>
-              카카오로 로그인
+              {t('login.kakaoLogin')}
             </Button>
 
             <Button
@@ -137,7 +143,7 @@ function LoginForm(): React.ReactElement {
               className='w-full justify-center gap-3 border-border bg-background/70'
             >
               <svg width='24' height='24' viewBox='0 0 24 24'>
-                <title>구글</title>
+                <title>Google</title>
                 <path
                   fill='#4285F4'
                   d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'
@@ -155,19 +161,17 @@ function LoginForm(): React.ReactElement {
                   d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'
                 />
               </svg>
-              구글로 로그인
+              {t('login.googleLogin')}
             </Button>
 
-            <p className='pt-1 text-center text-xs text-muted-foreground'>
-              카카오 로그인 시 카카오톡 알림 기능을 사용할 수 있습니다
-            </p>
+            <p className='pt-1 text-center text-xs text-muted-foreground'>{t('login.kakaoNote')}</p>
 
             <div className='text-center pt-1'>
               <Link
                 href={`/${lang}/pricing`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
-                요금제 보기
+                {t('login.pricingLink')}
               </Link>
             </div>
           </CardContent>

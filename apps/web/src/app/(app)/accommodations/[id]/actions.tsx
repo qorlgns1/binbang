@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { useDeleteAccommodation } from '@/hooks/useDeleteAccommodation';
 import { useToggleActive } from '@/hooks/useToggleActive';
 
-export function DeleteButton({ id }: { id: string }) {
+export function DeleteButton({ id }: { id: string }): React.ReactElement {
+  const t = useTranslations('common');
   const router = useRouter();
   const deleteMutation = useDeleteAccommodation();
 
@@ -25,7 +27,7 @@ export function DeleteButton({ id }: { id: string }) {
 
   return (
     <Button variant='destructive' onClick={handleDelete} disabled={deleteMutation.isPending}>
-      {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+      {deleteMutation.isPending ? t('deleting') : t('delete')}
     </Button>
   );
 }

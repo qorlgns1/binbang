@@ -5,9 +5,11 @@ import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Home, LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
 
+import { LangToggle } from '@/components/landing/LangToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -21,9 +23,11 @@ interface AppHeaderProps {
   userName: string | null;
   userImage?: string | null;
   isAdmin?: boolean;
+  locale?: string;
 }
 
-export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactElement {
+export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.ReactElement {
+  const t = useTranslations('common');
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [isDark, setIsDark] = useState<boolean | null>(null);
@@ -54,7 +58,7 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactEle
             <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
               <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
             </span>
-            <span className='text-sm font-semibold tracking-wide text-foreground md:text-base'>빈방</span>
+            <span className='text-sm font-semibold tracking-wide text-foreground md:text-base'>{t('brand')}</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -101,9 +105,10 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactEle
             {isDark ? <Sun className='size-3.5' /> : <Moon className='size-3.5' />}
             {isDark ? 'Light' : 'Dark'}
           </button>
+          {locale && <LangToggle currentLang={locale as 'ko' | 'en'} />}
           <span className='text-sm text-muted-foreground'>{userName}</span>
           <Button variant='ghost' size='sm' onClick={() => signOut({ callbackUrl: '/login' })}>
-            로그아웃
+            {t('logout')}
           </Button>
         </div>
 
@@ -183,13 +188,14 @@ export function AppHeader({ userName, isAdmin }: AppHeaderProps): React.ReactEle
                   {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
                   {isDark ? '라이트 모드' : '다크 모드'}
                 </button>
+                {locale && <LangToggle currentLang={locale as 'ko' | 'en'} variant='mobile' />}
                 <Button
                   variant='ghost'
                   className='w-full justify-start text-destructive hover:text-destructive'
                   onClick={() => signOut({ callbackUrl: '/login' })}
                 >
                   <LogOut className='size-4 mr-2' />
-                  로그아웃
+                  {t('logout')}
                 </Button>
               </div>
             </SheetContent>

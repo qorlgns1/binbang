@@ -4,7 +4,9 @@ import { type FormEvent, useState } from 'react';
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
+import { LangToggle } from '@/components/landing/LangToggle';
 import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,7 @@ import { Label } from '@/components/ui/label';
 export default function SignupPage(): React.ReactElement {
   const { lang } = useParams<{ lang: string }>();
   const router = useRouter();
+  const t = useTranslations('auth');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +31,7 @@ export default function SignupPage(): React.ReactElement {
     setError('');
 
     if (password !== passwordConfirm) {
-      setError('비밀번호가 일치하지 않습니다');
+      setError(t('errors.passwordMismatch'));
       return;
     }
 
@@ -44,27 +47,30 @@ export default function SignupPage(): React.ReactElement {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || '회원가입에 실패했습니다');
+        setError(data.error || t('errors.signupFailed'));
         return;
       }
 
       router.push(`/${lang}/login`);
     } catch {
-      setError('서버 오류가 발생했습니다');
+      setError(t('errors.serverError'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className='flex flex-1 items-center justify-center p-4 md:p-8'>
+    <main className='relative flex flex-1 items-center justify-center p-4 md:p-8'>
+      <div className='absolute right-4 top-4'>
+        <LangToggle currentLang={lang as 'ko' | 'en'} />
+      </div>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel ctaLabel='로그인으로 이동' ctaHref={`/${lang}/login`} />
+        <AuthBrandPanel ctaLabel={t('signup.ctaLogin')} ctaHref={`/${lang}/login`} />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
-            <CardTitle className='text-2xl'>회원가입</CardTitle>
-            <CardDescription>빈방 알림을 받을 계정을 만들어 주세요</CardDescription>
+            <CardTitle className='text-2xl'>{t('signup.title')}</CardTitle>
+            <CardDescription>{t('signup.description')}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
             {error && (
@@ -75,11 +81,11 @@ export default function SignupPage(): React.ReactElement {
 
             <form onSubmit={handleSignup} className='space-y-3'>
               <div className='space-y-1.5'>
-                <Label htmlFor='name'>이름</Label>
+                <Label htmlFor='name'>{t('signup.name')}</Label>
                 <Input
                   id='name'
                   type='text'
-                  placeholder='홍길동'
+                  placeholder={t('signup.namePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -88,7 +94,7 @@ export default function SignupPage(): React.ReactElement {
                 />
               </div>
               <div className='space-y-1.5'>
-                <Label htmlFor='email'>이메일</Label>
+                <Label htmlFor='email'>{t('signup.email')}</Label>
                 <Input
                   id='email'
                   type='email'
@@ -101,11 +107,11 @@ export default function SignupPage(): React.ReactElement {
                 />
               </div>
               <div className='space-y-1.5'>
-                <Label htmlFor='password'>비밀번호</Label>
+                <Label htmlFor='password'>{t('signup.password')}</Label>
                 <Input
                   id='password'
                   type='password'
-                  placeholder='8자 이상'
+                  placeholder={t('signup.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -115,7 +121,7 @@ export default function SignupPage(): React.ReactElement {
                 />
               </div>
               <div className='space-y-1.5'>
-                <Label htmlFor='password-confirm'>비밀번호 확인</Label>
+                <Label htmlFor='password-confirm'>{t('signup.confirmPassword')}</Label>
                 <Input
                   id='password-confirm'
                   type='password'
@@ -132,17 +138,17 @@ export default function SignupPage(): React.ReactElement {
                 className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
                 disabled={loading}
               >
-                {loading ? '가입 중...' : '회원가입'}
+                {loading ? t('signup.submitting') : t('signup.submit')}
               </Button>
             </form>
 
             <p className='text-center text-sm text-muted-foreground'>
-              이미 계정이 있으신가요?{' '}
+              {t('signup.hasAccount')}{' '}
               <Link
                 href={`/${lang}/login`}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
-                로그인
+                {t('signup.login')}
               </Link>
             </p>
 
@@ -151,21 +157,21 @@ export default function SignupPage(): React.ReactElement {
                 href={`/${lang}/pricing`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
-                요금제 보기
+                {t('signup.pricingLink')}
               </Link>
               <span className='text-muted-foreground'>·</span>
               <Link
                 href={`/${lang}/privacy`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
-                개인정보처리방침
+                {t('signup.privacyLink')}
               </Link>
               <span className='text-muted-foreground'>·</span>
               <Link
                 href={`/${lang}/terms`}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
-                서비스 약관
+                {t('signup.termsLink')}
               </Link>
             </div>
           </CardContent>

@@ -136,15 +136,13 @@ jobs:
               update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST" .env.production
               update_env_var DEPLOY_SHA "${{ github.sha }}" .env.production
               update_env_var DEPLOYED_AT "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" .env.production
-              if [ -n "${{ secrets.DATABASE_URL }}" ]; then
-                update_env_var DATABASE_URL "${{ secrets.DATABASE_URL }}" .env.production.local
-              fi
 
+              docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
               pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
               pnpm with-env:production:host pnpm --filter @workspace/db exec prisma generate
               pnpm with-env:production:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
 
-              docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
+              
               docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
               exit 0
             fi

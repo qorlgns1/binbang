@@ -6,7 +6,7 @@ vi.mock('node:fs/promises', () => ({
 
 import { readFile } from 'node:fs/promises';
 
-import { getNamespacesForRoute, getRequestMessages, loadMessages } from './request';
+import { getNamespacesForRoute, getRequestMessages, loadMessages } from './namespaces';
 
 beforeEach(() => {
   vi.mocked(readFile).mockReset();

@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { buildAccommodationUrl } from '@workspace/shared';
@@ -50,6 +51,8 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
 
   if (!accommodation) notFound();
 
+  const t = await getTranslations('common');
+
   return (
     <main className='mx-auto max-w-4xl px-4 py-8'>
       {/* 뒤로 가기 */}
@@ -81,7 +84,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
       {/* 액션 버튼 그룹 */}
       <div className='mb-8 flex flex-wrap gap-3'>
         <Button asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
-          <Link href={`/accommodations/${accommodation.id}/edit`}>수정</Link>
+          <Link href={`/accommodations/${accommodation.id}/edit`}>{t('edit')}</Link>
         </Button>
         <ToggleActiveButton id={accommodation.id} isActive={accommodation.isActive} />
         <DeleteButton id={accommodation.id} />

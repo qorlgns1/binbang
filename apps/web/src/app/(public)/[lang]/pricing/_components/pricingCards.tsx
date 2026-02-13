@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Check, Clock, Home, Zap } from 'lucide-react';
 
@@ -12,11 +13,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { type PlanInfo, usePlans } from '@/hooks/usePlans';
 import { useUserQuota } from '@/hooks/useUserQuota';
 
-function formatPrice(price: number): string {
-  if (price === 0) return '무료';
-  return `₩${price.toLocaleString()}`;
-}
-
 function PlanCard({
   plan,
   isCurrentPlan,
@@ -26,7 +22,18 @@ function PlanCard({
   isCurrentPlan: boolean;
   lang: string;
 }): React.ReactElement {
+  const t = useTranslations('pricing');
   const isPopular = plan.name === 'PRO';
+
+  const priceLabel = plan.price === 0 ? t('plan.free') : `₩${plan.price.toLocaleString()}`;
+  const intervalLabel = plan.price > 0 ? (plan.interval === 'month' ? t('plan.perMonth') : t('plan.perYear')) : null;
+
+  const planName =
+    plan.name === 'FREE' || plan.name === 'PRO' || plan.name === 'BIZ' ? t(`plan.plans.${plan.name}.name`) : plan.name;
+  const planDescription =
+    plan.name === 'FREE' || plan.name === 'PRO' || plan.name === 'BIZ'
+      ? t(`plan.plans.${plan.name}.description`)
+      : (plan.description ?? '');
 
   return (
     <Card
@@ -35,50 +42,48 @@ function PlanCard({
       } ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}
     >
       {isPopular && (
-        <Badge className='absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground'>인기</Badge>
+        <Badge className='absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground'>
+          {t('plan.popular')}
+        </Badge>
       )}
       {isCurrentPlan && (
-        <Badge className='absolute -top-3 right-4 bg-status-success text-status-success-foreground'>현재 플랜</Badge>
+        <Badge className='absolute -top-3 right-4 bg-status-success text-status-success-foreground'>
+          {t('plan.currentPlan')}
+        </Badge>
       )}
 
       <CardHeader className='text-center pb-2'>
-        <CardTitle className='text-xl'>{plan.name}</CardTitle>
-        <CardDescription>{plan.description}</CardDescription>
+        <CardTitle className='text-xl'>{planName}</CardTitle>
+        <CardDescription>{planDescription}</CardDescription>
       </CardHeader>
 
       <CardContent className='flex-1'>
         <div className='text-center mb-6'>
-          <span className='text-4xl font-bold'>{formatPrice(plan.price)}</span>
-          {plan.price > 0 && (
-            <span className='text-muted-foreground'>/{plan.interval === 'month' ? '월' : plan.interval}</span>
-          )}
+          <span className='text-4xl font-bold'>{priceLabel}</span>
+          {intervalLabel != null && <span className='text-muted-foreground'>/{intervalLabel}</span>}
         </div>
 
         <ul className='space-y-3'>
           <li className='flex items-center gap-2'>
             <Home className='size-4 text-primary' />
-            <span>
-              숙소 <strong>{plan.quotas.maxAccommodations}개</strong> 등록
-            </span>
+            <span>{t('plan.accommodations', { count: plan.quotas.maxAccommodations })}</span>
           </li>
           <li className='flex items-center gap-2'>
             <Clock className='size-4 text-primary' />
-            <span>
-              <strong>{plan.quotas.checkIntervalMin}분</strong>마다 가격 체크
-            </span>
+            <span>{t('plan.checkInterval', { minutes: plan.quotas.checkIntervalMin })}</span>
           </li>
           <li className='flex items-center gap-2'>
             <Zap className='size-4 text-primary' />
-            <span>실시간 카카오톡 알림</span>
+            <span>{t('plan.kakaoAlert')}</span>
           </li>
           <li className='flex items-center gap-2'>
             <Check className='size-4 text-primary' />
-            <span>가격 추이 그래프</span>
+            <span>{t('plan.priceChart')}</span>
           </li>
           {plan.name !== 'FREE' && (
             <li className='flex items-center gap-2'>
               <Check className='size-4 text-primary' />
-              <span>우선 지원</span>
+              <span>{t('plan.prioritySupport')}</span>
             </li>
           )}
         </ul>
@@ -87,15 +92,19 @@ function PlanCard({
       <CardFooter>
         {isCurrentPlan ? (
           <Button className='w-full' variant='outline' disabled>
-            현재 이용 중
+            {t('plan.currentPlanButton')}
           </Button>
         ) : plan.price === 0 ? (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
-            <Link href={`/${lang}/signup`}>무료로 시작하기</Link>
+            <Link href={`/${lang}/signup`}>{t('plan.getStartedFree')}</Link>
           </Button>
         ) : (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
-            <Link href={`mailto:rlgns0610@gmail.com?subject=${plan.name} 플랜 업그레이드 문의`}>업그레이드 문의</Link>
+            <Link
+              href={`mailto:rlgns0610@gmail.com?subject=${encodeURIComponent(t('plan.upgradeInquirySubject', { planName }))}`}
+            >
+              {t('plan.upgradeInquiry')}
+            </Link>
           </Button>
         )}
       </CardFooter>
@@ -131,6 +140,7 @@ function PricingCardsSkeleton(): React.ReactElement {
 
 export function PricingCards(): React.ReactElement {
   const { lang } = useParams<{ lang: string }>();
+  const t = useTranslations('pricing');
   const { data: plans, isLoading, isError } = usePlans();
   const { data: userQuota } = useUserQuota();
 
@@ -141,7 +151,7 @@ export function PricingCards(): React.ReactElement {
   }
 
   if (isError || !plans) {
-    return <div className='text-center text-muted-foreground py-12'>플랜 정보를 불러올 수 없습니다.</div>;
+    return <div className='text-center text-muted-foreground py-12'>{t('loadError')}</div>;
   }
 
   return (

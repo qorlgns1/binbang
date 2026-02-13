@@ -1,0 +1,36 @@
+{
+  "privacy": {
+    "backToHome": "← Back to home",
+    "title": "Binbang Privacy Policy",
+    "lastUpdated": "Last updated: February 11, 2026",
+    "intro": "Binbang values your privacy and complies with applicable laws including the Personal Information Protection Act. This policy explains how we collect and handle personal information when you use Binbang services.",
+    "section1Title": "1. Personal information we collect",
+    "section1Body": "When you sign up we collect your name, email address and password. We also store accommodation URLs and alert settings you register while using the service. This information is necessary to provide the vacancy alert service.",
+    "section2Title": "2. How we use personal information",
+    "section2Body": "Collected information is used only for account management, sending vacancy alerts, service improvement and customer support. We do not use your personal information for purposes other than providing the service or share it with third parties.",
+    "section3Title": "3. Retention and deletion",
+    "section3Body": "Personal information is deleted once the purpose of use is fulfilled. When laws require a retention period we keep it securely for that period and then delete it. Deleting your account will also delete the related personal information.",
+    "section4Title": "4. Your rights",
+    "section4Body": "You may access, correct or delete your personal information at any time. For inquiries or to exercise your rights regarding personal information, please contact us through the in-service contact feature and we will respond promptly.",
+    "termsLink": "Terms of Service",
+    "homeLink": "Back to home"
+  },
+  "terms": {
+    "backToHome": "← Back to home",
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: February 11, 2026",
+    "intro": "Thank you for using Binbang. These terms apply when you use our service.",
+    "section1Title": "1. Agreement to terms",
+    "section1Body": "By signing up or using the service you are deemed to have agreed to these terms. We may update the terms when necessary and will give notice before changes take effect.",
+    "section2Title": "2. Service description",
+    "section2Body": "Binbang monitors vacancy information on accommodation booking sites and sends you alerts when a vacancy matching your settings is found. The service is improved over time and features or operations may change with prior notice.",
+    "section3Title": "3. Use of the service",
+    "section3Body": "Please use the service in compliance with applicable laws and these terms. You may not use another person's account or take actions that disrupt normal operation of the service.",
+    "section4Title": "4. Limitations",
+    "section4Body": "Alerts may be delayed or missed due to changes or outages on booking sites. Please confirm availability on the booking site. We are not liable for any disadvantage arising from such circumstances.",
+    "section5Title": "5. Contact",
+    "section5Body": "For questions or support while using the service, please use the in-service contact feature or reach out to the operator.",
+    "privacyLink": "Privacy Policy",
+    "homeLink": "Back to home"
+  }
+}

@@ -45,19 +45,25 @@ function negotiateLocale(request: NextRequest): Locale {
 /** locale prefix 없이 접근 가능한 public 경로 (redirect 대상) */
 const PUBLIC_PATHS = ['/login', '/signup', '/pricing', '/terms', '/privacy'];
 
+/** next-intl이 getRequestConfig의 requestLocale으로 읽는 헤더 (서버로 전달) */
+const NEXT_INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
+
 /**
  * Locale 협상 + Rate Limiting middleware.
  *
- * - URL에 locale prefix가 있으면 통과
+ * - URL에 locale prefix가 있으면 통과 (next-intl용 locale 헤더 설정)
  * - root "/" 또는 public 경로 → locale 협상 후 redirect
  * - API 경로 → rate limit 적용
  */
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  // 1) URL에 locale prefix가 있으면 통과
-  if (parseLocaleFromPath(pathname)) {
-    return NextResponse.next();
+  // 1) URL에 locale prefix가 있으면 통과 (next-intl에 path 기반 locale 전달)
+  const pathLocale = parseLocaleFromPath(pathname);
+  if (pathLocale) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(NEXT_INTL_LOCALE_HEADER, pathLocale);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // 2) root "/" 또는 public 경로 → locale 협상 후 redirect
