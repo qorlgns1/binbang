@@ -63,6 +63,7 @@ export function middleware(request: NextRequest): NextResponse {
   if (pathLocale) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set(NEXT_INTL_LOCALE_HEADER, pathLocale);
+    requestHeaders.set('x-pathname', pathname);
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 

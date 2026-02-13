@@ -1,80 +1,59 @@
 /**
- * Namespace slicing — route group별 최소 메시지 로딩.
+ * Namespace slicing — pathname 기반 최소 namespace 결정.
  *
- * 메시지 파일: `apps/web/messages/{locale}/{namespace}.json`
- * 각 route group은 필요한 namespace만 선언적으로 매핑하여 번들 크기를 최소화한다.
- *
- * @example
- * const messages = await getRequestMessages('ko', '(public)');
- * // → { common: {...}, landing: {...} }
+ * PublicHeader가 common/landing/pricing을 무조건 사용하므로,
+ * public 라우트의 기본(base)은 이 3개이고, 페이지별로 auth/legal을 추가한다.
+ * app 라우트는 common만 로드한다.
  */
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
-import type { Locale, Messages } from '@workspace/shared/i18n';
+/** 모든 public 라우트의 기본 namespace (PublicHeader가 사용) */
+const PUBLIC_BASE = ['common', 'landing', 'pricing'] as const;
 
-/** Route group → namespace 매핑 (선언적 관리) */
-const ROUTE_NAMESPACES: Record<string, readonly string[]> = {
-  '(public)': ['common', 'landing'],
-  '(app)': ['common', 'app'],
-  admin: ['common', 'admin'],
-};
-
-const DEFAULT_NAMESPACES: readonly string[] = ['common'];
+/** 모든 namespace (fallback용) */
+const ALL_NAMESPACES = ['common', 'landing', 'legal', 'auth', 'pricing'] as const;
 
 /**
- * Route group에 필요한 namespace 목록을 반환한다.
+ * pathname에서 locale prefix 뒤의 segment를 추출한다.
  *
- * @param routeGroup - Next.js route group명 (예: "(public)", "(app)", "admin")
- * @returns 해당 route group에 필요한 namespace 배열
+ * @example "/ko/pricing" → "pricing"
+ * @example "/en" → ""
+ * @example "/dashboard" → null (locale prefix 없음)
  */
-export function getNamespacesForRoute(routeGroup: string): readonly string[] {
-  return ROUTE_NAMESPACES[routeGroup] ?? DEFAULT_NAMESPACES;
+function extractPublicSegment(pathname: string): string | null {
+  const match = pathname.match(/^\/(ko|en)(?:\/(.*))?$/);
+  if (!match) return null;
+  return match[2] ?? '';
 }
 
 /**
- * 지정된 namespace의 메시지 JSON을 로드한다.
+ * pathname으로부터 필요한 namespace 목록을 결정한다.
  *
- * @param locale - 로드할 locale
- * @param ns - namespace명 (파일명)
- * @returns 메시지 객체
+ * @param pathname - 요청 경로 (예: "/ko/pricing", "/dashboard")
+ * @returns 로드해야 할 namespace 배열
  */
-async function loadNamespace(locale: Locale, ns: string): Promise<Record<string, unknown>> {
-  const filePath = join(process.cwd(), 'messages', locale, `${ns}.json`);
-  const raw = await readFile(filePath, 'utf-8');
-  return JSON.parse(raw) as Record<string, unknown>;
+export function getNamespacesForPathname(pathname: string): readonly string[] {
+  const segment = extractPublicSegment(pathname);
+
+  // locale prefix가 없는 경로 → app 라우트
+  if (segment === null) return ['common'];
+
+  // public 라우트: 페이지별 추가 namespace
+  switch (segment) {
+    case '':
+    case 'pricing':
+      return PUBLIC_BASE;
+    case 'login':
+    case 'signup':
+      return [...PUBLIC_BASE, 'auth'];
+    case 'terms':
+    case 'privacy':
+      return [...PUBLIC_BASE, 'legal'];
+    default:
+      return PUBLIC_BASE;
+  }
 }
 
-/**
- * 여러 namespace의 메시지를 병렬 로드하여 하나의 Messages 객체로 합친다.
- *
- * @param locale - 로드할 locale
- * @param namespaces - 로드할 namespace 목록
- * @returns namespace를 키로 하는 메시지 객체
- */
-export async function loadMessages(locale: Locale, namespaces: readonly string[]): Promise<Messages> {
-  const entries = await Promise.all(
-    namespaces.map(async (ns) => {
-      const messages = await loadNamespace(locale, ns);
-      return [ns, messages] as const;
-    }),
-  );
-  return Object.fromEntries(entries);
-}
-
-/**
- * Route group 기반으로 필요한 namespace만 로드한다.
- *
- * @param locale - 로드할 locale
- * @param routeGroup - Next.js route group명
- * @returns namespace를 키로 하는 메시지 객체 (필요한 namespace만 포함)
- *
- * @example
- * // (public) 그룹: common + landing만 로드
- * const messages = await getRequestMessages('ko', '(public)');
- * // { common: { brand: "Binbang", ... }, landing: { hero: {...}, ... } }
- */
-export async function getRequestMessages(locale: Locale, routeGroup: string): Promise<Messages> {
-  const namespaces = getNamespacesForRoute(routeGroup);
-  return loadMessages(locale, namespaces);
+/** pathname을 결정할 수 없을 때 사용하는 전체 namespace 목록 */
+export function getAllNamespaces(): readonly string[] {
+  return ALL_NAMESPACES;
 }
