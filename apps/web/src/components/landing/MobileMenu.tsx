@@ -2,11 +2,13 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { LandingCopy, Lang } from '@/lib/i18n/landing';
+import type { Lang } from '@/lib/i18n/landing';
 
 const Sheet = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.Sheet })), { ssr: false });
 const SheetContent = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.SheetContent })), {
@@ -17,40 +19,69 @@ const SheetTrigger = dynamic(() => import('@/components/ui/sheet').then((mod) =>
 });
 
 interface MobileMenuProps {
-  copy: LandingCopy;
   lang: Lang;
 }
 
+const navItemClass =
+  'flex min-h-11 w-full items-center rounded-lg px-4 py-3 text-base font-medium text-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground active:bg-accent/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
 /**
- * Render a mobile navigation sheet with links and a login button using localized labels.
- *
- * @param copy - Localized copy for navigation labels; should provide `nav.features`, `nav.status`, `nav.pricing`, and `nav.login`
- * @returns A React element containing a Sheet-based mobile menu with navigation links and a login button
+ * Mobile navigation sheet. 터치 타겟 44px+, 링크 클릭 시 시트 자동 닫힘, 접근성·시각적 계층 반영.
  */
-export function MobileMenu({ copy, lang }: MobileMenuProps): React.ReactElement {
+export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
+  const t = useTranslations('landing');
+  const [open, setOpen] = useState(false);
+
+  const closeSheet = () => setOpen(false);
+
+  const scrollToAndClose = (id: string) => {
+    closeSheet();
+    // 시트가 닫힌 뒤 포커스가 트리거(햄버거)로 복원되며 상단으로 스크롤되므로, 스크롤을 지연시켜 그 다음에 실행.
+    const scrollDelayMs = 350;
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    }, scrollDelayMs);
+  };
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant='ghost' size='icon' className='text-foreground hover:bg-accent'>
-          <Menu className='size-5' />
+        <Button
+          variant='ghost'
+          size='icon'
+          className='min-h-9 min-w-9 text-foreground hover:bg-accent'
+          aria-label={lang === 'ko' ? '메뉴 열기' : 'Open menu'}
+        >
+          <Menu className='size-5' aria-hidden />
         </Button>
       </SheetTrigger>
-      <SheetContent className='border-border bg-background text-foreground'>
-        <div className='mt-10 flex flex-col gap-4'>
-          <Link href='#features' className='text-base text-foreground'>
-            {copy.nav.features}
-          </Link>
-          <Link href='#status' className='text-base text-foreground'>
-            {copy.nav.status}
-          </Link>
-          <Link href={`/${lang}/pricing`} className='text-base text-foreground'>
-            {copy.nav.pricing}
-          </Link>
-          <Link href={`/${lang}/privacy`} className='text-base text-foreground'>
-            {copy.footer.privacy}
-          </Link>
-          <Button asChild className='mt-2 bg-primary text-primary-foreground hover:bg-primary/90'>
-            <Link href={`/${lang}/login`}>{copy.nav.login}</Link>
+      <SheetContent
+        side='right'
+        className='flex w-[min(100vw-2rem,20rem)] max-w-[20rem] flex-col border-l border-border/60 bg-background px-0 shadow-xl'
+      >
+        <div className='flex flex-col gap-1 px-4 pt-14 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]'>
+          <p className='mb-2 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground' aria-hidden>
+            {lang === 'ko' ? '메뉴' : 'Menu'}
+          </p>
+          <nav className='flex flex-col gap-0.5' aria-label='Mobile navigation'>
+            <button type='button' className={navItemClass} onClick={() => scrollToAndClose('features')}>
+              {t('nav.features')}
+            </button>
+            <button type='button' className={navItemClass} onClick={() => scrollToAndClose('status')}>
+              {t('nav.status')}
+            </button>
+            <Link href={`/${lang}/pricing`} className={navItemClass} onClick={closeSheet}>
+              {t('nav.pricing')}
+            </Link>
+            <Link href={`/${lang}/privacy`} className={navItemClass} onClick={closeSheet}>
+              {t('footer.privacy')}
+            </Link>
+          </nav>
+          <hr className='my-4 border-border/60' />
+          <Button asChild className='h-11 w-full rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/90'>
+            <Link href={`/${lang}/login`} onClick={closeSheet}>
+              {t('nav.login')}
+            </Link>
           </Button>
         </div>
       </SheetContent>

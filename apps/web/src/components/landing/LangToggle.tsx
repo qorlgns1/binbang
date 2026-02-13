@@ -55,7 +55,8 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
       <button
         type='button'
         onClick={handleToggle}
-        className={`rounded-md px-2 py-1 text-xs font-medium text-foreground ${className}`}
+        aria-label={currentLang === 'ko' ? 'Switch to English' : '한국어로 전환'}
+        className={`min-h-9 min-w-9 rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
       >
         {currentLang === 'ko' ? 'EN' : 'KR'}
       </button>
@@ -66,10 +67,11 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
     <button
       type='button'
       onClick={handleToggle}
-      className={`flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary ${className}`}
+      aria-label={currentLang === 'ko' ? 'Switch to English' : '한국어로 전환'}
+      className={`flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-2 text-xs font-medium text-foreground outline-none transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
     >
-      <Globe className='size-3.5' />
-      {currentLang === 'ko' ? 'EN' : 'KR'}
+      <Globe className='size-4 shrink-0 text-muted-foreground' aria-hidden />
+      <span>{currentLang === 'ko' ? 'EN' : 'KR'}</span>
     </button>
   );
 }

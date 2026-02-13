@@ -54,13 +54,16 @@ export function ThemeToggle({ lang, className = '', variant = 'desktop' }: Theme
     trackThemeToggled(lang, newIsDark ? 'dark' : 'light');
   };
 
+  const baseFocusClass =
+    'outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
   if (variant === 'mobile') {
     return (
       <button
         type='button'
         onClick={handleToggle}
         aria-label={lang === 'ko' ? '다크 모드 전환' : 'Toggle dark mode'}
-        className={`rounded-md px-2 py-1 text-xs font-medium text-foreground ${className}`}
+        className={`min-h-9 min-w-9 rounded-md px-2 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${baseFocusClass} ${className}`}
       >
         {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
       </button>
@@ -72,10 +75,10 @@ export function ThemeToggle({ lang, className = '', variant = 'desktop' }: Theme
       type='button'
       onClick={handleToggle}
       aria-label={lang === 'ko' ? '다크 모드 전환' : 'Toggle dark mode'}
-      className={`flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:border-primary/50 hover:text-primary ${className}`}
+      className={`flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary ${baseFocusClass} ${className}`}
     >
-      {isDark ? <Sun className='size-3.5' /> : <Moon className='size-3.5' />}
-      {isDark ? 'Light' : 'Dark'}
+      {isDark ? <Sun className='size-3.5 shrink-0' /> : <Moon className='size-3.5 shrink-0' />}
+      <span>{isDark ? 'Light' : 'Dark'}</span>
     </button>
   );
 }

@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { LangToggle } from '@/components/landing/LangToggle';
 import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -57,9 +56,6 @@ function LoginForm(): React.ReactElement {
 
   return (
     <main className='relative flex flex-1 items-center justify-center p-4 md:p-8'>
-      <div className='absolute right-4 top-4'>
-        <LangToggle currentLang={lang as 'ko' | 'en'} />
-      </div>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
         <AuthBrandPanel ctaLabel={t('login.ctaLanding')} ctaHref={`/${lang}`} />
 

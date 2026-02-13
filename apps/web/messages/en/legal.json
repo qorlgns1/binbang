@@ -1,6 +1,5 @@
 {
   "privacy": {
-    "backToHome": "← Back to home",
     "title": "Binbang Privacy Policy",
     "lastUpdated": "Last updated: February 11, 2026",
     "intro": "Binbang values your privacy and complies with applicable laws including the Personal Information Protection Act. This policy explains how we collect and handle personal information when you use Binbang services.",
@@ -16,7 +15,6 @@
     "homeLink": "Back to home"
   },
   "terms": {
-    "backToHome": "← Back to home",
     "title": "Terms of Service",
     "lastUpdated": "Last updated: February 11, 2026",
     "intro": "Thank you for using Binbang. These terms apply when you use our service.",

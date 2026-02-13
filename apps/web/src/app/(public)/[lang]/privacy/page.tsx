@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { LangToggle } from '@/components/landing/LangToggle';
 import { isValidLang } from '@/lib/i18n/landing';
 
 /** 정적 생성으로 항상 200 HTML 응답 보장 (OAuth 검증용). */
@@ -35,15 +34,6 @@ export default async function PrivacyPage({ params }: PageProps): Promise<React.
 
   return (
     <main className='mx-auto max-w-3xl px-4 py-12'>
-      <div className='mb-8 flex items-center justify-between'>
-        <Link
-          href={`/${lang}`}
-          className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
-        >
-          {t('privacy.backToHome')}
-        </Link>
-        <LangToggle currentLang={lang} />
-      </div>
       <h1 className='text-3xl font-semibold text-foreground'>{t('privacy.title')}</h1>
       <p className='mt-2 text-sm text-muted-foreground'>{t('privacy.lastUpdated')}</p>
       <div className='prose prose-neutral mt-8 dark:prose-invert'>
