@@ -8,9 +8,9 @@
 
 ---
 
-## 현재 구현 상태 요약 (2026-02-13)
+## 현재 구현 상태 요약 (2026-02-14)
 
-- **지원 locale**: 계획 1차 지원은 `ko`, `en`, `ja`, `zh-CN`, `es-419`이나, **현재 구현은 `ko`, `en`만** 적용됨. `packages/shared` `SUPPORTED_LOCALES`, `apps/web` `Lang`/`supportedLangs`, `messages/` 디렉터리, middleware matcher, `LangToggle` 모두 ko/en 기준.
+- **지원 locale**: 계획 1차 지원은 `ko`, `en`, `ja`, `zh-CN`, `es-419`이나, **현재 구현은 `ko`, `en`만** 적용됨. `packages/shared` `SUPPORTED_LOCALES`가 단일 소스이며, `apps/web` 전체가 `@workspace/shared/i18n`의 `Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`을 사용. 레거시 `Lang`/`supportedLangs`/`isValidLang`(`apps/web/src/lib/i18n/config.ts`)은 제거됨.
 - **Public 라우팅**: `(public)/[lang]/**` 구조 정렬 완료(WU-14). middleware에서 `/`, `/login`, `/signup`, `/pricing`, `/terms`, `/privacy` 접근 시 locale 협상 후 `/{locale}/...` 로 redirect.
 - **Public 헤더(단일·한 줄)**: `(public)/[lang]/layout.tsx`에서 **PublicHeader** 한 개만 주입. layout에서 `lang` props 전달, pathname으로 variant 자동 판단.
   - **landing** (`/[lang]`): 브랜드 | 네비(기능/상태/요금제/개인정보) | 테마 | 언어 | 로그인. 모바일은 브랜드 | 테마 | 언어 | 햄버거(시트 내 네비·로그인).
@@ -20,8 +20,8 @@
   - **default**: 브랜드 | 언어.
   - 랜딩은 별도 네비 바 없음(Landing Header 제거). pricing/terms/privacy는 페이지 내 헤더·뒤로가기 제거, 모두 PublicHeader 한 줄로 통합.
 - **MobileMenu**: `useTranslations('landing')` 기반, `copy` prop 제거. 터치 타겟 44px+, 시트 내 계층·구분선·접근성. 링크/버튼 클릭 시 시트 닫기; #features/#status는 `scrollToAndClose`(시트 닫힌 뒤 350ms 지연 scrollIntoView로 포커스 복원에 의한 상단 스크롤 방지).
-- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. **랜딩 포함 모든 Public 페이지**는 next-intl(request.ts에서 messages 일괄 로드) 사용. `getLandingCopy` 제거됨.
-- **request.ts**: locale은 `(public)/[lang]`에서는 URL param, `(app)`에서는 cookie fallback. 메시지는 **전체 namespace** 일괄 로드. route별 namespace slicing은 아직 request.ts에 미적용.
+- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. **랜딩 포함 모든 Public 페이지**는 next-intl 사용. `getLandingCopy` 제거됨.
+- **request.ts + namespace slicing(적용 완료)**: locale은 `(public)/[lang]`에서는 URL param, `(app)`에서는 cookie fallback. middleware가 `x-pathname` 헤더를 전달하고, `request.ts`가 `namespaces.ts`의 `getNamespacesForPathname()`을 사용해 **라우트별 필요 namespace만** 동적 로드. Landing/Pricing은 3개(common+landing+pricing), Auth는 4개(+auth), Legal은 4개(+legal), App 라우트는 1개(common). pathname 미확인 시 전체 5개 fallback.
 - **Public SEO(WU-16 완료)**: `sitemap.ts`는 locale 접두어(`/ko`, `/en`, `/ko/pricing` 등) URL + 항목별 `alternates.languages`(hreflang) 출력. Public 각 페이지(landing, pricing, login, signup, terms, privacy)는 `generateMetadata`/layout에서 `alternates.canonical`(절대 URL) 및 `alternates.languages`(ko/en) 설정. 헬퍼: `apps/web/src/lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates).
 
 ---
@@ -39,7 +39,7 @@
 
 | # | 항목 | 설명 | 참고 |
 |---|------|------|------|
-| 3 | **request.ts namespace slicing** | route/그룹별로 필요한 namespace만 로드하도록 `namespaces.ts` 매핑을 request.ts에 반영. 현재는 전체 namespace 일괄 로드. | 5.8, 현재 구현 상태 요약 |
+| 3 | **(완료) request.ts namespace slicing** | middleware `x-pathname` 헤더 + `namespaces.ts` `getNamespacesForPathname()` 기반으로 라우트별 최소 namespace 로드 적용 완료. | 5.8, 현재 구현 상태 요약 |
 | 4 | **사용자 preferredLocale 저장·반영** | 사용자 프로필에 `preferredLocale` 저장, Web 2차 확정·Worker/이메일 발송 시 반영. (DB 스키마·마이그레이션 별도.) | ADR-2, ADR-4, 7.5 |
 | 5 | **Missing-key 관측(Prod)** | missing-key 발생 시 메트릭/로그 수집, SLO·알람 설계. | 12.4, 12.7 |
 
@@ -47,7 +47,7 @@
 
 | # | 항목 | 설명 | 참고 |
 |---|------|------|------|
-| 6 | **지원 locale 확장** | 현재 ko/en만. 계획 1차: ja, zh-CN, es-419 추가 시 messages·middleware·Lang 타입·LangToggle 확장. | 2.1, ADR-9 |
+| 6 | **지원 locale 확장** | 현재 ko/en만. 계획 1차: ja, zh-CN, es-419 추가 시 `@workspace/shared/i18n`의 `Locale`/`SUPPORTED_LOCALES` 확장 + messages·middleware·LangToggle 대응. | 2.1, ADR-9 |
 | 7 | **App(비공개) 페이지 i18n** | Dashboard, Accommodations, Subscription Settings 등에 텍스트 i18n 적용 및 언어 변경 동작. (SEO 비대상.) | 17.3 매트릭스 |
 | 8 | **포맷 토큰 통일** | Admin/Email/Worker 등에서 날짜·숫자·통화 포맷을 `@workspace/shared` 포맷 토큰으로 통일. | 9.4 |
 
@@ -494,7 +494,7 @@ export async function resolveLocaleOnServer(input: {
 - 번역 리소스는 `apps/web/messages/{locale}/{namespace}.json`에서 로딩
 - “필요한 namespace만” 조립해서 `next-intl`에 제공 (namespace slicing)
 
-**현재 구현 참고(2026-02-13)**: `request.ts`는 locale만 route에 따라 분기(URL param vs cookie fallback)하고, 메시지는 **전체 namespace**(common, landing, legal, auth, pricing)를 일괄 로드. `namespaces.ts`의 route별 매핑은 아직 request.ts에 반영되지 않음.
+**구현 완료(2026-02-14)**: `middleware.ts`가 `x-pathname` 헤더를 전달하고, `request.ts`가 이를 읽어 `getNamespacesForPathname()`으로 필요한 namespace만 동적 `import()`한다. 전체 로드 fallback은 pathname 헤더가 없을 때(`getAllNamespaces()`)만 사용.
 
 ```ts
 // apps/web/src/i18n/request.ts
@@ -1521,6 +1521,8 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-13`: PublicHeader 단일·한 줄 통합 — `lang`/`variant` props, pathname 기반 variant(landing/pricing/auth/legal/default). 랜딩: Landing Header 제거, LandingPage는 layout PublicHeader만 사용. pricing/terms/privacy: 페이지 내 헤더·뒤로가기 제거, PublicHeader 한 줄로 통합(pricing은 useSession으로 대시보드/로그인·가입 분기). MobileMenu: useTranslations 기반(copy 제거), 터치 44px·접근성·시트 닫힌 뒤 scrollIntoView 350ms 지연(포커스 복원으로 인한 상단 스크롤 방지).
 - `2026-02-13`: `WU-16` 완료 — Public SEO: `lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates), sitemap locale prefix + alternates.languages, Public 각 페이지(landing/pricing/login/signup/terms/privacy) canonical + alternates.languages(ko/en). login/signup은 layout generateMetadata. 17.3 SEO 열 [x] 처리.
 - `2026-02-13`: 랜딩 텍스트 i18n 전환 — `getLandingCopy` 제거, `lib/i18n/landing.ts`는 config 재export만. LandingPage 및 Hero/Features/Footer/CTAButtons/AppPurpose/StatusDashboard/StatusDashboardSlot은 `useTranslations('landing')`·`useMessages()`·`useParams()` 사용. 17.3 Landing 행 텍스트 i18n [x].
+- `2026-02-14`: Locale 타입 통일 — `apps/web/src/lib/i18n/config.ts`(`Lang`/`supportedLangs`/`isValidLang`) 제거, 15개 소비 파일을 `@workspace/shared/i18n`(`Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`)로 이전. ci:check 통과(291 tests).
+- `2026-02-14`: Namespace slicing 적용 — `namespaces.ts` 순수 함수 재작성(fs 의존 제거), middleware `x-pathname` 헤더 전달, `request.ts`에서 pathname 기반 최소 namespace만 동적 `import()`. 테스트 13개 추가. ci:check 통과(295 tests).
 - `YYYY-MM-DD`: `-`
 
 ---
