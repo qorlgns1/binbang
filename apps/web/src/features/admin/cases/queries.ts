@@ -40,6 +40,15 @@ export interface ConditionMetEvent {
   createdAt: string;
 }
 
+export interface CaseMessageItem {
+  id: string;
+  templateKey: string;
+  channel: string;
+  content: string;
+  sentById: string;
+  createdAt: string;
+}
+
 export interface CaseDetail extends CaseItem {
   submission: {
     id: string;
@@ -63,6 +72,7 @@ export interface CaseDetail extends CaseItem {
     createdAt: string;
   }[];
   conditionMetEvents: ConditionMetEvent[];
+  messages: CaseMessageItem[];
 }
 
 export interface CasesResponse {

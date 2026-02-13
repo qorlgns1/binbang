@@ -28,7 +28,7 @@ const navLinkClass =
 function resolveVariant(pathname: string | null, lang: Locale): PublicHeaderVariant {
   if (!pathname) return 'default';
   if (pathname === `/${lang}`) return 'landing';
-  if (pathname === `/${lang}/pricing`) return 'pricing';
+  if (pathname === `/${lang}/pricing` || pathname === `/${lang}/faq` || pathname === `/${lang}/about`) return 'pricing';
   if (pathname === `/${lang}/login` || pathname === `/${lang}/signup`) return 'auth';
   if (pathname === `/${lang}/terms` || pathname === `/${lang}/privacy`) return 'legal';
   return 'default';
@@ -89,14 +89,14 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
         {variant === 'landing' && (
           <>
             <nav className='hidden gap-1 md:flex mr-auto' aria-label='Main'>
-              <a href='#features' className={navLinkClass}>
-                {tLanding('nav.features')}
-              </a>
-              <a href='#status' className={navLinkClass}>
-                {tLanding('nav.status')}
-              </a>
+              <Link href={`/${lang}/about`} className={navLinkClass}>
+                {tLanding('nav.about')}
+              </Link>
               <Link href={`/${lang}/pricing`} className={navLinkClass}>
                 {tLanding('nav.pricing')}
+              </Link>
+              <Link href={`/${lang}/faq`} className={navLinkClass}>
+                {tLanding('nav.faq')}
               </Link>
             </nav>
             <div className='flex items-center gap-2'>
