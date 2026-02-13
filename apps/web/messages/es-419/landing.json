@@ -6,9 +6,9 @@
   },
   "nav": {
     "brand": "Binbang",
-    "features": "Funciones",
-    "status": "Estado del sistema",
     "pricing": "Precios",
+    "faq": "FAQ",
+    "about": "Acerca de",
     "login": "Iniciar sesión"
   },
   "hero": {
@@ -17,7 +17,6 @@
     "subheadline": "Binbang mantiene el faro encendido toda la noche.",
     "subheadlineMobile": ["Binbang mantiene el faro", "encendido toda la noche."],
     "description": "¿Cansado de actualizar sin parar? Binbang vigila mientras duermes y detecta la vacante de tu alojamiento soñado antes que nadie.",
-    "aboutApp": "Binbang es un servicio de alertas de disponibilidad; al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas.",
     "cta": "Comenzar alertas de disponibilidad",
     "secondaryCta": "Ver funciones",
     "statusLabel": "Estado del sistema en vivo"

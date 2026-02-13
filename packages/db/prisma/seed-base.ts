@@ -4,6 +4,7 @@
  * 운영/개발 서버 공통으로 필요한 베이스 데이터만 포함합니다:
  * - RBAC: Roles, Permissions, Plans, PlanQuotas
  * - System Settings
+ * - Form Question Mappings
  * - Platform Selectors & Patterns
  *
  * 실행: pnpm db:seed:deploy (root) 또는 pnpm --filter @workspace/db db:seed:base
@@ -15,6 +16,7 @@ import { PrismaClient } from '@/generated/prisma/client';
 import type { QuotaKey } from '@/generated/prisma/enums';
 
 import {
+  SEED_FORM_QUESTION_MAPPINGS,
   SEED_PERMISSIONS,
   SEED_PLANS,
   SEED_PLAN_QUOTAS,
@@ -110,6 +112,33 @@ export async function seedBase() {
     });
   }
   console.log(`   ✓ SystemSettings: ${SYSTEM_SETTINGS.length}`);
+
+  // ── Form Question Mappings ──
+  for (const mapping of SEED_FORM_QUESTION_MAPPINGS) {
+    await prisma.formQuestionMapping.upsert({
+      where: {
+        formKey_field: {
+          formKey: mapping.formKey,
+          field: mapping.field,
+        },
+      },
+      update: {
+        questionItemId: mapping.questionItemId,
+        questionTitle: mapping.questionTitle,
+        expectedAnswer: mapping.expectedAnswer,
+        isActive: mapping.isActive,
+      },
+      create: {
+        formKey: mapping.formKey,
+        field: mapping.field,
+        questionItemId: mapping.questionItemId,
+        questionTitle: mapping.questionTitle,
+        expectedAnswer: mapping.expectedAnswer,
+        isActive: mapping.isActive,
+      },
+    });
+  }
+  console.log(`   ✓ FormQuestionMappings: ${SEED_FORM_QUESTION_MAPPINGS.length}`);
 
   // ── Platform Selectors ──
   let selectorCreated = 0;

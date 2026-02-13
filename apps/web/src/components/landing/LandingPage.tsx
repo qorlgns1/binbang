@@ -2,7 +2,6 @@ import dynamic from 'next/dynamic';
 
 import type { Locale } from '@workspace/shared/i18n';
 
-import { AppPurpose } from './AppPurpose';
 import { Hero } from './Hero';
 
 const LandingTracker = dynamic(() => import('./LandingTracker').then((mod) => ({ default: mod.LandingTracker })));
@@ -23,7 +22,6 @@ export function LandingPage({ lang }: LandingPageProps): React.ReactElement {
       <LandingTracker lang={lang} />
       <main>
         <Hero />
-        <AppPurpose />
         <Features />
         <Footer />
       </main>

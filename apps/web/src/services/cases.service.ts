@@ -76,6 +76,15 @@ export interface BillingEventOutput {
   createdAt: string;
 }
 
+export interface CaseMessageOutput {
+  id: string;
+  templateKey: string;
+  channel: string;
+  content: string;
+  sentById: string;
+  createdAt: string;
+}
+
 export interface CaseDetailOutput extends CaseOutput {
   submission: {
     id: string;
@@ -94,6 +103,7 @@ export interface CaseDetailOutput extends CaseOutput {
   conditionMetEvents: ConditionMetEventOutput[];
   notifications: CaseNotificationOutput[];
   billingEvent: BillingEventOutput | null;
+  messages: CaseMessageOutput[];
 }
 
 export interface CaseStatusLogOutput {
@@ -224,6 +234,17 @@ const CASE_DETAIL_SELECT = {
       createdAt: true,
     },
   },
+  messages: {
+    select: {
+      id: true,
+      templateKey: true,
+      channel: true,
+      content: true,
+      sentById: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
 } as const;
 
 // ============================================================================
@@ -314,6 +335,14 @@ interface CaseDetailRow extends CaseRow {
     description: string | null;
     createdAt: Date;
   } | null;
+  messages: {
+    id: string;
+    templateKey: string;
+    channel: string;
+    content: string;
+    sentById: string;
+    createdAt: Date;
+  }[];
 }
 
 function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
@@ -374,6 +403,16 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
           createdAt: row.billingEvent.createdAt.toISOString(),
         }
       : null,
+    messages: row.messages.map(
+      (m): CaseMessageOutput => ({
+        id: m.id,
+        templateKey: m.templateKey,
+        channel: m.channel,
+        content: m.content,
+        sentById: m.sentById,
+        createdAt: m.createdAt.toISOString(),
+      }),
+    ),
   };
 }
 

@@ -17,6 +17,7 @@ import {
   SEED_ACCOUNTS,
   SEED_BILLING_EVENTS,
   SEED_CASES,
+  SEED_CASE_MESSAGES,
   SEED_CASE_NOTIFICATIONS,
   SEED_CASE_STATUS_LOGS,
   SEED_CHECK_CYCLES,
@@ -486,6 +487,34 @@ async function main() {
     });
   }
   console.log(`   ✓ CaseNotifications: ${SEED_CASE_NOTIFICATIONS.length}`);
+
+  // ── Case Messages ──
+  for (const msg of SEED_CASE_MESSAGES) {
+    const sentById = userIdByKey[msg.sentByKey];
+    if (!sentById) {
+      throw new Error(`Seed user id missing for CaseMessage sentByKey="${msg.sentByKey}"`);
+    }
+    await prisma.caseMessage.upsert({
+      where: { id: msg.id },
+      update: {
+        caseId: msg.caseId,
+        templateKey: msg.templateKey,
+        channel: msg.channel,
+        content: msg.content,
+        sentById,
+      },
+      create: {
+        id: msg.id,
+        caseId: msg.caseId,
+        templateKey: msg.templateKey,
+        channel: msg.channel,
+        content: msg.content,
+        sentById,
+        createdAt: msg.createdAt,
+      },
+    });
+  }
+  console.log(`   ✓ CaseMessages: ${SEED_CASE_MESSAGES.length}`);
 
   // ── Worker Heartbeat ──
   await prisma.workerHeartbeat.upsert({
