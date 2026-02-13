@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Globe } from 'lucide-react';
 
@@ -36,6 +36,7 @@ const LOCALE_LABELS: Record<Locale, string> = {
 export function LangToggle({ currentLang, className = '', variant = 'desktop' }: LangToggleProps): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleChange = (newLang: string): void => {
     const locale = newLang as Locale;
@@ -48,7 +49,9 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
 
     const localeMatch = pathname.match(LOCALE_PATH_REGEX);
     if (localeMatch) {
-      router.push(`/${locale}${localeMatch[2] || ''}`);
+      const path = `/${locale}${localeMatch[2] || ''}`;
+      const query = searchParams.toString();
+      router.push(query ? `${path}?${query}` : path);
     } else {
       router.refresh();
     }
