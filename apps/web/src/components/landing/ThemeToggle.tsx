@@ -63,7 +63,7 @@ export function ThemeToggle({ lang, className = '', variant = 'desktop' }: Theme
         type='button'
         onClick={handleToggle}
         aria-label={lang === 'ko' ? '다크 모드 전환' : 'Toggle dark mode'}
-        className={`min-h-9 min-w-9 rounded-md px-2 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${baseFocusClass} ${className}`}
+        className={`h-9 min-w-9 rounded-md px-2 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${baseFocusClass} ${className}`}
       >
         {isDark ? <Sun className='size-4' /> : <Moon className='size-4' />}
       </button>
@@ -75,7 +75,7 @@ export function ThemeToggle({ lang, className = '', variant = 'desktop' }: Theme
       type='button'
       onClick={handleToggle}
       aria-label={lang === 'ko' ? '다크 모드 전환' : 'Toggle dark mode'}
-      className={`flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary ${baseFocusClass} ${className}`}
+      className={`flex h-9 items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary ${baseFocusClass} ${className}`}
     >
       {isDark ? <Sun className='size-3.5 shrink-0' /> : <Moon className='size-3.5 shrink-0' />}
       <span>{isDark ? 'Light' : 'Dark'}</span>
