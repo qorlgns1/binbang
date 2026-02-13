@@ -9,7 +9,19 @@
     ".env.production",
     ".env.production.local"
   ],
-  "globalPassThroughEnv": ["DATABASE_URL", "REDIS_URL"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "APP_ENV",
+    "WEB_PORT",
+    "NEXTAUTH_URL",
+    "NEXTAUTH_SECRET",
+    "GOOGLE_FORM_WEBHOOK_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "KAKAO_CLIENT_ID",
+    "KAKAO_CLIENT_SECRET"
+  ],
   "tasks": {
     "db:generate": {
       "cache": false,
