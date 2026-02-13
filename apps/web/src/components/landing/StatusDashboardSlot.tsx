@@ -2,8 +2,6 @@
 
 import dynamic from 'next/dynamic';
 
-import type { LandingCopy, Lang } from '@/lib/i18n/landing';
-
 const StatusDashboard = dynamic(() => import('./StatusDashboard').then((mod) => mod.StatusDashboard), {
   ssr: false,
   loading: () => (
@@ -20,18 +18,9 @@ const StatusDashboard = dynamic(() => import('./StatusDashboard').then((mod) => 
   ),
 });
 
-interface StatusDashboardSlotProps {
-  copy: LandingCopy;
-  lang: Lang;
-}
-
 /**
- * Render the StatusDashboard component with the provided localization props.
- *
- * @param copy - Localized copy content for the dashboard
- * @param lang - Language selector used to choose localization
- * @returns The StatusDashboard React element
+ * Renders the StatusDashboard (localization via next-intl inside StatusDashboard).
  */
-export function StatusDashboardSlot({ copy, lang }: StatusDashboardSlotProps): React.ReactElement {
-  return <StatusDashboard copy={copy} lang={lang} />;
+export function StatusDashboardSlot(): React.ReactElement {
+  return <StatusDashboard />;
 }

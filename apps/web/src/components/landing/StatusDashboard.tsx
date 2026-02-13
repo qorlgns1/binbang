@@ -3,23 +3,22 @@
 import { useEffect, useState } from 'react';
 
 import { Activity, Wifi } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useMessages, useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import type { LandingCopy, Lang } from '@/lib/i18n/landing';
-
-interface StatusDashboardProps {
-  copy: LandingCopy;
-  lang?: Lang;
-  isError?: boolean;
-  onRetry?: () => void;
-}
 
 interface LogEntry {
   id: number;
   message: string;
   location: string;
   timestamp: number;
+}
+
+interface StatusDashboardProps {
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
 export const MOCK_SYSTEM_STATUS = {
@@ -30,12 +29,8 @@ export const MOCK_SYSTEM_STATUS = {
 
 /**
  * Convert an absolute timestamp to a short, human-readable relative time string in the given language.
- *
- * @param timestamp - Time in milliseconds since the UNIX epoch to compare with the current time
- * @param lang - Language code; `"ko"` produces Korean output, any other value produces English output
- * @returns A short relative time string such as `방금`, `10초 전`, `3분 전`, `2시간 전` (Korean) or `just now`, `10s ago`, `3m ago`, `2h ago` (English)
  */
-function getRelativeTime(timestamp: number, lang: Lang): string {
+function getRelativeTime(timestamp: number, lang: string): string {
   const now = Date.now();
   const diff = Math.floor((now - timestamp) / 1000); // seconds
 
@@ -54,28 +49,25 @@ function getRelativeTime(timestamp: number, lang: Lang): string {
 
 /**
  * Render a localized live status dashboard with simulated system metrics and streaming logs.
- *
- * Displays system overview metrics and a scrolling, time-localized log feed whose relative timestamps update periodically.
- * When `isError` is true it renders an error card and an optional retry button.
- *
- * @param copy - UI copy and `mockLogs` used for initial and simulated log entries
- * @param lang - Language code for relative time localization (default: `'ko'`)
- * @param isError - If `true`, show the error state instead of the dashboard
- * @param onRetry - Optional callback invoked when the retry button is clicked in the error state
- * @returns A React element containing the status dashboard UI
  */
-export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusDashboardProps): React.ReactElement {
+export function StatusDashboard({ isError, onRetry }: StatusDashboardProps): React.ReactElement {
+  const t = useTranslations('landing');
+  const messages = useMessages();
+  const lang = (useParams().lang as string) ?? 'ko';
+  const mockLogs =
+    (messages.landing as { mockLogs?: Array<{ id: number; message: string; location: string }> })?.mockLogs ?? [];
+
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [newestLogId, setNewestLogId] = useState<number | null>(null);
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     const INITIAL_LOG_COUNT = 6;
-    const LOG_AGE_INTERVAL_MS = 15000; // 15초 간격
-    const NEW_LOG_INTERVAL_MS = 4000; // 4초마다 새 로그 추가
-    const TIME_UPDATE_INTERVAL_MS = 5000; // 5초마다 시간 업데이트
+    const LOG_AGE_INTERVAL_MS = 15000;
+    const NEW_LOG_INTERVAL_MS = 4000;
+    const TIME_UPDATE_INTERVAL_MS = 5000;
 
-    const logData = copy.mockLogs;
+    const logData = mockLogs;
     if (logData.length === 0) {
       setLogs([]);
       return;
@@ -110,26 +102,25 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
       clearInterval(timeInterval);
       clearInterval(logInterval);
     };
-  }, [copy.mockLogs]);
-  // Error state (FR-012, CHK-009)
+  }, [mockLogs]);
   if (isError) {
     return (
       <section id='status' className='mx-auto w-full max-w-5xl'>
         <div className='mb-4 flex items-center justify-between'>
           <h3 className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary md:text-sm'>
             <Activity className='size-4' />
-            {copy.trust.title}
+            {t('trust.title')}
           </h3>
         </div>
         <Card className='border-border bg-card p-8 text-center'>
-          <p className='text-base font-semibold text-foreground'>{copy.trust.errorMessage}</p>
+          <p className='text-base font-semibold text-foreground'>{t('trust.errorMessage')}</p>
           {onRetry && (
             <button
               type='button'
               onClick={onRetry}
               className='mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90'
             >
-              {copy.trust.retry}
+              {t('trust.retry')}
             </button>
           )}
         </Card>
@@ -142,27 +133,27 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
       <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
         <h3 className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary md:text-sm'>
           <Activity className='size-4 animate-pulse' />
-          {copy.trust.title}
+          {t('trust.title')}
         </h3>
         <Badge className='border border-primary/35 bg-primary/10 text-xs text-primary'>
           <span className='mr-2 size-2 rounded-full bg-chart-3 animate-pulse' />
-          {copy.trust.operational}
+          {t('trust.operational')}
         </Badge>
       </div>
 
       <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         <Card className='border-border bg-card/60 p-5 text-foreground sm:col-span-2 lg:col-span-1'>
-          <p className='text-xs uppercase tracking-wider text-muted-foreground'>{copy.trust.uptime}</p>
+          <p className='text-xs uppercase tracking-wider text-muted-foreground'>{t('trust.uptime')}</p>
           <p className='mt-1 text-2xl font-semibold'>{MOCK_SYSTEM_STATUS.uptime}</p>
 
-          <p className='mt-5 text-xs uppercase tracking-wider text-muted-foreground'>{copy.trust.activeMonitors}</p>
+          <p className='mt-5 text-xs uppercase tracking-wider text-muted-foreground'>{t('trust.activeMonitors')}</p>
           <p className='mt-1 text-2xl font-semibold text-primary'>
             {MOCK_SYSTEM_STATUS.activeMonitors.toLocaleString()}
           </p>
 
           <div className='mt-5 flex items-center gap-2 text-xs text-chart-3'>
             <Wifi className='size-3.5' />
-            {copy.trust.response}: {MOCK_SYSTEM_STATUS.avgResponseTime}
+            {t('trust.response')}: {MOCK_SYSTEM_STATUS.avgResponseTime}
           </div>
         </Card>
 
@@ -170,7 +161,7 @@ export function StatusDashboard({ copy, lang = 'ko', isError, onRetry }: StatusD
           <div className='absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/70 to-transparent' />
           {logs.length === 0 ? (
             <div className='flex h-44 items-center justify-center'>
-              <p className='text-sm text-muted-foreground'>{copy.trust.emptyLogs}</p>
+              <p className='text-sm text-muted-foreground'>{t('trust.emptyLogs')}</p>
             </div>
           ) : (
             <div

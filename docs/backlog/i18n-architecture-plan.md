@@ -20,7 +20,7 @@
   - **default**: 브랜드 | 언어.
   - 랜딩은 별도 네비 바 없음(Landing Header 제거). pricing/terms/privacy는 페이지 내 헤더·뒤로가기 제거, 모두 PublicHeader 한 줄로 통합.
 - **MobileMenu**: `useTranslations('landing')` 기반, `copy` prop 제거. 터치 타겟 44px+, 시트 내 계층·구분선·접근성. 링크/버튼 클릭 시 시트 닫기; #features/#status는 `scrollToAndClose`(시트 닫힌 뒤 350ms 지연 scrollIntoView로 포커스 복원에 의한 상단 스크롤 방지).
-- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. 랜딩 페이지는 `getLandingCopy(lang)`으로 `landing.json` 직접 로드, 나머지 Public 페이지는 next-intl 사용.
+- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. **랜딩 포함 모든 Public 페이지**는 next-intl(request.ts에서 messages 일괄 로드) 사용. `getLandingCopy` 제거됨.
 - **request.ts**: locale은 `(public)/[lang]`에서는 URL param, `(app)`에서는 cookie fallback. 메시지는 **전체 namespace** 일괄 로드. route별 namespace slicing은 아직 request.ts에 미적용.
 - **Public SEO(WU-16 완료)**: `sitemap.ts`는 locale 접두어(`/ko`, `/en`, `/ko/pricing` 등) URL + 항목별 `alternates.languages`(hreflang) 출력. Public 각 페이지(landing, pricing, login, signup, terms, privacy)는 `generateMetadata`/layout에서 `alternates.canonical`(절대 URL) 및 `alternates.languages`(ko/en) 설정. 헬퍼: `apps/web/src/lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates).
 
@@ -32,7 +32,7 @@
 
 | # | 항목 | 설명 | 참고 |
 |---|------|------|------|
-| 1 | **랜딩 텍스트 i18n 전환** | 랜딩 페이지가 현재 `getLandingCopy(landing.json)` 직접 로드. next-intl `getTranslations('landing')` 기반으로 통일하면 17.3 매트릭스 "텍스트 i18n 적용" [부분] → [x] 완료. | 17.3 Landing 행 |
+| 1 | **(완료) 랜딩 텍스트 i18n** | 랜딩을 next-intl `useTranslations('landing')` 기반으로 통일 완료. | 17.3 Landing 행 |
 | 2 | **(완료) WU-16 Public SEO** | hreflang/canonical/sitemap 적용 완료. | 17.2, 17.3 |
 
 ### 우선순위 중간 (아키텍처·품질)
@@ -1489,7 +1489,7 @@ packages/worker-shared/src/runtime/i18n/
 
 | 페이지 | 현재 라우트 파일 | 목표 라우트 파일 | 라우팅 구조 정렬([lang]) | Public 공통 헤더(언어 변경) | 텍스트 i18n 적용 | 언어 변경 동작 | SEO 최적화(마지막) | 비고 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [x] | [x] | [부분] | [x] | [x] | PublicHeader variant=landing 한 줄, 모바일 햄버거 |
+| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=landing 한 줄, next-intl landing |
 | Pricing | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=pricing 한 줄, useSession |
 | Login | `apps/web/src/app/(public)/[lang]/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=auth |
 | Signup | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=auth |
@@ -1520,6 +1520,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-13`: `WU-15` 완료 — Public 공통 헤더 `PublicHeader`(브랜드+LangToggle)를 `(public)/[lang]/layout.tsx`에서 주입. pricing/terms/privacy/login/signup에서 중복 브랜드·LangToggle 제거. Landing Header는 브랜드·LangToggle 제거 후 네비/테마/로그인만 유지(sticky top-14). web test 173개 + typecheck 통과.
 - `2026-02-13`: PublicHeader 단일·한 줄 통합 — `lang`/`variant` props, pathname 기반 variant(landing/pricing/auth/legal/default). 랜딩: Landing Header 제거, LandingPage는 layout PublicHeader만 사용. pricing/terms/privacy: 페이지 내 헤더·뒤로가기 제거, PublicHeader 한 줄로 통합(pricing은 useSession으로 대시보드/로그인·가입 분기). MobileMenu: useTranslations 기반(copy 제거), 터치 44px·접근성·시트 닫힌 뒤 scrollIntoView 350ms 지연(포커스 복원으로 인한 상단 스크롤 방지).
 - `2026-02-13`: `WU-16` 완료 — Public SEO: `lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates), sitemap locale prefix + alternates.languages, Public 각 페이지(landing/pricing/login/signup/terms/privacy) canonical + alternates.languages(ko/en). login/signup은 layout generateMetadata. 17.3 SEO 열 [x] 처리.
+- `2026-02-13`: 랜딩 텍스트 i18n 전환 — `getLandingCopy` 제거, `lib/i18n/landing.ts`는 config 재export만. LandingPage 및 Hero/Features/Footer/CTAButtons/AppPurpose/StatusDashboard/StatusDashboardSlot은 `useTranslations('landing')`·`useMessages()`·`useParams()` 사용. 17.3 Landing 행 텍스트 i18n [x].
 - `YYYY-MM-DD`: `-`
 
 ---

@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { authOptions } from '@/lib/auth';
 import type { Lang } from '@/lib/i18n/config';
-import { getLandingCopy, isValidLang, supportedLangs } from '@/lib/i18n/landing';
+import { isValidLang, supportedLangs } from '@/lib/i18n/landing';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 interface PageProps {
@@ -70,7 +70,5 @@ export default async function Home({ params }: PageProps): Promise<React.ReactEl
     notFound();
   }
 
-  const copy = getLandingCopy(langParam);
-
-  return <LandingPage lang={langParam} copy={copy} />;
+  return <LandingPage lang={langParam} />;
 }

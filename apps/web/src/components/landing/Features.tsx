@@ -1,12 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 
 import { Anchor, Target, Zap } from 'lucide-react';
-
-import type { LandingCopy } from '@/lib/i18n/landing';
-
-interface FeaturesProps {
-  copy: LandingCopy;
-}
+import { useTranslations } from 'next-intl';
 
 const FEATURE_IMAGES = [
   {
@@ -24,34 +21,32 @@ const FEATURE_IMAGES = [
 ] as const;
 
 /**
- * Render the features section with three responsive feature cards populated from provided localized copy.
- *
- * @param copy - Localized landing copy used for feature titles, subtitles, descriptions, and the "learn more" text
- * @returns The React element for the features section containing three responsive feature cards
+ * Render the features section with three responsive feature cards.
  */
-export function Features({ copy }: FeaturesProps): React.ReactElement {
+export function Features(): React.ReactElement {
+  const t = useTranslations('landing');
   const items = [
     {
       icon: <Zap className='size-8 text-primary' />,
-      title: copy.features.f1Title,
-      subtitle: copy.features.f1Subtitle,
-      description: copy.features.f1Desc,
+      title: t('features.f1Title'),
+      subtitle: t('features.f1Subtitle'),
+      description: t('features.f1Desc'),
       image: FEATURE_IMAGES[0].url,
       imageAlt: FEATURE_IMAGES[0].alt,
     },
     {
       icon: <Target className='size-8 text-primary' />,
-      title: copy.features.f2Title,
-      subtitle: copy.features.f2Subtitle,
-      description: copy.features.f2Desc,
+      title: t('features.f2Title'),
+      subtitle: t('features.f2Subtitle'),
+      description: t('features.f2Desc'),
       image: FEATURE_IMAGES[1].url,
       imageAlt: FEATURE_IMAGES[1].alt,
     },
     {
       icon: <Anchor className='size-8 text-primary' />,
-      title: copy.features.f3Title,
-      subtitle: copy.features.f3Subtitle,
-      description: copy.features.f3Desc,
+      title: t('features.f3Title'),
+      subtitle: t('features.f3Subtitle'),
+      description: t('features.f3Desc'),
       image: FEATURE_IMAGES[2].url,
       imageAlt: FEATURE_IMAGES[2].alt,
     },
@@ -79,7 +74,7 @@ export function Features({ copy }: FeaturesProps): React.ReactElement {
               <p className='mt-2 text-sm font-medium italic text-primary/80'>{item.subtitle}</p>
               <p className='mt-4 leading-relaxed text-muted-foreground'>{item.description}</p>
               <p className='mt-auto text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100'>
-                {copy.features.learnMore}
+                {t('features.learnMore')}
               </p>
             </div>
           </article>
