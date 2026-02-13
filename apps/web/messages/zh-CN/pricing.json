@@ -35,7 +35,7 @@
     "q3": "退款政策如何？",
     "a3": "付款后 7 天内申请可全额退款。"
   },
-  "footer": { "contact": "联系邮箱：rlgns0610@gmail.com" },
+  "footer": { "contact": "联系邮箱：{email}" },
   "loadError": "无法加载方案信息。",
   "meta": {
     "description": "查看 Binbang 方案。免费开始，随时升级。分钟级检查、实时 KakaoTalk 通知、价格趋势分析。",

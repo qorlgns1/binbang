@@ -44,7 +44,7 @@
     "a3": "Full refund if requested within 7 days of payment."
   },
   "footer": {
-    "contact": "Contact: rlgns0610@gmail.com"
+    "contact": "Contact: {email}"
   },
   "loadError": "Unable to load plan information.",
   "meta": {

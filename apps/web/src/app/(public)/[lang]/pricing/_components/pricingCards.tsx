@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 
 import { Check, Clock, Home, Zap } from 'lucide-react';
 
+import { SUPPORT_EMAIL } from '@/lib/support';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,7 +102,7 @@ function PlanCard({
         ) : (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
             <Link
-              href={`mailto:rlgns0610@gmail.com?subject=${encodeURIComponent(t('plan.upgradeInquirySubject', { planName }))}`}
+              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(t('plan.upgradeInquirySubject', { planName }))}`}
             >
               {t('plan.upgradeInquiry')}
             </Link>

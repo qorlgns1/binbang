@@ -38,7 +38,7 @@
     "q3": "¿Cuál es la política de reembolso?",
     "a3": "Reembolso completo si se solicita dentro de los 7 días del pago."
   },
-  "footer": { "contact": "Contacto: rlgns0610@gmail.com" },
+  "footer": { "contact": "Contacto: {email}" },
   "loadError": "No se pudo cargar la información del plan.",
   "meta": {
     "description": "Ver planes de Binbang. Empieza gratis, actualiza cuando quieras. Comprobación por minuto, alertas KakaoTalk en tiempo real, análisis de tendencias de precios.",

@@ -133,12 +133,23 @@ export async function retryStaleCaseNotifications(
     let buttonUrl: string;
 
     if (isStructuredPayload(payload)) {
-      const locale = await getUserLocale(userId);
-      const rendered = renderNotification(locale, payload);
-      title = rendered.title;
-      description = rendered.description;
-      buttonText = rendered.buttonText;
-      buttonUrl = rendered.buttonUrl;
+      try {
+        const locale = await getUserLocale(userId);
+        const rendered = renderNotification(locale, payload);
+        title = rendered.title;
+        description = rendered.description;
+        buttonText = rendered.buttonText;
+        buttonUrl = rendered.buttonUrl;
+      } catch (error) {
+        const failReason = error instanceof Error ? error.message : 'locale/렌더링 예외';
+        await prisma.caseNotification.update({
+          where: { id: n.id },
+          data: { status: 'FAILED', failReason },
+          select: { id: true },
+        });
+        result.failed += 1;
+        continue;
+      }
     } else {
       title = isNonEmptyString(payload.title) ? payload.title : null;
       description = isNonEmptyString(payload.description) ? payload.description : null;

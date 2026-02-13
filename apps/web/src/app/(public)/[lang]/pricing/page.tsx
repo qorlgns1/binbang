@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
+import { SUPPORT_EMAIL } from '@/lib/support';
 
 import { PricingCards } from './_components/pricingCards';
 
@@ -80,7 +81,7 @@ export default async function PricingPage({ params }: PageProps): Promise<React.
 
         <footer className='border-t border-border/50 bg-background/80 py-8 backdrop-blur'>
           <div className='mx-auto max-w-7xl px-4 text-center text-sm text-muted-foreground'>
-            <p>{t('footer.contact')}</p>
+            <p>{t('footer.contact', { email: SUPPORT_EMAIL })}</p>
           </div>
         </footer>
       </div>
