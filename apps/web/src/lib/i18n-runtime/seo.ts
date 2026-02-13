@@ -36,7 +36,20 @@ export function buildPublicAlternates(
 
 /** OpenGraph locale string for the given lang (e.g. ko_KR, en_US). */
 export function getOgLocale(lang: Locale): string {
-  return lang === 'ko' ? 'ko_KR' : 'en_US';
+  switch (lang) {
+    case 'ko':
+      return 'ko_KR';
+    case 'en':
+      return 'en_US';
+    case 'ja':
+      return 'ja_JP';
+    case 'zh-CN':
+      return 'zh_CN';
+    case 'es-419':
+      return 'es_419';
+    default:
+      return 'en_US';
+  }
 }
 
 /** Default OG image used by Public pages (relative path; resolved via metadataBase). */

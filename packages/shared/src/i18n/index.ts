@@ -3,6 +3,7 @@ export {
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,
   isSupportedLocale,
+  mapToSupportedLocale,
   normalizeLocale,
 } from './locale';
 

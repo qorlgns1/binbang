@@ -1,0 +1,62 @@
+{
+  "nav": { "brand": "Binbang", "features": "功能介绍", "status": "系统状态", "pricing": "价格", "login": "登录" },
+  "hero": {
+    "headline": "让您的休息不迷路，",
+    "headlineMobile": ["让您的休息", "不迷路，"],
+    "subheadline": "Binbang 彻夜为您点亮灯塔。",
+    "subheadlineMobile": ["Binbang 彻夜", "为您点亮灯塔。"],
+    "description": "厌倦了无休止的刷新？Binbang 在您入睡时持续监控，抢先为您捕捉心仪住宿的空房。",
+    "aboutApp": "Binbang 是空房提醒服务；使用 Google 登录时，我们仅将您的邮箱用于账户识别和发送提醒。",
+    "cta": "开启空房提醒",
+    "secondaryCta": "了解功能",
+    "statusLabel": "实时系统状态"
+  },
+  "features": {
+    "f1Title": "更快、更早",
+    "f1Subtitle": "少一点等待，多一点期待",
+    "f1Desc": "浏览器优化使空房发现速度比常规检查快最多 4 倍。抢先知晓，在他人之前锁定理想住宿。",
+    "f2Title": "雾中亦清晰",
+    "f2Subtitle": "面对变化依然准确",
+    "f2Desc": "动态选择器无需重新部署即可适应预订网站界面变化。平台如何演变，Binbang 的视线都不会迷路。",
+    "f3Title": "不灭的灯塔",
+    "f3Subtitle": "您入睡时依然守护",
+    "f3Desc": "分钟级心跳日志让监控稳定透明。系统自动发现并恢复问题，守护从不间断。",
+    "learnMore": "了解更多"
+  },
+  "trust": {
+    "title": "实时运行状态",
+    "operational": "运行中",
+    "uptime": "可用率",
+    "activeMonitors": "活跃监控数",
+    "response": "平均响应",
+    "emptyLogs": "最近 5 分钟无系统记录。",
+    "errorMessage": "加载实时状态失败，5 秒后重试。",
+    "retry": "重试"
+  },
+  "footer": {
+    "title": "复杂的事交给我们。",
+    "description": "您只需专注规划下一次旅程。",
+    "cta": "获取空房动态",
+    "copyright": "© 2026 Binbang. 保留所有权利。",
+    "privacy": "隐私政策",
+    "terms": "服务条款"
+  },
+  "appPurpose": "Binbang 是监控住宿预订网站空房并在有空房时通过邮件通知您的服务。使用 Google 登录时，我们仅将您的邮箱用于账户识别和空房提醒发送。",
+  "mockLogs": [
+    { "id": 1, "message": "发现空房：首尔柏悦酒店（豪华套房）", "location": "首尔" },
+    { "id": 2, "message": "发现空房：济州君悦酒店（海景豪华房）", "location": "济州" },
+    { "id": 3, "message": "检查完成：已扫描 2,847 个目标", "location": "系统" },
+    { "id": 4, "message": "发现空房：新罗 Stay 光化门（行政房）", "location": "首尔" },
+    { "id": 5, "message": "提醒已发送：已送达 3 位用户", "location": "系统" },
+    { "id": 6, "message": "发现空房：釜山乐天酒店（海景尊享房）", "location": "釜山" },
+    { "id": 7, "message": "发现空房：首尔四季酒店（转角国王房）", "location": "首尔" },
+    { "id": 8, "message": "检查完成：已扫描 1,923 个目标", "location": "系统" },
+    { "id": 9, "message": "发现空房：济州梅森格拉德（标准双床房）", "location": "济州" },
+    { "id": 10, "message": "发现空房：阿南蒂湾（海景豪华房）", "location": "釜山" },
+    { "id": 11, "message": "发现空房：首尔康莱德（行政房）", "location": "首尔" },
+    { "id": 12, "message": "提醒已发送：已送达 7 位用户", "location": "系统" },
+    { "id": 13, "message": "发现空房：悦榕庄俱乐部与水疗（泳池别墅）", "location": "济州" },
+    { "id": 14, "message": "检查完成：已扫描 3,421 个目标", "location": "系统" },
+    { "id": 15, "message": "发现空房：西马克酒店（海景双床房）", "location": "江陵" }
+  ]
+}
