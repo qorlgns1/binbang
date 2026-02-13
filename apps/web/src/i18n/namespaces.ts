@@ -12,15 +12,16 @@ const PUBLIC_BASE = ['common', 'landing', 'pricing'] as const;
 /** 모든 namespace (fallback용) */
 const ALL_NAMESPACES = ['common', 'landing', 'legal', 'auth', 'pricing'] as const;
 
-/** Public pathname의 locale prefix 정규식 (SUPPORTED_LOCALES와 동기화) */
-const LOCALE_PREFIX_REGEX = /^\/(ko|en|ja|zh-CN|es-419)(?:\/(.*))?$/;
+/** Public pathname의 locale prefix + 첫 세그먼트만 캡처 (하위 경로 무시) */
+const LOCALE_PREFIX_REGEX = /^\/(ko|en|ja|zh-CN|es-419)(?:\/([^/]*))?(?:\/.*)?$/;
 
 /**
- * pathname에서 locale prefix 뒤의 segment를 추출한다.
+ * pathname에서 locale prefix 뒤의 첫 번째 segment만 추출한다.
  *
  * @example "/ko/pricing" → "pricing"
  * @example "/en" → ""
  * @example "/ja/signup" → "signup"
+ * @example "/ja/login/reset" → "login" (첫 세그먼트만)
  * @example "/dashboard" → null (locale prefix 없음)
  */
 function extractPublicSegment(pathname: string): string | null {
