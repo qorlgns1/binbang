@@ -24,7 +24,7 @@ export default async function LangLayout({ children, params }: LangLayoutProps):
   const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider messages={messages}>
+    <NextIntlClientProvider locale={lang} messages={messages}>
       <PublicHeader lang={lang as Locale} />
       {children}
     </NextIntlClientProvider>

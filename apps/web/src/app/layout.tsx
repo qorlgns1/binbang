@@ -4,6 +4,7 @@ import Script from 'next/script';
 
 import { GoogleAnalytics } from '@/components/analytics';
 import { Providers } from '@/components/providers';
+import { getLocaleForHtmlLang } from '@/lib/i18n-runtime/server';
 
 import './globals.css';
 
@@ -32,9 +33,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLocaleForHtmlLang();
   return (
-    <html lang='ko'>
+    <html lang={lang}>
       <head>
         <Script id='theme-init' strategy='beforeInteractive'>{`
           (function() {

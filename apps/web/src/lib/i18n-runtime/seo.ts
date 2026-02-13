@@ -5,10 +5,13 @@
 
 import { type Locale, SUPPORTED_LOCALES } from '@workspace/shared/i18n';
 
-const BASE_URL =
+const RAW_BASE =
   typeof process.env.NEXT_PUBLIC_APP_URL === 'string' && process.env.NEXT_PUBLIC_APP_URL.length > 0
     ? process.env.NEXT_PUBLIC_APP_URL
     : 'https://binbang.moodybeard.com';
+
+/** Trailing slash 제거하여 canonical/hreflang 이중 슬래시 방지 */
+const BASE_URL = RAW_BASE.replace(/\/+$/, '');
 
 export function getBaseUrl(): string {
   return BASE_URL;

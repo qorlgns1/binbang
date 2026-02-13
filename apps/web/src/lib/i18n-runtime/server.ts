@@ -8,7 +8,13 @@
  */
 import { cookies, headers } from 'next/headers';
 
-import { mapToSupportedLocale, type ResolveLocaleResult, resolveLocale } from '@workspace/shared/i18n';
+import {
+  type Locale,
+  isSupportedLocale,
+  mapToSupportedLocale,
+  type ResolveLocaleResult,
+  resolveLocale,
+} from '@workspace/shared/i18n';
 
 const COOKIE_NAME = 'binbang-lang';
 
@@ -43,4 +49,23 @@ export async function resolveServerLocale(input: ResolveServerLocaleInput = {}):
     cookie: cookieLocale,
     acceptLanguage: headerLocale,
   });
+}
+
+/**
+ * Root layout의 <html lang>용 locale.
+ *
+ * pathname/헤더가 있으면 사용하고, 없으면 cookie·Accept-Language 협상.
+ * [lang]이 없는 루트 레이아웃에서 접근성·SEO용 lang 속성 설정에 사용.
+ */
+export async function getLocaleForHtmlLang(): Promise<Locale> {
+  const headerStore = await headers();
+  const pathname = headerStore.get('x-pathname');
+  if (pathname) {
+    const segment = pathname.split('/')[1];
+    if (segment && isSupportedLocale(segment)) return segment as Locale;
+  }
+  const headerLocale = headerStore.get('x-next-intl-locale');
+  if (headerLocale && isSupportedLocale(headerLocale)) return headerLocale as Locale;
+  const { locale } = await resolveServerLocale({});
+  return locale;
 }
