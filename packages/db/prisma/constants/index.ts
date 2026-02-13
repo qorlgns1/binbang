@@ -976,6 +976,48 @@ export const SEED_CASE_NOTIFICATIONS: SeedCaseNotification[] = [
   },
 ];
 
+export interface SeedCaseMessage {
+  id: string;
+  caseId: string;
+  templateKey: string;
+  channel: string;
+  content: string;
+  sentByKey: SeedUserKey;
+  createdAt: Date;
+}
+
+export const SEED_CASE_MESSAGES: SeedCaseMessage[] = [
+  {
+    id: 'seed_msg_1',
+    caseId: 'seed_case_3',
+    templateKey: 'intake_confirm',
+    channel: 'MANUAL_COPY',
+    content: '요청이 접수되었습니다.\n조건(Q4)을 검토한 뒤 진행 가능 여부와 비용을 안내드리겠습니다.',
+    sentByKey: 'admin',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 30),
+  },
+  {
+    id: 'seed_msg_2',
+    caseId: 'seed_case_3',
+    templateKey: 'price_quote',
+    channel: 'MANUAL_COPY',
+    content:
+      '요청 조건 기준으로 진행 가능하며,\n조건 충족(열림 확인) 시 1회 비용은 24,000원입니다.\n해당 요청은 조건 충족 1회만 유효하며, 최초 충족 시점에만 비용이 발생합니다.',
+    sentByKey: 'admin',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 90),
+  },
+  {
+    id: 'seed_msg_3',
+    caseId: 'seed_case_5',
+    templateKey: 'payment_start',
+    channel: 'MANUAL_COPY',
+    content:
+      '결제 확인되었습니다.\n이제부터 설정하신 조건에 맞춰 모니터링을 시작합니다.\nQ4에 명시된 조건이 충족되면 알림으로 알려드리겠습니다.',
+    sentByKey: 'admin',
+    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 70),
+  },
+];
+
 export const SYSTEM_SETTINGS = [
   // ── Worker 스케줄 ──
   {

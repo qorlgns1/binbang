@@ -507,6 +507,7 @@ model Case {
   conditionMetEvents  ConditionMetEvent[]
   notifications       CaseNotification[]
   billingEvent        BillingEvent?
+  messages            CaseMessage[]
 
   @@index([status])
   @@index([createdAt])
@@ -586,4 +587,21 @@ model BillingEvent {
   createdAt           DateTime          @default(now())
 
   @@index([caseId])
+}
+
+// ── Operator Messages ──
+
+model CaseMessage {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  templateKey String
+  channel     String
+  content     String   @db.Text
+  sentById    String
+  createdAt   DateTime @default(now())
+
+  @@index([caseId])
+  @@index([sentById])
+  @@index([createdAt])
 }
