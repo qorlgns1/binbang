@@ -130,9 +130,7 @@ export default function NewAccommodationPage(): React.ReactElement {
         <CardContent>
           {(createMutation.error || dateError) && (
             <Alert variant='destructive' className='mb-6'>
-              <AlertTitle>
-                {createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}
-              </AlertTitle>
+              <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
               <AlertDescription>
                 <p>{dateError || createMutation.error?.message}</p>
                 {createMutation.error instanceof QuotaExceededError && (
@@ -144,7 +142,14 @@ export default function NewAccommodationPage(): React.ReactElement {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} onChange={() => { createMutation.reset(); setDateError(''); }} className='space-y-6'>
+          <form
+            onSubmit={handleSubmit}
+            onChange={() => {
+              createMutation.reset();
+              setDateError('');
+            }}
+            className='space-y-6'
+          >
             {/* URL 입력 */}
             <div className='space-y-2'>
               <Label htmlFor='url'>숙소 URL *</Label>

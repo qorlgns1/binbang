@@ -141,7 +141,14 @@ export default function EditAccommodationPage(): React.ReactElement {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} onChange={() => { updateMutation.reset(); setDateError(''); }} className='space-y-6'>
+          <form
+            onSubmit={handleSubmit}
+            onChange={() => {
+              updateMutation.reset();
+              setDateError('');
+            }}
+            className='space-y-6'
+          >
             {/* URL 입력 */}
             <div className='space-y-2'>
               <Label htmlFor='url'>숙소 URL *</Label>
