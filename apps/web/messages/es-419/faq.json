@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "title": "Binbang – Preguntas frecuentes",
+    "description": "Encuentra respuestas a las preguntas más frecuentes sobre el servicio de alertas de disponibilidad de Binbang.",
+    "ogDescription": "Binbang FAQ – servicio, alertas, precios y más."
+  },
+  "title": {
+    "heading": "Preguntas frecuentes",
+    "subline": "Todo lo que necesitas saber sobre Binbang."
+  },
+  "categories": {
+    "service": "Sobre el servicio",
+    "monitoring": "Alertas y monitoreo",
+    "account": "Cuenta y pagos",
+    "other": "Otros"
+  },
+  "service": {
+    "q1": "¿Qué es Binbang?",
+    "a1": "Binbang monitorea automáticamente sitios de reserva de alojamiento (Airbnb, Agoda, etc.) y envía alertas por correo y KakaoTalk cuando hay disponibilidad.",
+    "q2": "¿Qué sitios de reserva son compatibles?",
+    "a2": "Actualmente soportamos Airbnb y Agoda. Planeamos agregar más plataformas en el futuro."
+  },
+  "monitoring": {
+    "q1": "¿Con qué frecuencia se verifican las vacantes?",
+    "a1": "Depende de tu plan. El plan gratuito verifica cada 30 minutos y el plan Pro cada minuto.",
+    "q2": "¿Cómo recibiré las alertas?",
+    "a2": "Las alertas por correo están incluidas por defecto. También puedes recibir notificaciones en tiempo real por KakaoTalk al vincular tu cuenta de Kakao.",
+    "q3": "¿El monitoreo funciona las 24 horas?",
+    "a3": "Sí, Binbang monitorea las 24 horas, los 365 días del año. Nuestro sistema de heartbeat garantiza una operación estable en todo momento."
+  },
+  "account": {
+    "q1": "¿Cómo me registro?",
+    "a1": "Puedes registrarte fácilmente con tu cuenta de Google. Tu correo se usa solo para identificación y envío de alertas.",
+    "q2": "¿Puedo cambiar mi plan?",
+    "a2": "Sí, puedes actualizar o reducir tu plan en cualquier momento.",
+    "q3": "¿Cuál es la política de reembolso?",
+    "a3": "Reembolso completo si se solicita dentro de los 7 días posteriores al pago."
+  },
+  "other": {
+    "q1": "¿Mis datos personales están seguros?",
+    "a1": "Binbang solo recopila información mínima a través de Google OAuth. Tu correo se usa exclusivamente para identificación y alertas. Consulta nuestra Política de Privacidad para más detalles.",
+    "q2": "¿Cómo puedo contactar al soporte?",
+    "a2": "Envíanos un correo a support@binbang.moodybeard.com y te responderemos a la brevedad."
+  }
+}

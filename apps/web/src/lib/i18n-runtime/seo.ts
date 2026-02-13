@@ -18,7 +18,7 @@ export function getBaseUrl(): string {
 }
 
 /** Public path segments (no leading slash for root). Used for sitemap and canonical. */
-export const PUBLIC_PATHS = ['', '/pricing', '/login', '/signup', '/terms', '/privacy'] as const;
+export const PUBLIC_PATHS = ['', '/pricing', '/faq', '/login', '/signup', '/terms', '/privacy'] as const;
 
 /**
  * Build canonical URL and hreflang alternates for a Public page.

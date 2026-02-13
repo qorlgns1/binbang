@@ -28,7 +28,7 @@ const navLinkClass =
 function resolveVariant(pathname: string | null, lang: Locale): PublicHeaderVariant {
   if (!pathname) return 'default';
   if (pathname === `/${lang}`) return 'landing';
-  if (pathname === `/${lang}/pricing`) return 'pricing';
+  if (pathname === `/${lang}/pricing` || pathname === `/${lang}/faq`) return 'pricing';
   if (pathname === `/${lang}/login` || pathname === `/${lang}/signup`) return 'auth';
   if (pathname === `/${lang}/terms` || pathname === `/${lang}/privacy`) return 'legal';
   return 'default';
@@ -97,6 +97,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
               </a>
               <Link href={`/${lang}/pricing`} className={navLinkClass}>
                 {tLanding('nav.pricing')}
+              </Link>
+              <Link href={`/${lang}/faq`} className={navLinkClass}>
+                {tLanding('nav.faq')}
               </Link>
             </nav>
             <div className='flex items-center gap-2'>

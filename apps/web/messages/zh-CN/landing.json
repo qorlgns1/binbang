@@ -4,7 +4,7 @@
     "description": "Binbang 监控住宿预订网站空房并发送邮件提醒。使用 Google 登录时，我们仅将您的邮箱用于账户识别和发送提醒。",
     "twitterDescription": "每分钟检查的空房提醒，空房出现即通知您。"
   },
-  "nav": { "brand": "Binbang", "features": "功能介绍", "status": "系统状态", "pricing": "价格", "login": "登录" },
+  "nav": { "brand": "Binbang", "features": "功能介绍", "status": "系统状态", "pricing": "价格", "faq": "FAQ", "login": "登录" },
   "hero": {
     "headline": "让您的休息不迷路，",
     "headlineMobile": ["让您的休息", "不迷路，"],
