@@ -43,7 +43,7 @@ export interface QueueStatsInfo {
   paused: number;
 }
 
-export type QueueJobState = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown';
+export type QueueJobState = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'paused' | 'unknown';
 
 export interface QueueJobSummary {
   id: string;

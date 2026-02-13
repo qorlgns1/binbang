@@ -129,17 +129,33 @@ async function main(): Promise<void> {
   // ============================================
   // HTTP Control Server
   // ============================================
+  const internalSecret = process.env.WORKER_INTERNAL_SECRET;
+  const corsOrigin = process.env.WORKER_CORS_ORIGIN ?? '*';
+  const controlPaths = new Set(['/restart', '/queue/snapshot', '/cache/invalidate', '/test', '/health']);
+
+  function isControlRequestAuthorized(req: import('node:http').IncomingMessage): boolean {
+    if (!internalSecret || internalSecret.length === 0) return true;
+    const header = req.headers['x-worker-secret'];
+    return typeof header === 'string' && header === internalSecret;
+  }
+
   const server = createServer((req, res): void => {
     const requestUrl = new URL(req.url ?? '/', 'http://localhost');
     const pathname = requestUrl.pathname;
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Worker-Secret');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(200);
       res.end();
+      return;
+    }
+
+    if (controlPaths.has(pathname) && !isControlRequestAuthorized(req)) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
     }
 

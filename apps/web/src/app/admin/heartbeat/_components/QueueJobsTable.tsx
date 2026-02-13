@@ -38,6 +38,7 @@ function getStateBadgeClass(state: QueueJobState): string {
     case 'waiting':
       return 'bg-status-neutral text-status-neutral-foreground';
     case 'delayed':
+    case 'paused':
       return 'bg-status-neutral text-status-neutral-foreground';
     default:
       return 'bg-muted text-muted-foreground';
@@ -218,8 +219,17 @@ function QueueJobsGrid({ rows, selectedJobKey, onSelectJob }: QueueJobsGridProps
         {rows.map((job) => (
           <TableRow
             key={job.rowKey}
+            role='button'
+            tabIndex={0}
+            aria-selected={selectedJobKey === job.rowKey}
             onClick={() => onSelectJob(job.rowKey)}
             className={`cursor-pointer ${selectedJobKey === job.rowKey ? 'bg-muted/60' : ''}`}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSelectJob(job.rowKey);
+              }
+            }}
           >
             <TableCell>
               <Badge variant='outline'>{job.queue.toUpperCase()}</Badge>

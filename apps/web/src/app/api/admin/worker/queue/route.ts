@@ -25,10 +25,16 @@ export async function GET(request: NextRequest): Promise<Response> {
   const limit = parsed.data.limit ?? DEFAULT_LIMIT;
   const workerUrl = process.env.WORKER_INTERNAL_URL || 'http://localhost:3500';
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const secret = process.env.WORKER_INTERNAL_SECRET;
+  if (typeof secret === 'string' && secret.length > 0) {
+    headers['X-Worker-Secret'] = secret;
+  }
+
   try {
     const workerRes = await fetch(`${workerUrl}/queue/snapshot?limit=${limit}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       cache: 'no-store',
       signal: AbortSignal.timeout(5000),
     });
@@ -37,7 +43,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       const workerError = await workerRes.text().catch((): string => '');
       return NextResponse.json(
         {
-          error: workerError || 'Failed to fetch worker queue snapshot',
+          error: workerError || '워커 큐 스냅샷을 가져오지 못했습니다.',
           timestamp: new Date().toISOString(),
         },
         { status: 503 },

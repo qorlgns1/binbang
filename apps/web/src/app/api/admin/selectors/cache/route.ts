@@ -24,9 +24,12 @@ export async function POST(request: Request): Promise<Response> {
   let workerResult = null;
   try {
     const workerUrl = process.env.WORKER_INTERNAL_URL || 'http://localhost:3500';
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const secret = process.env.WORKER_INTERNAL_SECRET;
+    if (typeof secret === 'string' && secret.length > 0) headers['X-Worker-Secret'] = secret;
     const workerRes = await fetch(`${workerUrl}/cache/invalidate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ platform: body.platform }),
       signal: AbortSignal.timeout(5000),
     });
