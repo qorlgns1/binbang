@@ -55,11 +55,18 @@ describe('auth.service', (): void => {
       expect(mockBcryptHash).toHaveBeenCalledWith('secret', 12);
       expect(mockUserCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: {
+          data: expect.objectContaining({
             email: 'a@b.co',
             password: 'hashed',
             name: 'Alice',
             emailVerified: expect.any(Date),
+            plan: { connect: { name: 'FREE' } },
+            roles: { connect: [{ name: 'USER' }] },
+          }),
+          select: {
+            id: true,
+            email: true,
+            name: true,
           },
         }),
       );

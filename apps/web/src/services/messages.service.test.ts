@@ -85,13 +85,20 @@ describe('MESSAGE_TEMPLATES', () => {
   it('price_quote template should include finalPrice', () => {
     const template = getTemplateByKey('price_quote');
     expect(template).toBeDefined();
-    const content = template!.buildContent({ finalPrice: 43000 });
+    if (!template) {
+      throw new Error('price_quote template is required');
+    }
+    const content = template.buildContent({ finalPrice: 43000 });
     expect(content).toContain('43,000원');
   });
 
   it('price_quote template should default to 0 without params', () => {
     const template = getTemplateByKey('price_quote');
-    const content = template!.buildContent();
+    expect(template).toBeDefined();
+    if (!template) {
+      throw new Error('price_quote template is required');
+    }
+    const content = template.buildContent();
     expect(content).toContain('0원');
   });
 
