@@ -5,10 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
 
 import { trackLocaleToggled } from '@/lib/analytics/landing-tracker';
-import type { Lang } from '@/lib/i18n/landing';
+import type { Locale } from '@workspace/shared/i18n';
 
 interface LangToggleProps {
-  currentLang: Lang;
+  currentLang: Locale;
   className?: string;
   variant?: 'desktop' | 'mobile';
 }
@@ -29,7 +29,7 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
   const pathname = usePathname();
 
   const handleToggle = (): void => {
-    const newLang: Lang = currentLang === 'ko' ? 'en' : 'ko';
+    const newLang: Locale = currentLang === 'ko' ? 'en' : 'ko';
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
     // 쿠키 저장

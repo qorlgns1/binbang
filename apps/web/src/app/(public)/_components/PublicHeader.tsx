@@ -11,13 +11,13 @@ import { Button } from '@/components/ui/button';
 import { LangToggle } from '@/components/landing/LangToggle';
 import { MobileMenu } from '@/components/landing/MobileMenu';
 import { ThemeToggle } from '@/components/landing/ThemeToggle';
-import type { Lang } from '@/lib/i18n/landing';
+import type { Locale } from '@workspace/shared/i18n';
 
 export type PublicHeaderVariant = 'default' | 'landing' | 'pricing' | 'auth' | 'legal';
 
 export interface PublicHeaderProps {
   /** 현재 locale. layout에서 params.lang으로 전달. */
-  lang: Lang;
+  lang: Locale;
   /** 생략 시 pathname으로 자동 판단. */
   variant?: PublicHeaderVariant;
 }
@@ -25,7 +25,7 @@ export interface PublicHeaderProps {
 const navLinkClass =
   'rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
-function resolveVariant(pathname: string | null, lang: Lang): PublicHeaderVariant {
+function resolveVariant(pathname: string | null, lang: Locale): PublicHeaderVariant {
   if (!pathname) return 'default';
   if (pathname === `/${lang}`) return 'landing';
   if (pathname === `/${lang}/pricing`) return 'pricing';

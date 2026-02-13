@@ -5,10 +5,10 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { PublicHeader } from '@/app/(public)/_components/PublicHeader';
-import { isValidLang, supportedLangs, type Lang } from '@/lib/i18n/landing';
+import { type Locale, SUPPORTED_LOCALES, isSupportedLocale } from '@workspace/shared/i18n';
 
 export function generateStaticParams() {
-  return supportedLangs.map((lang) => ({ lang }));
+  return SUPPORTED_LOCALES.map((lang) => ({ lang }));
 }
 
 interface LangLayoutProps {
@@ -18,14 +18,14 @@ interface LangLayoutProps {
 
 export default async function LangLayout({ children, params }: LangLayoutProps): Promise<React.ReactElement> {
   const { lang } = await params;
-  if (!isValidLang(lang)) notFound();
+  if (!isSupportedLocale(lang)) notFound();
 
   setRequestLocale(lang);
   const messages = await getMessages();
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <PublicHeader lang={lang as Lang} />
+      <PublicHeader lang={lang as Locale} />
       {children}
     </NextIntlClientProvider>
   );

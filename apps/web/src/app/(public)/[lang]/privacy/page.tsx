@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { isValidLang } from '@/lib/i18n/landing';
-import type { Lang } from '@/lib/i18n/config';
+import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 /** 정적 생성으로 항상 200 HTML 응답 보장 (OAuth 검증용). */
@@ -16,9 +15,9 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
-  if (!isValidLang(lang)) return {};
+  if (!isSupportedLocale(lang)) return {};
   const t = await getTranslations({ locale: lang, namespace: 'legal' });
-  const { canonical, languages } = buildPublicAlternates(lang as Lang, '/privacy');
+  const { canonical, languages } = buildPublicAlternates(lang as Locale, '/privacy');
   const title = `${t('privacy.title')} | Binbang`;
   const description = 'Binbang(빈방) 개인정보처리방침. 수집·이용·보관·삭제 등 개인정보 처리 방식을 안내합니다.';
   return {
@@ -27,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: { canonical, languages },
     openGraph: {
       type: 'website',
-      locale: getOgLocale(lang as Lang),
+      locale: getOgLocale(lang as Locale),
       url: canonical,
       siteName: 'Binbang',
       title,
@@ -43,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 export default async function PrivacyPage({ params }: PageProps): Promise<React.ReactElement> {
   const { lang } = await params;
-  if (!isValidLang(lang)) notFound();
+  if (!isSupportedLocale(lang)) notFound();
 
   const t = await getTranslations({ locale: lang, namespace: 'legal' });
 

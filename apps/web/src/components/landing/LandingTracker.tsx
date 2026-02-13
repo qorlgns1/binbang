@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { setupScrollDepthTracking, trackLandingViewed } from '@/lib/analytics/landing-tracker';
-import type { Lang } from '@/lib/i18n/landing';
+import type { Locale } from '@workspace/shared/i18n';
 
 interface LandingTrackerProps {
-  lang: Lang;
+  lang: Locale;
 }
 
 /**

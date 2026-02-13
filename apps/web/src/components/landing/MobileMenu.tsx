@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { Lang } from '@/lib/i18n/landing';
+import type { Locale } from '@workspace/shared/i18n';
 
 const Sheet = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.Sheet })), { ssr: false });
 const SheetContent = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.SheetContent })), {
@@ -19,7 +19,7 @@ const SheetTrigger = dynamic(() => import('@/components/ui/sheet').then((mod) =>
 });
 
 interface MobileMenuProps {
-  lang: Lang;
+  lang: Locale;
 }
 
 const navItemClass =

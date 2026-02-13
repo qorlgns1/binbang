@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic';
 
-import type { Lang } from '@/lib/i18n/landing';
+import type { Locale } from '@workspace/shared/i18n';
 
 import { AppPurpose } from './AppPurpose';
 import { Hero } from './Hero';
@@ -10,7 +10,7 @@ const Features = dynamic(() => import('./Features').then((mod) => ({ default: mo
 const Footer = dynamic(() => import('./Footer').then((mod) => ({ default: mod.Footer })));
 
 interface LandingPageProps {
-  lang: Lang;
+  lang: Locale;
 }
 
 /**

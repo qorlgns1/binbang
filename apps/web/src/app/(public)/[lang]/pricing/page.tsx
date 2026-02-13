@@ -1,8 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { isValidLang } from '@/lib/i18n/landing';
-import type { Lang } from '@/lib/i18n/config';
+import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 import { PricingCards } from './_components/pricingCards';
@@ -13,9 +12,9 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { lang } = await params;
-  if (!isValidLang(lang)) return {};
+  if (!isSupportedLocale(lang)) return {};
   const t = await getTranslations({ locale: lang, namespace: 'pricing' });
-  const { canonical, languages } = buildPublicAlternates(lang as Lang, '/pricing');
+  const { canonical, languages } = buildPublicAlternates(lang as Locale, '/pricing');
   return {
     title: `${t('nav.brand')} + – Pricing`,
     description:
@@ -23,7 +22,7 @@ export async function generateMetadata({ params }: PageProps) {
     alternates: { canonical, languages },
     openGraph: {
       type: 'website',
-      locale: getOgLocale(lang as Lang),
+      locale: getOgLocale(lang as Locale),
       url: canonical,
       siteName: 'Binbang',
       title: `${t('nav.brand')} – Pricing`,
@@ -35,7 +34,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function PricingPage({ params }: PageProps): Promise<React.ReactElement> {
   const { lang } = await params;
-  if (!isValidLang(lang)) notFound();
+  if (!isSupportedLocale(lang)) notFound();
 
   const t = await getTranslations({ locale: lang, namespace: 'pricing' });
 

@@ -4,8 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { LandingPage } from '@/components/landing/LandingPage';
 import { authOptions } from '@/lib/auth';
-import type { Lang } from '@/lib/i18n/config';
-import { isValidLang, supportedLangs } from '@/lib/i18n/landing';
+import { type Locale, SUPPORTED_LOCALES, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 interface PageProps {
@@ -14,8 +13,8 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
-  if (!isValidLang(lang)) return {};
-  const langTyped = lang as Lang;
+  if (!isSupportedLocale(lang)) return {};
+  const langTyped = lang as Locale;
   const { canonical, languages } = buildPublicAlternates(langTyped, '');
   const title = 'Binbang – 빈방 알림 서비스';
   const description =
@@ -48,7 +47,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * @returns An array of objects where each object has a `lang` property set to a supported language (e.g., `{ lang: 'en' }`)
  */
 export async function generateStaticParams() {
-  return supportedLangs.map((lang) => ({ lang }));
+  return SUPPORTED_LOCALES.map((lang) => ({ lang }));
 }
 
 /**
@@ -66,7 +65,7 @@ export default async function Home({ params }: PageProps): Promise<React.ReactEl
 
   const { lang: langParam } = await params;
 
-  if (!isValidLang(langParam)) {
+  if (!isSupportedLocale(langParam)) {
     notFound();
   }
 

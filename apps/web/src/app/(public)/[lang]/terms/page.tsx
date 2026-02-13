@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
-import { isValidLang } from '@/lib/i18n/landing';
-import type { Lang } from '@/lib/i18n/config';
+import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 interface PageProps {
@@ -13,9 +12,9 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
-  if (!isValidLang(lang)) return {};
+  if (!isSupportedLocale(lang)) return {};
   const t = await getTranslations({ locale: lang, namespace: 'legal' });
-  const { canonical, languages } = buildPublicAlternates(lang as Lang, '/terms');
+  const { canonical, languages } = buildPublicAlternates(lang as Locale, '/terms');
   const title = `${t('terms.title')} | Binbang`;
   const description = 'Binbang(빈방) 이용약관. 서비스 이용에 관한 약관을 안내합니다.';
   return {
@@ -24,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: { canonical, languages },
     openGraph: {
       type: 'website',
-      locale: getOgLocale(lang as Lang),
+      locale: getOgLocale(lang as Locale),
       url: canonical,
       siteName: 'Binbang',
       title,
@@ -39,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 export default async function TermsPage({ params }: PageProps): Promise<React.ReactElement> {
   const { lang } = await params;
-  if (!isValidLang(lang)) notFound();
+  if (!isSupportedLocale(lang)) notFound();
 
   const t = await getTranslations({ locale: lang, namespace: 'legal' });
 

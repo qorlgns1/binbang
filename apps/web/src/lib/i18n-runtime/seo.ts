@@ -3,8 +3,7 @@
  * Used by sitemap and Public page metadata (WU-16).
  */
 
-import type { Lang } from '@/lib/i18n/config';
-import { supportedLangs } from '@/lib/i18n/config';
+import { type Locale, SUPPORTED_LOCALES } from '@workspace/shared/i18n';
 
 const BASE_URL =
   typeof process.env.NEXT_PUBLIC_APP_URL === 'string' && process.env.NEXT_PUBLIC_APP_URL.length > 0
@@ -24,19 +23,19 @@ export const PUBLIC_PATHS = ['', '/pricing', '/login', '/signup', '/terms', '/pr
  * @param path - Path segment after /[lang], e.g. '' or '/pricing'
  */
 export function buildPublicAlternates(
-  lang: Lang,
+  lang: Locale,
   path: string,
 ): { canonical: string; languages: Record<string, string> } {
   const canonical = `${BASE_URL}/${lang}${path}`;
   const languages: Record<string, string> = {};
-  for (const l of supportedLangs) {
+  for (const l of SUPPORTED_LOCALES) {
     languages[l] = `${BASE_URL}/${l}${path}`;
   }
   return { canonical, languages };
 }
 
 /** OpenGraph locale string for the given lang (e.g. ko_KR, en_US). */
-export function getOgLocale(lang: Lang): string {
+export function getOgLocale(lang: Locale): string {
   return lang === 'ko' ? 'ko_KR' : 'en_US';
 }
 

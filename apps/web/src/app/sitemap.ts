@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 import { getBaseUrl, PUBLIC_PATHS } from '@/lib/i18n-runtime/seo';
-import { supportedLangs } from '@/lib/i18n/config';
+import { SUPPORTED_LOCALES } from '@workspace/shared/i18n';
 
 const PRIORITY_AND_FREQ: Record<string, { priority: number; changeFrequency: 'weekly' | 'monthly' | 'yearly' }> = {
   '': { priority: 1.0, changeFrequency: 'weekly' },
@@ -27,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
       changeFrequency: 'monthly' as const,
     };
-    for (const lang of supportedLangs) {
+    for (const lang of SUPPORTED_LOCALES) {
       entries.push({
         url: `${baseUrl}/${lang}${path}`,
         lastModified: new Date(),

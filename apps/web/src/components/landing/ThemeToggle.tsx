@@ -6,10 +6,10 @@ import { flushSync } from 'react-dom';
 import { Moon, Sun } from 'lucide-react';
 
 import { trackThemeToggled } from '@/lib/analytics/landing-tracker';
-import type { Lang } from '@/lib/i18n/landing';
+import type { Locale } from '@workspace/shared/i18n';
 
 interface ThemeToggleProps {
-  lang: Lang;
+  lang: Locale;
   className?: string;
   variant?: 'desktop' | 'mobile';
 }
