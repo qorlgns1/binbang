@@ -74,6 +74,11 @@ export const adminKeys = {
   ] => [...adminKeys.selectors(), 'testResult', input ?? {}] as const,
   testableAttributes: (): readonly ['admin', 'selectors', 'testableAttributes'] =>
     [...adminKeys.selectors(), 'testableAttributes'] as const,
+  // Submissions
+  submissions: (filters?: Record<string, string>): readonly ['admin', 'submissions', Record<string, string>] =>
+    [...adminKeys.all, 'submissions', filters ?? {}] as const,
+  submissionDetail: (id: string): readonly ['admin', 'submissions', string] =>
+    [...adminKeys.all, 'submissions', id] as const,
   // Cases
   cases: (filters?: Record<string, string>): readonly ['admin', 'cases', Record<string, string>] =>
     [...adminKeys.all, 'cases', filters ?? {}] as const,
