@@ -37,6 +37,8 @@ export async function createUserWithCredentials(input: SignupInput): Promise<Aut
       password: hashedPassword,
       name: input.name,
       emailVerified: new Date(),
+      plan: { connect: { name: 'FREE' } },
+      roles: { connect: [{ name: 'USER' }] },
     },
     select: {
       id: true,
@@ -104,6 +106,25 @@ export function createNextAuthAdapter() {
   const baseAdapter = PrismaAdapter(prisma);
   return {
     ...baseAdapter,
+    createUser: async (data: Record<string, unknown>) => {
+      const user = await prisma.user.create({
+        data: {
+          ...(data as { name?: string; email: string; emailVerified?: Date | null; image?: string }),
+          plan: { connect: { name: 'FREE' } },
+          roles: { connect: [{ name: 'USER' }] },
+        },
+        select: {
+          id: true,
+          email: true,
+          emailVerified: true,
+          name: true,
+          image: true,
+          roles: { select: { name: true } },
+          plan: { select: { name: true } },
+        },
+      });
+      return user as typeof user & { email: string };
+    },
     getUser: getUserWithRolesAndPlan,
     getSessionAndUser: getSessionAndUserByToken,
   };
