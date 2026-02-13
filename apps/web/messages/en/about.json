@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "title": "Binbang – About Us",
+    "description": "Binbang automatically monitors accommodation booking sites for vacancies and sends you alerts.",
+    "ogDescription": "About Binbang – vacancy alert service."
+  },
+  "title": {
+    "heading": "About Binbang",
+    "subline": "A lighthouse that stays lit all night, so your rest never loses its way."
+  },
+  "mission": {
+    "title": "Our Mission",
+    "description": "Booking accommodations should be exciting, not stressful. Binbang was built to free you from endless refreshing and booking wars. The moment a vacancy appears at your dream stay, we let you know first."
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1Title": "Register Accommodation",
+    "step1Desc": "Add the URL of your desired accommodation from Airbnb, Agoda, and more.",
+    "step2Title": "Automatic Monitoring",
+    "step2Desc": "Binbang checks for vacancies around the clock. Pro plans check every minute.",
+    "step3Title": "Instant Alerts",
+    "step3Desc": "When a room opens up, we notify you instantly via email and KakaoTalk."
+  },
+  "values": {
+    "title": "Core Values",
+    "v1Title": "Speed",
+    "v1Desc": "Browser-optimized technology detects vacancies up to 4x faster.",
+    "v2Title": "Reliability",
+    "v2Desc": "Heartbeat system ensures uninterrupted 24/7 monitoring.",
+    "v3Title": "Accuracy",
+    "v3Desc": "Dynamic selectors adapt instantly to booking site changes."
+  },
+  "cta": {
+    "title": "Get Started Today",
+    "description": "Leave the booking race to Binbang and focus on planning your next trip.",
+    "button": "Start for Free"
+  }
+}

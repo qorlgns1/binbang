@@ -76,6 +76,9 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
             <Link href={`/${lang}/faq`} className={navItemClass} onClick={closeSheet}>
               {t('nav.faq')}
             </Link>
+            <Link href={`/${lang}/about`} className={navItemClass} onClick={closeSheet}>
+              {t('nav.about')}
+            </Link>
             <Link href={`/${lang}/privacy`} className={navItemClass} onClick={closeSheet}>
               {t('footer.privacy')}
             </Link>

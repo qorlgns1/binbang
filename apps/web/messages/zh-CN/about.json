@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "title": "Binbang – 关于我们",
+    "description": "Binbang自动监控住宿预订网站的空房情况并发送提醒通知。",
+    "ogDescription": "关于Binbang – 空房提醒服务。"
+  },
+  "title": {
+    "heading": "关于Binbang",
+    "subline": "让您的休息不迷路，彻夜为您点亮灯塔。"
+  },
+  "mission": {
+    "title": "我们的使命",
+    "description": "预订住宿应该是令人兴奋的，而不是充满压力的。Binbang的诞生就是为了将您从无休止的刷新和预订大战中解放出来。当您心仪的住宿出现空房时，我们第一时间通知您。"
+  },
+  "howItWorks": {
+    "title": "工作原理",
+    "step1Title": "注册住宿",
+    "step1Desc": "添加来自Airbnb、Agoda等平台的住宿URL。",
+    "step2Title": "自动监控",
+    "step2Desc": "Binbang全天候不间断检查空房。Pro套餐每分钟检查一次。",
+    "step3Title": "即时提醒",
+    "step3Desc": "一旦有空房，立即通过邮件和KakaoTalk通知您。"
+  },
+  "values": {
+    "title": "核心价值",
+    "v1Title": "速度",
+    "v1Desc": "浏览器优化技术，空房检测速度提升4倍。",
+    "v2Title": "稳定性",
+    "v2Desc": "心跳系统确保全年365天、每天24小时不间断监控。",
+    "v3Title": "准确性",
+    "v3Desc": "动态选择器即时适应预订网站的变化。"
+  },
+  "cta": {
+    "title": "立即开始",
+    "description": "将预订竞争交给Binbang，专注于规划您的下一次旅行。",
+    "button": "免费开始"
+  }
+}

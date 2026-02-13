@@ -33,6 +33,12 @@ describe('getNamespacesForPathname', () => {
     });
   });
 
+  describe('public 라우트 — about 추가', () => {
+    it('about (/ko/about)', () => {
+      expect(getNamespacesForPathname('/ko/about')).toEqual(['common', 'landing', 'pricing', 'about']);
+    });
+  });
+
   describe('public 라우트 — legal 추가', () => {
     it('terms (/ko/terms)', () => {
       expect(getNamespacesForPathname('/ko/terms')).toEqual(['common', 'landing', 'pricing', 'legal']);
@@ -69,14 +75,15 @@ describe('getNamespacesForPathname', () => {
 });
 
 describe('getAllNamespaces', () => {
-  it('6개 전체 namespace를 반환한다', () => {
+  it('7개 전체 namespace를 반환한다', () => {
     const all = getAllNamespaces();
-    expect(all).toHaveLength(6);
+    expect(all).toHaveLength(7);
     expect(all).toContain('common');
     expect(all).toContain('landing');
     expect(all).toContain('legal');
     expect(all).toContain('auth');
     expect(all).toContain('pricing');
     expect(all).toContain('faq');
+    expect(all).toContain('about');
   });
 });

@@ -7,6 +7,7 @@ const PRIORITY_AND_FREQ: Record<string, { priority: number; changeFrequency: 'we
   '': { priority: 1.0, changeFrequency: 'weekly' },
   '/pricing': { priority: 0.8, changeFrequency: 'monthly' },
   '/faq': { priority: 0.7, changeFrequency: 'monthly' },
+  '/about': { priority: 0.7, changeFrequency: 'monthly' },
   '/login': { priority: 0.5, changeFrequency: 'yearly' },
   '/signup': { priority: 0.5, changeFrequency: 'yearly' },
   '/terms': { priority: 0.5, changeFrequency: 'monthly' },
