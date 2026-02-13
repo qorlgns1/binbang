@@ -41,12 +41,9 @@ export async function POST(request: Request): Promise<Response> {
     // 워커 내부 HTTP 서버로 테스트 요청 전달
     const workerUrl = process.env.WORKER_INTERNAL_URL || 'http://localhost:3500';
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const secret = process.env.WORKER_INTERNAL_SECRET;
-    if (typeof secret === 'string' && secret.length > 0) headers['X-Worker-Secret'] = secret;
     const workerRes = await fetch(`${workerUrl}/test`, {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         url,
         platform,

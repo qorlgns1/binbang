@@ -19,13 +19,10 @@ export async function POST(_request: Request): Promise<Response> {
     let response: Response;
 
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      const secret = process.env.WORKER_INTERNAL_SECRET;
-      if (typeof secret === 'string' && secret.length > 0) headers['X-Worker-Secret'] = secret;
       // 1. Worker가 실행 중인지 확인
       response = await fetch(`${workerUrl}/restart`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
       // 2. Worker가 죽었을 경우 환경별로 재시작
