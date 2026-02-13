@@ -89,20 +89,14 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
         {variant === 'landing' && (
           <>
             <nav className='hidden gap-1 md:flex mr-auto' aria-label='Main'>
-              <a href='#features' className={navLinkClass}>
-                {tLanding('nav.features')}
-              </a>
-              <a href='#status' className={navLinkClass}>
-                {tLanding('nav.status')}
-              </a>
+              <Link href={`/${lang}/about`} className={navLinkClass}>
+                {tLanding('nav.about')}
+              </Link>
               <Link href={`/${lang}/pricing`} className={navLinkClass}>
                 {tLanding('nav.pricing')}
               </Link>
               <Link href={`/${lang}/faq`} className={navLinkClass}>
                 {tLanding('nav.faq')}
-              </Link>
-              <Link href={`/${lang}/about`} className={navLinkClass}>
-                {tLanding('nav.about')}
               </Link>
             </nav>
             <div className='flex items-center gap-2'>
