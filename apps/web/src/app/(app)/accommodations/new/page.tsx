@@ -32,7 +32,7 @@ export default function NewAccommodationPage(): React.ReactElement {
   const [dateError, setDateError] = useState('');
 
   const now = new Date();
-  const today = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // URL 변경 시 자동 파싱
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional, runs only on url changes
