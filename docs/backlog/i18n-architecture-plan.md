@@ -53,7 +53,7 @@
 
 ### 선택·장기
 
-- **레거시 경로 EOL(2026-06-30)**: `apps/web/public/locales/**` 참조 완전 제거(이미 메시지는 `messages/**` 단일화됨, CI 차단만 유지).
+- **레거시 경로 EOL(2026-06-30)**: `apps/web/public/locales/**` 참조 완전 제거(이미 메시지는 `messages/**` 단일화됨, 해당 디렉터리 삭제 완료. CI 레거시 차단 스크립트는 제거됨).
 - **i18n messages payload 측정/CI 게이트**: route별 client messages 크기 측정, 임계치 초과 시 실패. (13.4)
 
 ---
@@ -714,7 +714,7 @@ export default async function LocaleLayout({
   - 신규 번역 추가/수정은 `apps/web/messages/**`에서만 수행한다.
 - 종료 시점(EOL): **2026-06-30**
   - 2026-07-01부터 `apps/web/public/locales/**` 로딩 경로 제거
-  - CI에서 `apps/web/public/locales/**` 변경 PR을 실패 처리(마이그레이션 예외 승인 제외)
+  - (과거) CI에서 해당 경로 변경 PR 실패 처리했으나, 레거시 디렉터리 삭제 후 `check-legacy.mjs` 제거됨
 
 예시
 
@@ -936,7 +936,7 @@ export default async function LocaleLayout({
   - ICU 변수 파라미터 정합성 검사
 - `pnpm i18n:ci`
   - `i18n:typegen` 실행(생성물은 git 추적 제외)
-  - `i18n:check` 실행(키/ICU 파라미터 정합성)
+  - `i18n:check` 실행(키/ICU 파라미터 정합성). (레거시 경로 차단은 제거됨)
   - `pnpm typecheck` 또는 `pnpm ci:check` 내 typecheck 단계가
     생성된 타입을 사용해 “키 오타/잘못된 사용”을 컴파일 타임에 차단
 
@@ -1438,10 +1438,9 @@ packages/worker-shared/src/runtime/i18n/
   - Blocker: `-`
 
 - [x] WU-12 CI 게이트 + 레거시 경로 차단
-  - Scope: `i18n:ci` 강제, `apps/web/public/locales/**` 변경 차단(EOL 정책 반영)
+  - Scope: `i18n:ci` 강제, (당시) `apps/web/public/locales/**` 변경 차단(EOL 정책 반영). 이후 레거시 디렉터리 삭제로 `check-legacy.mjs` 제거됨.
   - Allowed Files: `.github/workflows/*.yml`, `scripts/i18n/**`, 루트 `package.json`
-  - DoD: 승인 없는 레거시 경로 변경 PR 실패
-  - Verify: `pnpm ci:check` (또는 CI 워크플로우 검증 명령)
+  - DoD: 승인 없는 레거시 경로 변경 PR 실패 (현재는 해당 스크립트 미사용)
   - Done Date: `2026-02-12`
   - Blocker: `-`
 
@@ -1513,7 +1512,7 @@ packages/worker-shared/src/runtime/i18n/
 - `2026-02-12`: `WU-09` 완료 — worker i18n runtime(loader+templates+userLocale), conditionTrigger 구조화 페이로드 전환, caseNotifications 레거시/구조화 양방향 호환, 메시지 ko/en notification.json, 테스트 11개 통과, ci:check 통과
 - `2026-02-12`: `WU-10` 완료 — `scripts/i18n/check.mjs`(key parity+param parity+빈 값 검사), apps/web+worker-shared messages 대상, `pnpm i18n:check` 스크립트 추가, ci:check 통과
 - `2026-02-12`: `WU-11` 완료 — `scripts/i18n/typegen.mjs`(ko 기준 namespace별 key union 타입 생성), 출력 `packages/shared/src/generated/i18n/messages.ts`(gitignored), `pnpm i18n:typegen` 스크립트 추가, WebMessages/WorkerMessages/TypedTranslateFunction 타입 제공, ci:check 통과
-- `2026-02-12`: `WU-12` 완료 — `scripts/i18n/check-legacy.mjs`(레거시 경로 변경 차단, EOL 2026-06-30), `pnpm i18n:ci`(typegen+check+check-legacy 통합), `.github/workflows/ci.yml`에 `pnpm i18n:ci` 단계 추가, ci:check 통과
+- `2026-02-12`: `WU-12` 완료 — (당시) `scripts/i18n/check-legacy.mjs`(레거시 경로 변경 차단), `pnpm i18n:ci`(typegen+check 통합), `.github/workflows/ci.yml`에 `pnpm i18n:ci` 단계 추가. 이후 레거시 디렉터리 삭제에 따라 `check-legacy.mjs` 제거, `i18n:ci`는 typegen+check만 실행.
 - `2026-02-12`: `WU-13` 완료 — `apps/web/public/locales/` 삭제, `landing.json` → `messages/{ko,en}/landing.json` 이동, `getLandingCopy()` 경로 업데이트, i18n:check(common 13 + landing 40 keys), ci:check 통과
 - `2026-02-13`: `WU-14` 완료 — Public 페이지(login/signup/pricing/terms/privacy) `(public)/[lang]/` 하위로 이동, middleware에 locale 협상 redirect 추가(PUBLIC_PATHS), 모든 내부 링크 `/${lang}/...` 패턴으로 통일(landing 6개 컴포넌트 + 3개 client 페이지), `generateStaticParams` 추가, ci:check 통과
 - `2026-02-13`: 구현 상태 반영 — Public 전 페이지에 LangToggle 적용(경로 유지 전환), pricing/login/signup/terms/privacy는 next-intl(auth, legal, pricing namespace) 적용, 랜딩은 getLandingCopy(landing.json) 유지. 지원 언어 ko/en. 공통 헤더는 layout 주입 없이 페이지별 구성. request.ts는 전체 namespace 일괄 로드.
