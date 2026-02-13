@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { ArrowLeft, CheckCircle, Home } from 'lucide-react';
 
@@ -17,6 +18,7 @@ import { parseAccommodationUrl } from '@/lib/url-parser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
 export default function NewAccommodationPage(): React.ReactElement {
+  const t = useTranslations('common');
   const router = useRouter();
   const createMutation = useCreateAccommodation();
   const [parsedInfo, setParsedInfo] = useState<ParsedAccommodationUrl | null>(null);
@@ -243,7 +245,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 {createMutation.isPending ? '추가 중...' : '숙소 추가'}
               </Button>
               <Button asChild variant='outline' className='border-border'>
-                <Link href='/dashboard'>취소</Link>
+                <Link href='/dashboard'>{t('cancel')}</Link>
               </Button>
             </div>
           </form>

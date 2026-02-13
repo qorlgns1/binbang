@@ -1,0 +1,8 @@
+{
+  "conditionMet": {
+    "title": "Accommodation Available! 🎉",
+    "button": "Book Now",
+    "checkNow": "Check it now!"
+  },
+  "fallbackButton": "Check"
+}

@@ -9,7 +9,8 @@
       "@/generated/*": ["../../packages/db/generated/*"],
       "@workspace/db": ["../../packages/db/src"],
       "@workspace/db/enums": ["../../packages/db/src/enums.ts"],
-      "@workspace/shared": ["../../packages/shared/src"]
+      "@workspace/shared": ["../../packages/shared/src"],
+      "@workspace/shared/i18n": ["../../packages/shared/src/i18n"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

@@ -1,56 +1,79 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import type { Lang } from '@/lib/i18n/config';
+import { DEFAULT_LOCALE, type Locale, isSupportedLocale, mapToSupportedLocale } from '@workspace/shared/i18n';
+
 import { checkRateLimit, cleanupStore, getClientIp, getRateLimit } from '@/lib/rateLimit';
 
 /**
- * Determine the request language preference using cookie, then Accept-Language header, defaulting to `ko`.
+ * URL pathname에서 locale prefix를 파싱한다.
  *
- * @param request - The incoming Next.js request whose cookies and headers are inspected for language preference
- * @returns `'ko'` or `'en'` — chosen from the `binbang-lang` cookie if present and valid, otherwise from the request's `Accept-Language` primary tag, or `'ko'` if neither yields a supported language
+ * @example parseLocaleFromPath("/ko/landing") → "ko"
+ * @example parseLocaleFromPath("/dashboard") → null
  */
-function detectLang(request: NextRequest): Lang {
-  // 1순위: 쿠키
-  const langCookie = request.cookies.get('binbang-lang');
-  if (langCookie?.value === 'ko' || langCookie?.value === 'en') {
-    return langCookie.value;
-  }
-
-  // 2순위: Accept-Language
-  const acceptLanguage = request.headers.get('accept-language');
-  if (acceptLanguage) {
-    const preferredLang = acceptLanguage.split(',')[0]?.split('-')[0];
-    if (preferredLang === 'ko') return 'ko';
-    if (preferredLang === 'en') return 'en';
-  }
-
-  // 3순위: 기본값
-  return 'ko';
+function parseLocaleFromPath(pathname: string): Locale | null {
+  const segment = pathname.split('/')[1];
+  return segment && isSupportedLocale(segment) ? segment : null;
 }
 
 /**
- * Handles root-path language redirects and enforces rate limits for API routes.
+ * Edge-safe 1차 locale 협상 (DB 접근 금지).
  *
- * Depending on the request path, this middleware either redirects the root path to a language-prefixed URL, bypasses rate limiting for non-API paths, rejects requests that exceed the rate limit, or forwards allowed requests while attaching rate-limit headers.
+ * 우선순위: cookie(`binbang-lang`) > Accept-Language > DEFAULT_LOCALE
+ * DB(`preferredLocale`)는 서버 2차 확정에서 반영한다 (ADR-2).
+ * zh-* → zh-CN, es-* → es-419 매핑 적용 (ADR-9).
+ */
+function negotiateLocale(request: NextRequest): Locale {
+  const cookieRaw = request.cookies.get('binbang-lang')?.value;
+  const cookieLocale = cookieRaw ? mapToSupportedLocale(cookieRaw) : null;
+  if (cookieLocale) return cookieLocale;
+
+  const acceptLanguage = request.headers.get('accept-language');
+  if (acceptLanguage) {
+    const primary = acceptLanguage.split(',')[0]?.trim();
+    const headerLocale = primary
+      ? (mapToSupportedLocale(primary) ?? mapToSupportedLocale(primary.split('-')[0]))
+      : null;
+    if (headerLocale) return headerLocale;
+  }
+
+  return DEFAULT_LOCALE;
+}
+
+/** locale prefix 없이 접근 가능한 public 경로 (redirect 대상) */
+const PUBLIC_PATHS = ['/login', '/signup', '/pricing', '/terms', '/privacy'];
+
+/** next-intl이 getRequestConfig의 requestLocale으로 읽는 헤더 (서버로 전달) */
+const NEXT_INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
+
+/**
+ * Locale 협상 + Rate Limiting middleware.
  *
- * @returns A NextResponse that is one of:
- *  - a 302 redirect to "/{lang}" for the root path;
- *  - a 429 JSON response `{ error: 'Too many requests' }` with `Retry-After`, `X-RateLimit-Limit`, and `X-RateLimit-Remaining: 0` when the client is rate limited;
- *  - or a next response with `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers for allowed requests (or a plain next response for paths not subject to rate limiting).
+ * - URL에 locale prefix가 있으면 통과 (next-intl용 locale 헤더 설정)
+ * - root "/" 또는 public 경로 → locale 협상 후 redirect
+ * - API 경로 → rate limit 적용
  */
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  // / 경로: 언어 감지 후 302 redirect
-  if (pathname === '/') {
-    const lang = detectLang(request);
+  // 1) URL에 locale prefix가 있으면 통과 (next-intl에 path 기반 locale 전달)
+  const pathLocale = parseLocaleFromPath(pathname);
+  if (pathLocale) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(NEXT_INTL_LOCALE_HEADER, pathLocale);
+    requestHeaders.set('x-pathname', pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // 2) root "/" 또는 public 경로 → locale 협상 후 redirect
+  if (pathname === '/' || PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    const locale = negotiateLocale(request);
     const url = request.nextUrl.clone();
-    url.pathname = `/${lang}`;
+    url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`;
     return NextResponse.redirect(url, { status: 302 });
   }
 
-  // Rate limit 체크 (API 경로만)
+  // 3) Rate limit 체크 (API 경로만)
   const limit = getRateLimit(pathname);
   if (limit === null) {
     return NextResponse.next();
@@ -82,5 +105,18 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/', '/api/:path*'],
+  matcher: [
+    '/',
+    '/ko/:path*',
+    '/en/:path*',
+    '/ja/:path*',
+    '/zh-CN/:path*',
+    '/es-419/:path*',
+    '/api/:path*',
+    '/login',
+    '/signup',
+    '/pricing',
+    '/terms',
+    '/privacy',
+  ],
 };

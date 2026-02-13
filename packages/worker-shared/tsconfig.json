@@ -14,7 +14,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@workspace/db": ["../db/src"],
-      "@workspace/shared": ["../shared/src"]
+      "@workspace/shared": ["../shared/src"],
+      "@workspace/shared/i18n": ["../shared/src/i18n"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -1,10 +1,60 @@
 # 다국어(i18n) 아키텍처 상세 계획서 (Backlog)
 
-> 작성일: 2026-02-12 | 최종 업데이트: 2026-02-12
+> 작성일: 2026-02-12 | 최종 업데이트: 2026-02-13
 > 기준 브랜치: `develop`
 > 목표: Web/App/Admin/Worker/Email까지 **일관된 Locale 전파 + 메시지 카탈로그 + 검증/운영 파이프라인**을 갖춘, 프레임워크/라우팅 변경에도 흔들리지 않는 i18n 아키텍처를 정의한다.
 
 이 문서는 “지금 코드가 어떻게 되어 있냐”가 아니라, **장기적으로 가장 좋은 i18n 아키텍처가 무엇인지**를 모노레포 경계(`rules.md`) 관점에서 구체화한 계획서다.
+
+---
+
+## 현재 구현 상태 요약 (2026-02-13)
+
+- **지원 locale**: 계획 1차 지원은 `ko`, `en`, `ja`, `zh-CN`, `es-419`이나, **현재 구현은 `ko`, `en`만** 적용됨. `packages/shared` `SUPPORTED_LOCALES`가 단일 소스이며, `apps/web` 전체가 `@workspace/shared/i18n`의 `Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`을 사용. 레거시 `Lang`/`supportedLangs`/`isValidLang`(`apps/web/src/lib/i18n/config.ts`)은 제거됨.
+- **Public 라우팅**: `(public)/[lang]/**` 구조 정렬 완료(WU-14). middleware에서 `/`, `/login`, `/signup`, `/pricing`, `/terms`, `/privacy` 접근 시 locale 협상 후 `/{locale}/...` 로 redirect.
+- **Public 헤더(단일·한 줄)**: `(public)/[lang]/layout.tsx`에서 **PublicHeader** 한 개만 주입. layout에서 `lang` props 전달, pathname으로 variant 자동 판단.
+  - **landing** (`/[lang]`): 브랜드 | 네비(기능/상태/요금제/개인정보) | 테마 | 언어 | 로그인. 모바일은 브랜드 | 테마 | 언어 | 햄버거(시트 내 네비·로그인).
+  - **pricing** (`/[lang]/pricing`): 브랜드 | 뒤로 | 언어 | (로그인 시 대시보드, 비로그인 시 로그인·가입). `useSession()` 연동.
+  - **auth** (`/[lang]/login`, `/[lang]/signup`): 브랜드 | 언어.
+  - **legal** (`/[lang]/terms`, `/[lang]/privacy`): 브랜드 | 홈으로 | 언어.
+  - **default**: 브랜드 | 언어.
+  - 랜딩은 별도 네비 바 없음(Landing Header 제거). pricing/terms/privacy는 페이지 내 헤더·뒤로가기 제거, 모두 PublicHeader 한 줄로 통합.
+- **MobileMenu**: `useTranslations('landing')` 기반, `copy` prop 제거. 터치 타겟 44px+, 시트 내 계층·구분선·접근성. 링크/버튼 클릭 시 시트 닫기; #features/#status는 `scrollToAndClose`(시트 닫힌 뒤 350ms 지연 scrollIntoView로 포커스 복원에 의한 상단 스크롤 방지).
+- **메시지/네임스페이스**: `apps/web/messages/{ko,en}/` 에 `common`, `auth`, `landing`, `legal`, `pricing` 존재. **랜딩 포함 모든 Public 페이지**는 next-intl 사용. `getLandingCopy` 제거됨.
+- **request.ts + namespace slicing(적용 완료)**: locale은 `(public)/[lang]`에서는 URL param, `(app)`에서는 cookie fallback. middleware가 `x-pathname` 헤더를 전달하고, `request.ts`가 `namespaces.ts`의 `getNamespacesForPathname()`을 사용해 **라우트별 필요 namespace만** 동적 로드. Landing/Pricing은 3개(common+landing+pricing), Auth는 4개(+auth), Legal은 4개(+legal), App 라우트는 1개(common). pathname 미확인 시 전체 5개 fallback.
+- **Public SEO(WU-16 완료)**: `sitemap.ts`는 locale 접두어(`/ko`, `/en`, `/ko/pricing` 등) URL + 항목별 `alternates.languages`(hreflang) 출력. Public 각 페이지(landing, pricing, login, signup, terms, privacy)는 `generateMetadata`/layout에서 `alternates.canonical`(절대 URL) 및 `alternates.languages`(ko/en) 설정. 헬퍼: `apps/web/src/lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates).
+
+---
+
+## 앞으로 구현할 사항
+
+### 우선순위 높음 (Public / SEO)
+
+| # | 항목 | 설명 | 참고 |
+|---|------|------|------|
+| 1 | **(완료) 랜딩 텍스트 i18n** | 랜딩을 next-intl `useTranslations('landing')` 기반으로 통일 완료. | 17.3 Landing 행 |
+| 2 | **(완료) WU-16 Public SEO** | hreflang/canonical/sitemap 적용 완료. | 17.2, 17.3 |
+
+### 우선순위 중간 (아키텍처·품질)
+
+| # | 항목 | 설명 | 참고 |
+|---|------|------|------|
+| 3 | **(완료) request.ts namespace slicing** | middleware `x-pathname` 헤더 + `namespaces.ts` `getNamespacesForPathname()` 기반으로 라우트별 최소 namespace 로드 적용 완료. | 5.8, 현재 구현 상태 요약 |
+| 4 | **사용자 preferredLocale 저장·반영** | 사용자 프로필에 `preferredLocale` 저장, Web 2차 확정·Worker/이메일 발송 시 반영. (DB 스키마·마이그레이션 별도.) | ADR-2, ADR-4, 7.5 |
+| 5 | **Missing-key 관측(Prod)** | missing-key 발생 시 메트릭/로그 수집, SLO·알람 설계. | 12.4, 12.7 |
+
+### 우선순위 낮음 / 확장
+
+| # | 항목 | 설명 | 참고 |
+|---|------|------|------|
+| 6 | **지원 locale 확장** | 현재 ko/en만. 계획 1차: ja, zh-CN, es-419 추가 시 `@workspace/shared/i18n`의 `Locale`/`SUPPORTED_LOCALES` 확장 + messages·middleware·LangToggle 대응. | 2.1, ADR-9 |
+| 7 | **App(비공개) 페이지 i18n** | Dashboard, Accommodations, Subscription Settings 등에 텍스트 i18n 적용 및 언어 변경 동작. (SEO 비대상.) | 17.3 매트릭스 |
+| 8 | **포맷 토큰 통일** | Admin/Email/Worker 등에서 날짜·숫자·통화 포맷을 `@workspace/shared` 포맷 토큰으로 통일. | 9.4 |
+
+### 선택·장기
+
+- **레거시 경로 EOL(2026-06-30)**: `apps/web/public/locales/**` 참조 완전 제거(이미 메시지는 `messages/**` 단일화됨, 해당 디렉터리 삭제 완료. CI 레거시 차단 스크립트는 제거됨).
+- **i18n messages payload 측정/CI 게이트**: route별 client messages 크기 측정, 임계치 초과 시 실패. (13.4)
 
 ---
 
@@ -28,6 +78,7 @@
 16. [부록: 추천 디렉터리/파일 레이아웃](#16-부록-추천-디렉터리파일-레이아웃)
 17. [LLM 실행 운영 가이드(이 문서 단독)](#17-llm-실행-운영-가이드이-문서-단독)
 18. [관련 문서](#18-관련-문서)
+19. [앞으로 구현할 사항](#앞으로-구현할-사항)
 
 ---
 
@@ -59,9 +110,10 @@
 
 ### 2.1 Locale / Language / Region
 
-- **Language**: `ko`, `en` 등 (UI 언어)
+- **Language**: `ko`, `en`, `ja`, `zh`, `es` 등 (UI 언어)
 - **Locale**: `ko-KR`, `en-US` 등 (언어+지역)
-- 본 계획서는 초기에 `ko`, `en`을 최소 집합으로 두되, 설계는 Locale 확장(`en-US`, `en-GB`)이 가능해야 한다.
+- 본 계획서의 1차 지원 locale은 `ko`, `en`, `ja`, `zh-CN`, `es-419`를 기준으로 한다.
+- 2차 확장 시 지역 분리 locale(`zh-TW`, `es-ES` 등)로 확장 가능해야 한다.
 
 ### 2.2 Namespace
 
@@ -175,6 +227,23 @@ DoD(호환성):
   을 포함하지 않는다.
 - 사용자 데이터는 항상 런타임 파라미터로 주입하고, 번역 리소스는 “정적 텍스트/ICU 템플릿”만 담는다.
 
+### ADR-9. 지원 Locale 세트 + 지역 매핑 정책
+
+권장 결정:
+
+- 1차 지원 locale: `ko`, `en`, `ja`, `zh-CN`, `es-419`
+- 기본 locale(`defaultLocale`): `ko`
+
+지역 매핑 정책(1차):
+
+- `zh-*` 요청은 `zh-CN`으로 매핑한다.
+- `es-*` 요청은 `es-419`로 매핑한다.
+
+2차 분리 정책:
+
+- 트래픽/고객요청/운영지표가 충분하면 `zh-TW`, `es-ES`를 별도 locale로 분리한다.
+- 분리 전까지는 매핑 정책으로 일관성을 유지한다.
+
 ---
 
 ## 4. 목표 아키텍처(To-Be) 개요
@@ -275,13 +344,62 @@ export function LoginButton(): React.ReactElement {
 - **Mode A (기본)**: Public만 `/{lang}/...` prefix 적용, App/Admin은 비-prefix 운영
 - **Mode B (옵션)**: Public/App/Admin 모두 `/{lang}/...` prefix로 통일
 
-지원 언어(예시): `ko`, `en`
+지원 언어(1차): `ko`, `en`, `ja`, `zh-CN`, `es-419`
 
 핵심 규칙:
 
 - URL에 locale이 있으면 **그 값이 Source of Truth**다.
 - URL에 locale이 없으면 (Mode에 따라) cookie/header로 **1차 협상 후 redirect**한다.
 - 로그인 사용자 `preferredLocale`은 서버에서 **2차 확정**에 반영된다(ADR-2 참고).
+
+### 5.6A Public 라우팅 구조 재설계(파일 시스템 정렬)
+
+문제:
+
+- Public 라우트가 `/(public)/[lang]/...`와 `/(public)/...`로 혼재하면,
+  locale 소스 우선순위(URL 최우선), 링크 정책, 테스트 케이스가 분산된다.
+
+목표(Mode A 기준):
+
+- Public 페이지는 파일 시스템 기준으로 `apps/web/src/app/(public)/[lang]/**`로 통일한다.
+- 비어드민 App 페이지(`(app)/**`)는 비-prefix 유지(Mode A 기본 정책).
+
+현재 -> 목표(권장 매핑):
+
+- `apps/web/src/app/(public)/[lang]/page.tsx` -> 유지
+- `apps/web/src/app/(public)/pricing/page.tsx` -> `apps/web/src/app/(public)/[lang]/pricing/page.tsx`
+- `apps/web/src/app/(public)/login/page.tsx` -> `apps/web/src/app/(public)/[lang]/login/page.tsx`
+- `apps/web/src/app/(public)/signup/page.tsx` -> `apps/web/src/app/(public)/[lang]/signup/page.tsx`
+- `apps/web/src/app/(public)/terms/page.tsx` -> `apps/web/src/app/(public)/[lang]/terms/page.tsx`
+- `apps/web/src/app/(public)/privacy/page.tsx` -> `apps/web/src/app/(public)/[lang]/privacy/page.tsx`
+
+마이그레이션 규칙:
+
+- 전환 기간에는 레거시 비-prefix 경로를 삭제하지 말고, middleware redirect로 canonical 경로(`/[lang]/...`)로 수렴시킨다.
+- canonical 경로 정착 후 레거시 파일/라우트를 제거한다(SEO 작업 전에 완료).
+
+### 5.6B Public 공통 헤더 + 언어 변경 UX 표준
+
+목표:
+
+- Public 페이지(landing/pricing/login/signup/terms/privacy)에
+  **경량 공통 헤더(브랜드 + 언어 변경)** 를 일관 적용한다.
+
+권장 구성:
+
+- 공통 헤더는 `apps/web/src/app/(public)/[lang]/layout.tsx`에서 주입한다.
+- 필수 요소:
+  - 브랜드/홈 링크
+    - 브랜드 표기 정책: `ko` locale은 `빈방`, 그 외 locale(`en`, `ja`, `zh-CN`, `es-419`)은 `binbang`
+  - 언어 변경 컨트롤(예: `ko` / `en` / `ja` / `zh-CN` / `es-419`)
+
+언어 변경 동작 규칙(필수):
+
+- 같은 페이지를 유지한 채 locale만 전환한다.
+  - 예: `/ko/pricing?plan=pro` -> `/es-419/pricing?plan=pro`
+- path와 query를 유지한다(불필요한 랜딩 페이지 복귀 금지).
+- 로그인 사용자라면 언어 변경 시 `preferredLocale` 동기화 정책을 적용한다.
+- 전환 후 화면 텍스트/포맷이 새 locale 기준으로 즉시 반영되어야 한다.
 
 ### 5.7 Middleware에서 locale 협상 + redirect(예시)
 
@@ -291,12 +409,26 @@ export function LoginButton(): React.ReactElement {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const SUPPORTED = new Set(['ko', 'en'] as const);
+const SUPPORTED = new Set(['ko', 'en', 'ja', 'zh-CN', 'es-419'] as const);
+type SupportedLocale = 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419';
 const DEFAULT_LOCALE = 'ko';
 
-function parseLocaleFromPath(pathname: string): string | null {
+function mapToSupportedLocale(raw: string | null | undefined): SupportedLocale | null {
+  if (!raw) return null;
+  if (SUPPORTED.has(raw as SupportedLocale)) return raw as SupportedLocale;
+
+  const normalized = raw.toLowerCase();
+  if (normalized.startsWith('zh')) return 'zh-CN';
+  if (normalized.startsWith('es')) return 'es-419';
+  if (normalized.startsWith('ja')) return 'ja';
+  if (normalized.startsWith('en')) return 'en';
+  if (normalized.startsWith('ko')) return 'ko';
+  return null;
+}
+
+function parseLocaleFromPath(pathname: string): SupportedLocale | null {
   const maybe = pathname.split('/')[1];
-  return maybe && SUPPORTED.has(maybe as 'ko' | 'en') ? maybe : null;
+  return mapToSupportedLocale(maybe);
 }
 
 export function middleware(req: NextRequest): NextResponse {
@@ -308,12 +440,12 @@ export function middleware(req: NextRequest): NextResponse {
 
   // 2) 1차 협상(예시, Edge-safe): cookie -> Accept-Language -> default
   // DB(user preferredLocale)는 여기서 다루지 않는다(ADR-2 참고).
-  const cookieLocale = req.cookies.get('NEXT_LOCALE')?.value;
-  const headerLocale = req.headers.get('accept-language')?.split(',')[0]?.split('-')[0];
+  const cookieLocale = mapToSupportedLocale(req.cookies.get('NEXT_LOCALE')?.value);
+  const headerLocale = mapToSupportedLocale(req.headers.get('accept-language')?.split(',')[0]);
 
   const negotiated =
-    (cookieLocale && SUPPORTED.has(cookieLocale as 'ko' | 'en') ? cookieLocale : null) ??
-    (headerLocale && SUPPORTED.has(headerLocale as 'ko' | 'en') ? headerLocale : null) ??
+    cookieLocale ??
+    headerLocale ??
     DEFAULT_LOCALE;
 
   // 3) redirect to /{locale}/...
@@ -340,7 +472,7 @@ export const config = {
 
 ```ts
 // 개념 예시(실제 코드는 프로젝트 auth/session 구조에 맞춤)
-type Locale = 'ko' | 'en';
+type Locale = 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419';
 
 export async function resolveLocaleOnServer(input: {
   urlLocale: Locale | null;
@@ -362,11 +494,13 @@ export async function resolveLocaleOnServer(input: {
 - 번역 리소스는 `apps/web/messages/{locale}/{namespace}.json`에서 로딩
 - “필요한 namespace만” 조립해서 `next-intl`에 제공 (namespace slicing)
 
+**구현 완료(2026-02-13)**: `middleware.ts`가 `x-pathname` 헤더를 전달하고, `request.ts`가 이를 읽어 `getNamespacesForPathname()`으로 필요한 namespace만 동적 `import()`한다. 전체 로드 fallback은 pathname 헤더가 없을 때(`getAllNamespaces()`)만 사용.
+
 ```ts
 // apps/web/src/i18n/request.ts
 import { getRequestConfig } from 'next-intl/server';
 
-type Locale = 'ko' | 'en';
+type Locale = 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419';
 type Namespace = 'common' | 'auth';
 
 async function loadNamespace(locale: Locale, ns: Namespace): Promise<Record<string, unknown>> {
@@ -504,7 +638,7 @@ export default async function LocaleLayout({
 
 ### 7.1 RequestContext 스키마(최소)
 
-- `locale`: `ko` | `en` (향후 `en-US` 등 확장)
+- `locale`: `ko` | `en` | `ja` | `zh-CN` | `es-419` (향후 `zh-TW`, `es-ES` 등 확장)
 - `timeZone`: 예: `Asia/Seoul`
 - `currency`: 예: `KRW`
 - `source`: locale 결정 근거(디버깅/관측용)
@@ -539,7 +673,7 @@ export default async function LocaleLayout({
 
 권장 모델(개념):
 
-- `User.preferredLocale: 'ko' | 'en' | null`
+- `User.preferredLocale: 'ko' | 'en' | 'ja' | 'zh-CN' | 'es-419' | null`
   - null이면 협상 결과(URL/cookie/header) 또는 기본값을 사용
 - 변경은 인증된 사용자만 가능
 - 저장 시 **supported locales**로 강제(검증 실패 시 거부)
@@ -580,7 +714,7 @@ export default async function LocaleLayout({
   - 신규 번역 추가/수정은 `apps/web/messages/**`에서만 수행한다.
 - 종료 시점(EOL): **2026-06-30**
   - 2026-07-01부터 `apps/web/public/locales/**` 로딩 경로 제거
-  - CI에서 `apps/web/public/locales/**` 변경 PR을 실패 처리(마이그레이션 예외 승인 제외)
+  - (과거) CI에서 해당 경로 변경 PR 실패 처리했으나, 레거시 디렉터리 삭제 후 `check-legacy.mjs` 제거됨
 
 예시
 
@@ -632,6 +766,9 @@ export default async function LocaleLayout({
 권장 예외:
 
 - 브랜드/프로덕트 고유명사(예: 서비스명)
+  - 본 서비스 표기 고정 규칙:
+    - `ko` locale: `빈방`
+    - `en`, `ja`, `zh-CN`, `es-419`: `binbang`
 - 외부 서비스/제휴사 고유명사(번역하면 오히려 혼란)
 - 법적 고정 문구 중 “번역본이 법적 효력을 갖지 않는” 경우(정책/법무 판단 필요)
 
@@ -688,7 +825,7 @@ export default async function LocaleLayout({
 ### 10.1 공개 페이지 URL 전략
 
 - **권장**: Public(SEO 대상)만 locale prefix
-  - `/ko/...`, `/en/...`
+  - `/ko/...`, `/en/...`, `/ja/...`, `/zh-CN/...`, `/es-419/...`
 - 이유
   - canonical/hreflang/sitemap 설계가 단순해짐
   - 공유 링크의 의미가 명확해짐
@@ -799,7 +936,7 @@ export default async function LocaleLayout({
   - ICU 변수 파라미터 정합성 검사
 - `pnpm i18n:ci`
   - `i18n:typegen` 실행(생성물은 git 추적 제외)
-  - `i18n:check` 실행(키/ICU 파라미터 정합성)
+  - `i18n:check` 실행(키/ICU 파라미터 정합성). (레거시 경로 차단은 제거됨)
   - `pnpm typecheck` 또는 `pnpm ci:check` 내 typecheck 단계가
     생성된 타입을 사용해 “키 오타/잘못된 사용”을 컴파일 타임에 차단
 
@@ -930,8 +1067,12 @@ DoD(성능):
 
 권장 규칙:
 
+- 지역 매핑(alias) 정책을 먼저 적용한다.
+  - `zh-*` -> `zh-CN`
+  - `es-*` -> `es-419`
 - 요청 locale이 지역(locale)까지 포함하면,
   - 메시지는 `language-region` → `language` → `defaultLocale` 순으로 폴백한다.
+  - 단, `language` 리소스가 없으면 해당 단계를 건너뛰고 `defaultLocale`로 폴백한다.
 
 예시:
 
@@ -956,9 +1097,10 @@ DoD(성능):
 
 ### P0-1. ADR 확정(핵심 + 추가)
 
-- 결정(예시, 현재 문서 기준 ADR-1~ADR-8)
+- 결정(예시, 현재 문서 기준 ADR-1~ADR-9)
   - 메시지 포맷(ICU)
   - locale 우선순위(2단계 협상 포함)
+  - 지원 locale 세트/지역 매핑 정책
   - 누락 키 정책
   - 사용자 선호 locale 저장
   - Web 어댑터(`next-intl`) 선택
@@ -1044,11 +1186,48 @@ DoD(성능):
 
 ---
 
+### P2-1A. Public 라우팅 구조 정렬(`(public)/[lang]/**`)
+
+#### 내용 — P2-1A
+
+- Public 페이지 라우트를 `apps/web/src/app/(public)/[lang]/**`로 통일
+- 레거시 비-prefix 경로는 middleware redirect로 canonical 경로로 유도
+- 라우트 이동 후 페이지별 언어 변경 동작(토글/재렌더/링크)을 재검증
+
+#### 완료조건(DoD) — P2-1A
+
+- Public 주요 페이지(landing/pricing/login/signup/terms/privacy)의 canonical 경로가 `/[lang]/...`로 정렬
+- 레거시 경로 접근 시 canonical로 일관 redirect
+- SEO 작업(P2-2) 이전에 라우팅 정렬이 완료됨
+
+---
+
+### P2-1B. Public 공통 헤더/언어 변경 UX 적용
+
+#### 내용 — P2-1B
+
+- `apps/web/src/app/(public)/[lang]/layout.tsx`에 경량 Public 헤더 주입
+- pricing/login/signup/terms/privacy/landing에서 동일 헤더 사용
+- 언어 변경 시 현재 페이지 path/query 유지한 locale 전환
+
+#### 완료조건(DoD) — P2-1B
+
+- Public 주요 페이지에서 언어 변경 UI가 동일하게 노출
+- 언어 변경 시 같은 페이지 유지 + 텍스트/포맷 재반영 확인
+- 로그인 사용자 locale 변경 정책(`preferredLocale`)과 충돌 없음
+
+---
+
 ### P2-2. Public SEO 정책 적용(선택: prefix)
+
+실행 순서 정책(고정):
+
+- 이 작업은 **비어드민 페이지의 번역 적용 + 페이지 내 언어 변경 동작**이 완료된 뒤,
+  **마지막 단계**에서만 수행한다.
 
 #### 내용 — P2-2
 
-- `/ko/*`, `/en/*` 정책
+- `/ko/*`, `/en/*`, `/ja/*`, `/zh-CN/*`, `/es-419/*` 정책
 - `hreflang`, `canonical`, sitemap
 
 #### 완료조건(DoD) — P2-2
@@ -1162,7 +1341,7 @@ packages/worker-shared/src/runtime/i18n/
 4. 성공 시:
    - 해당 WU를 `- [x]`로 변경
    - `Done Date`에 완료일(`YYYY-MM-DD`) 기입
-   - 17.3 Progress Log에 1줄 추가
+   - 17.4 Progress Log에 1줄 추가
 5. 실패/차단 시:
    - 체크박스는 그대로 둔다.
    - WU의 `Blocker`를 채운다.
@@ -1170,113 +1349,179 @@ packages/worker-shared/src/runtime/i18n/
 
 ### 17.2 Work Units 체크박스 보드
 
-- [ ] WU-01 Locale 기본 타입/상수 추가
+- [x] WU-01 Locale 기본 타입/상수 추가
   - Scope: `Locale`, `SUPPORTED_LOCALES`, `DEFAULT_LOCALE` 정의
   - Allowed Files: `packages/shared/src/i18n/locale.ts`, 관련 테스트 파일
   - DoD: 타입/상수 export + 테스트 통과
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-02 `resolveLocale()` 순수 함수 구현
+- [x] WU-02 `resolveLocale()` 순수 함수 구현
   - Scope: URL > DB > Cookie > Accept-Language > Default
   - Allowed Files: `packages/shared/src/i18n/resolveLocale.ts`, 관련 테스트 파일
   - DoD: `source`(`url|userProfile|cookie|acceptLanguage|default`) 포함 반환
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-03 Loader/에러 타입 정의
+- [x] WU-03 Loader/에러 타입 정의
   - Scope: 런타임 독립 인터페이스/에러 타입 확정
   - Allowed Files: `packages/shared/src/i18n/loaderTypes.ts`, `packages/shared/src/i18n/errors.ts`
   - DoD: Node/Browser/Worker에서 공용 타입으로 import 가능
   - Verify: `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-04 `createI18n()` + `t()` 최소 구현
+- [x] WU-04 `createI18n()` + `t()` 최소 구현
   - Scope: key 조회, 파라미터 치환, missing-key 정책(Dev/CI fail, Prod fallback)
   - Allowed Files: `packages/shared/src/i18n/createI18n.ts`, 관련 테스트 파일
   - DoD: 핵심 경로 단위테스트 통과
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-05 `format.*` 토큰 유틸 구현
+- [x] WU-05 `format.*` 토큰 유틸 구현
   - Scope: 날짜/숫자/통화/상대시간 토큰 API
   - Allowed Files: `packages/shared/src/i18n/format.ts`, 관련 테스트 파일
   - DoD: 동일 locale + 동일 토큰 입력 시 결정적 출력
   - Verify: `pnpm --filter @workspace/shared test`, `pnpm --filter @workspace/shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-06 Web middleware 1차 협상 적용
+- [x] WU-06 Web middleware 1차 협상 적용
   - Scope: Edge-safe 협상(cookie/header/default) + redirect, DB 접근 금지
   - Allowed Files: `apps/web/src/middleware.ts`, 관련 테스트 파일
   - DoD: URL locale가 있으면 pass, 없으면 1차 협상 redirect
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-07 Web 서버 2차 확정(DB 포함)
+- [x] WU-07 Web 서버 2차 확정(DB 포함)
   - Scope: URL 미존재 케이스에서 `preferredLocale` 반영
   - Allowed Files: `apps/web/src/lib/i18n-runtime/server.ts`, 관련 호출부/테스트
   - DoD: 서버에서 세션/유저 컨텍스트 기반 locale 확정
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-08 `request.ts` namespace slicing 적용
+- [x] WU-08 `request.ts` namespace slicing 적용
   - Scope: 페이지/그룹별 최소 namespace 로딩
   - Allowed Files: `apps/web/src/i18n/request.ts`, 필요 시 매핑 파일
   - DoD: `apps/web/messages/**` 기준으로 필요한 namespace만 주입
   - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-09 Worker i18n runtime 적용
+- [x] WU-09 Worker i18n runtime 적용
   - Scope: 발송 직전 locale 조회 + `email`/`notification` 렌더링
   - Allowed Files: `packages/worker-shared/src/runtime/i18n/**`, 필요 시 `packages/worker-shared/src/runtime/evidence.ts`
   - DoD: payload locale 고정 의존 없이 렌더링
   - Verify: `pnpm --filter @workspace/worker-shared test`, `pnpm --filter @workspace/worker-shared typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-10 i18n 정합성 검사 스크립트
+- [x] WU-10 i18n 정합성 검사 스크립트
   - Scope: key set/ICU 파라미터/공유 namespace parity 검사
   - Allowed Files: `scripts/i18n/check.*`, 루트 `package.json` scripts
   - DoD: 실패 시 locale/namespace/key를 명확히 출력
   - Verify: `pnpm i18n:check`, `pnpm typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-11 i18n typegen 파이프라인
-  - Scope: 메시지 key 타입 생성(`packages/shared/generated/i18n/**`, 비커밋)
+- [x] WU-11 i18n typegen 파이프라인
+  - Scope: 메시지 key 타입 생성(`packages/shared/src/generated/i18n/**`, 비커밋)
   - Allowed Files: `scripts/i18n/typegen.*`, 루트 `package.json`, `.gitignore`(필요 시)
   - DoD: key 오타가 typecheck에서 실패
   - Verify: `pnpm i18n:typegen`, `pnpm typecheck`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-12 CI 게이트 + 레거시 경로 차단
-  - Scope: `i18n:ci` 강제, `apps/web/public/locales/**` 변경 차단(EOL 정책 반영)
+- [x] WU-12 CI 게이트 + 레거시 경로 차단
+  - Scope: `i18n:ci` 강제, (당시) `apps/web/public/locales/**` 변경 차단(EOL 정책 반영). 이후 레거시 디렉터리 삭제로 `check-legacy.mjs` 제거됨.
   - Allowed Files: `.github/workflows/*.yml`, `scripts/i18n/**`, 루트 `package.json`
-  - DoD: 승인 없는 레거시 경로 변경 PR 실패
-  - Verify: `pnpm ci:check` (또는 CI 워크플로우 검증 명령)
-  - Done Date: `-`
+  - DoD: 승인 없는 레거시 경로 변경 PR 실패 (현재는 해당 스크립트 미사용)
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-- [ ] WU-13 EOL 이후 레거시 경로 제거(2026-07-01 이후)
+- [x] WU-13 EOL 이후 레거시 경로 제거
   - Scope: `apps/web/public/locales/**` 로딩/참조 제거
   - Allowed Files: web i18n 로더/참조 코드, 필요 시 `apps/web/public/locales/**` 삭제
   - DoD: 메시지 소스가 `apps/web/messages/**`로 단일화
   - Verify: `pnpm i18n:check`, `pnpm --filter @workspace/web typecheck`, `pnpm --filter @workspace/web test`
-  - Done Date: `-`
+  - Done Date: `2026-02-12`
   - Blocker: `-`
 
-### 17.3 Progress Log (체크박스와 함께 업데이트)
+- [x] WU-14 Public 라우팅 구조 정렬(`(public)/[lang]/**`)
+  - Scope: Public 페이지 파일 구조를 `[lang]` prefix 기준으로 통일
+  - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/middleware.ts`, 관련 테스트 파일
+  - DoD: pricing/login/signup/terms/privacy의 canonical 경로가 `/[lang]/...`로 정렬
+  - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
+  - Done Date: `2026-02-13`
+  - Blocker: `-`
 
-- `YYYY-MM-DD`: `WU-xx` 완료/차단 요약 + 검증 결과 1줄
+- [x] WU-15 비어드민 페이지 언어 변경 동작 완료
+  - Scope: Public 공통 헤더(언어 변경 UI) + 비어드민 페이지 locale 전환 동작 구현/검증
+  - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/app/(app)/**`, `apps/web/src/lib/i18n/**`, 관련 테스트 파일
+  - DoD: 17.3의 `Public 공통 헤더(언어 변경)` + `언어 변경 동작` 체크가 대상 페이지에서 완료
+  - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`
+  - Done Date: `2026-02-13`
+  - Blocker: `-`
+
+- [x] WU-16 Public SEO 최적화 마무리(최종 단계)
+  - Scope: `hreflang`/`canonical`/sitemap 정합성 마무리
+  - Allowed Files: `apps/web/src/app/(public)/**`, `apps/web/src/lib/i18n-runtime/seo.ts`, sitemap 관련 코드, 관련 테스트
+  - DoD: 17.3의 Public 페이지에서 `SEO 최적화(마지막)` 체크 완료
+  - Verify: `pnpm --filter @workspace/web test`, `pnpm --filter @workspace/web typecheck`, `pnpm ci:check`
+  - Done Date: `2026-02-13`
+  - Blocker: `-`
+
+### 17.3 비어드민 페이지별 적용 매트릭스(체크박스)
+
+적용 원칙:
+
+- Public 페이지는 `/(public)/[lang]/**`로 라우팅 구조를 먼저 정렬한다.
+- Public 페이지는 공통 헤더(브랜드 + 언어 변경 UI)를 동일하게 사용한다.
+- 각 페이지는 **언어 변경 동작**(페이지에서 locale 전환 후 텍스트/포맷 반영)이 완료되어야 한다.
+- Public 페이지의 **SEO 최적화 체크는 마지막 단계에서만** 수행한다.
+  - 선행 조건: 해당 페이지의 `라우팅 구조 정렬([lang])` + `Public 공통 헤더(언어 변경)` + `텍스트 i18n 적용` + `언어 변경 동작` 체크 완료
+
+| 페이지 | 현재 라우트 파일 | 목표 라우트 파일 | 라우팅 구조 정렬([lang]) | Public 공통 헤더(언어 변경) | 텍스트 i18n 적용 | 언어 변경 동작 | SEO 최적화(마지막) | 비고 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Landing | `apps/web/src/app/(public)/[lang]/page.tsx` | `apps/web/src/app/(public)/[lang]/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=landing 한 줄, next-intl landing |
+| Pricing | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | `apps/web/src/app/(public)/[lang]/pricing/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=pricing 한 줄, useSession |
+| Login | `apps/web/src/app/(public)/[lang]/login/page.tsx` | `apps/web/src/app/(public)/[lang]/login/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=auth |
+| Signup | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | `apps/web/src/app/(public)/[lang]/signup/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=auth |
+| Terms | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | `apps/web/src/app/(public)/[lang]/terms/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=legal, 홈으로 |
+| Privacy | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | `apps/web/src/app/(public)/[lang]/privacy/page.tsx` | [x] | [x] | [x] | [x] | [x] | PublicHeader variant=legal, 홈으로 |
+| Dashboard | `apps/web/src/app/(app)/dashboard/page.tsx` | `apps/web/src/app/(app)/dashboard/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+| Accommodations New | `apps/web/src/app/(app)/accommodations/new/page.tsx` | `apps/web/src/app/(app)/accommodations/new/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+| Accommodation Detail | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | `apps/web/src/app/(app)/accommodations/[id]/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+| Subscription Settings | `apps/web/src/app/(app)/settings/subscription/page.tsx` | `apps/web/src/app/(app)/settings/subscription/page.tsx` | N/A | N/A | [ ] | [ ] | N/A | SEO 비대상 |
+
+### 17.4 Progress Log (체크박스와 함께 업데이트)
+
+- `2026-02-12`: `WU-01` 완료 — `locale.ts`(Locale/SUPPORTED_LOCALES/DEFAULT_LOCALE/isSupportedLocale/normalizeLocale) + `./i18n` export + 테스트 18개 통과, typecheck 통과
+- `2026-02-12`: `WU-02` 완료 — `resolveLocale.ts`(URL>userProfile>cookie>acceptLanguage>default 우선순위) + 테스트 14개 통과, typecheck 통과
+- `2026-02-12`: `WU-03` 완료 — `loaderTypes.ts`(MessageLoader/I18nOptions/MissingKeyPolicy) + `errors.ts`(MissingKeyError/MessageFormatError), typecheck 통과
+- `2026-02-12`: `WU-04` 완료 — `createI18n.ts`(t() key 조회/파라미터 치환/missing-key error+fallback 정책/fallbackMessages/onMissingKey 콜백) + 테스트 16개 통과, typecheck 통과
+- `2026-02-12`: `WU-05` 완료 — `format.ts`(formatDate/formatNumber/formatCurrency/formatRelativeTime + 토큰 프리셋) + 테스트 23개 통과, typecheck 통과
+- `2026-02-12`: `WU-06` 완료 — `middleware.ts` 리팩터(shared i18n 코어 사용: parseLocaleFromPath+negotiateLocale), `.ts` 확장자 제거(cross-package 호환), web test 157개 + typecheck 통과
+- `2026-02-12`: `WU-07` 완료 — `i18n-runtime/server.ts`(resolveServerLocale: cookies+headers 자동 읽기, urlLocale/userPreferredLocale 파라미터) + 테스트 7개 통과, web test 164개 + typecheck 통과
+- `2026-02-12`: `WU-08` 완료 — `src/i18n/request.ts`(getNamespacesForRoute+loadMessages+getRequestMessages), route group→namespace 선언적 매핑, `messages/{locale}/{ns}.json` 구조, 테스트 9개 통과, web test 173개 + typecheck 통과
+- `2026-02-12`: `WU-09` 완료 — worker i18n runtime(loader+templates+userLocale), conditionTrigger 구조화 페이로드 전환, caseNotifications 레거시/구조화 양방향 호환, 메시지 ko/en notification.json, 테스트 11개 통과, ci:check 통과
+- `2026-02-12`: `WU-10` 완료 — `scripts/i18n/check.mjs`(key parity+param parity+빈 값 검사), apps/web+worker-shared messages 대상, `pnpm i18n:check` 스크립트 추가, ci:check 통과
+- `2026-02-12`: `WU-11` 완료 — `scripts/i18n/typegen.mjs`(ko 기준 namespace별 key union 타입 생성), 출력 `packages/shared/src/generated/i18n/messages.ts`(gitignored), `pnpm i18n:typegen` 스크립트 추가, WebMessages/WorkerMessages/TypedTranslateFunction 타입 제공, ci:check 통과
+- `2026-02-12`: `WU-12` 완료 — (당시) `scripts/i18n/check-legacy.mjs`(레거시 경로 변경 차단), `pnpm i18n:ci`(typegen+check 통합), `.github/workflows/ci.yml`에 `pnpm i18n:ci` 단계 추가. 이후 레거시 디렉터리 삭제에 따라 `check-legacy.mjs` 제거, `i18n:ci`는 typegen+check만 실행.
+- `2026-02-12`: `WU-13` 완료 — `apps/web/public/locales/` 삭제, `landing.json` → `messages/{ko,en}/landing.json` 이동, `getLandingCopy()` 경로 업데이트, i18n:check(common 13 + landing 40 keys), ci:check 통과
+- `2026-02-13`: `WU-14` 완료 — Public 페이지(login/signup/pricing/terms/privacy) `(public)/[lang]/` 하위로 이동, middleware에 locale 협상 redirect 추가(PUBLIC_PATHS), 모든 내부 링크 `/${lang}/...` 패턴으로 통일(landing 6개 컴포넌트 + 3개 client 페이지), `generateStaticParams` 추가, ci:check 통과
+- `2026-02-13`: 구현 상태 반영 — Public 전 페이지에 LangToggle 적용(경로 유지 전환), pricing/login/signup/terms/privacy는 next-intl(auth, legal, pricing namespace) 적용, 랜딩은 getLandingCopy(landing.json) 유지. 지원 언어 ko/en. 공통 헤더는 layout 주입 없이 페이지별 구성. request.ts는 전체 namespace 일괄 로드.
+- `2026-02-13`: `WU-15` 완료 — Public 공통 헤더 `PublicHeader`(브랜드+LangToggle)를 `(public)/[lang]/layout.tsx`에서 주입. pricing/terms/privacy/login/signup에서 중복 브랜드·LangToggle 제거. Landing Header는 브랜드·LangToggle 제거 후 네비/테마/로그인만 유지(sticky top-14). web test 173개 + typecheck 통과.
+- `2026-02-13`: PublicHeader 단일·한 줄 통합 — `lang`/`variant` props, pathname 기반 variant(landing/pricing/auth/legal/default). 랜딩: Landing Header 제거, LandingPage는 layout PublicHeader만 사용. pricing/terms/privacy: 페이지 내 헤더·뒤로가기 제거, PublicHeader 한 줄로 통합(pricing은 useSession으로 대시보드/로그인·가입 분기). MobileMenu: useTranslations 기반(copy 제거), 터치 44px·접근성·시트 닫힌 뒤 scrollIntoView 350ms 지연(포커스 복원으로 인한 상단 스크롤 방지).
+- `2026-02-13`: `WU-16` 완료 — Public SEO: `lib/i18n-runtime/seo.ts`(getBaseUrl, buildPublicAlternates), sitemap locale prefix + alternates.languages, Public 각 페이지(landing/pricing/login/signup/terms/privacy) canonical + alternates.languages(ko/en). login/signup은 layout generateMetadata. 17.3 SEO 열 [x] 처리.
+- `2026-02-13`: 랜딩 텍스트 i18n 전환 — `getLandingCopy` 제거, `lib/i18n/landing.ts`는 config 재export만. LandingPage 및 Hero/Features/Footer/CTAButtons/AppPurpose/StatusDashboard/StatusDashboardSlot은 `useTranslations('landing')`·`useMessages()`·`useParams()` 사용. 17.3 Landing 행 텍스트 i18n [x].
+- `2026-02-13`: Locale 타입 통일 — `apps/web/src/lib/i18n/config.ts`(`Lang`/`supportedLangs`/`isValidLang`) 제거, 15개 소비 파일을 `@workspace/shared/i18n`(`Locale`/`SUPPORTED_LOCALES`/`isSupportedLocale`)로 이전. ci:check 통과(291 tests).
+- `2026-02-13`: Namespace slicing 적용 — `namespaces.ts` 순수 함수 재작성(fs 의존 제거), middleware `x-pathname` 헤더 전달, `request.ts`에서 pathname 기반 최소 namespace만 동적 `import()`. 테스트 13개 추가. ci:check 통과(295 tests).
 - `YYYY-MM-DD`: `-`
 
 ---

@@ -127,7 +127,7 @@ describe('caseNotifications', (): void => {
 
     expect(mockUpdate).toHaveBeenCalledWith({
       where: { id: 'n-1' },
-      data: { status: 'FAILED', failReason: 'payload(userId/title/description) 누락' },
+      data: { status: 'FAILED', failReason: 'payload(title/description) 누락' },
       select: { id: true },
     });
   });

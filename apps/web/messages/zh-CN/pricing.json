@@ -1,0 +1,44 @@
+{
+  "nav": { "brand": "Binbang", "login": "登录", "getStarted": "免费开始", "dashboard": "控制台" },
+  "title": {
+    "heading": "选择适合您的方案",
+    "subline1": "复杂的事交给我们。",
+    "subline2": "您只需专注规划下一次旅程。"
+  },
+  "plan": {
+    "free": "免费",
+    "perMonth": "月",
+    "perYear": "年",
+    "popular": "热门",
+    "currentPlan": "当前方案",
+    "accommodations": "{count} 个住宿",
+    "checkInterval": "每 {minutes} 分钟检查价格",
+    "kakaoAlert": "实时 KakaoTalk 提醒",
+    "priceChart": "价格趋势图",
+    "prioritySupport": "优先支持",
+    "currentPlanButton": "当前方案",
+    "getStartedFree": "免费开始",
+    "upgradeInquiry": "咨询升级",
+    "upgradeInquirySubject": "{planName} 方案升级咨询",
+    "plans": {
+      "FREE": { "name": "免费方案", "description": "1 个住宿，30 分钟检查。适合入门体验。" },
+      "PRO": { "name": "Pro 方案", "description": "更多住宿与更快检查。适合深度使用。" },
+      "BIZ": { "name": "商业方案", "description": "批量登记与优先支持。适合团队与商户。" }
+    }
+  },
+  "faq": {
+    "title": "常见问题",
+    "q1": "可以随时更换方案吗？",
+    "a1": "可以，您可随时升级或降级方案。",
+    "q2": "如何付款？",
+    "a2": "目前请通过邮件联系我们。我们计划不久后推出自动扣款。",
+    "q3": "退款政策如何？",
+    "a3": "付款后 7 天内申请可全额退款。"
+  },
+  "footer": { "contact": "联系邮箱：{email}" },
+  "loadError": "无法加载方案信息。",
+  "meta": {
+    "description": "查看 Binbang 方案。免费开始，随时升级。分钟级检查、实时 KakaoTalk 通知、价格趋势分析。",
+    "ogDescription": "免费开始。分钟级检查，实时通知。"
+  }
+}

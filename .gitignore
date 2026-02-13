@@ -45,7 +45,7 @@ Thumbs.db
 # Prisma
 prisma/*.db
 prisma/*.db-journal
-src/generated/
+**generated/
 
 .pnpm-store
 .turbo

@@ -1,0 +1,54 @@
+{
+  "nav": {
+    "brand": "Binbang",
+    "login": "Log in",
+    "getStarted": "Get started free",
+    "dashboard": "Dashboard"
+  },
+  "title": {
+    "heading": "Choose the plan that fits you",
+    "subline1": "We handle the complexity.",
+    "subline2": "You can focus on planning your next trip."
+  },
+  "plan": {
+    "free": "Free",
+    "perMonth": "month",
+    "perYear": "year",
+    "popular": "Popular",
+    "currentPlan": "Current plan",
+    "accommodations": "{count} accommodations",
+    "checkInterval": "Price check every {minutes} min",
+    "kakaoAlert": "Real-time KakaoTalk alerts",
+    "priceChart": "Price trend chart",
+    "prioritySupport": "Priority support",
+    "currentPlanButton": "Current plan",
+    "getStartedFree": "Get started free",
+    "upgradeInquiry": "Inquire to upgrade",
+    "upgradeInquirySubject": "{planName} plan upgrade inquiry",
+    "plans": {
+      "FREE": { "name": "Free plan", "description": "1 accommodation, 30-min check. Great to get started." },
+      "PRO": { "name": "Pro plan", "description": "More accommodations and faster checks. For serious use." },
+      "BIZ": {
+        "name": "Business plan",
+        "description": "Bulk registration and priority support. For teams and businesses."
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": "Can I change my plan anytime?",
+    "a1": "Yes, you can upgrade or downgrade your plan anytime.",
+    "q2": "How do I pay?",
+    "a2": "Contact us by email for now. We plan to introduce automatic billing soon.",
+    "q3": "What is your refund policy?",
+    "a3": "Full refund if requested within 7 days of payment."
+  },
+  "footer": {
+    "contact": "Contact: {email}"
+  },
+  "loadError": "Unable to load plan information.",
+  "meta": {
+    "description": "View Binbang plans. Start free, upgrade anytime. 1-min checks, real-time KakaoTalk alerts, price trend analysis.",
+    "ogDescription": "Start free. 1-min checks, real-time alerts."
+  }
+}

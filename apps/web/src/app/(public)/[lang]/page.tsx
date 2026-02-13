@@ -1,20 +1,46 @@
 import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
+import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { LandingPage } from '@/components/landing/LandingPage';
 import { authOptions } from '@/lib/auth';
-import { getLandingCopy, isValidLang, supportedLangs } from '@/lib/i18n/landing';
+import { type Locale, SUPPORTED_LOCALES, isSupportedLocale } from '@workspace/shared/i18n';
+import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
-export const metadata: Metadata = {
-  title: 'Binbang – 빈방 알림 서비스',
-  description:
-    'Binbang(빈방)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다. Google 로그인 시 이메일은 회원 식별 및 알림 발송에만 사용됩니다.',
-  openGraph: {
-    title: 'Binbang – 빈방 알림 서비스',
-    description: 'Binbang(빈방)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다.',
-  },
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isSupportedLocale(lang)) return {};
+  const langTyped = lang as Locale;
+  const t = await getTranslations({ locale: lang, namespace: 'landing' });
+  const { canonical, languages } = buildPublicAlternates(langTyped, '');
+  const title = t('meta.title');
+  const description = t('meta.description');
+  return {
+    title,
+    description,
+    alternates: { canonical, languages },
+    openGraph: {
+      type: 'website',
+      locale: getOgLocale(langTyped),
+      url: canonical,
+      siteName: 'Binbang',
+      title,
+      description,
+      images: [DEFAULT_OG_IMAGE],
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description: t('meta.twitterDescription'),
+      images: ['/icon.png'],
+    },
+  };
+}
 
 /**
  * Provide static route parameters for each supported language.
@@ -22,11 +48,7 @@ export const metadata: Metadata = {
  * @returns An array of objects where each object has a `lang` property set to a supported language (e.g., `{ lang: 'en' }`)
  */
 export async function generateStaticParams() {
-  return supportedLangs.map((lang) => ({ lang }));
-}
-
-interface PageProps {
-  params: Promise<{ lang: string }>;
+  return SUPPORTED_LOCALES.map((lang) => ({ lang }));
 }
 
 /**
@@ -44,15 +66,9 @@ export default async function Home({ params }: PageProps): Promise<React.ReactEl
 
   const { lang: langParam } = await params;
 
-  if (!isValidLang(langParam)) {
+  if (!isSupportedLocale(langParam)) {
     notFound();
   }
 
-  const copy = getLandingCopy(langParam);
-  const baseUrl =
-    typeof process.env.NEXTAUTH_URL === 'string'
-      ? process.env.NEXTAUTH_URL.replace(/\/$/, '')
-      : 'https://binbang.moodybeard.com';
-
-  return <LandingPage lang={langParam} copy={copy} baseUrl={baseUrl} />;
+  return <LandingPage lang={langParam} />;
 }

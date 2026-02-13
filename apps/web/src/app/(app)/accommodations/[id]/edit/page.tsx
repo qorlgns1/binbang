@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import { useUpdateAccommodation } from '@/hooks/useUpdateAccommodation';
 import { parseAccommodationUrl } from '@/lib/url-parser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
-export default function EditAccommodationPage() {
+export default function EditAccommodationPage(): React.ReactElement {
+  const t = useTranslations('common');
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -224,10 +226,10 @@ export default function EditAccommodationPage() {
             {/* 버튼 */}
             <div className='flex gap-4'>
               <Button type='submit' disabled={updateMutation.isPending} className='flex-1'>
-                {updateMutation.isPending ? '수정 중...' : '수정 완료'}
+                {updateMutation.isPending ? t('saving') : t('save')}
               </Button>
               <Button asChild variant='outline'>
-                <Link href={`/accommodations/${id}`}>취소</Link>
+                <Link href={`/accommodations/${id}`}>{t('cancel')}</Link>
               </Button>
             </div>
           </form>

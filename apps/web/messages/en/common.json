@@ -1,0 +1,51 @@
+{
+  "brand": "Binbang",
+  "loading": "Loading...",
+  "error": "An error occurred.",
+  "retry": "Retry",
+  "save": "Save",
+  "saving": "Saving...",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "deleting": "Deleting...",
+  "edit": "Edit",
+  "back": "Back",
+  "next": "Next",
+  "login": "Login",
+  "logout": "Logout",
+  "finish": "Finish",
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you requested could not be found. Go to dashboard or home.",
+    "heading": "Lost?",
+    "subline": "Binbang can guide you. Use the links below to get where you need.",
+    "ctaDashboard": "Back to dashboard",
+    "ctaHome": "Go to home"
+  },
+  "sectionError": {
+    "title": "We couldn't load the data",
+    "description": "Please check your network and try again."
+  },
+  "structuredData": {
+    "organizationDescription": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available.",
+    "websiteDescription": "Vacancy alert service for accommodation booking sites. Get notified when a room becomes available."
+  },
+  "tutorial": {
+    "step1": {
+      "title": "Get started with Binbang",
+      "body": "Register accommodations to receive KakaoTalk alerts when a vacancy appears."
+    },
+    "step2": {
+      "title": "Add your first accommodation",
+      "body": "Add a URL from Airbnb, Agoda, etc. and we'll check availability for you."
+    },
+    "step3": {
+      "title": "KakaoTalk alerts",
+      "body": "Connect your Kakao account to receive instant alerts when a vacancy is found."
+    },
+    "step4": { "title": "All set!", "body": "We'll monitor availability 24/7. Sit back and relax!" },
+    "skip": "Skip",
+    "finish": "Finish"
+  }
+}

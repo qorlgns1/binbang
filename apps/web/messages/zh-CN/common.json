@@ -1,0 +1,42 @@
+{
+  "brand": "Binbang",
+  "loading": "加载中...",
+  "error": "发生错误。",
+  "retry": "重试",
+  "save": "保存",
+  "saving": "保存中...",
+  "cancel": "取消",
+  "confirm": "确认",
+  "delete": "删除",
+  "deleting": "删除中...",
+  "edit": "编辑",
+  "back": "返回",
+  "next": "下一步",
+  "login": "登录",
+  "logout": "退出登录",
+  "finish": "完成",
+  "notFound": {
+    "title": "页面未找到",
+    "description": "无法找到您请求的页面。请前往控制台或首页。",
+    "heading": "迷路了吗？",
+    "subline": "Binbang 为您指路。请使用下方链接前往。",
+    "ctaDashboard": "返回控制台",
+    "ctaHome": "前往首页"
+  },
+  "sectionError": {
+    "title": "无法加载数据",
+    "description": "请检查网络后重试。"
+  },
+  "structuredData": {
+    "organizationDescription": "Binbang 监控住宿预订网站空房并在有空房时通过邮件通知您。",
+    "websiteDescription": "住宿预订空房提醒服务，空房出现即通知。"
+  },
+  "tutorial": {
+    "step1": { "title": "开始使用空房提醒", "body": "注册想要入住的房源，空房出现时会通过 KakaoTalk 收到通知。" },
+    "step2": { "title": "添加第一个房源", "body": "注册爱彼迎、Agoda 等房源链接，我们会自动为您检查空房。" },
+    "step3": { "title": "KakaoTalk 通知设置", "body": "绑定 Kakao 账号后，空房出现时可即时收到 KakaoTalk 通知。" },
+    "step4": { "title": "准备就绪！", "body": "我们将 24 小时监控预订状态，请放心等待。" },
+    "skip": "跳过",
+    "finish": "完成"
+  }
+}
