@@ -13,5 +13,18 @@
   "back": "Volver",
   "next": "Siguiente",
   "login": "Iniciar sesión",
-  "logout": "Cerrar sesión"
+  "logout": "Cerrar sesión",
+  "finish": "Finalizar",
+  "sectionError": {
+    "title": "No se pudieron cargar los datos",
+    "description": "Comprueba tu conexión e inténtalo de nuevo."
+  },
+  "tutorial": {
+    "step1": { "title": "Empezar con Binbang", "body": "Registra alojamientos para recibir alertas por KakaoTalk cuando haya disponibilidad." },
+    "step2": { "title": "Añade tu primer alojamiento", "body": "Añade una URL de Airbnb, Agoda, etc. y comprobaremos la disponibilidad por ti." },
+    "step3": { "title": "Alertas por KakaoTalk", "body": "Conecta tu cuenta Kakao para recibir alertas al instante cuando haya disponibilidad." },
+    "step4": { "title": "¡Listo!", "body": "Monitorearemos la disponibilidad 24/7. ¡Solo relájate!" },
+    "skip": "Omitir",
+    "finish": "Finalizar"
+  }
 }

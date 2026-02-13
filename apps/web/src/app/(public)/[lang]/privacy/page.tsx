@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const t = await getTranslations({ locale: lang, namespace: 'legal' });
   const { canonical, languages } = buildPublicAlternates(lang as Locale, '/privacy');
   const title = `${t('privacy.title')} | Binbang`;
-  const description = 'Binbang(빈방) 개인정보처리방침. 수집·이용·보관·삭제 등 개인정보 처리 방식을 안내합니다.';
+  const description = t('privacy.metaDescription');
   return {
     title,
     description,

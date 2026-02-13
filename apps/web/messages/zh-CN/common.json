@@ -13,5 +13,18 @@
   "back": "返回",
   "next": "下一步",
   "login": "登录",
-  "logout": "退出登录"
+  "logout": "退出登录",
+  "finish": "完成",
+  "sectionError": {
+    "title": "无法加载数据",
+    "description": "请检查网络后重试。"
+  },
+  "tutorial": {
+    "step1": { "title": "开始使用空房提醒", "body": "注册想要入住的房源，空房出现时会通过 KakaoTalk 收到通知。" },
+    "step2": { "title": "添加第一个房源", "body": "注册爱彼迎、Agoda 等房源链接，我们会自动为您检查空房。" },
+    "step3": { "title": "KakaoTalk 通知设置", "body": "绑定 Kakao 账号后，空房出现时可即时收到 KakaoTalk 通知。" },
+    "step4": { "title": "准备就绪！", "body": "我们将 24 小时监控预订状态，请放心等待。" },
+    "skip": "跳过",
+    "finish": "完成"
+  }
 }

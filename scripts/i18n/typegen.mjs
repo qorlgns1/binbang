@@ -11,7 +11,7 @@
  *
  * 출력: packages/shared/src/generated/i18n/messages.ts (gitignored)
  */
-import { readdirSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -62,6 +62,10 @@ const lines = [
 ];
 
 for (const source of MESSAGE_SOURCES) {
+	if (!existsSync(source.dir)) {
+		console.log(`SKIP ${source.id}: directory not found (${source.dir})`);
+		continue;
+	}
 	const namespaces = readdirSync(source.dir)
 		.filter((f) => f.endsWith('.json'))
 		.map((f) => f.replace('.json', ''))

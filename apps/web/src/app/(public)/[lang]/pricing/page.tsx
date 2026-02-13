@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -10,15 +11,14 @@ interface PageProps {
   params: Promise<{ lang: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
   if (!isSupportedLocale(lang)) return {};
   const t = await getTranslations({ locale: lang, namespace: 'pricing' });
   const { canonical, languages } = buildPublicAlternates(lang as Locale, '/pricing');
   return {
-    title: `${t('nav.brand')} + – Pricing`,
-    description:
-      'View Binbang plans. Start free, upgrade anytime. 1-min checks, real-time KakaoTalk alerts, price trend analysis.',
+    title: `${t('nav.brand')} – Pricing`,
+    description: t('meta.description'),
     alternates: { canonical, languages },
     openGraph: {
       type: 'website',
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps) {
       url: canonical,
       siteName: 'Binbang',
       title: `${t('nav.brand')} – Pricing`,
-      description: 'Start free. 1-min checks, real-time alerts.',
+      description: t('meta.ogDescription'),
       images: [DEFAULT_OG_IMAGE],
     },
   };

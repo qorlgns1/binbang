@@ -1,6 +1,6 @@
 import { prisma, type Prisma } from '@workspace/db';
 
-import { type StructuredNotificationPayload, getUserLocale, isStructuredPayload, renderNotification } from './i18n';
+import { getUserLocale, isStructuredPayload, renderNotification } from './i18n';
 import { sendKakaoNotification } from './notifications';
 
 export interface RetryCaseNotificationsOptions {
@@ -134,7 +134,7 @@ export async function retryStaleCaseNotifications(
 
     if (isStructuredPayload(payload)) {
       const locale = await getUserLocale(userId);
-      const rendered = renderNotification(locale, payload as unknown as StructuredNotificationPayload);
+      const rendered = renderNotification(locale, payload);
       title = rendered.title;
       description = rendered.description;
       buttonText = rendered.buttonText;

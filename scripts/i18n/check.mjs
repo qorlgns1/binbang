@@ -79,12 +79,16 @@ for (const { pkg, dir } of MESSAGE_DIRS) {
 
   console.log(`\nChecking ${pkg} (locales: ${locales.join(', ')})`);
 
-  // 각 locale의 namespace 목록 수집
+  // 각 locale의 namespace 목록 수집 (모든 locale 디렉터리의 union)
   const baseLocale = locales[0];
-  const baseDir = join(dir, baseLocale);
-  const namespaces = readdirSync(baseDir)
-    .filter((f) => f.endsWith('.json'))
-    .map((f) => f.replace('.json', ''));
+  const namespacesSet = new Set();
+  for (const locale of locales) {
+    const localeDir = join(dir, locale);
+    for (const f of readdirSync(localeDir).filter((name) => name.endsWith('.json'))) {
+      namespacesSet.add(f.replace('.json', ''));
+    }
+  }
+  const namespaces = Array.from(namespacesSet).sort();
 
   for (const ns of namespaces) {
     // 1. 모든 locale에 namespace 파일이 있는지

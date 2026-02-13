@@ -43,5 +43,9 @@
   "footer": {
     "contact": "문의: rlgns0610@gmail.com"
   },
-  "loadError": "플랜 정보를 불러올 수 없습니다."
+  "loadError": "플랜 정보를 불러올 수 없습니다.",
+  "meta": {
+    "description": "빈방 플랜 보기. 무료로 시작하고 언제든 업그레이드하세요. 분 단위 가격 체크, 실시간 카카오톡 알림, 가격 추이 분석.",
+    "ogDescription": "무료로 시작. 분 단위 체크, 실시간 알림."
+  }
 }

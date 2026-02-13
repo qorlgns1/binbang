@@ -60,10 +60,20 @@ export function renderNotification(locale: Locale, payload: StructuredNotificati
 }
 
 /**
- * DB 페이로드가 구조화된 형식인지 판별한다.
- * 구조화 형식: `type` 필드가 존재하며 문자열.
- * 레거시 형식: `title` 필드가 존재 (렌더링된 텍스트 직접 저장).
+ * DB 페이로드가 구조화된 형식인지 판별하는 타입 가드.
+ * 구조화 형식: type === 'conditionMet' 및 필수 필드 존재.
+ * 레거시 형식: title 등 렌더링된 텍스트 직접 저장.
  */
-export function isStructuredPayload(payload: Record<string, unknown>): boolean {
-  return typeof payload.type === 'string';
+export function isStructuredPayload(
+  payload: Record<string, unknown>,
+): payload is StructuredNotificationPayload {
+  if (payload.type !== 'conditionMet') return false;
+  return (
+    typeof payload.userId === 'string' &&
+    typeof payload.accommodationName === 'string' &&
+    typeof payload.checkIn === 'string' &&
+    typeof payload.checkOut === 'string' &&
+    (payload.price === null || typeof payload.price === 'string') &&
+    typeof payload.checkUrl === 'string'
+  );
 }

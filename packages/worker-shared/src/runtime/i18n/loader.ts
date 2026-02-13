@@ -16,10 +16,16 @@ const MESSAGES_DIR = join(__dirname, '..', '..', '..', 'messages');
 
 const cache = new Map<string, Record<string, unknown>>();
 
+/** namespace가 단일 path segment인지 검증 (경로 조작 방지). */
+const VALID_NAMESPACE = /^[a-zA-Z0-9_-]+$/;
+
 /**
  * 단일 namespace의 메시지를 로드한다 (캐시 우선).
  */
 export function loadWorkerMessages(locale: Locale, namespace: string): Record<string, unknown> {
+  if (!VALID_NAMESPACE.test(namespace)) {
+    throw new Error(`Invalid namespace: ${namespace}`);
+  }
   const key = `${locale}:${namespace}`;
   const cached = cache.get(key);
   if (cached) return cached;

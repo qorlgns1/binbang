@@ -64,5 +64,9 @@ try {
 
 	console.log('✓ No legacy i18n path changes');
 } catch (error) {
+	if (process.env.CI) {
+		console.error(`✗ Legacy path check FAILED (unexpected error): ${error.message}`);
+		process.exit(1);
+	}
 	console.warn(`⚠ Legacy path check skipped: ${error.message}`);
 }

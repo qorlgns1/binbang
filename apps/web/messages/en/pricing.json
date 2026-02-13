@@ -46,5 +46,9 @@
   "footer": {
     "contact": "Contact: rlgns0610@gmail.com"
   },
-  "loadError": "Unable to load plan information."
+  "loadError": "Unable to load plan information.",
+  "meta": {
+    "description": "View Binbang plans. Start free, upgrade anytime. 1-min checks, real-time KakaoTalk alerts, price trend analysis.",
+    "ogDescription": "Start free. 1-min checks, real-time alerts."
+  }
 }

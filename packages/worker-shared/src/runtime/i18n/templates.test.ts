@@ -120,15 +120,33 @@ describe('renderNotification', () => {
 });
 
 describe('isStructuredPayload', () => {
-  it('type 필드가 있으면 true', () => {
-    expect(isStructuredPayload({ type: 'conditionMet', userId: 'u-1' })).toBe(true);
+  const validStructuredPayload: Record<string, unknown> = {
+    type: 'conditionMet',
+    userId: 'u-1',
+    accommodationName: 'Test Stay',
+    checkIn: '2026-01-01',
+    checkOut: '2026-01-02',
+    price: '100',
+    checkUrl: 'https://example.com',
+  };
+
+  it('필수 필드가 모두 있으면 true', () => {
+    expect(isStructuredPayload(validStructuredPayload)).toBe(true);
   });
 
-  it('type 필드가 없으면 false (레거시 페이로드)', () => {
+  it('type이 conditionMet이 아니면 false', () => {
+    expect(isStructuredPayload({ type: 'other', userId: 'u-1' })).toBe(false);
+  });
+
+  it('레거시 페이로드(title 등)면 false', () => {
     expect(isStructuredPayload({ title: '제목', description: '내용' })).toBe(false);
   });
 
-  it('type이 문자열이 아니면 false', () => {
-    expect(isStructuredPayload({ type: 123 })).toBe(false);
+  it('필수 필드가 누락되면 false', () => {
+    expect(isStructuredPayload({ type: 'conditionMet', userId: 'u-1' })).toBe(false);
+  });
+
+  it('price가 null이어도 true', () => {
+    expect(isStructuredPayload({ ...validStructuredPayload, price: null })).toBe(true);
   });
 });
