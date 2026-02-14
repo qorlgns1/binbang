@@ -212,6 +212,26 @@ describe('admin/funnel.service', (): void => {
     );
   });
 
+  it('uses explicit UTC ISO filter for non-all ranges', async (): Promise<void> => {
+    await getAdminFunnel({
+      range: '7d',
+      from: '2026-02-01T00:00:00.000Z',
+      to: '2026-02-07T23:59:59.999Z',
+      now: new Date('2026-02-14T18:40:00.000Z'),
+    });
+
+    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          createdAt: {
+            gte: new Date('2026-02-01T00:00:00.000Z'),
+            lte: new Date('2026-02-07T23:59:59.999Z'),
+          },
+        },
+      }),
+    );
+  });
+
   it('builds zero-filled UTC series even when there is no activity', async (): Promise<void> => {
     const result = await getAdminFunnel({
       range: 'today',

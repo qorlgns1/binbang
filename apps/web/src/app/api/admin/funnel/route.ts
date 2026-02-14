@@ -6,9 +6,42 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin';
 import { getAdminFunnel, type FunnelRangePreset } from '@/services/admin/funnel.service';
 
-const paramsSchema = z.object({
-  range: z.enum(['today', '7d', '30d', 'all']).optional(),
-});
+const utcIsoSchema = z
+  .string()
+  .datetime({ offset: true })
+  .refine((value): boolean => value.endsWith('Z'), {
+    message: 'UTC ISO string must end with Z',
+  });
+
+const paramsSchema = z
+  .object({
+    range: z.enum(['today', '7d', '30d', 'all']).optional(),
+    from: utcIsoSchema.optional(),
+    to: utcIsoSchema.optional(),
+  })
+  .superRefine((value, ctx): void => {
+    const from = value.from;
+    const to = value.to;
+    const hasFrom = typeof from === 'string';
+    const hasTo = typeof to === 'string';
+
+    if (hasFrom !== hasTo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '`from` and `to` must be provided together',
+      });
+      return;
+    }
+
+    if (!hasFrom || !hasTo) return;
+
+    if (new Date(from).getTime() > new Date(to).getTime()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '`from` must be less than or equal to `to`',
+      });
+    }
+  });
 
 type ErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'INTERNAL_SERVER_ERROR';
 
@@ -54,10 +87,20 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   try {
     const range: FunnelRangePreset | undefined = parsed.data.range;
-    const data = await getAdminFunnel({ range });
+    const data = await getAdminFunnel({
+      range,
+      from: parsed.data.from,
+      to: parsed.data.to,
+    });
     const latencyMs = Date.now() - startedAt;
 
-    console.info('[admin/funnel] success', { requestId, range: range ?? '30d', latencyMs });
+    console.info('[admin/funnel] success', {
+      requestId,
+      range: range ?? '30d',
+      from: parsed.data.from ?? null,
+      to: parsed.data.to ?? null,
+      latencyMs,
+    });
 
     return NextResponse.json({
       ok: true,

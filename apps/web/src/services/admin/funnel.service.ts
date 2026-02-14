@@ -26,8 +26,15 @@ export interface AdminFunnelRange {
   timezone: 'UTC';
 }
 
+export interface AdminFunnelFilter {
+  from: string;
+  to: string;
+}
+
 export interface AdminFunnelData {
   range: AdminFunnelRange;
+  filter: AdminFunnelFilter;
+  displayTimezone: 'Asia/Seoul';
   kpis: AdminFunnelKpis;
   conversion: AdminFunnelConversion;
   series: AdminFunnelSeriesItem[];
@@ -35,6 +42,8 @@ export interface AdminFunnelData {
 
 export interface GetAdminFunnelInput {
   range?: FunnelRangePreset;
+  from?: string;
+  to?: string;
   now?: Date;
 }
 
@@ -113,7 +122,16 @@ async function resolveAllRangeStart(now: Date): Promise<Date> {
   return startOfUtcDay(new Date(Math.min(...candidates)));
 }
 
-async function resolveRange(range: FunnelRangePreset, now: Date): Promise<{ from: Date; to: Date }> {
+async function resolveRange(
+  range: FunnelRangePreset,
+  now: Date,
+  fromIso?: string,
+  toIso?: string,
+): Promise<{ from: Date; to: Date }> {
+  if (range !== 'all' && fromIso && toIso) {
+    return { from: new Date(fromIso), to: new Date(toIso) };
+  }
+
   const to = endOfUtcDay(now);
 
   switch (range) {
@@ -133,7 +151,7 @@ async function resolveRange(range: FunnelRangePreset, now: Date): Promise<{ from
 export async function getAdminFunnel(input: GetAdminFunnelInput = {}): Promise<AdminFunnelData> {
   const range = input.range ?? DEFAULT_RANGE;
   const now = input.now ?? new Date();
-  const { from, to } = await resolveRange(range, now);
+  const { from, to } = await resolveRange(range, now, input.from, input.to);
 
   const rangeFilter = { gte: from, lte: to };
 
@@ -270,6 +288,11 @@ export async function getAdminFunnel(input: GetAdminFunnelInput = {}): Promise<A
       to: to.toISOString(),
       timezone: 'UTC',
     },
+    filter: {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    },
+    displayTimezone: 'Asia/Seoul',
     kpis,
     conversion,
     series,

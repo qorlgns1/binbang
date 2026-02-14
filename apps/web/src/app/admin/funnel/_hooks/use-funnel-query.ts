@@ -15,8 +15,18 @@ interface ApiErrorShape {
   };
 }
 
-export async function fetchFunnel(range: FunnelRangePreset): Promise<AdminFunnelResponse> {
-  const params = new URLSearchParams({ range });
+export interface FunnelQueryFilter {
+  range: FunnelRangePreset;
+  from: string;
+  to: string;
+}
+
+export async function fetchFunnel(filter: FunnelQueryFilter): Promise<AdminFunnelResponse> {
+  const params = new URLSearchParams({
+    range: filter.range,
+    from: filter.from,
+    to: filter.to,
+  });
   const response = await fetch(`/api/admin/funnel?${params.toString()}`, {
     cache: 'no-store',
   });
@@ -33,12 +43,19 @@ export async function fetchFunnel(range: FunnelRangePreset): Promise<AdminFunnel
 
 export type UseFunnelQueryResult = UseQueryResult<AdminFunnelResponse, Error>;
 
-export function useFunnelQuery(range: FunnelRangePreset): UseFunnelQueryResult {
-  const filterKey = useMemo((): Record<string, string> => ({ range }), [range]);
+export function useFunnelQuery(filter: FunnelQueryFilter): UseFunnelQueryResult {
+  const filterKey = useMemo(
+    (): Record<string, string> => ({
+      range: filter.range,
+      from: filter.from,
+      to: filter.to,
+    }),
+    [filter.from, filter.range, filter.to],
+  );
 
   return useQuery({
     queryKey: adminKeys.funnelSnapshot(filterKey),
-    queryFn: (): Promise<AdminFunnelResponse> => fetchFunnel(range),
+    queryFn: (): Promise<AdminFunnelResponse> => fetchFunnel(filter),
     refetchInterval: 30_000,
   });
 }

@@ -230,6 +230,11 @@ export interface AdminFunnelResponse {
     to: string;
     timezone: 'UTC';
   };
+  filter: {
+    from: string;
+    to: string;
+  };
+  displayTimezone: 'Asia/Seoul';
   kpis: AdminFunnelKpis;
   conversion: AdminFunnelConversion;
   series: AdminFunnelSeriesItem[];

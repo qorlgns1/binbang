@@ -1,0 +1,25 @@
+# P0-9-T4 timezone validation log
+# generated_at_utc=2026-02-14T20:37:54Z
+
+[tests]
+
+> @workspace/web@0.0.0 test /Users/marco/workspace/binbang/apps/web
+> vitest run src/lib/datetime/format-kst.test.ts src/app/admin/funnel/_components/date-filter.test.ts
+
+
+ RUN  v4.0.18 /Users/marco/workspace/binbang/apps/web
+
+ ✓ src/lib/datetime/format-kst.test.ts (4 tests) 24ms
+ ✓ src/app/admin/funnel/_components/date-filter.test.ts (3 tests) 4ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  05:37:55
+   Duration  430ms (transform 103ms, setup 0ms, import 311ms, tests 28ms, environment 0ms)
+
+
+[timezone-independence-check]
+TZ=UTC
+2026-02-14 09:00
+TZ=America/Los_Angeles
+2026-02-14 09:00

@@ -188,7 +188,7 @@ Dependencies/Blockers: `P0-9-T2`.
 Estimate_days: 2
 
 #### Ticket `P0-9-T4`
-- [ ] 진행완료
+- [x] 진행완료
 Title: UTC 필터 + KST 표시 정책 적용
 Goal: 저장/필터 UTC, 표시 KST 원칙을 코드로 강제한다.
 User-visible outcome: Admin 날짜/시간이 항상 KST로 일관되게 보인다.
@@ -227,15 +227,16 @@ Error shape(표준 에러 1개):
 Pagination/aggregation 기준:
 - 필터 파라미터는 ISO(UTC) 전송, 표시만 KST 포맷한다.
 DoD:
-- [ ] `Intl.DateTimeFormat(... timeZone: 'Asia/Seoul')` 경로가 공용화된다.
-- [ ] 기간 경계(00:00) 테스트가 UTC/KST 케이스 포함.
-- [ ] 사용자 로컬 타임존 의존 코드가 퍼널 화면에서 제거된다.
-- [ ] 표시 포맷 함수 1개(`formatKstDateTime`)로 모든 Admin 표시를 통일한다.
-- [ ] `Intl.DateTimeFormat`에 `timeZone: 'Asia/Seoul'`이 강제된다.
-- [ ] 필터 파라미터는 ISO UTC 문자열로만 전송된다.
+- [x] `Intl.DateTimeFormat(... timeZone: 'Asia/Seoul')` 경로가 공용화된다.
+- [x] 기간 경계(00:00) 테스트가 UTC/KST 케이스 포함.
+- [x] 사용자 로컬 타임존 의존 코드가 퍼널 화면에서 제거된다.
+- [x] 표시 포맷 함수 1개(`formatKstDateTime`)로 모든 Admin 표시를 통일한다.
+- [x] `Intl.DateTimeFormat`에 `timeZone: 'Asia/Seoul'`이 강제된다.
+- [x] 필터 파라미터는 ISO UTC 문자열로만 전송된다.
 Validation:
-- [ ] UTC 경계 샘플 데이터로 전환 테스트 작성.
-- [ ] 수동 검증: 브라우저 타임존 변경 후에도 KST 고정 표시 확인.
+- [x] UTC 경계 샘플 데이터로 전환 테스트 작성.
+- [x] 수동 검증: 브라우저 타임존 변경 후에도 KST 고정 표시 확인.
+Validation evidence: `docs/backlog/roadmap/validation/p0-9-t4-timezone.log`
 Dependencies/Blockers: `P0-9-T2`, `P0-9-T3`.
 Estimate_days: 1
 
