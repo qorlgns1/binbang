@@ -1,0 +1,31 @@
+# P0-9b-T1 click tracking validation log
+# generated_at_utc=2026-02-14T21:02:07Z
+
+[tests]
+
+
+> @workspace/web@0.0.0 test /Users/marco/workspace/binbang/apps/web
+> vitest run src/lib/analytics/click-tracker.test.ts src/services/analytics-click.service.test.ts src/services/admin/__tests__/funnel-clicks.service.test.ts
+
+
+ RUN  v4.0.18 /Users/marco/workspace/binbang/apps/web
+
+ ✓ src/lib/analytics/click-tracker.test.ts (2 tests) 22ms
+ ✓ src/services/analytics-click.service.test.ts (2 tests) 8ms
+ ✓ src/services/admin/__tests__/funnel-clicks.service.test.ts (4 tests) 8ms
+
+ Test Files  3 passed (3)
+      Tests  8 passed (8)
+   Start at  06:02:08
+   Duration  262ms (transform 203ms, setup 0ms, import 249ms, tests 39ms, environment 0ms)
+
+
+[db-sample-20-events]
+
+
+> binbang@2.29.0 with-env:local /Users/marco/workspace/binbang
+> dotenv -e .env -e .env.local -- pnpm --filter \@workspace/db exec tsx
+
+grouped_counts=[{"eventName":"mobile_menu_cta","count":4},{"eventName":"mobile_menu_open","count":4},{"eventName":"nav_pricing","count":4},{"eventName":"nav_request","count":4},{"eventName":"nav_signup","count":4}]
+total=20
+transaction=rolled_back

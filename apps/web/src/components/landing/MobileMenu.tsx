@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { trackClickEvent } from '@/lib/analytics/click-tracker';
 import type { Locale } from '@workspace/shared/i18n';
 
 const Sheet = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.Sheet })), { ssr: false });
@@ -33,9 +34,37 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
 
   const closeSheet = () => setOpen(false);
+  const handleOpenChange = (nextOpen: boolean): void => {
+    if (nextOpen) {
+      trackClickEvent({
+        eventName: 'mobile_menu_open',
+        source: 'mobile_menu_trigger',
+        locale: lang,
+      });
+    }
+    setOpen(nextOpen);
+  };
+
+  const handlePricingClick = (): void => {
+    trackClickEvent({
+      eventName: 'nav_pricing',
+      source: 'mobile_menu_pricing',
+      locale: lang,
+    });
+    closeSheet();
+  };
+
+  const handleMobileCtaClick = (): void => {
+    trackClickEvent({
+      eventName: 'mobile_menu_cta',
+      source: 'mobile_menu_cta',
+      locale: lang,
+    });
+    closeSheet();
+  };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
         <Button
           variant='ghost'
@@ -55,7 +84,7 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
             {lang === 'ko' ? '메뉴' : 'Menu'}
           </p>
           <nav className='flex flex-col gap-0.5' aria-label='Mobile navigation'>
-            <Link href={`/${lang}/pricing`} className={navItemClass} onClick={closeSheet}>
+            <Link href={`/${lang}/pricing`} className={navItemClass} onClick={handlePricingClick}>
               {t('nav.pricing')}
             </Link>
             <Link href={`/${lang}/faq`} className={navItemClass} onClick={closeSheet}>
@@ -73,7 +102,7 @@ export function MobileMenu({ lang }: MobileMenuProps): React.ReactElement {
             asChild
             className='h-11 w-full rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/90'
           >
-            <Link href={`/${lang}/login`} onClick={closeSheet}>
+            <Link href={`/${lang}/login`} onClick={handleMobileCtaClick}>
               {t('nav.login')}
             </Link>
           </Button>

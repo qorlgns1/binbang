@@ -3,6 +3,8 @@
  * Implements TR-001~012 from landing-page-llm-spec.md
  */
 
+import { trackClickEvent } from '@/lib/analytics/click-tracker';
+
 type LandingEvent =
   | 'landing_viewed'
   | 'hero_primary_cta_clicked'
@@ -108,6 +110,11 @@ export function trackLandingViewed(locale: string, theme: string): void {
 export function trackPrimaryCTAClicked(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
   sendEvent('hero_primary_cta_clicked', params);
+  trackClickEvent({
+    eventName: 'nav_request',
+    source: 'hero_primary_cta',
+    locale,
+  });
 }
 
 /**

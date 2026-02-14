@@ -202,6 +202,74 @@ export interface ThroughputComparisonResponse {
   groups: ThroughputComparisonGroup[];
 }
 
+// ── Funnel ──
+
+export type FunnelRangePreset = 'today' | '7d' | '30d' | 'all';
+
+export interface AdminFunnelKpis {
+  submitted: number;
+  processed: number;
+  paymentConfirmed: number;
+  conditionMet: number;
+}
+
+export interface AdminFunnelConversion {
+  submittedToProcessed: number;
+  processedToPaymentConfirmed: number;
+  paymentConfirmedToConditionMet: number;
+  submittedToConditionMet: number;
+}
+
+export interface AdminFunnelSeriesItem extends AdminFunnelKpis {
+  date: string;
+}
+
+export interface AdminFunnelResponse {
+  range: {
+    from: string;
+    to: string;
+    timezone: 'UTC';
+  };
+  filter: {
+    from: string;
+    to: string;
+  };
+  displayTimezone: 'Asia/Seoul';
+  kpis: AdminFunnelKpis;
+  conversion: AdminFunnelConversion;
+  series: AdminFunnelSeriesItem[];
+}
+
+export interface AdminFunnelClickTotals {
+  navSignup: number;
+  navRequest: number;
+  navPricing: number;
+  mobileMenuOpen: number;
+  mobileMenuCta: number;
+  total: number;
+}
+
+export interface AdminFunnelClickSeriesItem extends AdminFunnelClickTotals {
+  date: string;
+}
+
+export interface AdminFunnelClicksResponse {
+  range: {
+    from: string;
+    to: string;
+    timezone: 'UTC';
+  };
+  filter: {
+    from: string;
+    to: string;
+  };
+  displayTimezone: 'Asia/Seoul';
+  totals: AdminFunnelClickTotals;
+  submitted: number;
+  navRequestToSubmitted: number;
+  series: AdminFunnelClickSeriesItem[];
+}
+
 // ── Platform Selector Management ──
 
 export interface PlatformSelectorItem {
