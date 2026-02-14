@@ -20,9 +20,9 @@ interface ApiErrorShape {
 export async function fetchFunnelClicks(filter: FunnelQueryFilter): Promise<AdminFunnelClicksResponse> {
   const params = new URLSearchParams({
     range: filter.range,
-    from: filter.from,
-    to: filter.to,
   });
+  if (filter.from) params.set('from', filter.from);
+  if (filter.to) params.set('to', filter.to);
 
   const response = await fetch(`/api/admin/funnel/clicks?${params.toString()}`, {
     cache: 'no-store',
@@ -44,8 +44,8 @@ export function useFunnelClicksQuery(filter: FunnelQueryFilter): UseFunnelClicks
   const filterKey = useMemo(
     (): Record<string, string> => ({
       range: filter.range,
-      from: filter.from,
-      to: filter.to,
+      from: filter.from ?? '',
+      to: filter.to ?? '',
     }),
     [filter.from, filter.range, filter.to],
   );

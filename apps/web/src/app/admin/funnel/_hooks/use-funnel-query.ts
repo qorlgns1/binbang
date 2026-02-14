@@ -17,16 +17,16 @@ interface ApiErrorShape {
 
 export interface FunnelQueryFilter {
   range: FunnelRangePreset;
-  from: string;
-  to: string;
+  from?: string;
+  to?: string;
 }
 
 export async function fetchFunnel(filter: FunnelQueryFilter): Promise<AdminFunnelResponse> {
   const params = new URLSearchParams({
     range: filter.range,
-    from: filter.from,
-    to: filter.to,
   });
+  if (filter.from) params.set('from', filter.from);
+  if (filter.to) params.set('to', filter.to);
   const response = await fetch(`/api/admin/funnel?${params.toString()}`, {
     cache: 'no-store',
   });
@@ -47,8 +47,8 @@ export function useFunnelQuery(filter: FunnelQueryFilter): UseFunnelQueryResult 
   const filterKey = useMemo(
     (): Record<string, string> => ({
       range: filter.range,
-      from: filter.from,
-      to: filter.to,
+      from: filter.from ?? '',
+      to: filter.to ?? '',
     }),
     [filter.from, filter.range, filter.to],
   );

@@ -26,8 +26,8 @@ function addUtcDays(date: Date, days: number): Date {
 
 export interface FunnelUtcFilter {
   range: FunnelRangePreset;
-  from: string;
-  to: string;
+  from?: string;
+  to?: string;
 }
 
 export function buildUtcFilterFromRange(range: FunnelRangePreset, now: Date = new Date()): FunnelUtcFilter {
@@ -49,14 +49,12 @@ export function buildUtcFilterFromRange(range: FunnelRangePreset, now: Date = ne
     case '30d':
       return {
         range,
-        from: startOfUtcDay(addUtcDays(now, -30)).toISOString(),
+        from: startOfUtcDay(addUtcDays(now, -29)).toISOString(),
         to: to.toISOString(),
       };
     case 'all':
       return {
         range,
-        from: new Date('1970-01-01T00:00:00.000Z').toISOString(),
-        to: to.toISOString(),
       };
   }
 }

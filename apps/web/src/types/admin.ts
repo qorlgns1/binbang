@@ -266,7 +266,7 @@ export interface AdminFunnelClicksResponse {
   displayTimezone: 'Asia/Seoul';
   totals: AdminFunnelClickTotals;
   submitted: number;
-  clickToSubmitted: number;
+  navRequestToSubmitted: number;
   series: AdminFunnelClickSeriesItem[];
 }
 

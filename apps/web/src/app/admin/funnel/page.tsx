@@ -86,11 +86,11 @@ export default function FunnelPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>클릭 → 제출 전환율</CardTitle>
+              <CardTitle>요청 클릭 → 제출 전환율</CardTitle>
             </CardHeader>
             <CardContent className='text-sm text-muted-foreground space-y-1'>
               <p className='text-3xl font-semibold text-foreground'>
-                {(clickQuery.data.clickToSubmitted * 100).toFixed(1)}%
+                {(clickQuery.data.navRequestToSubmitted * 100).toFixed(1)}%
               </p>
               <p>
                 submitted {clickQuery.data.submitted} / nav_request {clickQuery.data.totals.navRequest}

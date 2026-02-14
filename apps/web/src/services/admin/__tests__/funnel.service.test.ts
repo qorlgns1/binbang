@@ -157,6 +157,24 @@ describe('admin/funnel.service', (): void => {
     );
   });
 
+  it('resolves 30d range with inclusive UTC window', async (): Promise<void> => {
+    await getAdminFunnel({
+      range: '30d',
+      now: new Date('2026-02-14T18:40:00.000Z'),
+    });
+
+    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          createdAt: {
+            gte: new Date('2026-01-16T00:00:00.000Z'),
+            lte: new Date('2026-02-14T23:59:59.999Z'),
+          },
+        },
+      }),
+    );
+  });
+
   it('uses earliest metric timestamp as all-range start', async (): Promise<void> => {
     mockFormSubmissionFindFirst
       .mockResolvedValueOnce({ createdAt: new Date('2026-01-20T05:00:00.000Z') })

@@ -64,7 +64,7 @@ describe('admin/funnel-clicks.service', (): void => {
       mobileMenuCta: 1,
       total: 5,
     });
-    expect(result.clickToSubmitted).toBe(3);
+    expect(result.navRequestToSubmitted).toBe(3);
     expect(result.series).toEqual([
       {
         date: '2026-02-13',
@@ -101,6 +101,24 @@ describe('admin/funnel-clicks.service', (): void => {
           occurredAt: {
             gte: new Date('2026-02-01T00:00:00.000Z'),
             lte: new Date('2026-02-07T23:59:59.999Z'),
+          },
+        }),
+      }),
+    );
+  });
+
+  it('resolves 30d range with inclusive UTC window', async (): Promise<void> => {
+    await getAdminFunnelClicks({
+      range: '30d',
+      now: new Date('2026-02-14T12:00:00.000Z'),
+    });
+
+    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          occurredAt: {
+            gte: new Date('2026-01-16T00:00:00.000Z'),
+            lte: new Date('2026-02-14T23:59:59.999Z'),
           },
         }),
       }),

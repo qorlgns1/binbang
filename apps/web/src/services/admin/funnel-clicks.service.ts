@@ -32,7 +32,7 @@ export interface AdminFunnelClicksData {
   displayTimezone: 'Asia/Seoul';
   totals: AdminFunnelClickTotals;
   submitted: number;
-  clickToSubmitted: number;
+  navRequestToSubmitted: number;
   series: AdminFunnelClickSeriesItem[];
 }
 
@@ -152,7 +152,7 @@ async function resolveRange(
     case '7d':
       return { from: startOfUtcDay(addUtcDays(now, -6)), to };
     case '30d':
-      return { from: startOfUtcDay(addUtcDays(now, -30)), to };
+      return { from: startOfUtcDay(addUtcDays(now, -29)), to };
     case 'all': {
       const from = await resolveAllRangeStart(now);
       return { from, to };
@@ -221,7 +221,7 @@ export async function getAdminFunnelClicks(input: GetAdminFunnelClicksInput = {}
     displayTimezone: 'Asia/Seoul',
     totals,
     submitted,
-    clickToSubmitted: safeRatio(submitted, totals.navRequest),
+    navRequestToSubmitted: safeRatio(submitted, totals.navRequest),
     series,
   };
 }
