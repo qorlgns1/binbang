@@ -39,9 +39,11 @@ export function ThroughputDashboard() {
 
   return (
     <div className='space-y-6'>
-      <div>
-        <h1 className='text-3xl font-bold'>처리량 분석</h1>
-        <p className='text-muted-foreground mt-2'>설정 조합별 분당 숙소 처리량을 기록하고 비교합니다.</p>
+      <div className='space-y-2'>
+        <h1 className='text-3xl font-bold text-foreground'>처리량 분석</h1>
+        <p className='text-base leading-relaxed text-muted-foreground'>
+          설정 조합별 분당 숙소 처리량을 기록하고 비교합니다.
+        </p>
       </div>
 
       <Separator />

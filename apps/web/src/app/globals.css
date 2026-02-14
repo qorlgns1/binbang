@@ -274,6 +274,11 @@
 }
 
 @layer utilities {
+  /* DS-019: Dashboard card entrance (admin/landing) */
+  .animate-dashboard-enter {
+    animation: var(--animate-dashboard-enter);
+  }
+
   /* 등대 불빛 효과 (Glow) */
   .lighthouse-glow {
     box-shadow: 0 0 15px -3px oklch(78% 0.17 85 / 0.4);

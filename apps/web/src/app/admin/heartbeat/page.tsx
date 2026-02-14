@@ -33,7 +33,7 @@ function StatusCard() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
             <Activity className='size-5' />
@@ -64,7 +64,7 @@ function StatusCard() {
   const statusBgColor = status?.isHealthy ? 'bg-status-success' : 'bg-status-error';
 
   return (
-    <Card>
+    <Card className='animate-dashboard-enter'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <Activity className='size-5' />
@@ -107,7 +107,7 @@ function WorkerControlCard() {
   const isWorkerRunning = status?.status === 'healthy';
 
   return (
-    <Card>
+    <Card className='animate-dashboard-enter'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <Power className='size-5' />
@@ -169,9 +169,11 @@ export default function HeartbeatPage() {
   return (
     <main className='max-w-7xl mx-auto px-4 py-8'>
       <div className='space-y-6'>
-        <div>
-          <h1 className='text-3xl font-bold'>하트비트 모니터링</h1>
-          <p className='text-muted-foreground mt-2'>워커 프로세스의 실시간 상태를 모니터링하고 제어합니다.</p>
+        <div className='space-y-2'>
+          <h1 className='text-3xl font-bold text-foreground'>하트비트 모니터링</h1>
+          <p className='text-base leading-relaxed text-muted-foreground'>
+            워커 프로세스의 실시간 상태를 모니터링하고 제어합니다.
+          </p>
         </div>
 
         <Separator />

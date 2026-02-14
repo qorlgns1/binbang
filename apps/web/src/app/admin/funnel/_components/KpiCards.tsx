@@ -16,7 +16,7 @@ export function KpiCards({ kpis }: KpiCardsProps) {
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4'>
       {KPI_ITEMS.map((item) => (
-        <Card key={item.key}>
+        <Card key={item.key} className='animate-dashboard-enter'>
           <CardHeader className='pb-2'>
             <CardDescription>{item.label}</CardDescription>
             <CardTitle className='text-3xl'>{kpis[item.key]}</CardTitle>

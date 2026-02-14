@@ -42,20 +42,22 @@ export default function FunnelPage() {
   return (
     <main className='max-w-7xl mx-auto px-4 py-8 space-y-6'>
       <div className='space-y-2'>
-        <h1 className='text-3xl font-bold'>운영 퍼널</h1>
-        <p className='text-muted-foreground'>서버 SoT 기준 제출/처리/결제확인/조건충족 퍼널을 조회합니다.</p>
+        <h1 className='text-3xl font-bold text-foreground'>운영 퍼널</h1>
+        <p className='text-base leading-relaxed text-muted-foreground'>
+          서버 SoT 기준 제출/처리/결제확인/조건충족 퍼널을 조회합니다.
+        </p>
       </div>
 
       <DateFilter value={filter.range} onChange={handleRangeChange} disabled={isPending} />
 
       {isPending && (
-        <Card>
+        <Card className='animate-dashboard-enter'>
           <CardContent className='py-6 text-sm text-muted-foreground'>퍼널 데이터를 불러오는 중입니다.</CardContent>
         </Card>
       )}
 
       {errorMessage && (
-        <Card>
+        <Card className='animate-dashboard-enter'>
           <CardContent className='py-6 text-sm text-destructive'>
             퍼널 데이터를 불러오지 못했습니다: {errorMessage}
           </CardContent>
@@ -64,7 +66,7 @@ export default function FunnelPage() {
 
       {query.data && clickQuery.data && (
         <>
-          <Card>
+          <Card className='animate-dashboard-enter'>
             <CardHeader>
               <CardTitle>조회 범위</CardTitle>
               <CardDescription>{query.data.displayTimezone} 기준 표시 (필터/저장은 UTC)</CardDescription>
@@ -78,7 +80,7 @@ export default function FunnelPage() {
 
           <ConversionMatrix conversion={query.data.conversion} />
 
-          <Card>
+          <Card className='animate-dashboard-enter'>
             <CardHeader>
               <CardTitle>클릭 지표 (2차)</CardTitle>
               <CardDescription>P0-9b 라벨: 클릭 이벤트는 1차 KPI와 분리 집계됩니다.</CardDescription>
@@ -90,7 +92,7 @@ export default function FunnelPage() {
 
           <ClickKpiCards totals={clickQuery.data.totals} />
 
-          <Card>
+          <Card className='animate-dashboard-enter'>
             <CardHeader>
               <CardTitle>요청 클릭 → 제출 전환율</CardTitle>
             </CardHeader>
@@ -104,7 +106,7 @@ export default function FunnelPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className='animate-dashboard-enter'>
             <CardHeader>
               <CardTitle>일별 시계열 (UTC)</CardTitle>
             </CardHeader>
