@@ -29,7 +29,9 @@
   },
   "structuredData": {
     "organizationDescription": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva y envía notificaciones por correo cuando hay habitación.",
-    "websiteDescription": "Servicio de alertas de disponibilidad para alojamientos. Te avisamos cuando hay habitación."
+    "websiteDescription": "Servicio de alertas de disponibilidad para alojamientos. Te avisamos cuando hay habitación.",
+    "applicationName": "Binbang",
+    "applicationDescription": "Alertas automáticas de disponibilidad cada minuto. Compatible con Airbnb y Agoda."
   },
   "tutorial": {
     "step1": {
