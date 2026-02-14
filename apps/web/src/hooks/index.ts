@@ -96,6 +96,8 @@ export {
   useMonitoringLogsInfiniteQuery as useMonitoringLogs,
   useMonitoringSummaryQuery,
   useMonitoringSummaryQuery as useMonitoringSummary,
+  useWorkerQueueQuery,
+  useWorkerQueueQuery as useWorkerQueue,
 } from '@/features/admin/monitoring/queries';
 
 // Admin - Audit Logs

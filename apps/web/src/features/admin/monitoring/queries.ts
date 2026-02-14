@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-query';
 
 import { adminKeys } from '@/lib/queryKeys';
-import type { MonitoringLogsResponse, MonitoringSummary } from '@/types/admin';
+import type { MonitoringLogsResponse, MonitoringSummary, QueueSnapshotResponse } from '@/types/admin';
 
 // ============================================================================
 // Types
@@ -28,6 +28,7 @@ interface LogsFilterParams {
 
 export type UseMonitoringSummaryQueryResult = UseQueryResult<MonitoringSummary, Error>;
 export type UseMonitoringLogsInfiniteQueryResult = UseInfiniteQueryResult<InfiniteData<MonitoringLogsResponse>, Error>;
+export type UseWorkerQueueQueryResult = UseQueryResult<QueueSnapshotResponse, Error>;
 
 // ============================================================================
 // Fetch Functions
@@ -50,6 +51,22 @@ async function fetchLogs(filters: LogsFilterParams, cursor?: string): Promise<Mo
 
   const res = await fetch(`/api/admin/monitoring/logs?${params.toString()}`);
   if (!res.ok) throw new Error('Failed to fetch monitoring logs');
+  return res.json();
+}
+
+async function fetchWorkerQueue(limit: number): Promise<QueueSnapshotResponse> {
+  const params = new URLSearchParams();
+  params.set('limit', String(limit));
+
+  const res = await fetch(`/api/admin/worker/queue?${params.toString()}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const message =
+      typeof (errorData as { error?: string }).error === 'string'
+        ? (errorData as { error: string }).error
+        : '워커 큐 스냅샷을 가져오지 못했습니다.';
+    throw new Error(message);
+  }
   return res.json();
 }
 
@@ -79,5 +96,16 @@ export function useMonitoringLogsInfiniteQuery(filters: LogsFilterParams): UseMo
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: MonitoringLogsResponse): string | undefined => lastPage.nextCursor ?? undefined,
     refetchInterval: 30_000,
+  });
+}
+
+export function useWorkerQueueQuery(limit: number = 20): UseWorkerQueueQueryResult {
+  const safeLimit = Number.isFinite(limit) && limit >= 1 ? Math.floor(limit) : 20;
+
+  return useQuery({
+    queryKey: adminKeys.workerQueue({ limit: String(safeLimit) }),
+    queryFn: (): Promise<QueueSnapshotResponse> => fetchWorkerQueue(safeLimit),
+    refetchInterval: 3000,
+    staleTime: 1000,
   });
 }

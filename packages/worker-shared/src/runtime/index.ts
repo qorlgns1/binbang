@@ -9,6 +9,8 @@ export { createCycleQueue, createCheckQueue, QUEUE_NAMES } from './queues';
 export { createCycleWorker, createCheckWorker } from './workers';
 export type { CreateWorkerOptions } from './workers';
 export { setupRepeatableJobs, removeRepeatableJobs } from './scheduler';
+export { buildQueueSnapshot } from './queueSnapshot';
+export type { QueueSnapshotResponse, QueueStats, QueueJobState, QueueJobSummary } from './queueSnapshot';
 
 // Heartbeat
 export {
