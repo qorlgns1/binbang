@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { LangToggle } from '@/components/landing/LangToggle';
 import { MobileMenu } from '@/components/landing/MobileMenu';
 import { ThemeToggle } from '@/components/landing/ThemeToggle';
+import { trackClickEvent } from '@/lib/analytics/click-tracker';
 import type { Locale } from '@workspace/shared/i18n';
 
 export type PublicHeaderVariant = 'default' | 'landing' | 'pricing' | 'auth' | 'legal';
@@ -54,6 +55,20 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
   const tPricing = useTranslations('pricing');
 
   const isLoggedIn = !!session?.user;
+  const handleNavPricingClick = (): void => {
+    trackClickEvent({
+      eventName: 'nav_pricing',
+      source: 'public_header_desktop',
+      locale: lang,
+    });
+  };
+  const handleNavSignupClick = (): void => {
+    trackClickEvent({
+      eventName: 'nav_signup',
+      source: 'public_header_pricing',
+      locale: lang,
+    });
+  };
 
   return (
     <header className='sticky top-0 z-50 border-b border-border/50 bg-background/95 shadow-sm backdrop-blur-md'>
@@ -92,7 +107,7 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
               <Link href={`/${lang}/about`} className={navLinkClass}>
                 {tLanding('nav.about')}
               </Link>
-              <Link href={`/${lang}/pricing`} className={navLinkClass}>
+              <Link href={`/${lang}/pricing`} className={navLinkClass} onClick={handleNavPricingClick}>
                 {tLanding('nav.pricing')}
               </Link>
               <Link href={`/${lang}/faq`} className={navLinkClass}>
@@ -136,7 +151,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
                   <Link href={`/${lang}/login`}>{tPricing('nav.login')}</Link>
                 </Button>
                 <Button size='sm' asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                  <Link href={`/${lang}/signup`}>{tPricing('nav.getStarted')}</Link>
+                  <Link href={`/${lang}/signup`} onClick={handleNavSignupClick}>
+                    {tPricing('nav.getStarted')}
+                  </Link>
                 </Button>
               </>
             )}

@@ -240,6 +240,36 @@ export interface AdminFunnelResponse {
   series: AdminFunnelSeriesItem[];
 }
 
+export interface AdminFunnelClickTotals {
+  navSignup: number;
+  navRequest: number;
+  navPricing: number;
+  mobileMenuOpen: number;
+  mobileMenuCta: number;
+  total: number;
+}
+
+export interface AdminFunnelClickSeriesItem extends AdminFunnelClickTotals {
+  date: string;
+}
+
+export interface AdminFunnelClicksResponse {
+  range: {
+    from: string;
+    to: string;
+    timezone: 'UTC';
+  };
+  filter: {
+    from: string;
+    to: string;
+  };
+  displayTimezone: 'Asia/Seoul';
+  totals: AdminFunnelClickTotals;
+  submitted: number;
+  clickToSubmitted: number;
+  series: AdminFunnelClickSeriesItem[];
+}
+
 // ── Platform Selector Management ──
 
 export interface PlatformSelectorItem {

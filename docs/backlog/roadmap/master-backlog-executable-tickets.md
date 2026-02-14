@@ -244,15 +244,15 @@ Estimate_days: 1
 ### Story 1.1b — [P0-9b] 클릭 트래킹 2차 릴리즈
 summary: P0-9 1차 서버 SoT 이후, 클릭 이벤트를 저장형 트래킹으로 연결해 제출 전 단계 퍼널을 확장한다.  
 success_metric: `nav_signup/nav_request/nav_pricing/mobile_menu_*` 이벤트가 저장되고 클릭→제출 전환율이 대시보드에서 조회된다.
-- [ ] Progress: 완료
+- [x] Progress: 완료
 
 선행조건 체크리스트:
-- [ ] 클릭 이벤트 저장 API/저장소 구현 완료
-- [ ] Header + Mobile Menu CTA 모두 이벤트 호출 연결
-- [ ] `nav_pricing` 호출 경로(데스크톱/모바일) 검증 완료
+- [x] 클릭 이벤트 저장 API/저장소 구현 완료
+- [x] Header + Mobile Menu CTA 모두 이벤트 호출 연결
+- [x] `nav_pricing` 호출 경로(데스크톱/모바일) 검증 완료
 
 #### Ticket `P0-9b-T1`
-- [ ] 진행완료
+- [x] 진행완료
 Title: 클릭 이벤트 저장 API + 랜딩 CTA 계측 연결
 Goal: 클릭 이벤트를 서버 저장형으로 전환해 클릭→제출 퍼널의 SoT를 확보한다.
 User-visible outcome: 운영자가 클릭 수와 클릭→제출 전환율을 대시보드에서 확인할 수 있다.
@@ -283,12 +283,13 @@ Error shape(표준 에러 1개):
 Pagination/aggregation 기준:
 - 클릭 집계는 UTC 일 단위(`occurredAt`)로 집계하고, 이벤트명별 `count(*)`를 반환한다.
 DoD:
-- [ ] `nav_signup/nav_request/nav_pricing/mobile_menu_open/mobile_menu_cta` 저장.
-- [ ] 클릭 집계 API와 P0-9 퍼널 화면 연동.
-- [ ] 클릭 지표는 2차 Story(P0-9b) 라벨로 1차 KPI와 분리 표시.
+- [x] `nav_signup/nav_request/nav_pricing/mobile_menu_open/mobile_menu_cta` 저장.
+- [x] 클릭 집계 API와 P0-9 퍼널 화면 연동.
+- [x] 클릭 지표는 2차 Story(P0-9b) 라벨로 1차 KPI와 분리 표시.
 Validation:
-- [ ] 샘플 클릭 이벤트 20건 적재 후 집계 결과 확인.
-- [ ] header/mobile menu에서 동일 이벤트명이 중복 전송되지 않음을 검증.
+- [x] 샘플 클릭 이벤트 20건 적재 후 집계 결과 확인.
+- [x] header/mobile menu에서 동일 이벤트명이 중복 전송되지 않음을 검증.
+Validation evidence: `docs/backlog/roadmap/validation/p0-9b-t1-click-tracking.log`
 Dependencies/Blockers: `P0-9-T2`, `P0-9-T3`.
 Estimate_days: 1
 

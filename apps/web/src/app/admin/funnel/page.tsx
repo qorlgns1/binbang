@@ -6,14 +6,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatKstDateTime } from '@/lib/datetime/format-kst';
 
+import { ClickKpiCards } from './_components/click-kpi-cards';
 import { ConversionMatrix } from './_components/conversion-matrix';
 import { DateFilter, buildUtcFilterFromRange, type FunnelUtcFilter } from './_components/date-filter';
 import { KpiCards } from './_components/kpi-cards';
+import { useFunnelClicksQuery } from './_hooks/use-funnel-clicks-query';
 import { useFunnelQuery } from './_hooks/use-funnel-query';
 
 export default function FunnelPage() {
   const [filter, setFilter] = useState<FunnelUtcFilter>(() => buildUtcFilterFromRange('30d'));
   const query = useFunnelQuery(filter);
+  const clickQuery = useFunnelClicksQuery(filter);
+  const isPending = query.isPending || clickQuery.isPending;
+  const errorMessage = query.isError ? query.error.message : clickQuery.isError ? clickQuery.error.message : null;
 
   const handleRangeChange = (next: FunnelUtcFilter): void => {
     if (next.range === filter.range && next.from === filter.from && next.to === filter.to) return;
@@ -35,23 +40,23 @@ export default function FunnelPage() {
         <p className='text-muted-foreground'>서버 SoT 기준 제출/처리/결제확인/조건충족 퍼널을 조회합니다.</p>
       </div>
 
-      <DateFilter value={filter.range} onChange={handleRangeChange} disabled={query.isPending} />
+      <DateFilter value={filter.range} onChange={handleRangeChange} disabled={isPending} />
 
-      {query.isPending && (
+      {isPending && (
         <Card>
           <CardContent className='py-6 text-sm text-muted-foreground'>퍼널 데이터를 불러오는 중입니다.</CardContent>
         </Card>
       )}
 
-      {query.isError && (
+      {errorMessage && (
         <Card>
           <CardContent className='py-6 text-sm text-destructive'>
-            퍼널 데이터를 불러오지 못했습니다: {query.error.message}
+            퍼널 데이터를 불러오지 못했습니다: {errorMessage}
           </CardContent>
         </Card>
       )}
 
-      {query.data && (
+      {query.data && clickQuery.data && (
         <>
           <Card>
             <CardHeader>
@@ -66,6 +71,32 @@ export default function FunnelPage() {
           <KpiCards kpis={query.data.kpis} />
 
           <ConversionMatrix conversion={query.data.conversion} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>클릭 지표 (2차)</CardTitle>
+              <CardDescription>P0-9b 라벨: 클릭 이벤트는 1차 KPI와 분리 집계됩니다.</CardDescription>
+            </CardHeader>
+            <CardContent className='text-sm text-muted-foreground'>
+              {formatKstDateTime(clickQuery.data.filter.from)} ~ {formatKstDateTime(clickQuery.data.filter.to)}
+            </CardContent>
+          </Card>
+
+          <ClickKpiCards totals={clickQuery.data.totals} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>클릭 → 제출 전환율</CardTitle>
+            </CardHeader>
+            <CardContent className='text-sm text-muted-foreground space-y-1'>
+              <p className='text-3xl font-semibold text-foreground'>
+                {(clickQuery.data.clickToSubmitted * 100).toFixed(1)}%
+              </p>
+              <p>
+                submitted {clickQuery.data.submitted} / nav_request {clickQuery.data.totals.navRequest}
+              </p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

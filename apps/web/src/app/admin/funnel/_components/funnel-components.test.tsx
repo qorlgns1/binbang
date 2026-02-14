@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { ClickKpiCards } from './click-kpi-cards';
 import { ConversionMatrix } from './conversion-matrix';
 import { DateFilter } from './date-filter';
 import { KpiCards } from './kpi-cards';
@@ -30,6 +31,23 @@ describe('admin/funnel components', () => {
           processedToPaymentConfirmed: 0.333,
           paymentConfirmedToConditionMet: 0.5,
           submittedToConditionMet: 0.143,
+        }}
+      />,
+    );
+
+    expect(html).toMatchSnapshot();
+  });
+
+  it('renders click KPI cards snapshot', () => {
+    const html = renderToStaticMarkup(
+      <ClickKpiCards
+        totals={{
+          navSignup: 5,
+          navRequest: 4,
+          navPricing: 3,
+          mobileMenuOpen: 2,
+          mobileMenuCta: 1,
+          total: 15,
         }}
       />,
     );
