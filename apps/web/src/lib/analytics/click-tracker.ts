@@ -3,6 +3,7 @@ import type { LandingClickEventName } from '@/lib/analytics/click-event-names';
 const DEDUPE_WINDOW_MS = 800;
 const recentEvents = new Map<string, number>();
 let sessionId: string | null = null;
+let fallbackSequence = 0;
 
 interface TrackClickEventInput {
   eventName: LandingClickEventName;
@@ -14,8 +15,25 @@ interface TrackClickEventInput {
 function getSessionId(): string {
   if (sessionId) return sessionId;
 
-  sessionId = `click_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  sessionId = `click_${createSessionEntropy()}`;
   return sessionId;
+}
+
+function createSessionEntropy(): string {
+  if (typeof globalThis.crypto !== 'undefined') {
+    if (typeof globalThis.crypto.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID().replaceAll('-', '');
+    }
+
+    if (typeof globalThis.crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(16);
+      globalThis.crypto.getRandomValues(bytes);
+      return Array.from(bytes, (value): string => value.toString(16).padStart(2, '0')).join('');
+    }
+  }
+
+  fallbackSequence += 1;
+  return `${Date.now().toString(36)}_${fallbackSequence.toString(36)}`;
 }
 
 function shouldDropDuplicate(eventName: LandingClickEventName, path: string): boolean {
