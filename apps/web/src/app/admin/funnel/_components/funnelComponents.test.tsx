@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { ClickKpiCards } from './click-kpi-cards';
-import { ConversionMatrix } from './conversion-matrix';
-import { DateFilter } from './date-filter';
-import { KpiCards } from './kpi-cards';
+import { ClickKpiCards } from './ClickKpiCards';
+import { ConversionMatrix } from './ConversionMatrix';
+import { DateFilter } from './DateFilter';
+import { KpiCards } from './KpiCards';
 
 describe('admin/funnel components', () => {
   it('renders KPI cards snapshot', () => {

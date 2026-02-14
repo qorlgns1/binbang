@@ -1,6 +1,8 @@
 import type { LandingClickEventName } from '@/lib/analytics/click-event-names';
 
 const DEDUPE_WINDOW_MS = 800;
+const MAX_RECENT_EVENTS = 100;
+const RECENT_EVENT_TTL_MS = DEDUPE_WINDOW_MS * 10;
 const recentEvents = new Map<string, number>();
 let sessionId: string | null = null;
 let fallbackSequence = 0;
@@ -43,6 +45,15 @@ function shouldDropDuplicate(eventName: LandingClickEventName, path: string): bo
 
   if (typeof previous === 'number' && now - previous < DEDUPE_WINDOW_MS) {
     return true;
+  }
+
+  if (recentEvents.size >= MAX_RECENT_EVENTS) {
+    const threshold = now - RECENT_EVENT_TTL_MS;
+    for (const [eventKey, timestamp] of recentEvents.entries()) {
+      if (timestamp < threshold) {
+        recentEvents.delete(eventKey);
+      }
+    }
   }
 
   recentEvents.set(key, now);

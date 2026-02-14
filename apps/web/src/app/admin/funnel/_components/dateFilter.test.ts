@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildUtcFilterFromRange } from './date-filter';
+import { buildUtcFilterFromRange } from './DateFilter';
 
 describe('buildUtcFilterFromRange', () => {
   const now = new Date('2026-02-14T12:34:56.000Z');

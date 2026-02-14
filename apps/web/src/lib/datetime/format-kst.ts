@@ -12,6 +12,9 @@ function getPart(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPart
 export function formatKstDateTime(value: Date | string, options: FormatKstDateTimeOptions = {}): string {
   const { withTime = true, locale = 'ko-KR' } = options;
   const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Invalid date value');
+  }
 
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone: KST_TIMEZONE,

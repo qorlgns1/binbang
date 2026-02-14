@@ -21,7 +21,11 @@ export interface LandingClickEventRecord {
 }
 
 export async function createLandingClickEvent(input: CreateLandingClickEventInput): Promise<LandingClickEventRecord> {
-  const occurredAt = input.occurredAt ? new Date(input.occurredAt) : new Date();
+  let occurredAt = new Date();
+  if (input.occurredAt) {
+    const parsed = new Date(input.occurredAt);
+    occurredAt = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  }
 
   const created = await prisma.landingEvent.create({
     data: {

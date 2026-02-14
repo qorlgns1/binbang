@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLandingClickEvent } from './analytics-click.service';
 
@@ -19,6 +19,14 @@ vi.mock('@workspace/db', () => ({
 }));
 
 describe('analytics-click.service', (): void => {
+  beforeEach((): void => {
+    mockLandingEventCreate.mockClear();
+  });
+
+  afterEach((): void => {
+    vi.useRealTimers();
+  });
+
   it('persists click event and returns normalized payload', async (): Promise<void> => {
     mockLandingEventCreate.mockResolvedValue({
       id: 'evt_1',
@@ -84,7 +92,30 @@ describe('analytics-click.service', (): void => {
         }),
       }),
     );
+  });
 
-    vi.useRealTimers();
+  it('falls back to current time when occurredAt is invalid', async (): Promise<void> => {
+    const now = new Date('2026-02-14T03:00:00.000Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    mockLandingEventCreate.mockResolvedValue({
+      id: 'evt_3',
+      eventName: 'nav_signup',
+      occurredAt: now,
+    });
+
+    await createLandingClickEvent({
+      eventName: 'nav_signup',
+      occurredAt: 'invalid-date',
+    });
+
+    expect(mockLandingEventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          occurredAt: now,
+        }),
+      }),
+    );
   });
 });

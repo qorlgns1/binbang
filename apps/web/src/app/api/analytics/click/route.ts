@@ -24,15 +24,28 @@ const bodySchema = z.object({
 
 type ErrorCode = 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR';
 
+function makeEntropy(): string {
+  if (typeof globalThis.crypto !== 'undefined') {
+    if (typeof globalThis.crypto.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID().slice(0, 8);
+    }
+
+    if (typeof globalThis.crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(4);
+      globalThis.crypto.getRandomValues(bytes);
+      return Array.from(bytes, (value): string => value.toString(16).padStart(2, '0')).join('');
+    }
+  }
+
+  return Date.now().toString(16).slice(-8).padStart(8, '0');
+}
+
 function makeRequestId(): string {
   const timestamp = new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, '')
     .slice(0, 14);
-  const entropy = Math.floor(Math.random() * 1000)
-    .toString()
-    .padStart(3, '0');
-  return `req_${timestamp}_${entropy}`;
+  return `req_${timestamp}_${makeEntropy()}`;
 }
 
 function errorResponse(status: number, code: ErrorCode, message: string, requestId: string): NextResponse {
@@ -87,7 +100,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       requestId,
       eventName: data.eventName,
       referrer: referrer ?? null,
-      userAgent: userAgent ?? null,
+      userAgent: userAgent ? userAgent.slice(0, 128) : null,
     });
 
     return NextResponse.json(

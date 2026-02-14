@@ -5,15 +5,8 @@ import { useMemo } from 'react';
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
 import { adminKeys } from '@/lib/queryKeys';
+import type { ApiErrorShape } from '@/types/api';
 import type { AdminFunnelResponse, FunnelRangePreset } from '@/types/admin';
-
-interface ApiErrorShape {
-  error?: {
-    code?: string;
-    message?: string;
-    requestId?: string;
-  };
-}
 
 export interface FunnelQueryFilter {
   range: FunnelRangePreset;

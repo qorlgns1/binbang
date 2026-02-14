@@ -1282,6 +1282,13 @@ B2C (직접 사용자) + B2B (여행사/관리업체 API) + Marketplace (숙소 
 | 국가별 데이터 규제(GDPR 등) 미준수 | 낮음 | 높음 | 동의 문구 표준화, 삭제 요청 절차(DSR) 정의, 접근 로그 보존 |
 | 법령/정책 변경 대응 지연 | 중간 | 중간 | 분기별 법률 점검, 외부 자문 슬롯 사전 확보 |
 
+**LandingEvent PII 보존/DSR 매핑 (2026-02-15 기준)**
+
+- 대상 컬럼: `LandingEvent.ipAddress`, `LandingEvent.userAgent`
+- 기본 보존 정책: `occurredAt` 기준 30일 경과 시 PII 필드 익명화(`NULL`)
+- 자동화 경로: 워커 repeatable job `landing-event-pii-retention`(UTC cron `17 0 * * *`)가 일 1회 실행
+- DSR 대응: 요청 접수 시 즉시 `sessionId`/시간대 기준 대상 이벤트를 삭제 또는 PII 익명화하고, 30일 경과 데이터는 정기잡으로 재검증
+
 ---
 
 ## 19. KPI 및 성공 지표

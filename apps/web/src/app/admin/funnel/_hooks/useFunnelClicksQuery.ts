@@ -5,17 +5,10 @@ import { useMemo } from 'react';
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
 import { adminKeys } from '@/lib/queryKeys';
+import type { ApiErrorShape } from '@/types/api';
 import type { AdminFunnelClicksResponse } from '@/types/admin';
 
-import type { FunnelQueryFilter } from './use-funnel-query';
-
-interface ApiErrorShape {
-  error?: {
-    code?: string;
-    message?: string;
-    requestId?: string;
-  };
-}
+import type { FunnelQueryFilter } from './useFunnelQuery';
 
 export async function fetchFunnelClicks(filter: FunnelQueryFilter): Promise<AdminFunnelClicksResponse> {
   const params = new URLSearchParams({

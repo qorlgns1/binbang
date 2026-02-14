@@ -18,4 +18,8 @@ describe('formatKstDateTime', () => {
   it('exposes fixed display timezone constant', () => {
     expect(KST_TIMEZONE).toBe('Asia/Seoul');
   });
+
+  it('throws on invalid date input', () => {
+    expect(() => formatKstDateTime('not-a-date')).toThrowError('Invalid date value');
+  });
 });

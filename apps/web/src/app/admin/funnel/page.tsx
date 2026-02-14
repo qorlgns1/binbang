@@ -6,30 +6,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatKstDateTime } from '@/lib/datetime/format-kst';
 
-import { ClickKpiCards } from './_components/click-kpi-cards';
-import { ConversionMatrix } from './_components/conversion-matrix';
-import { DateFilter, buildUtcFilterFromRange, type FunnelUtcFilter } from './_components/date-filter';
-import { KpiCards } from './_components/kpi-cards';
-import { useFunnelClicksQuery } from './_hooks/use-funnel-clicks-query';
-import { useFunnelQuery } from './_hooks/use-funnel-query';
+import { ClickKpiCards } from './_components/ClickKpiCards';
+import { ConversionMatrix } from './_components/ConversionMatrix';
+import { DateFilter, buildUtcFilterFromRange, type FunnelUtcFilter } from './_components/DateFilter';
+import { KpiCards } from './_components/KpiCards';
+import { useFunnelClicksQuery } from './_hooks/useFunnelClicksQuery';
+import { useFunnelQuery } from './_hooks/useFunnelQuery';
 
 export default function FunnelPage() {
   const [filter, setFilter] = useState<FunnelUtcFilter>(() => buildUtcFilterFromRange('30d'));
   const query = useFunnelQuery(filter);
   const clickQuery = useFunnelClicksQuery(filter);
   const isPending = query.isPending || clickQuery.isPending;
-  const errorMessage = query.isError ? query.error.message : clickQuery.isError ? clickQuery.error.message : null;
+  const errorMessages = [
+    query.isError ? query.error.message : null,
+    clickQuery.isError ? clickQuery.error.message : null,
+  ].filter((value): value is string => Boolean(value));
+  const errorMessage = errorMessages.length > 0 ? errorMessages.join('; ') : null;
 
   const handleRangeChange = (next: FunnelUtcFilter): void => {
     if (next.range === filter.range && next.from === filter.from && next.to === filter.to) return;
 
-    console.info('[admin/funnel] filter_change', {
-      fromRange: filter.range,
-      toRange: next.range,
-      from: next.from,
-      to: next.to,
-      changedAt: new Date().toISOString(),
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.info('[admin/funnel] filter_change', {
+        fromRange: filter.range,
+        toRange: next.range,
+        from: next.from,
+        to: next.to,
+        changedAt: new Date().toISOString(),
+      });
+    }
     setFilter(next);
   };
 

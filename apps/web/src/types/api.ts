@@ -7,3 +7,11 @@ export interface RouteParams {
 export interface PageParams {
   params: Promise<{ id: string }>;
 }
+
+export interface ApiErrorShape {
+  error?: {
+    code?: string;
+    message?: string;
+    requestId?: string;
+  };
+}
