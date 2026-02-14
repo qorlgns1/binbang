@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Binbang – Servicio de alertas de disponibilidad",
-    "description": "Binbang monitorea sitios de reserva de alojamiento y envía alertas por correo. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas.",
-    "twitterDescription": "Alertas de disponibilidad cada minuto. Te avisamos cuando hay habitación."
+    "title": "Binbang – Alertas de disponibilidad | Airbnb y Agoda en tiempo real",
+    "description": "¿Alojamiento agotado? Binbang verifica cada minuto y te avisa cuando hay disponibilidad en Airbnb o Agoda. Comienza a monitorear gratis.",
+    "twitterDescription": "Alertas de disponibilidad cada minuto. Monitoreo en tiempo real de Airbnb y Agoda."
   },
   "nav": {
     "brand": "Binbang",

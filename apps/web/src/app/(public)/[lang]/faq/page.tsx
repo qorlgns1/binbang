@@ -47,8 +47,28 @@ export default async function FaqPage({ params }: PageProps): Promise<React.Reac
 
   const t = await getTranslations({ locale: lang, namespace: 'faq' });
 
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: CATEGORIES.flatMap(({ key, questionCount }) =>
+      Array.from({ length: questionCount }, (_, i) => ({
+        '@type': 'Question',
+        name: t(`${key}.q${i + 1}`),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t(`${key}.a${i + 1}`),
+        },
+      })),
+    ),
+  };
+
   return (
     <main className='py-16'>
+      <script
+        type='application/ld+json'
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD from i18n messages
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+      />
       <div className='mb-16 text-center'>
         <h1 className='mb-4 text-3xl font-semibold text-foreground md:text-4xl'>{t('title.heading')}</h1>
         <p className='mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground'>{t('title.subline')}</p>

@@ -29,7 +29,9 @@
   },
   "structuredData": {
     "organizationDescription": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available.",
-    "websiteDescription": "Vacancy alert service for accommodation booking sites. Get notified when a room becomes available."
+    "websiteDescription": "Vacancy alert service for accommodation booking sites. Get notified when a room becomes available.",
+    "applicationName": "Binbang",
+    "applicationDescription": "Automatic vacancy alerts every minute. Supports Airbnb & Agoda."
   },
   "tutorial": {
     "step1": {

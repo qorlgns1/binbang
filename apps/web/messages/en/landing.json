@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Binbang – Vacancy Alert Service",
-    "description": "Binbang monitors accommodation booking sites for vacancies and sends email alerts. When you sign in with Google we use your email only for account identification and sending alerts.",
-    "twitterDescription": "Vacancy alerts checked every minute. We notify you when a room becomes available."
+    "title": "Binbang – Vacancy Alert for Airbnb & Agoda | Real-Time Monitoring",
+    "description": "Sold-out accommodation? Binbang checks every minute and notifies you instantly when a room becomes available on Airbnb or Agoda. Start monitoring for free.",
+    "twitterDescription": "Vacancy alerts every minute. Real-time Airbnb & Agoda accommodation monitoring."
   },
   "nav": {
     "brand": "Binbang",

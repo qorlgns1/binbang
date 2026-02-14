@@ -29,7 +29,9 @@
   },
   "structuredData": {
     "organizationDescription": "Binbang 监控住宿预订网站空房并在有空房时通过邮件通知您。",
-    "websiteDescription": "住宿预订空房提醒服务，空房出现即通知。"
+    "websiteDescription": "住宿预订空房提醒服务，空房出现即通知。",
+    "applicationName": "Binbang",
+    "applicationDescription": "每分钟自动检查的空房提醒服务，支持 Airbnb 和 Agoda。"
   },
   "tutorial": {
     "step1": { "title": "开始使用空房提醒", "body": "注册想要入住的房源，空房出现时会通过 KakaoTalk 收到通知。" },
