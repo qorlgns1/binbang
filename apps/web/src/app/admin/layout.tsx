@@ -1,12 +1,11 @@
 import type { ReactNode } from 'react';
 
 import { getServerSession } from 'next-auth';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { authOptions } from '@/lib/auth';
 
-import { AdminNav } from './_components/adminNav';
+import { AdminSidebar } from './_components/AdminSidebar';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -20,22 +19,17 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div className='min-h-screen bg-muted/40'>
-      <header className='bg-background/80 backdrop-blur-sm border-b'>
-        <div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
-          <div className='flex items-center gap-6'>
-            <h1 className='text-xl font-bold'>Admin</h1>
-            <AdminNav userName={session.user.name ?? null} />
-          </div>
-          <div className='hidden md:flex items-center gap-4'>
-            <span className='text-sm text-muted-foreground'>{session.user.name}</span>
-            <Link href='/dashboard' className='text-sm text-primary hover:underline'>
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
-      {children}
+    <div className='relative min-h-screen overflow-x-hidden bg-background'>
+      <div className='pointer-events-none absolute inset-0'>
+        <div className='absolute -left-28 top-10 size-72 rounded-full bg-primary/10 blur-3xl' />
+        <div className='absolute -right-20 bottom-8 size-80 rounded-full bg-brand-navy/10 blur-3xl' />
+        <div className='absolute inset-0 bg-linear-to-b from-transparent via-transparent to-secondary/40' />
+      </div>
+      {/* 문서 스크롤 한 곳: 사이드바만 sticky, 본문은 흐름대로 */}
+      <div className='relative z-10 flex min-h-screen flex-col md:flex-row'>
+        <AdminSidebar userName={session.user.name ?? null} />
+        <main className='min-w-0 flex-1'>{children}</main>
+      </div>
     </div>
   );
 }

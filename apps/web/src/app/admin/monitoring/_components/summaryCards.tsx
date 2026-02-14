@@ -37,7 +37,7 @@ function StatusBadge({ status }: { status: 'healthy' | 'degraded' | 'down' }) {
 
 function SummaryCard({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: React.ReactNode }) {
   return (
-    <Card size='sm'>
+    <Card size='sm' className='animate-dashboard-enter'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-sm text-muted-foreground'>
           <Icon className='size-4' />
@@ -142,7 +142,7 @@ function SummaryCardsSkeleton() {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
       {SUMMARY_SKELETON_KEYS.map((key) => (
-        <Card size='sm' key={key}>
+        <Card size='sm' key={key} className='animate-dashboard-enter'>
           <CardHeader>
             <Skeleton className='h-4 w-24' />
           </CardHeader>

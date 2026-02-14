@@ -32,7 +32,7 @@ function getMetricClassName(metric: (typeof METRIC_KEYS)[number], value: number)
 export function QueueOverviewCard({ title, stats, isLoading }: QueueOverviewCardProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle className='flex items-center justify-between'>
             <span>{title}</span>
@@ -55,7 +55,7 @@ export function QueueOverviewCard({ title, stats, isLoading }: QueueOverviewCard
 
   if (!stats) {
     return (
-      <Card>
+      <Card className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
@@ -69,7 +69,7 @@ export function QueueOverviewCard({ title, stats, isLoading }: QueueOverviewCard
   const hasFailures = stats.failed > 0;
 
   return (
-    <Card>
+    <Card className='animate-dashboard-enter'>
       <CardHeader>
         <CardTitle className='flex items-center justify-between'>
           <span>{title}</span>
