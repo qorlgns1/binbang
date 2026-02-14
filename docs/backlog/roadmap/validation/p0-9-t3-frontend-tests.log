@@ -1,0 +1,18 @@
+# P0-9-T3 frontend validation log
+# generated_at_utc=2026-02-14T20:28:59Z
+# command=pnpm --filter @workspace/web test -- src/app/admin/funnel/_components/funnel-components.test.tsx
+
+
+> @workspace/web@0.0.0 test /Users/marco/workspace/binbang/apps/web
+> vitest run src/app/admin/funnel/_components/funnel-components.test.tsx
+
+
+ RUN  v4.0.18 /Users/marco/workspace/binbang/apps/web
+
+ ✓ src/app/admin/funnel/_components/funnel-components.test.tsx (3 tests) 16ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  05:29:00
+   Duration  432ms (transform 73ms, setup 0ms, import 283ms, tests 16ms, environment 0ms)
+

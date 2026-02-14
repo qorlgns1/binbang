@@ -11,6 +11,11 @@ export type { CreateWorkerOptions } from './workers';
 export { setupRepeatableJobs, removeRepeatableJobs } from './scheduler';
 export { buildQueueSnapshot } from './queueSnapshot';
 export type { QueueSnapshotResponse, QueueStats, QueueJobState, QueueJobSummary } from './queueSnapshot';
+export {
+  anonymizeExpiredLandingEventPii,
+  DEFAULT_LANDING_EVENT_PII_RETENTION_DAYS,
+} from './landingEventRetention';
+export type { LandingEventPiiRetentionInput, LandingEventPiiRetentionResult } from './landingEventRetention';
 
 // Heartbeat
 export {

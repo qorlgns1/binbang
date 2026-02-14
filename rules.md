@@ -356,7 +356,34 @@ Boundaries are enforced by import rules, not by discipline.
 - This rule applies equally to:
   - humans
   - LLM-assisted changes
-  - automation scripts
+- automation scripts
+
+---
+
+## 12. Naming Conventions (Enforced)
+
+### 12.1 File Naming
+
+- React component files (`.tsx`) MUST use `PascalCase`.
+  - Example: `AdminSidebar.tsx`, `DateFilter.tsx`
+- Non-component source files (`.ts` / utility `.tsx`) MUST use `camelCase`.
+  - Example: `useFunnelQuery.ts`, `landingEventRetention.ts`, `dateFilter.test.ts`
+
+### 12.2 Folder Naming
+
+- Folders MUST use `kebab-case`.
+  - Example: `admin-funnel`, `landing-events`
+
+### 12.3 Next App Router Private Folders
+
+- In `apps/web/src/app/**`, implementation-detail folders that are not route segments MUST use an underscore prefix.
+  - Example: `_components`, `_hooks`, `_lib`
+- The portion after `_` SHOULD follow existing local convention (`camelCase` or `kebab-case`) but MUST remain consistent within the same route subtree.
+
+### 12.4 Required Exceptions
+
+- Next.js reserved file conventions MUST be preserved as-is.
+  - `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`
 
 ---
 

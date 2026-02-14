@@ -1,5 +1,6 @@
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
+  anonymizeExpiredLandingEventPii,
   createCheckCycle,
   findActiveCaseLinks,
   findActiveAccommodations,
@@ -17,6 +18,20 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       const retryResult = await retryStaleCaseNotifications({ batchSize: 25, pendingStaleMs: 2 * 60_000 });
       console.log(
         `\n[notification-retry] scanned=${retryResult.scanned} claimed=${retryResult.claimed} sent=${retryResult.sent} failed=${retryResult.failed} skipped=${retryResult.skipped}`,
+      );
+      return;
+    }
+
+    if (job.name === 'landing-event-pii-retention') {
+      const retentionDaysRaw = (job.data as { retentionDays?: unknown } | undefined)?.retentionDays;
+      const retentionDays =
+        typeof retentionDaysRaw === 'number' && Number.isFinite(retentionDaysRaw) && retentionDaysRaw > 0
+          ? Math.floor(retentionDaysRaw)
+          : undefined;
+
+      const result = await anonymizeExpiredLandingEventPii({ retentionDays });
+      console.log(
+        `[landing-event-pii-retention] retentionDays=${result.retentionDays} cutoffAt=${result.cutoffAt} anonymized=${result.anonymizedCount}`,
       );
       return;
     }
