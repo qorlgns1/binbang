@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAdminFunnelClicks } from '../funnel-clicks.service';
+import type { FunnelRangePreset } from '../funnel.service';
 
 const { mockLandingEventFindMany, mockLandingEventFindFirst, mockFormSubmissionCount, mockFormSubmissionFindFirst } =
   vi.hoisted(
@@ -87,11 +88,11 @@ describe('admin/funnel-clicks.service', (): void => {
     ]);
   });
 
-  it('uses explicit UTC filter for non-all ranges', async (): Promise<void> => {
+  it('normalizes explicit UTC filter to full UTC day boundaries for non-all ranges', async (): Promise<void> => {
     await getAdminFunnelClicks({
       range: '7d',
-      from: '2026-02-01T00:00:00.000Z',
-      to: '2026-02-07T23:59:59.999Z',
+      from: '2026-02-01T12:34:56.000Z',
+      to: '2026-02-07T03:21:00.000Z',
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
@@ -105,6 +106,26 @@ describe('admin/funnel-clicks.service', (): void => {
         }),
       }),
     );
+  });
+
+  it('throws on invalid custom from date', async (): Promise<void> => {
+    await expect(
+      getAdminFunnelClicks({
+        range: '7d',
+        from: 'invalid-from',
+        to: '2026-02-07T03:21:00.000Z',
+        now: new Date('2026-02-14T12:00:00.000Z'),
+      }),
+    ).rejects.toThrowError('Invalid `from` datetime');
+  });
+
+  it('throws on unknown range preset', async (): Promise<void> => {
+    await expect(
+      getAdminFunnelClicks({
+        range: 'invalid' as FunnelRangePreset,
+        now: new Date('2026-02-14T12:00:00.000Z'),
+      }),
+    ).rejects.toThrowError('Invalid range preset: invalid');
   });
 
   it('resolves 30d range with inclusive UTC window', async (): Promise<void> => {

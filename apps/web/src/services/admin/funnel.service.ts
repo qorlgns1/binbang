@@ -62,6 +62,27 @@ function addUtcDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * MS_PER_DAY);
 }
 
+function parseIsoDate(value: string, label: 'from' | 'to'): Date {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid \`${label}\` datetime`);
+  }
+
+  return parsed;
+}
+
+function assertValidRangePreset(range: FunnelRangePreset): FunnelRangePreset {
+  switch (range) {
+    case 'today':
+    case '7d':
+    case '30d':
+    case 'all':
+      return range;
+    default:
+      throw new Error(`Invalid range preset: ${String(range)}`);
+  }
+}
+
 function toUtcDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -128,13 +149,22 @@ async function resolveRange(
   fromIso?: string,
   toIso?: string,
 ): Promise<{ from: Date; to: Date }> {
-  if (range !== 'all' && fromIso && toIso) {
-    return { from: new Date(fromIso), to: new Date(toIso) };
+  const validatedRange = assertValidRangePreset(range);
+
+  if (validatedRange !== 'all' && fromIso && toIso) {
+    const from = startOfUtcDay(parseIsoDate(fromIso, 'from'));
+    const to = endOfUtcDay(parseIsoDate(toIso, 'to'));
+
+    if (from.getTime() > to.getTime()) {
+      throw new Error('`from` must be less than or equal to `to`');
+    }
+
+    return { from, to };
   }
 
   const to = endOfUtcDay(now);
 
-  switch (range) {
+  switch (validatedRange) {
     case 'today':
       return { from: startOfUtcDay(now), to };
     case '7d':
@@ -145,6 +175,8 @@ async function resolveRange(
       const from = await resolveAllRangeStart(now);
       return { from, to };
     }
+    default:
+      throw new Error(`Invalid range preset: ${String(validatedRange)}`);
   }
 }
 

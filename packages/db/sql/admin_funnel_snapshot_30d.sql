@@ -2,6 +2,8 @@
 -- KPI aliases are fixed by contract: submitted / processed / paymentConfirmed / conditionMet
 -- Baseline window: 2026-01-14T00:00:00Z ~ 2026-02-13T23:59:59.999Z
 
+SET TIME ZONE 'UTC';
+
 WITH params AS (
   SELECT
     TIMESTAMPTZ '2026-01-14T00:00:00Z' AS from_utc,
