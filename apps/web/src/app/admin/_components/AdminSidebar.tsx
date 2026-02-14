@@ -34,7 +34,7 @@ const ADMIN_THEME_LOCALE: Locale = 'en';
 
 const NAV_GROUPS: Array<{
   label: string;
-  items: Array< { href: string; label: string; icon: LucideIcon }>;
+  items: Array<{ href: string; label: string; icon: LucideIcon }>;
 }> = [
   {
     label: '모니터링',
@@ -68,7 +68,8 @@ const NAV_GROUPS: Array<{
 const sidebarLinkBase =
   'relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar';
 
-const sidebarLinkInactive = 'text-sidebar-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground';
+const sidebarLinkInactive =
+  'text-sidebar-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground';
 
 const sidebarLinkActive = 'bg-sidebar-accent text-sidebar-accent-foreground';
 
@@ -98,9 +99,7 @@ export function AdminSidebar({ userName }: AdminSidebarProps) {
                   onClick={() => setSheetOpen(false)}
                   className={cn(
                     sidebarLinkBase,
-                    isActive
-                      ? sidebarLinkActive
-                      : sidebarLinkInactive,
+                    isActive ? sidebarLinkActive : sidebarLinkInactive,
                     isActive && 'border-l-2 border-sidebar-primary pl-[10px] pr-3',
                   )}
                 >
