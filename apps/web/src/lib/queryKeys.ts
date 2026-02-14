@@ -53,6 +53,11 @@ export const adminKeys = {
     filters?: Record<string, string>,
   ): readonly ['admin', 'throughput', 'compare', Record<string, string>] =>
     [...adminKeys.throughput(), 'compare', filters ?? {}] as const,
+  funnel: (): readonly ['admin', 'funnel'] => [...adminKeys.all, 'funnel'] as const,
+  funnelSnapshot: (
+    filters?: Record<string, string>,
+  ): readonly ['admin', 'funnel', 'snapshot', Record<string, string>] =>
+    [...adminKeys.funnel(), 'snapshot', filters ?? {}] as const,
   workerQueue: (filters?: Record<string, string>): readonly ['admin', 'worker', 'queue', Record<string, string>] =>
     [...adminKeys.all, 'worker', 'queue', filters ?? {}] as const,
   // Platform Selectors

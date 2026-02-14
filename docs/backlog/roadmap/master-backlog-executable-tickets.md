@@ -53,18 +53,18 @@ Dependencies/Blockers: 없음.
 Estimate_days: 1
 
 #### Ticket `P0-9-T2`
-- [ ] 진행완료
+- [x] 진행완료
 Title: 퍼널 집계 서비스/엔드포인트 구현
 Goal: `admin/funnel` API를 통해 KPI/전환율/일별 추이를 반환한다.
 User-visible outcome: 퍼널 화면 로딩 시 실시간 숫자가 API에서 내려온다.
 Scope / Out of scope: Scope는 서비스+API+권한체크, Out은 차트 스타일링.
 Changes: DB(집계 쿼리), API(`GET /api/admin/funnel`), UI(연동 훅), 로그(requestId/latency).
 Scope lock:
-- [ ] `apps/web/src/services/admin/funnel.service.ts`
-- [ ] `apps/web/src/app/api/admin/funnel/route.ts`
-- [ ] `apps/web/src/app/admin/funnel/page.tsx`
-- [ ] `packages/db/sql/admin_funnel_snapshot_30d.sql`
-- [ ] `apps/web/src/services/admin/__tests__/funnel.service.test.ts`
+- [x] `apps/web/src/services/admin/funnel.service.ts`
+- [x] `apps/web/src/app/api/admin/funnel/route.ts`
+- [x] `apps/web/src/app/admin/funnel/page.tsx`
+- [x] `packages/db/sql/admin_funnel_snapshot_30d.sql`
+- [x] `apps/web/src/services/admin/__tests__/funnel.service.test.ts`
 Out of scope:
 - [ ] 다른 Story의 기능을 동시 구현하지 않는다.
 - [ ] 전면 UI 리디자인/문구 재작성은 이번 범위에서 제외한다.
@@ -117,29 +117,30 @@ Error shape(표준 에러 1개):
 Pagination/aggregation 기준:
 - 일 집계(UTC) 고정, 조건충족은 `count(distinct BillingEvent.caseId)` 고정.
 DoD:
-- [ ] 기간 필터(today/7d/30d/all)가 API 파라미터로 동작한다.
-- [ ] 전환율 4개가 서버 계산값으로 반환된다.
-- [ ] `count(distinct caseId)` 규칙이 조건충족 집계에 적용된다.
-- [ ] API response의 KPI 키와 SQL alias가 1:1 대응된다.
+- [x] 기간 필터(today/7d/30d/all)가 API 파라미터로 동작한다.
+- [x] 전환율 4개가 서버 계산값으로 반환된다.
+- [x] `count(distinct caseId)` 규칙이 조건충족 집계에 적용된다.
+- [x] API response의 KPI 키와 SQL alias가 1:1 대응된다.
 Validation:
-- [ ] Vitest로 서비스 단위 테스트 6개 이상 작성.
-- [ ] API 응답과 직접 SQL 결과를 1회 이상 대조한다.
+- [x] Vitest로 서비스 단위 테스트 6개 이상 작성.
+- [x] API 응답과 직접 SQL 결과를 1회 이상 대조한다.
+Validation evidence: `docs/backlog/roadmap/validation/p0-9-t2-api-sql-compare.log`
 Dependencies/Blockers: `P0-9-T1`.
 Estimate_days: 2
 
 #### Ticket `P0-9-T3`
-- [ ] 진행완료
+- [x] 진행완료
 Title: Admin 퍼널 KPI 카드/전환율 UI 추가
 Goal: 운영자가 필터 변경만으로 퍼널 병목을 즉시 확인하게 한다.
 User-visible outcome: Admin 메뉴에 "퍼널"이 생기고 KPI 카드 4개와 전환율이 표시된다.
 Scope / Out of scope: Scope는 카드/필터/메뉴, Out은 클릭 퍼널.
 Changes: DB(없음), API(기존 funnel API 사용), UI(`admin/funnel` 페이지), 로그(필터변경 이벤트).
 Scope lock:
-- [ ] `apps/web/src/app/admin/funnel/page.tsx`
-- [ ] `apps/web/src/app/admin/funnel/_components/kpi-cards.tsx`
-- [ ] `apps/web/src/app/admin/funnel/_components/conversion-matrix.tsx`
-- [ ] `apps/web/src/app/admin/funnel/_components/date-filter.tsx`
-- [ ] `apps/web/src/app/admin/funnel/_hooks/use-funnel-query.ts`
+- [x] `apps/web/src/app/admin/funnel/page.tsx`
+- [x] `apps/web/src/app/admin/funnel/_components/kpi-cards.tsx`
+- [x] `apps/web/src/app/admin/funnel/_components/conversion-matrix.tsx`
+- [x] `apps/web/src/app/admin/funnel/_components/date-filter.tsx`
+- [x] `apps/web/src/app/admin/funnel/_hooks/use-funnel-query.ts`
 Out of scope:
 - [ ] 다른 Story의 기능을 동시 구현하지 않는다.
 - [ ] 전면 UI 리디자인/문구 재작성은 이번 범위에서 제외한다.
@@ -176,12 +177,13 @@ Error shape(표준 에러 1개):
 Pagination/aggregation 기준:
 - 페이지네이션 없음. UI는 `kpis/conversion/series` 키만 사용한다.
 DoD:
-- [ ] KPI 카드 4개(제출/처리/결제확인/조건충족) 표시.
-- [ ] 전환율 4개가 카드 하단에 표시.
-- [ ] 기간 필터 변경 시 1초 내 재조회.
+- [x] KPI 카드 4개(제출/처리/결제확인/조건충족) 표시.
+- [x] 전환율 4개가 카드 하단에 표시.
+- [x] 기간 필터 변경 시 1초 내 재조회.
 Validation:
-- [ ] 재현 시나리오: 필터 전환 후 값 변경 확인.
-- [ ] 프론트 테스트 또는 스냅샷 테스트 3개 이상 작성.
+- [x] 재현 시나리오: 필터 전환 후 값 변경 확인.
+- [x] 프론트 테스트 또는 스냅샷 테스트 3개 이상 작성.
+Validation evidence: `docs/backlog/roadmap/validation/p0-9-t3-frontend-tests.log`
 Dependencies/Blockers: `P0-9-T2`.
 Estimate_days: 2
 
