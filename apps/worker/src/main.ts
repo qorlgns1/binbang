@@ -127,7 +127,7 @@ async function main(): Promise<void> {
   process.on('SIGTERM', gracefulShutdown);
 
   // ============================================
-  // HTTP Control Server
+  // HTTP Control Server (내부 네트워크 전용, 외부 접근은 네트워크/방화벽으로 차단)
   // ============================================
   const server = createServer((req, res): void => {
     const requestUrl = new URL(req.url ?? '/', 'http://localhost');

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       const workerError = await workerRes.text().catch((): string => '');
       return NextResponse.json(
         {
-          error: workerError || 'Failed to fetch worker queue snapshot',
+          error: workerError || '워커 큐 스냅샷을 가져오지 못했습니다.',
           timestamp: new Date().toISOString(),
         },
         { status: 503 },

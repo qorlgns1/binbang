@@ -16,7 +16,7 @@ export interface QueueStats {
   paused: number;
 }
 
-export type QueueJobState = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown';
+export type QueueJobState = 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'paused' | 'unknown';
 
 export interface QueueJobDataPreview {
   accommodationId?: string;
@@ -100,11 +100,18 @@ async function getQueueStats(queue: Queue): Promise<QueueStats> {
 }
 
 async function getQueueJobs(queue: Queue, limit: number): Promise<QueueJobSummary[]> {
-  const jobs = await queue.getJobs([...JOB_STATES], 0, limit - 1, false);
-  const dedupedJobs = dedupeJobsById(jobs);
+  const allJobs: Job[] = [];
+  for (const state of JOB_STATES) {
+    const jobs = await queue.getJobs([state], 0, limit - 1, false);
+    allJobs.push(...jobs);
+  }
+  const dedupedJobs = dedupeJobsById(allJobs);
+  const sortTs = (job: Job): number => job.finishedOn ?? job.processedOn ?? job.timestamp ?? 0;
+  dedupedJobs.sort((a, b) => sortTs(b) - sortTs(a));
+  const limited = dedupedJobs.slice(0, limit);
 
   return Promise.all(
-    dedupedJobs.map(async (job): Promise<QueueJobSummary> => {
+    limited.map(async (job): Promise<QueueJobSummary> => {
       const state = await getJobState(job);
 
       return {
@@ -160,6 +167,8 @@ function mapJobState(state: string): QueueJobState {
       return 'failed';
     case 'delayed':
       return 'delayed';
+    case 'paused':
+      return 'paused';
     default:
       return 'unknown';
   }
