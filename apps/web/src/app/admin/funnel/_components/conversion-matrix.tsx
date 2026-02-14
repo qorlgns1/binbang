@@ -18,7 +18,7 @@ const CONVERSION_ITEMS: Array<{ key: keyof AdminFunnelConversion; label: string 
 
 export function ConversionMatrix({ conversion }: ConversionMatrixProps) {
   return (
-    <Card>
+    <Card className='animate-dashboard-enter'>
       <CardHeader>
         <CardTitle>전환율</CardTitle>
       </CardHeader>

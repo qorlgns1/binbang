@@ -25,7 +25,7 @@ function SummaryCardsSkeleton() {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
       {SUMMARY_SKELETON_KEYS.map((key) => (
-        <Card size='sm' key={key}>
+        <Card size='sm' key={key} className='animate-dashboard-enter'>
           <CardHeader>
             <Skeleton className='h-4 w-24' />
           </CardHeader>
@@ -55,7 +55,7 @@ export function ThroughputSummaryCards({ filters }: Props) {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
       {/* 평균 처리량/분 */}
-      <Card size='sm'>
+      <Card size='sm' className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm text-muted-foreground'>
             <Activity className='size-4' />
@@ -69,7 +69,7 @@ export function ThroughputSummaryCards({ filters }: Props) {
       </Card>
 
       {/* 마지막 사이클 */}
-      <Card size='sm'>
+      <Card size='sm' className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm text-muted-foreground'>
             <Clock className='size-4' />
@@ -89,7 +89,7 @@ export function ThroughputSummaryCards({ filters }: Props) {
       </Card>
 
       {/* 성공률 */}
-      <Card size='sm'>
+      <Card size='sm' className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm text-muted-foreground'>
             <CheckCircle className='size-4' />
@@ -115,7 +115,7 @@ export function ThroughputSummaryCards({ filters }: Props) {
       </Card>
 
       {/* 현재 설정 */}
-      <Card size='sm'>
+      <Card size='sm' className='animate-dashboard-enter'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2 text-sm text-muted-foreground'>
             <Settings className='size-4' />
