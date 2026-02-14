@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Binbang – 空室アラートサービス",
-    "description": "Binbangは宿泊予約サイトの空室を監視し、メールでアラートを送信します。Googleでサインインする際、メールアドレスはアカウント識別とアラート送信にのみ使用します。",
-    "twitterDescription": "1分ごとにチェックする空室アラート。空室が出たらお知らせします。"
+    "title": "Binbang – 空室アラート | Airbnb・Agodaリアルタイム監視",
+    "description": "満室の宿を見つけましたか？Binbangが1分ごとに自動チェックし、空室が出た瞬間にお知らせします。Airbnb・Agoda対応。無料で予約モニタリングを始めましょう。",
+    "twitterDescription": "1分ごとの空室アラート。Airbnb・Agoda宿泊予約リアルタイム監視サービス。"
   },
   "nav": {
     "brand": "Binbang",

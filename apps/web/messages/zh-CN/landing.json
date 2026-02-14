@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Binbang – 空房提醒服务",
-    "description": "Binbang 监控住宿预订网站空房并发送邮件提醒。使用 Google 登录时，我们仅将您的邮箱用于账户识别和发送提醒。",
-    "twitterDescription": "每分钟检查的空房提醒，空房出现即通知您。"
+    "title": "Binbang – 空房提醒 | Airbnb·Agoda 实时监控",
+    "description": "心仪的住宿已满房？Binbang 每分钟自动检查，空房出现立即通知您。支持 Airbnb、Agoda，免费开始住宿预订监控。",
+    "twitterDescription": "每分钟空房提醒，Airbnb·Agoda 住宿预订实时监控服务。"
   },
   "nav": {
     "brand": "Binbang",

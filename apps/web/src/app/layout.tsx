@@ -68,6 +68,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         publisher: { '@id': `${BASE_URL}/#organization` },
         inLanguage: ['ko', 'en', 'ja', 'zh-CN', 'es-419'],
       },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': `${BASE_URL}/#application`,
+        name: t('structuredData.applicationName'),
+        description: t('structuredData.applicationDescription'),
+        url: BASE_URL,
+        applicationCategory: 'UtilitiesApplication',
+        operatingSystem: 'Web',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'KRW',
+        },
+        publisher: { '@id': `${BASE_URL}/#organization` },
+      },
     ],
   };
   return (

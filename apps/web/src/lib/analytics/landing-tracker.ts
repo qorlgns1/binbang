@@ -4,6 +4,7 @@
  */
 
 import { trackClickEvent } from '@/lib/analytics/click-tracker';
+import { sendGa4Event } from '@/lib/analytics/gtag';
 
 type LandingEvent =
   | 'landing_viewed'
@@ -184,26 +185,11 @@ export function trackClosingCTAClicked(locale: string, theme: string): void {
  * @param params - Common event parameters to include with the event
  */
 function sendEvent(eventName: LandingEvent, params: EventParams): void {
-  // Console log for development
   if (process.env.NODE_ENV === 'development') {
     console.log('[Analytics]', eventName, params);
   }
 
-  // TODO: 실제 분석 서비스로 전송 (Google Analytics, Mixpanel 등)
-  // Example:
-  // gtag('event', eventName, params);
-  // or
-  // mixpanel.track(eventName, params);
-
-  // For now, just log to console
-  // Simulate API call
-  // fetch('/api/analytics', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ event: eventName, params }),
-  // }).catch(() => {
-  //   // TR-008: Retry once on failure
-  // });
+  sendGa4Event(eventName, params);
 }
 
 /**

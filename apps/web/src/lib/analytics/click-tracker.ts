@@ -1,4 +1,5 @@
 import type { LandingClickEventName } from '@/lib/analytics/click-event-names';
+import { sendGa4Event } from '@/lib/analytics/gtag';
 
 const DEDUPE_WINDOW_MS = 800;
 const MAX_RECENT_EVENTS = 100;
@@ -97,4 +98,11 @@ export function trackClickEvent(input: TrackClickEventInput): void {
   });
 
   sendBeaconPayload(payload);
+
+  sendGa4Event(input.eventName, {
+    source: input.source,
+    locale: input.locale,
+    path,
+    session_id: getSessionId(),
+  });
 }

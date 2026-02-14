@@ -2,6 +2,8 @@
  * Dashboard Analytics Tracker
  * Implements TR-001 ~ TR-012 from dashboard-action-center-implementation-spec.md
  */
+import { sendGa4Event } from '@/lib/analytics/gtag';
+
 type DashboardEvent =
   | 'dashboard_viewed'
   | 'dashboard_action_card_impression'
@@ -126,10 +128,5 @@ function sendEvent(eventName: DashboardEvent, params: EventParams): void {
     console.log('[Dashboard Analytics]', eventName, params);
   }
 
-  try {
-    // TODO: 실제 분석 서비스로 전송 (Google Analytics, Mixpanel 등)
-    // gtag('event', eventName, params);
-  } catch {
-    // TR-011: 실패 시 UI 차단 없이 무시
-  }
+  sendGa4Event(eventName, params);
 }
