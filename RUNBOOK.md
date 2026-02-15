@@ -1,7 +1,7 @@
 # Operations Runbook
 
 Last verified: 2026-02-15
-Owner: TBD
+Owner: binbang
 
 ## 1) Incident Levels
 - P1: full outage, persistent 5xx, or severe data integrity risk
@@ -10,7 +10,7 @@ Owner: TBD
 
 ## 2) Triage Workflow
 1. Confirm scope (prod/dev, web/worker/db)
-2. Declare incident in ops channel (`TBD`)
+2. Declare incident in ops channel (`github:issues`)
 3. Assign roles: commander, operator, scribe
 4. Stabilize first (rollback/restart/scale)
 5. Identify root cause and implement durable fix
@@ -83,7 +83,7 @@ pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate d
 - Public health: `https://binbang.moodybeard.com/api/health`
 - Dev health: `https://dev-binbang.moodybeard.com/api/health`
 - Admin heartbeat: `/api/health/heartbeat` (admin auth required)
-- Metrics/traces dashboard: `TBD`
+- Metrics/traces dashboard: metrics=`https://binbang.moodybeard.com/admin/monitoring`, `https://binbang.moodybeard.com/admin/throughput`, `https://binbang.moodybeard.com/admin/heartbeat`; traces=`없음`
 
 ## 7) Communication Templates
 ### Incident start
@@ -93,7 +93,7 @@ pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate d
 "Resolved at <time UTC>. Root cause: <summary>. Follow-up items: <ticket/link>."
 
 ## 8) Ownership and Escalation
-- Primary on-call: `TBD`
-- Secondary on-call: `TBD`
-- Escalation path: `TBD`
-- Vendor/infra support contacts: `TBD`
+- Primary on-call: `KIHOON BAE`
+- Secondary on-call: `없음`
+- Escalation path: `github:issues -> KIHOON BAE`
+- Vendor/infra support contacts: `github:issues`

@@ -1,7 +1,7 @@
 # Deployment Guide
 
 Last verified: 2026-02-15
-Owner: TBD
+Owner: binbang
 
 ## 1) Service Overview
 - Service name: `binbang`
@@ -19,7 +19,7 @@ Owner: TBD
 - Data stores:
   - Primary DB: PostgreSQL (`DATABASE_URL`)
   - Cache/queue: Redis 7 (`REDIS_URL`)
-  - Object storage: not defined in repo (`TBD`)
+  - Object storage: 사용 안 함
 - Network edge:
   - DNS/TLS: `binbang.moodybeard.com`, `dev-binbang.moodybeard.com` + Let's Encrypt
   - Reverse proxy: Nginx (`/home/ubuntu/workspace/reverse-proxy/nginx/conf.d/*.conf`)
@@ -108,12 +108,12 @@ docker compose -f docker/docker-compose.production.yml --env-file .env.productio
 ## 9) Observability and Alerts
 - Health APIs: `/api/health`, `/api/health/heartbeat`
 - Logs: Docker logs (`web`, `worker`, `redis`)
-- Metrics/trace dashboard: not defined in repo (`TBD`)
-- Incident channel and on-call routing: `TBD`
+- Metrics/trace dashboard: `https://binbang.moodybeard.com/admin/monitoring`, `https://binbang.moodybeard.com/admin/throughput`, `https://binbang.moodybeard.com/admin/heartbeat` (trace dashboard 없음)
+- Incident channel and on-call routing: `github:issues`
 
 ## 10) Ownership
 - Repo: `qorlgns1/binbang`
-- Service owner/on-call: `TBD`
+- Service owner/on-call: `KIHOON BAE`
 
 ## 11) Change History
 - 2026-02-15: initial structured deployment document created

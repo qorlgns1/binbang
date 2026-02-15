@@ -6,9 +6,9 @@ service:
   criticality: "high"
 
 owners:
-  primary: "TBD"
-  secondary: "TBD"
-  oncall_channel: "TBD"
+  primary: "KIHOON BAE"
+  secondary: "없음"
+  oncall_channel: "github:issues"
 
 environments:
   dev:
@@ -26,11 +26,11 @@ environments:
 
 infrastructure:
   compute: "OCI VM + Docker Compose"
-  region: "TBD"
+  region: "ap-seoul-1"
   runtime: "Node.js 24.x, pnpm 10.28.0"
   database: "PostgreSQL (external, DATABASE_URL)"
   cache: "Redis 7"
-  storage: "TBD"
+  storage: "사용 안 함"
   ingress: "Nginx reverse proxy + Let's Encrypt"
 
 deployment:
@@ -82,9 +82,9 @@ config:
 
 observability:
   logs: "docker compose logs (web/worker/redis)"
-  metrics: "TBD"
-  traces: "TBD"
-  alerts: "TBD"
+  metrics: "https://binbang.moodybeard.com/admin/monitoring, https://binbang.moodybeard.com/admin/throughput, https://binbang.moodybeard.com/admin/heartbeat"
+  traces: "없음"
+  alerts: "github:issues"
 
 llm_operating_rules:
   - "Do not guess missing values; ask follow-up questions."

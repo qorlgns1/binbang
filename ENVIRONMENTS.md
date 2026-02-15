@@ -1,7 +1,7 @@
 # Environment Matrix
 
 Last verified: 2026-02-15
-Owner: TBD
+Owner: binbang
 
 ## 1) Environments
 | Environment | Purpose | Branch/Tag Rule | URL | Deploy Trigger | Notes |
