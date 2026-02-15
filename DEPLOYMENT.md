@@ -1,0 +1,119 @@
+# Deployment Guide
+
+Last verified: 2026-02-15
+Owner: TBD
+
+## 1) Service Overview
+- Service name: `binbang`
+- Purpose: Airbnb/Agoda accommodation availability monitoring and notification service
+- Main users: end-users (monitoring), admins (operations)
+- Criticality tier: high
+
+## 2) Architecture Snapshot
+- Runtime: Node.js `24.x`, pnpm `10.28.0`
+- Hosting: OCI VM + Docker Compose + Nginx reverse proxy
+- Components:
+  - Web/API: `apps/web` (Next.js 15)
+  - Worker: `apps/worker` + `packages/worker-shared` (BullMQ/Playwright)
+  - Scheduler/Cron: worker runtime scheduler (BullMQ)
+- Data stores:
+  - Primary DB: PostgreSQL (`DATABASE_URL`)
+  - Cache/queue: Redis 7 (`REDIS_URL`)
+  - Object storage: not defined in repo (`TBD`)
+- Network edge:
+  - DNS/TLS: `binbang.moodybeard.com`, `dev-binbang.moodybeard.com` + Let's Encrypt
+  - Reverse proxy: Nginx (`/home/ubuntu/workspace/reverse-proxy/nginx/conf.d/*.conf`)
+
+## 3) Deployment Flow (Source of Truth)
+Based on `.github/workflows/deploy.yml`.
+
+1. Trigger: push to `main` or `develop`
+2. Validate: reusable CI (`lint`, `format:check`, `test`, `build`)
+3. Build/Push images: Docker Bake to Docker Hub
+   - `main` -> `kihoonbae/binbang:web-main`, `worker-main`
+   - `develop` -> `kihoonbae/binbang:web-develop`, `worker-develop`
+4. Deploy via SSH to OCI host
+5. Run Prisma migrate/generate (+ seed)
+6. Start/update compose services
+
+## 4) Standard Deploy Procedure
+### Production (`main`)
+```bash
+cd ~/workspace/binbang
+git fetch origin main
+git checkout -B main origin/main
+git reset --hard origin/main
+
+docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
+pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
+pnpm with-env:production:host pnpm --filter @workspace/db exec prisma generate
+pnpm with-env:production:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
+docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
+```
+
+### Development (`develop`)
+```bash
+cd ~/workspace/binbang
+git fetch origin develop
+git checkout -B develop origin/develop
+git reset --hard origin/develop
+
+docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
+pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate deploy
+pnpm with-env:development:host pnpm --filter @workspace/db exec prisma generate
+pnpm with-env:development:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
+pnpm with-env:development:host pnpm --filter @workspace/db db:seed
+docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d
+```
+
+## 5) Database Migration Policy
+- Migration tool: Prisma Migrate
+- Command: `pnpm --filter @workspace/db exec prisma migrate deploy`
+- Timing: before final `compose up -d`
+- Compatibility: maintain backward-compatible schema for rolling restart windows
+- Prohibited flow: `prisma db push` (repo rule)
+
+## 6) Health Checks and Verification
+- Public health endpoint:
+  - Production: `https://binbang.moodybeard.com/api/health`
+  - Development: `https://dev-binbang.moodybeard.com/api/health`
+- Admin heartbeat endpoint (requires admin session): `/api/health/heartbeat`
+- Container checks:
+```bash
+docker compose -f docker/docker-compose.production.yml --env-file .env.production ps
+docker compose -f docker/docker-compose.production.yml --env-file .env.production logs --tail 200 web worker
+```
+
+## 7) Rollback Procedure
+1. Identify last known good deploy SHA/image digests
+2. Update `.env.production` (`IMAGE_TAG`, `IMAGE_WEB_DIGEST`, `IMAGE_WORKER_DIGEST`) to previous values
+3. Re-run production pull + `up -d`
+4. Re-verify `/api/health` and critical user flows
+
+### Rollback Commands
+```bash
+# Set previous image digests in .env.production first
+docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
+docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
+```
+
+## 8) Secrets and Configuration
+- CI/CD secrets: GitHub Actions Secrets (`DOCKERHUB_*`, `OCI_*`, `RELEASE_TAG_PAT`)
+- CI/CD variables: GitHub Actions Variables (`NEXT_PUBLIC_*`)
+- Runtime env files on server:
+  - `.env.production`, `.env.production.local`
+  - `.env.development`, `.env.development.local`
+- Rule: never store secret values in markdown docs or prompts
+
+## 9) Observability and Alerts
+- Health APIs: `/api/health`, `/api/health/heartbeat`
+- Logs: Docker logs (`web`, `worker`, `redis`)
+- Metrics/trace dashboard: not defined in repo (`TBD`)
+- Incident channel and on-call routing: `TBD`
+
+## 10) Ownership
+- Repo: `qorlgns1/binbang`
+- Service owner/on-call: `TBD`
+
+## 11) Change History
+- 2026-02-15: initial structured deployment document created

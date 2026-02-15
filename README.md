@@ -99,6 +99,11 @@ pnpm local:docker up -d --build
 - 문서 인덱스: `docs/README.md`
 - 로컬 개발: `docs/guides/local-development.md`
 - 배포: `docs/guides/deployment.md`
+- 배포 환경 SOT:
+  - `DEPLOYMENT.md`
+  - `ENVIRONMENTS.md`
+  - `RUNBOOK.md`
+  - `llm-context.yaml`
 - 아키텍처/경계/구조: `docs/architecture/architecture.md`
 - 모노레포 계획: `docs/architecture/monorepo-plan.md`
 - 변경 이력: `docs/history/changelog.md`
