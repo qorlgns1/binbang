@@ -47,3 +47,20 @@ DATABASE_URL=postgresql://username:password@your-db-host:5432/accommodation_moni
 docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
 docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
 ```
+
+## 서버 리소스 스냅샷 (2026-02-15 기준)
+
+```text
+OS: Ubuntu 24.04.3 LTS (aarch64)
+CPU: 3 vCPU (ARM Neoverse-N1)
+Memory: total 15Gi / available 13Gi / swap 0B
+Disk(/): total 96G / used 18G / avail 79G (18%)
+```
+
+실시간으로 다시 확인할 때:
+
+```bash
+free -h
+df -h /
+lscpu | head -n 15
+```
