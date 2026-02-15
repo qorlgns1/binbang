@@ -1,0 +1,19 @@
+# P0-10-T1 operations review reflection log
+# generated_at_utc=2026-02-15T02:50:00Z
+# ticket=P0-10-T1
+# policy_doc=docs/guides/pricing-policy-v1.md
+
+review_comment:
+- source: operations
+- content: "가격 변경 이력은 남는데, 사유 문구가 제각각이면 분쟁 대응 시 비교가 어렵다."
+
+applied_changes:
+- Added section: "운영 리뷰 코멘트 반영 (2026-02-15)"
+- Added changeReason template:
+  factor: <duration|difficulty|urgency|frequency|platform>, from: <old>, to: <new>, note: <free-text>
+- Added rule: at least one factor change must be explicit.
+- Added rule: non-template requests are classified for ops review before save.
+
+result:
+- review_comment_reflected=true
+- ticket_validation_item_closed=true

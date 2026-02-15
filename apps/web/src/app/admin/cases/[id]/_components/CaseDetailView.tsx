@@ -17,6 +17,7 @@ import { ConsentEvidencePanel } from './ConsentEvidencePanel';
 import { formatDateTime } from './formatDateTime';
 import { MessageTemplatesPanel } from './MessageTemplatesPanel';
 import { PaymentConfirmButton } from './PaymentConfirmButton';
+import { PricingPanel } from './PricingPanel';
 import { StatusTransitionDialog } from './StatusTransitionDialog';
 
 interface Props {
@@ -140,6 +141,8 @@ export function CaseDetailView({ caseId }: Props) {
           />
 
           <ConditionEvidencePanel conditionMetEvents={caseData.conditionMetEvents} currentStatus={caseData.status} />
+
+          <PricingPanel caseId={caseId} />
 
           <MessageTemplatesPanel caseId={caseId} messages={caseData.messages ?? []} />
 

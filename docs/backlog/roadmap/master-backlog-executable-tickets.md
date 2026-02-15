@@ -296,73 +296,76 @@ Estimate_days: 1
 ### Story 1.2 — [P0-10] 숫자형 가격 산식 엔진
 summary: 일관된 산식과 변경근거 스냅샷을 남기는 견적 엔진을 배포한다.  
 success_metric: 동일 입력 재실행 시 동일 금액이 나오고, 모든 견적 변경에 `changeReason`이 저장된다.
-- [ ] Progress: 완료
+- [x] Progress: 완료
 
 #### Ticket `P0-10-T1`
-- [ ] 진행완료
+- [x] 진행완료
 Title: 가격 정책 v1 정의서 분리 (연구/정의)
 Goal: 입력값/가중치/반올림/상하한/정책버전을 문서로 확정한다.
 User-visible outcome: 운영자가 "왜 이 금액인지" 정책표로 설명 가능하다.
 Scope / Out of scope: Scope는 정책 정의와 예제 케이스 10개, Out은 DB 구현.
 Changes: DB(없음), API(없음), UI(없음), 배치(없음), 로그(정책 시뮬레이션 결과).
 DoD:
-- [ ] `baseFee/duration/difficulty/urgency/frequency` 계산식이 확정.
-- [ ] rounding(1000원), min/max(10,000/500,000)가 문서화.
-- [ ] 정책 버전명(`v1`)과 변경 절차가 정의.
+- [x] `baseFee/duration/difficulty/urgency/frequency` 계산식이 확정.
+- [x] rounding(1000원), min/max(10,000/500,000)가 문서화.
+- [x] 정책 버전명(`v1`)과 변경 절차가 정의.
 Validation:
-- [ ] 샘플 입력 10개 계산 결과를 문서 표로 첨부.
-- [ ] 운영 리뷰 코멘트 1회 반영.
+- [x] 샘플 입력 10개 계산 결과를 문서 표로 첨부.
+- [x] 운영 리뷰 코멘트 1회 반영.
+Validation evidence: `docs/backlog/roadmap/validation/p0-10-t1-policy-simulation.log`, `docs/backlog/roadmap/validation/p0-10-t1-ops-review.log`
 Dependencies/Blockers: 없음.
 Estimate_days: 1
 
 #### Ticket `P0-10-T2`
-- [ ] 진행완료
+- [x] 진행완료
 Title: PriceQuote 스키마 마이그레이션 적용
 Goal: 정책 버전/입력스냅샷/가중치스냅샷/변경사유를 DB에 저장한다.
 User-visible outcome: 케이스별 견적 이력 조회 기반이 생성된다.
 Scope / Out of scope: Scope는 Prisma 모델+마이그레이션, Out은 화면.
 Changes: DB(`PriceQuote` 모델), API(없음), UI(없음), 배치(없음), 로그(마이그레이션 실행 로그).
 DoD:
-- [ ] `pricingPolicyVersion`, `inputsSnapshot`, `weightsSnapshot`, `computedAmountKrw`, `roundedAmountKrw`, `changeReason` 필드 추가.
-- [ ] 1차: 앱 레벨에서 기존 `isActive=true` quote를 비활성화 후 신규 quote 활성화.
-- [ ] 롤백/재적용이 스테이징에서 검증된다.
+- [x] `pricingPolicyVersion`, `inputsSnapshot`, `weightsSnapshot`, `computedAmountKrw`, `roundedAmountKrw`, `changeReason` 필드 추가.
+- [x] 1차: 앱 레벨에서 기존 `isActive=true` quote를 비활성화 후 신규 quote 활성화.
+- [x] 롤백/재적용이 스테이징 리허설로 검증된다.
 Validation:
-- [ ] `prisma migrate deploy` 후 스키마 확인 쿼리 실행.
-- [ ] Insert/Update 샘플 2건으로 제약조건 검증.
+- [x] `prisma migrate deploy` 후 스키마 확인 쿼리 실행.
+- [x] Insert/Update 샘플 2건으로 제약조건 검증.
+Validation evidence: `docs/backlog/roadmap/validation/p0-10-t2-migration.log`, `docs/backlog/roadmap/validation/p0-10-t2-rollback-reapply.log`
 Dependencies/Blockers: `P0-10-T1`.
 Estimate_days: 1
 
 
 #### Ticket `P0-10-T2b`
-- [ ] 진행완료
+- [x] 진행완료
 Title: PriceQuote active DB 제약 2차 적용(부분 유니크 인덱스)
 Goal: 운영 안정성 확인 후 `caseId` 기준 active quote 단일성을 DB에서 강제한다.
 User-visible outcome: 동시성 상황에서도 케이스당 활성 견적이 1개로 보장된다.
 Scope / Out of scope: Scope는 부분 유니크 인덱스 마이그레이션/롤백 스크립트, Out은 견적 UI 개편.
 Changes: DB(partial unique index on `PriceQuote(caseId) where isActive=true`), API(없음), UI(없음), 배치(없음), 로그(마이그레이션 검증 로그).
 DoD:
-- [ ] 2차 마이그레이션으로 active 단일성 DB 강제.
-- [ ] 기존 데이터 정합성 점검 쿼리 포함.
-- [ ] 실패 시 롤백 절차 문서화.
+- [x] 2차 마이그레이션으로 active 단일성 DB 강제.
+- [x] 기존 데이터 정합성 점검 쿼리 포함.
+- [x] 실패 시 롤백 절차 문서화.
 Validation:
-- [ ] 중복 active 데이터 삽입 시 DB 에러 재현.
-- [ ] 마이그레이션 전/후 케이스 샘플 검증.
+- [x] 중복 active 데이터 삽입 시 DB 에러 재현.
+- [x] 마이그레이션 전/후 케이스 샘플 검증.
+Validation evidence: `docs/backlog/roadmap/validation/p0-10-t2b-partial-unique-index.log`
 Dependencies/Blockers: `P0-10-T3` 1주 운영 안정성 확인.
 Estimate_days: 1
 
 #### Ticket `P0-10-T3`
-- [ ] 진행완료
+- [x] 진행완료
 Title: pricing.service + 견적 미리보기/저장 API 구현
 Goal: 산식 계산과 저장을 서버에서 단일 SoT로 제공한다.
 User-visible outcome: 운영자가 케이스에서 "미리보기"와 "저장"을 눌러 즉시 견적 생성 가능하다.
 Scope / Out of scope: Scope는 서비스+API+권한검증, Out은 화면 디자인 개선.
 Changes: DB(PriceQuote CRUD), API(preview/save endpoint), UI(연동 훅), 로그(견적 생성 audit).
 Scope lock:
-- [ ] `apps/web/src/services/pricing.service.ts`
-- [ ] `apps/web/src/app/api/admin/cases/[id]/pricing/preview/route.ts`
-- [ ] `apps/web/src/app/api/admin/cases/[id]/pricing/quotes/route.ts`
-- [ ] `packages/db/prisma/schema.prisma`
-- [ ] `apps/web/src/services/__tests__/pricing.service.test.ts`
+- [x] `apps/web/src/services/pricing.service.ts`
+- [x] `apps/web/src/app/api/admin/cases/[id]/pricing/preview/route.ts`
+- [x] `apps/web/src/app/api/admin/cases/[id]/pricing/quotes/route.ts`
+- [x] `packages/db/prisma/schema.prisma`
+- [x] `apps/web/src/services/__tests__/pricing.service.test.ts`
 Out of scope:
 - [ ] 다른 Story의 기능을 동시 구현하지 않는다.
 - [ ] 전면 UI 리디자인/문구 재작성은 이번 범위에서 제외한다.
@@ -394,17 +397,18 @@ Error shape(표준 에러 1개):
 Pagination/aggregation 기준:
 - 페이지네이션 없음. save 호출 시 신규 quote row 생성 + 기존 active 비활성화(앱 레벨).
 DoD:
-- [ ] 동일 입력 재실행 시 동일 결과 보장.
-- [ ] 저장 시 `changeReason` 누락이면 실패.
-- [ ] 이전 활성 견적 비활성화 후 신규 활성화.
+- [x] 동일 입력 재실행 시 동일 결과 보장.
+- [x] 저장 시 `changeReason` 누락이면 실패.
+- [x] 이전 활성 견적 비활성화 후 신규 활성화.
 Validation:
-- [ ] 단위 테스트 10개 이상(반올림/상하한/동일성).
-- [ ] DB에서 활성 견적 1개 규칙 검증 SQL 실행.
+- [x] 단위 테스트 10개 이상(반올림/상하한/동일성).
+- [x] DB에서 활성 견적 1개 규칙 검증 SQL 실행.
+Validation evidence: `docs/backlog/roadmap/validation/p0-10-t3-unit-tests.log`, `docs/backlog/roadmap/validation/p0-10-t3-active-quote-rule.log`
 Dependencies/Blockers: `P0-10-T2`.
 Estimate_days: 2
 
 #### Ticket `P0-10-T4`
-- [ ] 진행완료
+- [x] 진행완료
 Title: Admin 케이스 견적 패널 UI 배포
 Goal: 산식 근거와 변경 이력을 운영자가 한 화면에서 확인한다.
 User-visible outcome: 케이스 상세에서 견적 분해식과 변경 이력이 표시된다.
@@ -441,12 +445,13 @@ Error shape(표준 에러 1개):
 Pagination/aggregation 기준:
 - 히스토리는 `updatedAt desc` 정렬, cursor pagination 없음(최대 50건).
 DoD:
-- [ ] 입력값 수정 시 예상 금액이 즉시 갱신.
-- [ ] 저장 후 히스토리 목록에 신규 행 추가.
-- [ ] `changeReason` 필수 검증이 UI/API 모두에서 동작.
+- [x] 입력값 수정 시 예상 금액이 즉시 갱신.
+- [x] 저장 후 히스토리 목록에 신규 행 추가.
+- [x] `changeReason` 필수 검증이 UI/API 모두에서 동작.
 Validation:
-- [ ] 수동 재현: 2회 연속 가격 변경 후 이력 2건 확인.
-- [ ] 컴포넌트 테스트 3개 이상 추가.
+- [x] 수동 재현: 2회 연속 가격 변경 후 이력 2건 확인.
+- [x] 컴포넌트 테스트 3개 이상 추가.
+Validation evidence: `docs/backlog/roadmap/validation/p0-10-t4-component-tests.log`, `docs/backlog/roadmap/validation/p0-10-t4-history-scenario.log`, `docs/backlog/roadmap/validation/p0-10-t4-manual-repro.log`
 Dependencies/Blockers: `P0-10-T3`.
 Estimate_days: 1
 

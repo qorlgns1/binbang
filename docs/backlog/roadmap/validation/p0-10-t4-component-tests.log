@@ -1,0 +1,22 @@
+# P0-10-T4 component tests log
+# generated_at_utc=2026-02-15T02:25:45Z
+# command=pnpm with-env:local pnpm --filter @workspace/web test -- src/app/admin/cases/[id]/_components/PricingPanel.test.tsx
+
+
+> binbang@2.33.0 with-env:local /Users/marco/workspace/binbang
+> dotenv -e .env -e .env.local -- pnpm --filter \@workspace/web test -- src/app/admin/cases/\[id\]/_components/PricingPanel.test.tsx
+
+
+> @workspace/web@0.0.0 test /Users/marco/workspace/binbang/apps/web
+> vitest run src/app/admin/cases/\[id\]/_components/PricingPanel.test.tsx
+
+
+ RUN  v4.0.18 /Users/marco/workspace/binbang/apps/web
+
+ ✓ src/app/admin/cases/[id]/_components/PricingPanel.test.tsx (3 tests) 100ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  11:25:46
+   Duration  804ms (transform 216ms, setup 0ms, import 561ms, tests 100ms, environment 0ms)
+

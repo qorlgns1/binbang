@@ -1,0 +1,57 @@
+# P0-10-T4 manual reproduction log
+# generated_at_utc=2026-02-15T02:39:36Z
+# base_url=http://localhost:3111
+# case_id=seed_case_1
+# reason_1=manual_t4_20260215023935_1
+# reason_2=manual_t4_20260215023935_2
+
+## 1) login
+status=200
+{"message":"로그인 성공"}
+## 2) save quote #1
+payload={"platform":"AIRBNB","durationBucket":"LE_24H","difficulty":"M","urgencyBucket":"D2_D3","frequencyBucket":"F30M","changeReason":"manual_t4_20260215023935_1"}
+status=200
+{"ok":true,"data":{"quoteId":"cmln50d2m0004bl4hbzgwr1bu","caseId":"seed_case_1","pricingPolicyVersion":"v1","inputsSnapshot":{"platform":"AIRBNB","durationBucket":"LE_24H","difficulty":"M","urgencyBucket":"D2_D3","frequencyBucket":"F30M"},"weightsSnapshot":{"baseFee":19000,"duration":0,"difficulty":7000,"urgency":7000,"frequency":0},"computedAmountKrw":33000,"roundedAmountKrw":33000,"changeReason":"manual_t4_20260215023935_1","isActive":true,"createdBy":"cmlb5tn550019974h5i9du6h6","createdAt":"2026-02-15T02:39:36.238Z","updatedAt":"2026-02-15T02:39:36.238Z"}}
+## 3) save quote #2
+payload={"platform":"AIRBNB","durationBucket":"BETWEEN_72H_7D","difficulty":"H","urgencyBucket":"D0_D1","frequencyBucket":"F15M","changeReason":"manual_t4_20260215023935_2"}
+status=200
+{"ok":true,"data":{"quoteId":"cmln50d4n0005bl4hkb3lvyde","caseId":"seed_case_1","pricingPolicyVersion":"v1","inputsSnapshot":{"platform":"AIRBNB","durationBucket":"BETWEEN_72H_7D","difficulty":"H","urgencyBucket":"D0_D1","frequencyBucket":"F15M"},"weightsSnapshot":{"baseFee":19000,"duration":12000,"difficulty":15000,"urgency":12000,"frequency":5000},"computedAmountKrw":63000,"roundedAmountKrw":63000,"changeReason":"manual_t4_20260215023935_2","isActive":true,"createdBy":"cmlb5tn550019974h5i9du6h6","createdAt":"2026-02-15T02:39:36.311Z","updatedAt":"2026-02-15T02:39:36.311Z"}}
+## 4) history
+status=200
+[
+  {
+    "quoteId": "cmln50d4n0005bl4hkb3lvyde",
+    "roundedAmountKrw": 63000,
+    "changeReason": "manual_t4_20260215023935_2",
+    "isActive": true,
+    "updatedAt": "2026-02-15T02:39:36.311Z"
+  },
+  {
+    "quoteId": "cmln50d2m0004bl4hbzgwr1bu",
+    "roundedAmountKrw": 33000,
+    "changeReason": "manual_t4_20260215023935_1",
+    "isActive": false,
+    "updatedAt": "2026-02-15T02:39:36.306Z"
+  },
+  {
+    "quoteId": "cmln4ziek0002bl4hkezpxvvf",
+    "roundedAmountKrw": 63000,
+    "changeReason": "manual_t4_step2",
+    "isActive": false,
+    "updatedAt": "2026-02-15T02:39:36.228Z"
+  },
+  {
+    "quoteId": "cmln4zf8l0001bl4hypyj4je4",
+    "roundedAmountKrw": 33000,
+    "changeReason": "manual_t4_step1",
+    "isActive": false,
+    "updatedAt": "2026-02-15T02:38:56.488Z"
+  }
+]
+
+## 5) assertions
+r1_count=1
+r2_count=1
+r1_active=false
+r2_active=true
+result=PASS

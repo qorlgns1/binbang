@@ -1,0 +1,22 @@
+# P0-10-T3 unit test log
+# generated_at_utc=2026-02-15T02:09:13Z
+# command=pnpm with-env:local pnpm --filter @workspace/web test -- src/services/__tests__/pricing.service.test.ts
+
+
+> binbang@2.33.0 with-env:local /Users/marco/workspace/binbang
+> dotenv -e .env -e .env.local -- pnpm --filter \@workspace/web test -- src/services/__tests__/pricing.service.test.ts
+
+
+> @workspace/web@0.0.0 test /Users/marco/workspace/binbang/apps/web
+> vitest run src/services/__tests__/pricing.service.test.ts
+
+
+ RUN  v4.0.18 /Users/marco/workspace/binbang/apps/web
+
+ ✓ src/services/__tests__/pricing.service.test.ts (14 tests) 24ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  11:09:16
+   Duration  475ms (transform 118ms, setup 0ms, import 153ms, tests 24ms, environment 0ms)
+
