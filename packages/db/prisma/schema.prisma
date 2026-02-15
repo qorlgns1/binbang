@@ -536,9 +536,31 @@ model Case {
   notifications      CaseNotification[]
   billingEvent       BillingEvent?
   messages           CaseMessage[]
+  priceQuotes        PriceQuote[]
 
   @@index([status])
   @@index([createdAt])
+}
+
+model PriceQuote {
+  id                   String   @id @default(cuid())
+  caseId               String
+  case                 Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  pricingPolicyVersion String
+  inputsSnapshot       Json
+  weightsSnapshot      Json
+  computedAmountKrw    Int
+  roundedAmountKrw     Int
+  changeReason         String   @db.Text
+  isActive             Boolean  @default(true)
+  createdBy            String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  /// DB-level invariant: one active quote per case is enforced via partial unique
+  /// index "PriceQuote_caseId_active_unique_idx" (migration 20260215113000).
+  @@index([caseId])
+  @@index([caseId, isActive])
 }
 
 model CaseStatusLog {

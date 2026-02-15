@@ -1,0 +1,16 @@
+# P0-10-T4 history scenario log (2 consecutive updates)
+# generated_at_utc=2026-02-15T02:26:00Z
+# db=accommodation_monitor
+
+BEGIN
+DELETE 0
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+     id     | roundedAmountKrw | isActive |       changeReason       |        updatedAt        
+------------+------------------+----------+--------------------------+-------------------------
+ p010_t4_q2 |            46000 | t        | urgency up               | 2026-02-15 02:26:00.499
+ p010_t4_q1 |            41000 | f        | superseded by urgency up | 2026-02-15 02:25:00.499
+(2 rows)
+
+ROLLBACK

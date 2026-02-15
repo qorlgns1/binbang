@@ -1,0 +1,39 @@
+# P0-10-T2b partial unique index validation log
+# generated_at_utc=2026-02-15T03:06:16Z
+# env=local_staging_rehearsal
+# migration=20260215113000_add_price_quote_active_unique_index
+# temp_db=accommodation_monitor_t2b_verify_1771124768201
+
+## 1) migration apply lines
+initial_deploy=37:Applying migration `20260215113000_add_price_quote_active_unique_index`
+reapply_deploy=12:Applying migration `20260215113000_add_price_quote_active_unique_index`
+
+## 2) pre-check (before reapply)
+{
+  "indexExists": false,
+  "migrationRows": 0,
+  "duplicateActiveRows": []
+}
+## 3) post-check (after reapply + duplicate insert scenario)
+{
+  "indexExists": true,
+  "duplicateInsertError": {
+    "code": "23505",
+    "constraint": "PriceQuote_caseId_active_unique_idx",
+    "message": "duplicate key value violates unique constraint \"PriceQuote_caseId_active_unique_idx\""
+  },
+  "inactiveInsertSucceeded": true
+}
+## 4) rollback procedure docs
+- duplicate check query: packages/db/sql/price_quote_active_uniqueness_check.sql
+- rollback SQL: packages/db/sql/price_quote_active_unique_index_rollback.sql
+
+## 5) assertions
+before_index_exists=false
+before_migration_rows=0
+before_duplicate_rows=0
+after_index_exists=true
+duplicate_insert_error_code=23505
+duplicate_insert_constraint=PriceQuote_caseId_active_unique_idx
+inactive_insert_succeeded=true
+result=PASS
