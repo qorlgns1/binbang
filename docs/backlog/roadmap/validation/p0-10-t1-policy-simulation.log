@@ -1,0 +1,19 @@
+# P0-10-T1 pricing policy simulation log
+# generated_at_utc=2026-02-15T00:00:00Z
+# policy_version=v1
+# formula=clamp(round((baseFee+durationWeight+difficultyWeight+urgencyWeight+frequencyWeight)/1000)*1000,10000,500000)
+
+case_id | platform | duration_bucket | difficulty | urgency_bucket | frequency_bucket | baseFee | durationWeight | difficultyWeight | urgencyWeight | frequencyWeight | computedAmountKrw | roundedAmountKrw
+--------+----------+-----------------+------------+----------------+------------------+---------+----------------+------------------+---------------+-----------------+-------------------+-----------------
+C01     | AIRBNB   | <=24h           | L          | D-4+           | 30m              |   19000 |              0 |                0 |             0 |               0 |             19000 |           19000
+C02     | AGODA    | >24h<=72h       | M          | D-2~D-3        | 15m              |   17000 |           5000 |             7000 |          7000 |            5000 |             41000 |           41000
+C03     | AIRBNB   | >72h<=7d        | H          | D-0~D-1        | 15m              |   19000 |          12000 |            15000 |         12000 |            5000 |             63000 |           63000
+C04     | AGODA    | >7d             | H          | D-0~D-1        | 30m              |   17000 |          20000 |            15000 |         12000 |               0 |             64000 |           64000
+C05     | AIRBNB   | <=24h           | M          | D-4+           | >=60m            |   19000 |              0 |             7000 |             0 |           -2000 |             24000 |           24000
+C06     | AGODA    | >24h<=72h       | L          | D-2~D-3        | >=60m            |   17000 |           5000 |                0 |          7000 |           -2000 |             27000 |           27000
+C07     | AIRBNB   | >7d             | H          | D-0~D-1        | >=60m            |   19000 |          20000 |            15000 |         12000 |           -2000 |             64000 |           64000
+C08     | AGODA    | >72h<=7d        | M          | D-4+           | 15m              |   17000 |          12000 |             7000 |             0 |            5000 |             41000 |           41000
+C09     | OVERRIDE | guardrail       | guardrail  | guardrail      | guardrail        |    9000 |              0 |                0 |             0 |           -2000 |              7000 |           10000
+C10     | OVERRIDE | guardrail       | guardrail  | guardrail      | guardrail        |  498000 |          20000 |            15000 |         12000 |            5000 |            550000 |          500000
+
+# note: C09/C10 are guardrail vectors for min/max clamp validation.

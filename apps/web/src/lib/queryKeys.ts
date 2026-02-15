@@ -101,6 +101,13 @@ export const adminKeys = {
   cases: (filters?: Record<string, string>): readonly ['admin', 'cases', Record<string, string>] =>
     [...adminKeys.all, 'cases', filters ?? {}] as const,
   caseDetail: (id: string): readonly ['admin', 'cases', string] => [...adminKeys.all, 'cases', id] as const,
+  casePricingPreview: (
+    id: string,
+    filters?: Record<string, string>,
+  ): readonly ['admin', 'cases', string, 'pricing', 'preview', Record<string, string>] =>
+    [...adminKeys.all, 'cases', id, 'pricing', 'preview', filters ?? {}] as const,
+  casePricingQuotes: (id: string): readonly ['admin', 'cases', string, 'pricing', 'quotes'] =>
+    [...adminKeys.all, 'cases', id, 'pricing', 'quotes'] as const,
 };
 
 export const heartbeatKeys = {

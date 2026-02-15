@@ -1,0 +1,39 @@
+# P0-10-T2 migration validation log
+# generated_at_utc=2026-02-15T01:59:23Z
+# db=accommodation_monitor
+
+     column_name      |          data_type          | is_nullable 
+----------------------+-----------------------------+-------------
+ id                   | text                        | NO
+ caseId               | text                        | NO
+ pricingPolicyVersion | text                        | NO
+ inputsSnapshot       | jsonb                       | NO
+ weightsSnapshot      | jsonb                       | NO
+ computedAmountKrw    | integer                     | NO
+ roundedAmountKrw     | integer                     | NO
+ changeReason         | text                        | NO
+ isActive             | boolean                     | NO
+ createdBy            | text                        | NO
+ createdAt            | timestamp without time zone | NO
+ updatedAt            | timestamp without time zone | NO
+(12 rows)
+
+           indexname            |                                                indexdef                                                 
+--------------------------------+---------------------------------------------------------------------------------------------------------
+ PriceQuote_caseId_idx          | CREATE INDEX "PriceQuote_caseId_idx" ON public."PriceQuote" USING btree ("caseId")
+ PriceQuote_caseId_isActive_idx | CREATE INDEX "PriceQuote_caseId_isActive_idx" ON public."PriceQuote" USING btree ("caseId", "isActive")
+ PriceQuote_pkey                | CREATE UNIQUE INDEX "PriceQuote_pkey" ON public."PriceQuote" USING btree (id)
+(3 rows)
+
+BEGIN
+DELETE 0
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+     id     |   caseId    | isActive | pricingPolicyVersion | computedAmountKrw | roundedAmountKrw |        changeReason         
+------------+-------------+----------+----------------------+-------------------+------------------+-----------------------------
+ p010_t2_q1 | seed_case_3 | f        | v1                   |             41000 |            41000 | superseded by recalculation
+ p010_t2_q2 | seed_case_3 | t        | v1                   |             49000 |            49000 | difficulty up
+(2 rows)
+
+ROLLBACK

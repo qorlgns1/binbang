@@ -1,0 +1,21 @@
+# P0-10-T3 active quote rule SQL log
+# generated_at_utc=2026-02-15T02:09:30Z
+# db=accommodation_monitor
+
+BEGIN
+DELETE 0
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+   caseId    | active_quote_count | total_quote_count 
+-------------+--------------------+-------------------
+ seed_case_3 |                  1 |                 2
+(1 row)
+
+     id     |   caseId    | isActive | roundedAmountKrw |        changeReason         
+------------+-------------+----------+------------------+-----------------------------
+ p010_t3_q1 | seed_case_3 | f        |            41000 | superseded by recalculation
+ p010_t3_q2 | seed_case_3 | t        |            49000 | difficulty up
+(2 rows)
+
+ROLLBACK
