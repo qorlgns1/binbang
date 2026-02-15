@@ -49,7 +49,15 @@
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "KAKAO_CLIENT_ID",
-        "KAKAO_CLIENT_SECRET"
+        "KAKAO_CLIENT_SECRET",
+        "HOTELBEDS_API_KEY",
+        "HOTELBEDS_SECRET",
+        "HOTELBEDS_BASE_URL",
+        "GOOGLE_PLACES_SERVER_API_KEY",
+        "GOOGLE_PLACES_API_KEY",
+        "OPENWEATHER_API_KEY",
+        "EXCHANGERATE_API_KEY",
+        "KOREA_TOUR_API_KEY"
       ],
       "cache": false,
       "persistent": true
