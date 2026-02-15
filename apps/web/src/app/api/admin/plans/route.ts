@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { createAdminPlan, getAdminPlans } from '@/services/admin/plansService';
+import { createAdminPlan, getAdminPlans } from '@/services/admin/plans.service';
 
 export async function GET(): Promise<Response> {
   const session = await requireAdmin();

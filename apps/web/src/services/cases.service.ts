@@ -1,6 +1,6 @@
 import { type CaseStatus, type Prisma, prisma } from '@workspace/db';
 
-import { type AmbiguityResult, analyzeCondition } from './conditionParserService';
+import { type AmbiguityResult, analyzeCondition } from './condition-parser.service';
 
 // ============================================================================
 // Types

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import type { Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
-import { invalidateSelectorCache } from '@/services/selectorsService';
+import { invalidateSelectorCache } from '@/services/selectors.service';
 
 interface InvalidateCachePayload {
   platform?: Platform;

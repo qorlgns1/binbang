@@ -9,7 +9,7 @@ import {
   getAccommodationLogs,
   updateAccommodation,
   verifyAccommodationOwnership,
-} from './accommodationsService';
+} from './accommodations.service';
 
 const { mockFindMany, mockFindFirst, mockFindUnique, mockCreate, mockUpdate, mockDelete, mockCheckLogFindMany } =
   vi.hoisted(

@@ -8,7 +8,7 @@ import {
   isValidTransition,
   linkAccommodation,
   transitionCaseStatus,
-} from './casesService';
+} from './cases.service';
 
 // ============================================================================
 // Mock setup

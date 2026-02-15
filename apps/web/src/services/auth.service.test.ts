@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { checkEmailExists, createUserWithCredentials, verifyCredentials } from './authService';
+import { checkEmailExists, createUserWithCredentials, verifyCredentials } from './auth.service';
 
 const { mockUserCreate, mockUserFindUnique, mockBcryptHash, mockBcryptCompare } = vi.hoisted(
   (): {

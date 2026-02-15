@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { confirmPayment } from '@/services/casesService';
+import { confirmPayment } from '@/services/cases.service';
 
 const paymentSchema = z.object({
   note: z.string().optional(),

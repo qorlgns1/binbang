@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { getAccommodationById } from '@/services/accommodationsService';
+import { getAccommodationById } from '@/services/accommodations.service';
 import type { PageParams } from '@/types/api';
 
 import { PriceTrendSection } from './_components/PriceTrendSection';

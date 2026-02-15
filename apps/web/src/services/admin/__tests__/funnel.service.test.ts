@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getAdminFunnel, type FunnelRangePreset } from '../funnelService';
+import { getAdminFunnel, type FunnelRangePreset } from '../funnel.service';
 
 const {
   mockFormSubmissionCount,

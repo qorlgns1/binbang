@@ -251,6 +251,10 @@ packages/
 - 외부 도구/계약 파일명은 통합 요구사항이 있으면 원형을 유지할 수 있다.
   - 예: `next-auth.d.ts`
 - `apps/web/src/components/ui/**`는 shadcn 호환을 위해 kebab-case 컴포넌트 파일명을 허용한다.
+- `apps/web/src/services/**` 하위 서비스 레이어 파일은 kebab-case + `.service` 접미사를 사용해야 한다.
+  - 예: `accommodations.service.ts`, `admin/funnel-clicks.service.ts`
+- `apps/web/src/services/**` 하위 서비스 테스트 파일은 kebab-case + `.service.test` 접미사를 사용해야 한다.
+  - 예: `accommodations.service.test.ts`, `admin/__tests__/funnel-clicks.service.test.ts`
 
 ---
 

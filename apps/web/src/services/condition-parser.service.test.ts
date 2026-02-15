@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeCondition } from './conditionParserService';
+import { analyzeCondition } from './condition-parser.service';
 
 describe('condition-parser.service', (): void => {
   // ==========================================================================

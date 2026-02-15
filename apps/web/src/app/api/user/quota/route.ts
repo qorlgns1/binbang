@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getUserQuota } from '@/services/userService';
+import { getUserQuota } from '@/services/user.service';
 
 export async function GET(): Promise<Response> {
   const session = await getServerSession(authOptions);

@@ -398,6 +398,10 @@ Boundaries are enforced by import rules, not by discipline.
 - External/tooling contract filenames MAY keep upstream conventions when required for integration.
   - Example: `next-auth.d.ts`
 - `apps/web/src/components/ui/**` MAY use kebab-case component filenames to keep upstream shadcn-style compatibility.
+- Service-layer files under `apps/web/src/services/**` MUST use kebab-case with `.service` suffix.
+  - Examples: `accommodations.service.ts`, `admin/funnel-clicks.service.ts`
+- Service tests under `apps/web/src/services/**` MUST use kebab-case with `.service.test` suffix.
+  - Examples: `accommodations.service.test.ts`, `admin/__tests__/funnel-clicks.service.test.ts`
 
 ---
 

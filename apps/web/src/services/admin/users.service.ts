@@ -1,5 +1,5 @@
 import { type Prisma, prisma } from '@workspace/db';
-import { createAuditLog } from '@/services/admin/auditLogsService';
+import { createAuditLog } from '@/services/admin/audit-logs.service';
 import type { ActivityType, UserActivityItem, UserActivityResponse } from '@/types/activity';
 import type { AdminUserInfo, AdminUsersResponse } from '@/types/admin';
 

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getUsers } from '@/services/admin/usersService';
+import { getUsers } from '@/services/admin/users.service';
 
 const usersParamsSchema = z.object({
   search: z.string().optional(),

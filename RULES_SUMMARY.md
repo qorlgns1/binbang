@@ -197,6 +197,8 @@ Required exceptions:
 - `packages/db/prisma/migrations/**` directory names are immutable and exempt.
 - Tooling contract filenames may retain upstream naming (e.g., `next-auth.d.ts`).
 - `apps/web/src/components/ui/**` may keep kebab-case component filenames for shadcn compatibility.
+- Service-layer files under `apps/web/src/services/**` must use kebab-case with `.service` suffix (e.g., `accommodations.service.ts`).
+- Service tests under `apps/web/src/services/**` must use kebab-case with `.service.test` suffix (e.g., `funnel-clicks.service.test.ts`).
 
 ---
 

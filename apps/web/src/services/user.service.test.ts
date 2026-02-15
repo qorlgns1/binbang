@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { completeTutorial, dismissTutorial, getTutorialStatus } from './userService';
+import { completeTutorial, dismissTutorial, getTutorialStatus } from './user.service';
 
 const { mockFindUnique, mockUpdate } = vi.hoisted(
   (): {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createFormSubmission, getFormSubmissionById, getFormSubmissions } from './intakeService';
+import { createFormSubmission, getFormSubmissionById, getFormSubmissions } from './intake.service';
 
 const {
   mockCreate,

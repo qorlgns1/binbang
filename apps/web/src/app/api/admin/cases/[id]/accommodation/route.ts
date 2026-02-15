@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { linkAccommodation } from '@/services/casesService';
+import { linkAccommodation } from '@/services/cases.service';
 
 const accommodationSchema = z.object({
   accommodationId: z.string().min(1),

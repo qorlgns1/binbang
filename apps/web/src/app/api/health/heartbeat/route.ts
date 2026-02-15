@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getHeartbeatStatus } from '@/services/healthService';
+import { getHeartbeatStatus } from '@/services/health.service';
 
 export async function GET(): Promise<Response> {
   const session = await getServerSession(authOptions);

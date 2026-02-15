@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { deleteAdminPlan, updateAdminPlan } from '@/services/admin/plansService';
+import { deleteAdminPlan, updateAdminPlan } from '@/services/admin/plans.service';
 
 const updatePlanSchema = z.object({
   name: z.string().min(1).optional(),

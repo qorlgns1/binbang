@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { getSelectorHistory } from '@/services/admin/selectorsService';
+import { getSelectorHistory } from '@/services/admin/selectors.service';
 
 export async function GET(request: Request): Promise<Response> {
   const session = await requireAdmin();

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { checkUserExists, getUsers, getUserDetail, updateUserPlan, updateUserRoles } from './usersService';
+import { checkUserExists, getUsers, getUserDetail, updateUserPlan, updateUserRoles } from './users.service';
 
 const {
   mockUserFindMany,
@@ -51,7 +51,7 @@ vi.mock('@workspace/db', () => ({
   },
 }));
 
-vi.mock('@/services/admin/auditLogsService', () => ({
+vi.mock('@/services/admin/audit-logs.service', () => ({
   createAuditLog: mockCreateAuditLog,
 }));
 

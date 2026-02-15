@@ -3,8 +3,8 @@ import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
-import { pauseExpiredAccommodations } from '@/services/accommodationsService';
-import { hasKakaoToken } from '@/services/userService';
+import { pauseExpiredAccommodations } from '@/services/accommodations.service';
+import { hasKakaoToken } from '@/services/user.service';
 
 import { SectionSkeleton } from './_components/SectionSkeleton';
 import { DashboardContent } from './DashboardContent';

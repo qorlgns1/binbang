@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { getFormSubmissions } from '@/services/intakeService';
+import { getFormSubmissions } from '@/services/intake.service';
 
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getPublicPlans } from '@/services/plansService';
+import { getPublicPlans } from '@/services/plans.service';
 
 export async function GET(): Promise<Response> {
   try {

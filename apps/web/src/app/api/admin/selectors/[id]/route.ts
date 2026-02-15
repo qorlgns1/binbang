@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { deleteSelector, updateSelector } from '@/services/admin/selectorsService';
+import { deleteSelector, updateSelector } from '@/services/admin/selectors.service';
 import type { UpdateSelectorPayload } from '@/types/admin';
 
 interface RouteParams {

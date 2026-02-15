@@ -2,7 +2,7 @@ import type { NextAuthOptions, Session } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
 
-import { createNextAuthAdapter, findAccountUserId, saveKakaoTokens } from '@/services/authService';
+import { createNextAuthAdapter, findAccountUserId, saveKakaoTokens } from '@/services/auth.service';
 
 export const authOptions: NextAuthOptions = {
   adapter: createNextAuthAdapter(),

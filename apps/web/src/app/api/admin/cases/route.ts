@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { createCase, getCases } from '@/services/casesService';
+import { createCase, getCases } from '@/services/cases.service';
 
 const createCaseSchema = z.object({
   submissionId: z.string().min(1, 'submissionId is required'),

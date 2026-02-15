@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getSettings, updateSettings } from '@/services/admin/settingsService';
+import { getSettings, updateSettings } from '@/services/admin/settings.service';
 
 const settingsUpdateSchema = z.object({
   settings: z

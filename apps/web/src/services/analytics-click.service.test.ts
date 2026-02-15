@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createLandingClickEvent } from './analyticsClickService';
+import { createLandingClickEvent } from './analytics-click.service';
 
 const { mockLandingEventCreate } = vi.hoisted(
   (): {

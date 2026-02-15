@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import { deleteAccommodation, getAccommodationById, updateAccommodation } from '@/services/accommodationsService';
+import { deleteAccommodation, getAccommodationById, updateAccommodation } from '@/services/accommodations.service';
 import type { RouteParams } from '@/types/api';
 
 const updateAccommodationSchema = z

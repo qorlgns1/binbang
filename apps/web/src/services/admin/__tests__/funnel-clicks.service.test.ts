@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getAdminFunnelClicks } from '../funnelClicksService';
-import type { FunnelRangePreset } from '../funnelService';
+import { getAdminFunnelClicks } from '../funnel-clicks.service';
+import type { FunnelRangePreset } from '../funnel.service';
 
 const { mockLandingEventFindMany, mockLandingEventFindFirst, mockFormSubmissionCount, mockFormSubmissionFindFirst } =
   vi.hoisted(

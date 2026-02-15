@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { createSessionForUser, verifyCredentials } from '@/services/authService';
+import { createSessionForUser, verifyCredentials } from '@/services/auth.service';
 
 const loginSchema = z.object({
   email: z.string().email(),

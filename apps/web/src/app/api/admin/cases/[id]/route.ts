@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { getCaseById } from '@/services/casesService';
+import { getCaseById } from '@/services/cases.service';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();

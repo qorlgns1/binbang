@@ -6,7 +6,7 @@ import {
   getCaseMessages,
   getOperatorMessageStats,
   getTemplateByKey,
-} from './messagesService';
+} from './messages.service';
 
 // ============================================================================
 // Mock setup

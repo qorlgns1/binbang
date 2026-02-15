@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { LANDING_CLICK_EVENT_NAMES } from '@/lib/analytics/clickEventNames';
-import { createLandingClickEvent } from '@/services/analyticsClickService';
+import { createLandingClickEvent } from '@/services/analytics-click.service';
 
 const utcIsoSchema = z
   .string()

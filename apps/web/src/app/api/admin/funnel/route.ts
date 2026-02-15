@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getAdminFunnel, type FunnelRangePreset } from '@/services/admin/funnelService';
+import { getAdminFunnel, type FunnelRangePreset } from '@/services/admin/funnel.service';
 
 const utcIsoSchema = z
   .string()

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { createCaseMessage, getCaseMessages } from '@/services/messagesService';
+import { createCaseMessage, getCaseMessages } from '@/services/messages.service';
 
 const createMessageSchema = z.object({
   templateKey: z.string().min(1),

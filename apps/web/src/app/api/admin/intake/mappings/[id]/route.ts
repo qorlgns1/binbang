@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { deleteFormQuestionMapping, updateFormQuestionMapping } from '@/services/admin/formQuestionMappingsService';
+import { deleteFormQuestionMapping, updateFormQuestionMapping } from '@/services/admin/form-question-mappings.service';
 
 const FORM_QUESTION_FIELDS = [
   'CONTACT_CHANNEL',

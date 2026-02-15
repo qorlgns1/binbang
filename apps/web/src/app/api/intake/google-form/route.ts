@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { createFormSubmission } from '@/services/intakeService';
+import { createFormSubmission } from '@/services/intake.service';
 
 // ============================================================================
 // Validation
