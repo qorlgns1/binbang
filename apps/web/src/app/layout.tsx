@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
     other: {
       'naver-site-verification': [process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || ''],
+      'agd-partner-manual-verification': '',
     },
   },
   robots: {
