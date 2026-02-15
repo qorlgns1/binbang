@@ -1,38 +1,23 @@
 #!/usr/bin/env node
 /**
- * Enforced naming check for source files/folders.
+ * Folder naming guard that complements Biome's filename lint rule.
  *
  * Scope:
  * - apps/<app>/src/**
  * - packages/<pkg>/src/**
  *
  * Rules:
- * - .tsx files: PascalCase (with optional .test/.spec/.stories suffix)
- * - .ts files: camelCase (with optional .test/.spec/.stories suffix)
  * - folders: kebab-case
  *
  * Exceptions:
- * - Next reserved files: page.tsx, layout.tsx, route.ts, loading.tsx, error.tsx, not-found.tsx, template.tsx, default.tsx
- * - apps/web/src/components/ui/**: filename checks skipped (shadcn compatibility)
- * - apps/web/src/services/**: *.service.ts and *.service.test.ts must use kebab-case prefixes
  * - __tests__, __snapshots__ folders
  * - route segment folders in app router: [id], (group), @slot
+ * - app router private folders: _components, _hooks, _lib
+ *   (tail must be kebab-case or camelCase)
  */
 
 import { execSync } from 'node:child_process';
 import path from 'node:path';
-
-const RESERVED_NEXT_FILES = new Set([
-  'page.tsx',
-  'layout.tsx',
-  'route.ts',
-  'loading.tsx',
-  'error.tsx',
-  'not-found.tsx',
-  'template.tsx',
-  'default.tsx',
-  'next-auth.d.ts',
-]);
 
 const errors = [];
 
@@ -44,21 +29,11 @@ function isCamelCase(input) {
   return /^[a-z][A-Za-z0-9]*$/.test(input);
 }
 
-function isPascalCase(input) {
-  return /^[A-Z][A-Za-z0-9]*$/.test(input);
-}
-
 function isRouteSegmentException(segment) {
   if (segment.startsWith('@')) return true;
   if (/^\(.*\)$/.test(segment)) return true;
   if (/^\[.*\]$/.test(segment)) return true;
   return false;
-}
-
-function splitStemAndSuffix(stem) {
-  const match = stem.match(/^(.*)\.(test|spec|stories)$/);
-  if (!match) return { core: stem, suffix: null };
-  return { core: match[1], suffix: match[2] };
 }
 
 function addError(filePath, message) {
@@ -89,24 +64,15 @@ function validateFolderSegments(filePath) {
   }
 }
 
-function validateServiceFile(baseName, filePath) {
-  const serviceTestMatch = baseName.match(/^([a-z0-9-]+)\.service\.test\.ts$/);
-  if (serviceTestMatch) {
-    if (!isKebabCase(serviceTestMatch[1])) {
-      addError(filePath, 'service test prefix must be kebab-case');
-    }
-    return true;
-  }
+function validateServiceSuffix(filePath) {
+  if (!filePath.startsWith('apps/web/src/services/')) return;
+  if (!filePath.endsWith('.ts') || filePath.endsWith('.d.ts')) return;
 
-  const serviceMatch = baseName.match(/^([a-z0-9-]+)\.service\.ts$/);
-  if (serviceMatch) {
-    if (!isKebabCase(serviceMatch[1])) {
-      addError(filePath, 'service prefix must be kebab-case');
-    }
-    return true;
+  const baseName = path.basename(filePath);
+  const ok = /^[a-z0-9]+(?:-[a-z0-9]+)*\.service(?:\.test)?\.ts$/.test(baseName);
+  if (!ok) {
+    addError(filePath, 'invalid service filename (expected kebab-case + .service(.test).ts)');
   }
-
-  return false;
 }
 
 const trackedFiles = execSync('git ls-files', { encoding: 'utf8' })
@@ -129,32 +95,10 @@ for (const filePath of trackedFiles) {
   if (filePath.startsWith('packages/db/prisma/migrations/')) continue;
 
   validateFolderSegments(filePath);
+  validateServiceSuffix(filePath);
 
   const baseName = path.basename(filePath);
-  if (RESERVED_NEXT_FILES.has(baseName)) continue;
-
-  if (filePath.startsWith('apps/web/src/components/ui/')) continue;
-
-  if (!baseName.endsWith('.ts') && !baseName.endsWith('.tsx')) continue;
-  if (baseName.endsWith('.d.ts')) continue;
-
-  if (filePath.startsWith('apps/web/src/services/')) {
-    if (validateServiceFile(baseName, filePath)) continue;
-  }
-
-  const stem = baseName.replace(/\.(ts|tsx)$/, '');
-  const { core } = splitStemAndSuffix(stem);
-
-  if (baseName.endsWith('.tsx')) {
-    if (!isPascalCase(core)) {
-      addError(filePath, `invalid TSX filename "${baseName}" (expected PascalCase)`);
-    }
-    continue;
-  }
-
-  if (!isCamelCase(core)) {
-    addError(filePath, `invalid TS filename "${baseName}" (expected camelCase)`);
-  }
+  if (!baseName) continue;
 }
 
 if (errors.length > 0) {
@@ -166,4 +110,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log('Naming check passed');
+console.log('Folder naming check passed');

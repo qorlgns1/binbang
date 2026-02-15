@@ -59,7 +59,11 @@
     "rules": {
       "recommended": true,
       "correctness": { "noUnusedVariables": "error" },
-      "style": { "noRestrictedImports": "error", "useImportType": "error" },
+      "style": {
+        "noRestrictedImports": "error",
+        "useImportType": "error",
+        "useFilenamingConvention": "off"
+      },
       "suspicious": { "noExplicitAny": "error" }
     }
   },
@@ -81,6 +85,68 @@
   },
   "html": { "formatter": { "indentScriptAndStyle": false, "selfCloseVoidElements": "always" } },
   "overrides": [
+    {
+      "includes": [
+        "apps/*/src/**/*.ts",
+        "packages/*/src/**/*.ts",
+        "!apps/web/src/services/**/*.ts",
+        "!**/*.d.ts",
+        "!**/route.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "filenameCases": ["camelCase"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "apps/*/src/**/*.tsx",
+        "packages/*/src/**/*.tsx",
+        "!apps/web/src/components/ui/**/*.tsx",
+        "!**/page.tsx",
+        "!**/layout.tsx",
+        "!**/loading.tsx",
+        "!**/error.tsx",
+        "!**/not-found.tsx",
+        "!**/template.tsx",
+        "!**/default.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "filenameCases": ["PascalCase"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/src/services/**/*.ts", "!apps/web/src/services/**/*.d.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "filenameCases": ["kebab-case"]
+              }
+            }
+          }
+        }
+      }
+    },
     {
       "includes": ["apps/web/**/*.{ts,tsx}", "!apps/web/src/services/**/*.{ts,tsx}"],
       "linter": {
