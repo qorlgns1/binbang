@@ -113,7 +113,7 @@ describe('admin/funnel-clicks.service', (): void => {
       getAdminFunnelClicks({
         range: '7d',
         from: 'invalid-from',
-        to: '-02-07T03:21:00.000Z',
+        to: '2026-02-07T03:21:00.000Z',
         now: new Date('2026-02-14T12:00:00.000Z'),
       }),
     ).rejects.toThrowError('Invalid `from` datetime');

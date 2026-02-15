@@ -48,7 +48,7 @@ function validateFolderSegments(filePath) {
     const segment = segments[i];
 
     if (segment === '__tests__' || segment === '__snapshots__') continue;
-    if (isRouteSegmentException(segment)) continue;
+    if (isAppRouterPath && isRouteSegmentException(segment)) continue;
 
     if (isAppRouterPath && segment.startsWith('_')) {
       const tail = segment.slice(1);
