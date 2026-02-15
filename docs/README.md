@@ -4,6 +4,14 @@
 
 - **`docs/AI_CONTEXT.md`**: ChatGPT, Gemini, Grok 등에 붙여넣을 **프로젝트/역할/구조 요약** 한 파일. `architecture.md`, `ai-context-extra.md`, `brand-identity.md` 수정 후 `pnpm update:ai-context` 실행하면 여기에 반영됨.
 
+## 배포 환경 SOT
+
+- `DEPLOYMENT.md`: 배포 흐름/마이그레이션/롤백 기준
+- `ENVIRONMENTS.md`: 환경별 차이(dev/prod), 엔드포인트, 검증 체크리스트
+- `RUNBOOK.md`: 장애 대응/복구 절차
+- `llm-context.yaml`: LLM 전달용 구조화 컨텍스트
+- `DEPLOYMENT_TBD_CHECKLIST.md`: `TBD` 값을 한 번에 확정하기 위한 체크리스트
+
 ## 구조
 
 - `docs/architecture/`
