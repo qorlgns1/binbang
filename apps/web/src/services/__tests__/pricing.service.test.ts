@@ -12,21 +12,22 @@ import {
   type PricingInputSnapshot,
 } from '../pricing.service';
 
-const { mockCaseFindUnique, mockPriceQuoteUpdateMany, mockPriceQuoteCreate, mockPriceQuoteFindMany, mockTransaction } = vi.hoisted(
-  (): {
-    mockCaseFindUnique: ReturnType<typeof vi.fn>;
-    mockPriceQuoteUpdateMany: ReturnType<typeof vi.fn>;
-    mockPriceQuoteCreate: ReturnType<typeof vi.fn>;
-    mockPriceQuoteFindMany: ReturnType<typeof vi.fn>;
-    mockTransaction: ReturnType<typeof vi.fn>;
-  } => ({
-    mockCaseFindUnique: vi.fn(),
-    mockPriceQuoteUpdateMany: vi.fn(),
-    mockPriceQuoteCreate: vi.fn(),
-    mockPriceQuoteFindMany: vi.fn(),
-    mockTransaction: vi.fn(),
-  }),
-);
+const { mockCaseFindUnique, mockPriceQuoteUpdateMany, mockPriceQuoteCreate, mockPriceQuoteFindMany, mockTransaction } =
+  vi.hoisted(
+    (): {
+      mockCaseFindUnique: ReturnType<typeof vi.fn>;
+      mockPriceQuoteUpdateMany: ReturnType<typeof vi.fn>;
+      mockPriceQuoteCreate: ReturnType<typeof vi.fn>;
+      mockPriceQuoteFindMany: ReturnType<typeof vi.fn>;
+      mockTransaction: ReturnType<typeof vi.fn>;
+    } => ({
+      mockCaseFindUnique: vi.fn(),
+      mockPriceQuoteUpdateMany: vi.fn(),
+      mockPriceQuoteCreate: vi.fn(),
+      mockPriceQuoteFindMany: vi.fn(),
+      mockTransaction: vi.fn(),
+    }),
+  );
 
 vi.mock('@workspace/db', () => ({
   prisma: {

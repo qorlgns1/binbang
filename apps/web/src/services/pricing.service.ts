@@ -308,18 +308,20 @@ export async function getCasePriceQuoteHistory(caseId: string, limit = 50): Prom
     select: PRICE_QUOTE_HISTORY_SELECT,
   });
 
-  return rows.map((row): CasePriceQuoteHistoryItem => ({
-    quoteId: row.id,
-    caseId: row.caseId,
-    pricingPolicyVersion: PRICING_POLICY_VERSION,
-    inputsSnapshot: toPricingInputSnapshot(row.inputsSnapshot),
-    weightsSnapshot: toPricingWeightSnapshot(row.weightsSnapshot),
-    computedAmountKrw: row.computedAmountKrw,
-    roundedAmountKrw: row.roundedAmountKrw,
-    changeReason: row.changeReason,
-    isActive: row.isActive,
-    changedBy: row.createdBy,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }));
+  return rows.map(
+    (row): CasePriceQuoteHistoryItem => ({
+      quoteId: row.id,
+      caseId: row.caseId,
+      pricingPolicyVersion: PRICING_POLICY_VERSION,
+      inputsSnapshot: toPricingInputSnapshot(row.inputsSnapshot),
+      weightsSnapshot: toPricingWeightSnapshot(row.weightsSnapshot),
+      computedAmountKrw: row.computedAmountKrw,
+      roundedAmountKrw: row.roundedAmountKrw,
+      changeReason: row.changeReason,
+      isActive: row.isActive,
+      changedBy: row.createdBy,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    }),
+  );
 }
