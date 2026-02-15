@@ -19,6 +19,7 @@ roundedAmountKrw = clamp(roundedAmountKrw, 10000, 500000)
 ```
 
 - 반올림: `1,000원` 단위
+  - `round`는 half-up(`0.5` 이상 올림, 미만 내림) 기준을 사용한다.
 - 하한/상한: `10,000원` / `500,000원`
 - 저장 규칙:
   - `computedAmountKrw`: 반올림/보정 전 합계
