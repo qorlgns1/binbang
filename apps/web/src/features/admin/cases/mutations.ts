@@ -3,7 +3,7 @@
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { adminKeys } from '@/lib/queryKeys';
-import type { CaseDetail, CaseMessageItem } from './queries';
+import type { CaseDetail, CaseMessageItem, PricingInputSnapshot } from './queries';
 
 // ============================================================================
 // Types
@@ -56,6 +56,27 @@ interface CreateCaseMessageResponse {
   message: CaseMessageItem;
 }
 
+interface SaveCasePriceQuoteVariables extends PricingInputSnapshot {
+  caseId: string;
+  changeReason: string;
+}
+
+interface SaveCasePriceQuoteResponse {
+  ok: true;
+  data: {
+    quoteId: string;
+    caseId: string;
+    pricingPolicyVersion: 'v1';
+    computedAmountKrw: number;
+    roundedAmountKrw: number;
+    changeReason: string;
+    isActive: boolean;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
 export type UseCreateCaseMutationResult = UseMutationResult<CreateCaseResponse, Error, CreateCaseVariables>;
 export type UseTransitionCaseStatusMutationResult = UseMutationResult<
   TransitionCaseStatusResponse,
@@ -72,6 +93,11 @@ export type UseCreateCaseMessageMutationResult = UseMutationResult<
   CreateCaseMessageResponse,
   Error,
   CreateCaseMessageVariables
+>;
+export type UseSaveCasePriceQuoteMutationResult = UseMutationResult<
+  SaveCasePriceQuoteResponse,
+  Error,
+  SaveCasePriceQuoteVariables
 >;
 
 // ============================================================================
@@ -155,6 +181,37 @@ async function createCaseMessage({
   return res.json();
 }
 
+async function saveCasePriceQuote({
+  caseId,
+  platform,
+  durationBucket,
+  difficulty,
+  urgencyBucket,
+  frequencyBucket,
+  changeReason,
+}: SaveCasePriceQuoteVariables): Promise<SaveCasePriceQuoteResponse> {
+  const res = await fetch(`/api/admin/cases/${caseId}/pricing/quotes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      platform,
+      durationBucket,
+      difficulty,
+      urgencyBucket,
+      frequencyBucket,
+      changeReason,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    const message = err?.error?.message || err?.error || '견적 저장에 실패했습니다';
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -213,6 +270,19 @@ export function useCreateCaseMessageMutation(): UseCreateCaseMessageMutationResu
     mutationFn: createCaseMessage,
     onSuccess: (_data, variables): void => {
       queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+    },
+  });
+}
+
+export function useSaveCasePriceQuoteMutation(): UseSaveCasePriceQuoteMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: saveCasePriceQuote,
+    onSuccess: (_data, variables): void => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.caseDetail(variables.caseId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.casePricingQuotes(variables.caseId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.cases() });
     },
   });
 }
