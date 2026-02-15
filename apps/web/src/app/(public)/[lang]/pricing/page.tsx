@@ -6,7 +6,7 @@ import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 import { SUPPORT_EMAIL } from '@/lib/support';
 
-import { PricingCards } from './_components/pricingCards';
+import { PricingCards } from './_components/PricingCards';
 
 interface PageProps {
   params: Promise<{ lang: string }>;

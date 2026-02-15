@@ -7,8 +7,8 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserDetail } from '@/hooks/useUserDetail';
 
-import { UserActivityTimeline } from './userActivityTimeline';
-import { UserDetailCard } from './userDetailCard';
+import { UserActivityTimeline } from './UserActivityTimeline';
+import { UserDetailCard } from './UserDetailCard';
 
 interface Props {
   userId: string;

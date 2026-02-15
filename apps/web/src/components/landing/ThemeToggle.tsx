@@ -5,7 +5,7 @@ import { flushSync } from 'react-dom';
 
 import { Moon, Sun } from 'lucide-react';
 
-import { trackThemeToggled } from '@/lib/analytics/landing-tracker';
+import { trackThemeToggled } from '@/lib/analytics/landingTracker';
 import type { Locale } from '@workspace/shared/i18n';
 
 interface ThemeToggleProps {

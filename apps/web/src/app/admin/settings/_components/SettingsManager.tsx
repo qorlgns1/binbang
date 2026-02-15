@@ -16,7 +16,7 @@ import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useUpdateSystemSettings } from '@/hooks/useUpdateSystemSettings';
 import type { SystemSettingItem } from '@/types/admin';
 
-import { SettingsHistory } from './settingsHistory';
+import { SettingsHistory } from './SettingsHistory';
 
 type TimeUnit = 'ms' | 's' | 'min';
 

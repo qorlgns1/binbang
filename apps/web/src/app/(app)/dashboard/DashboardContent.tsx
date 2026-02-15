@@ -12,16 +12,16 @@ import { useAccommodationsQuery } from '@/features/accommodations/queries';
 import { useRecentLogsQuery } from '@/features/logs/queries';
 import { useUserQuotaQuery, useUserTutorialQuery } from '@/features/user/queries';
 
-import { AccommodationBoard } from './_components/accommodation-board';
-import { ActionCenter } from './_components/action-center';
-import { LighthouseHero } from './_components/empty-illustrations';
-import { FirstUserTutorialDialog } from './_components/first-user-tutorial-dialog';
-import { KpiStrip } from './_components/kpi-strip';
-import { RecentEvents } from './_components/recent-events';
-import { SectionSkeleton } from './_components/section-skeleton';
-import { generateActionCards } from './_lib/action-card-generator';
+import { AccommodationBoard } from './_components/AccommodationBoard';
+import { ActionCenter } from './_components/ActionCenter';
+import { LighthouseHero } from './_components/EmptyIllustrations';
+import { FirstUserTutorialDialog } from './_components/FirstUserTutorialDialog';
+import { KpiStrip } from './_components/KpiStrip';
+import { RecentEvents } from './_components/RecentEvents';
+import { SectionSkeleton } from './_components/SectionSkeleton';
+import { generateActionCards } from './_lib/actionCardGenerator';
 import { PAGE_SUBTITLE, PAGE_TITLE } from './_lib/constants';
-import { trackDashboardViewed } from './_lib/dashboard-tracker';
+import { trackDashboardViewed } from './_lib/dashboardTracker';
 import type { ActionCard, BoardTab, DashboardMetrics } from './_lib/types';
 
 // ============================================================================

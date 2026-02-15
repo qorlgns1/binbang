@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import { AlertOctagon, AlertTriangle, BellOff, PauseCircle, TrendingUp } from 'lucide-react';
 
 import { ACTION_CARD_ACCENT, ACTION_CARD_STYLES } from '@/app/(app)/dashboard/_lib/constants';
-import { trackActionCardClicked, trackActionCardImpression } from '@/app/(app)/dashboard/_lib/dashboard-tracker';
+import { trackActionCardClicked, trackActionCardImpression } from '@/app/(app)/dashboard/_lib/dashboardTracker';
 import type { ActionCard as ActionCardData, ActionCardType } from '@/app/(app)/dashboard/_lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

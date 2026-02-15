@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowRight, BellRing } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { trackPrimaryCTAClicked, trackSecondaryCTAClicked } from '@/lib/analytics/landing-tracker';
+import { trackPrimaryCTAClicked, trackSecondaryCTAClicked } from '@/lib/analytics/landingTracker';
 import { smoothScrollTo } from '@/lib/utils/scroll';
 
 /**

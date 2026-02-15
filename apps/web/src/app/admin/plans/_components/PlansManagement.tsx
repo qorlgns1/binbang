@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AdminPlanInfo } from '@/hooks/useAdminPlans';
 
-import { PlanDialog } from './planDialog';
-import { PlansTable } from './plansTable';
+import { PlanDialog } from './PlanDialog';
+import { PlansTable } from './PlansTable';
 
 export function PlansManagement() {
   const [editingPlan, setEditingPlan] = useState<AdminPlanInfo | null>(null);

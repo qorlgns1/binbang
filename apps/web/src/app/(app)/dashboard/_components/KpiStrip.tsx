@@ -5,7 +5,7 @@ import type { DashboardMetrics } from '@/app/(app)/dashboard/_lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-import { SectionSkeleton } from './section-skeleton';
+import { SectionSkeleton } from './SectionSkeleton';
 
 interface KpiStripProps {
   metrics: DashboardMetrics;

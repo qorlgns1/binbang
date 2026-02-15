@@ -1,6 +1,6 @@
 import { prisma } from '@workspace/db';
 
-import type { LandingClickEventName } from '@/lib/analytics/click-event-names';
+import type { LandingClickEventName } from '@/lib/analytics/clickEventNames';
 
 export interface CreateLandingClickEventInput {
   eventName: LandingClickEventName;

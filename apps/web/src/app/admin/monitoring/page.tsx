@@ -1,4 +1,4 @@
-import { MonitoringDashboard } from './_components/monitoringDashboard';
+import { MonitoringDashboard } from './_components/MonitoringDashboard';
 
 export default function MonitoringPage() {
   return (

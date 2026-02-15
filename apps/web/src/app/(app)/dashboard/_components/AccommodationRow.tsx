@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Accommodation } from '@/types/accommodation';
 
-import { StatusBadge } from './status-badge';
+import { StatusBadge } from './StatusBadge';
 
 interface AccommodationRowProps {
   accommodation: Accommodation;

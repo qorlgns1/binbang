@@ -213,6 +213,51 @@ packages/
 
 ---
 
+## 12. 네이밍 규칙 (강제)
+
+### 12.0 적용 범위
+
+- 이 네이밍 규칙은 **신규 생성 파일/폴더**와 **명시적 리네임 작업**에 적용된다.
+- 기존 레거시 이름은 스코프가 명확한 리팩터 티켓으로 점진적으로 마이그레이션할 수 있다.
+- 범위 정의 없이 전역 대량 리네임을 수행하는 것은 금지한다.
+
+### 12.1 파일 네이밍
+
+- React 컴포넌트 파일(`.tsx`)은 `PascalCase`를 사용해야 한다.
+  - 예: `AdminSidebar.tsx`, `DateFilter.tsx`
+- 비컴포넌트 소스 파일(`.ts` / 유틸 `.tsx`)은 `camelCase`를 사용해야 한다.
+  - 예: `useFunnelQuery.ts`, `landingEventRetention.ts`, `dateFilter.test.ts`
+
+### 12.2 폴더 네이밍
+
+- 폴더는 `kebab-case`를 사용해야 한다.
+  - 예: `admin-funnel`, `landing-events`
+
+### 12.3 Next App Router private 폴더
+
+- `apps/web/src/app/**`에서 라우트 세그먼트가 아닌 구현 상세 폴더는 반드시 언더스코어(`_`) 프리픽스를 사용해야 한다.
+  - 예: `_components`, `_hooks`, `_lib`
+- `_` 뒤 이름은 해당 라우트 하위 트리 내에서 일관성을 유지해야 한다.
+
+### 12.4 필수 예외
+
+- Next.js 예약 파일명은 그대로 유지해야 한다.
+  - `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`
+- 테스트/스냅샷 관례 폴더는 예외로 허용한다.
+  - `__tests__`, `__snapshots__`
+- locale 폴더는 BCP-47 스타일을 허용한다.
+  - 예: `ko`, `en`, `ja`, `zh-CN`
+- `packages/db/prisma/migrations/**` 하위 마이그레이션 디렉터리는 불변 자산으로 간주하며 폴더 네이밍 규칙 예외다.
+- 외부 도구/계약 파일명은 통합 요구사항이 있으면 원형을 유지할 수 있다.
+  - 예: `next-auth.d.ts`
+- `apps/web/src/components/ui/**`는 shadcn 호환을 위해 kebab-case 컴포넌트 파일명을 허용한다.
+- `apps/web/src/services/**` 하위 서비스 레이어 파일은 kebab-case + `.service` 접미사를 사용해야 한다.
+  - 예: `accommodations.service.ts`, `admin/funnel-clicks.service.ts`
+- `apps/web/src/services/**` 하위 서비스 테스트 파일은 kebab-case + `.service.test` 접미사를 사용해야 한다.
+  - 예: `accommodations.service.test.ts`, `admin/__tests__/funnel-clicks.service.test.ts`
+
+---
+
 ## 최종 목적
 
 이 규칙의 목적은:

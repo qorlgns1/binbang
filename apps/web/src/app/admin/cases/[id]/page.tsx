@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { authOptions } from '@/lib/auth';
 
-import { CaseDetailView } from './_components/caseDetailView';
+import { CaseDetailView } from './_components/CaseDetailView';
 
 interface Props {
   params: Promise<{ id: string }>;

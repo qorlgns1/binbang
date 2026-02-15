@@ -4,10 +4,10 @@ import { useState } from 'react';
 
 import { Separator } from '@/components/ui/separator';
 
-import { ThroughputChart } from './throughputChart';
-import { ThroughputComparisonChart } from './throughputComparisonChart';
-import { ThroughputHistoryTable } from './throughputHistoryTable';
-import { ThroughputSummaryCards } from './throughputSummaryCards';
+import { ThroughputChart } from './ThroughputChart';
+import { ThroughputComparisonChart } from './ThroughputComparisonChart';
+import { ThroughputHistoryTable } from './ThroughputHistoryTable';
+import { ThroughputSummaryCards } from './ThroughputSummaryCards';
 
 type TimeRange = '1h' | '6h' | '24h' | '7d';
 

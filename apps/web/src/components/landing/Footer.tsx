@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { trackClosingCTAClicked } from '@/lib/analytics/landing-tracker';
+import { trackClosingCTAClicked } from '@/lib/analytics/landingTracker';
 
 /**
  * Renders the landing page footer with closing CTA section and copyright row.

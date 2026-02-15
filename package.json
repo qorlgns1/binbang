@@ -1,6 +1,6 @@
 {
   "name": "binbang",
-  "version": "2.29.0",
+  "version": "2.33.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
@@ -28,7 +28,8 @@
     "format:check": "biome format .",
     "test": "pnpm with-env:local turbo run test",
     "typecheck": "pnpm with-env:local turbo run typecheck",
-    "ci:check": "pnpm with-env:local turbo run lint typecheck test build && pnpm format:check",
+    "naming:check": "node scripts/naming/check.mjs",
+    "ci:check": "pnpm naming:check && pnpm with-env:local turbo run lint typecheck test build && pnpm format:check",
     "db:generate": "pnpm with-env:local turbo run db:generate --filter=@workspace/db",
     "db:push:forbidden": "echo \"Forbidden by rules.md: use db:migrate instead\" && exit 1",
     "db:migrate": "pnpm with-env:local pnpm --filter @workspace/db db:migrate",

@@ -10,14 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCaseDetailQuery } from '@/features/admin/cases';
 
-import { AccommodationLinkButton } from './accommodationLinkButton';
-import { ClarificationPanel } from './clarificationPanel';
-import { ConditionEvidencePanel } from './conditionEvidencePanel';
-import { ConsentEvidencePanel } from './consentEvidencePanel';
+import { AccommodationLinkButton } from './AccommodationLinkButton';
+import { ClarificationPanel } from './ClarificationPanel';
+import { ConditionEvidencePanel } from './ConditionEvidencePanel';
+import { ConsentEvidencePanel } from './ConsentEvidencePanel';
 import { formatDateTime } from './formatDateTime';
-import { MessageTemplatesPanel } from './messageTemplatesPanel';
-import { PaymentConfirmButton } from './paymentConfirmButton';
-import { StatusTransitionDialog } from './statusTransitionDialog';
+import { MessageTemplatesPanel } from './MessageTemplatesPanel';
+import { PaymentConfirmButton } from './PaymentConfirmButton';
+import { StatusTransitionDialog } from './StatusTransitionDialog';
 
 interface Props {
   caseId: string;

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
-import { UsersTable } from './usersTable';
+import { UsersTable } from './UsersTable';
 
 const ROLE_OPTIONS = [
   { value: 'all', label: '전체 역할' },

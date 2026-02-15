@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { setupScrollDepthTracking, trackLandingViewed } from '@/lib/analytics/landing-tracker';
+import { setupScrollDepthTracking, trackLandingViewed } from '@/lib/analytics/landingTracker';
 import type { Locale } from '@workspace/shared/i18n';
 
 interface LandingTrackerProps {

@@ -1,4 +1,4 @@
-import { SubmissionManagement } from './_components/submissionManagement';
+import { SubmissionManagement } from './_components/SubmissionManagement';
 
 export default function SubmissionsPage() {
   return (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseAccommodationUrl } from '@/lib/url-parser';
+import { parseAccommodationUrl } from '@/lib/urlParser';
 
 describe('parseAccommodationUrl', (): void => {
   describe('Airbnb URL', (): void => {

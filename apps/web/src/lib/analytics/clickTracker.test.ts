@@ -46,7 +46,7 @@ describe('click-tracker', () => {
     setupDomMocks(sendBeacon);
     vi.resetModules();
 
-    const { trackClickEvent } = await import('./click-tracker');
+    const { trackClickEvent } = await import('./clickTracker');
 
     trackClickEvent({
       eventName: 'nav_pricing',
@@ -63,7 +63,7 @@ describe('click-tracker', () => {
     setupDomMocks(sendBeacon);
     vi.resetModules();
 
-    const { trackClickEvent } = await import('./click-tracker');
+    const { trackClickEvent } = await import('./clickTracker');
 
     trackClickEvent({
       eventName: 'mobile_menu_open',

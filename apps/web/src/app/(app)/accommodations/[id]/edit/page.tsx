@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccommodation } from '@/hooks/useAccommodation';
 import { useUpdateAccommodation } from '@/hooks/useUpdateAccommodation';
-import { parseAccommodationUrl } from '@/lib/url-parser';
+import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
 export default function EditAccommodationPage(): React.ReactElement {

@@ -2,8 +2,8 @@ import { ACTION_EMPTY_DESCRIPTION, ACTION_EMPTY_TITLE } from '@/app/(app)/dashbo
 import type { ActionCard as ActionCardData } from '@/app/(app)/dashboard/_lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 
-import { ActionCard } from './action-card';
-import { LighthouseCalm } from './empty-illustrations';
+import { ActionCard } from './ActionCard';
+import { LighthouseCalm } from './EmptyIllustrations';
 
 interface ActionCenterProps {
   cards: ActionCardData[];

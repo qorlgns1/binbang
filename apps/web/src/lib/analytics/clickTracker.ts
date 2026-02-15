@@ -1,4 +1,4 @@
-import type { LandingClickEventName } from '@/lib/analytics/click-event-names';
+import type { LandingClickEventName } from '@/lib/analytics/clickEventNames';
 import { sendGa4Event } from '@/lib/analytics/gtag';
 
 const DEDUPE_WINDOW_MS = 800;

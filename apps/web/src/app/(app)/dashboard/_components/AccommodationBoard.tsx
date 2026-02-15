@@ -5,16 +5,16 @@ import { useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 
 import { BOARD_EMPTY_TEXT, BOARD_TAB_LABELS, SEVERITY_SCORE } from '@/app/(app)/dashboard/_lib/constants';
-import { trackBoardTabChanged } from '@/app/(app)/dashboard/_lib/dashboard-tracker';
+import { trackBoardTabChanged } from '@/app/(app)/dashboard/_lib/dashboardTracker';
 import type { BoardTab } from '@/app/(app)/dashboard/_lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Accommodation } from '@/types/accommodation';
 
-import { AccommodationRow } from './accommodation-row';
-import { LighthouseQuiet } from './empty-illustrations';
-import { SectionError } from './section-error';
-import { SectionSkeleton } from './section-skeleton';
+import { AccommodationRow } from './AccommodationRow';
+import { LighthouseQuiet } from './EmptyIllustrations';
+import { SectionError } from './SectionError';
+import { SectionSkeleton } from './SectionSkeleton';
 
 interface AccommodationBoardProps {
   accommodations: Accommodation[];

@@ -2,9 +2,9 @@
 
 import { useUserSubscription } from '@/hooks/useUserSubscription';
 
-import { BillingCard } from './billingCard';
-import { CurrentPlanCard } from './currentPlanCard';
-import { UsageCard } from './usageCard';
+import { BillingCard } from './BillingCard';
+import { CurrentPlanCard } from './CurrentPlanCard';
+import { UsageCard } from './UsageCard';
 
 export function SubscriptionOverview(): React.ReactElement {
   const { data, isLoading, isError } = useUserSubscription();

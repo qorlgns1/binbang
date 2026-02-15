@@ -1,4 +1,4 @@
-import { SubscriptionOverview } from './_components/subscriptionOverview';
+import { SubscriptionOverview } from './_components/SubscriptionOverview';
 
 export const metadata = {
   title: '구독 관리',

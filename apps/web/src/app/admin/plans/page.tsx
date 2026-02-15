@@ -1,4 +1,4 @@
-import { PlansManagement } from './_components/plansManagement';
+import { PlansManagement } from './_components/PlansManagement';
 
 export default function PlansPage() {
   return (

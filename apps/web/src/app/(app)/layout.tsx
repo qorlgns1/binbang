@@ -5,7 +5,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 
-import { AppHeader } from '@/components/app-header';
+import { AppHeader } from '@/components/AppHeader';
 import { authOptions } from '@/lib/auth';
 import { resolveServerLocale } from '@/lib/i18n-runtime/server';
 

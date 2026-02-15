@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import type { ActivityType } from '@/types/activity';
 
-import { ActivityItem } from './activityItem';
+import { ActivityItem } from './ActivityItem';
 
 interface Props {
   userId: string;

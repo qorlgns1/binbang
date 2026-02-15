@@ -5,8 +5,8 @@ import { useMemo, useState } from 'react';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { cn } from '@/lib/utils';
 
-import { PriceChart } from './priceChart';
-import { PriceStatCards } from './priceStatCards';
+import { PriceChart } from './PriceChart';
+import { PriceStatCards } from './PriceStatCards';
 
 type TimeRange = '7d' | '30d' | '90d' | 'all';
 

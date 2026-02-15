@@ -2,8 +2,8 @@
 
 import { Separator } from '@/components/ui/separator';
 
-import { LogsTimeline } from './logsTimeline';
-import { SummaryCards } from './summaryCards';
+import { LogsTimeline } from './LogsTimeline';
+import { SummaryCards } from './SummaryCards';
 
 export function MonitoringDashboard() {
   return (

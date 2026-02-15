@@ -1,4 +1,4 @@
-import { ThroughputDashboard } from './_components/throughputDashboard';
+import { ThroughputDashboard } from './_components/ThroughputDashboard';
 
 export default function ThroughputPage() {
   return (

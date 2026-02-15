@@ -21,8 +21,8 @@
 export * from './types';
 
 // URL Parser / Builder (pure)
-export { parseAccommodationUrl } from './url-parser';
-export { buildAccommodationUrl } from './url-builder';
+export { parseAccommodationUrl } from './urlParser';
+export { buildAccommodationUrl } from './urlBuilder';
 
 // Checker utilities (pure)
 export { parsePrice } from './checkers/priceParser';

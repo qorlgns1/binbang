@@ -15,8 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import type { AdminUserInfo } from '@/types/admin';
 
-import { PlanChangeDialog } from './planChangeDialog';
-import { RoleChangeDialog } from './roleChangeDialog';
+import { PlanChangeDialog } from './PlanChangeDialog';
+import { RoleChangeDialog } from './RoleChangeDialog';
 
 const TABLE_SKELETON_KEYS = ['user-row-1', 'user-row-2', 'user-row-3', 'user-row-4', 'user-row-5'];
 

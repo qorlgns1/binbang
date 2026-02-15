@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useMessages, useTranslations } from 'next-intl';
 
-import { CTAButtons } from './CTAButtons';
+import { CTAButtons } from './CtaButtons';
 import { StatusDashboardSlot } from './StatusDashboardSlot';
 
 /**

@@ -1,4 +1,4 @@
-import { CaseManagement } from './_components/caseManagement';
+import { CaseManagement } from './_components/CaseManagement';
 
 export default function CasesPage() {
   return (

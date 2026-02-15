@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { RecentLog } from '@/types/accommodation';
 
-import { LighthouseQuiet } from './empty-illustrations';
-import { EventRow } from './event-row';
-import { SectionError } from './section-error';
-import { SectionSkeleton } from './section-skeleton';
+import { LighthouseQuiet } from './EmptyIllustrations';
+import { EventRow } from './EventRow';
+import { SectionError } from './SectionError';
+import { SectionSkeleton } from './SectionSkeleton';
 
 interface RecentEventsProps {
   events: RecentLog[];

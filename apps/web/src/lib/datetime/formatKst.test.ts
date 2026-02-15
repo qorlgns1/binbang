@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { KST_TIMEZONE, formatKstDateTime } from './format-kst';
+import { KST_TIMEZONE, formatKstDateTime } from './formatKst';
 
 describe('formatKstDateTime', () => {
   it('forces Asia/Seoul timezone conversion at UTC boundary', () => {

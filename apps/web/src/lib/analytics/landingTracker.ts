@@ -3,7 +3,7 @@
  * Implements TR-001~012 from landing-page-llm-spec.md
  */
 
-import { trackClickEvent } from '@/lib/analytics/click-tracker';
+import { trackClickEvent } from '@/lib/analytics/clickTracker';
 import { sendGa4Event } from '@/lib/analytics/gtag';
 
 type LandingEvent =

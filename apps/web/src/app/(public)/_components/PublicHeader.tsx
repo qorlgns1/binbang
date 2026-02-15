@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { LangToggle } from '@/components/landing/LangToggle';
 import { MobileMenu } from '@/components/landing/MobileMenu';
 import { ThemeToggle } from '@/components/landing/ThemeToggle';
-import { trackClickEvent } from '@/lib/analytics/click-tracker';
+import { trackClickEvent } from '@/lib/analytics/clickTracker';
 import type { Locale } from '@workspace/shared/i18n';
 
 export type PublicHeaderVariant = 'default' | 'landing' | 'pricing' | 'auth' | 'legal';
