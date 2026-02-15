@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { savePricingQuoteSchema } from '@/lib/schemas/pricing-quote';
+import { savePricingQuoteSchema } from '@/lib/schemas/pricingQuote';
 import { getCasePriceQuoteHistory, saveCasePriceQuote } from '@/services/pricing.service';
 
 type ErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'NOT_FOUND' | 'INTERNAL_SERVER_ERROR';
