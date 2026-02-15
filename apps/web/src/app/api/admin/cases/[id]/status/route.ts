@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { transitionCaseStatus } from '@/services/cases.service';
+import { transitionCaseStatus } from '@/services/casesService';
 
 const transitionSchema = z.object({
   status: z.string().min(1, 'status is required'),

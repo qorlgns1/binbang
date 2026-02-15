@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import { checkUserQuota, createAccommodation, getAccommodationsByUserId } from '@/services/accommodations.service';
+import { checkUserQuota, createAccommodation, getAccommodationsByUserId } from '@/services/accommodationsService';
 
 const createAccommodationSchema = z
   .object({

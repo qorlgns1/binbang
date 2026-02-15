@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { checkUserExists, getUserActivity } from '@/services/admin/users.service';
+import { checkUserExists, getUserActivity } from '@/services/admin/usersService';
 import type { ActivityType } from '@/types/activity';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {

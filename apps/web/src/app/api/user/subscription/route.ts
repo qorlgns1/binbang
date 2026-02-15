@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getUserSubscription } from '@/services/user.service';
+import { getUserSubscription } from '@/services/userService';
 
 export async function GET(): Promise<Response> {
   const session = await getServerSession(authOptions);

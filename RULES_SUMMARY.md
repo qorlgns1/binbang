@@ -167,6 +167,39 @@ Client Components:
 
 ---
 
+## Naming Conventions
+
+Applicability:
+
+- Applies to newly created files/folders and explicit rename tasks.
+- Legacy names may remain until migrated by scoped refactor tickets.
+- Repository-wide bulk renames without a bounded migration plan are forbidden.
+
+File naming:
+
+- React component files (`.tsx`) -> `PascalCase`.
+- Non-component source files (`.ts` / utility `.tsx`) -> `camelCase`.
+
+Folder naming:
+
+- Folders -> `kebab-case`.
+
+Next App Router private folders:
+
+- In `apps/web/src/app/**`, non-route implementation folders must use `_` prefix (`_components`, `_hooks`, `_lib`).
+- Naming after `_` should stay consistent within each route subtree.
+
+Required exceptions:
+
+- Next reserved file conventions: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`.
+- Test/snapshot folders: `__tests__`, `__snapshots__`.
+- Locale folders may use BCP-47 names (e.g., `zh-CN`).
+- `packages/db/prisma/migrations/**` directory names are immutable and exempt.
+- Tooling contract filenames may retain upstream naming (e.g., `next-auth.d.ts`).
+- `apps/web/src/components/ui/**` may keep kebab-case component filenames for shadcn compatibility.
+
+---
+
 ## Validation Rules
 
 - After LLM code changes, `pnpm ci:check` at repo root is mandatory before reporting completion.

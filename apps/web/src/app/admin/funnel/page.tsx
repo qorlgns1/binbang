@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatKstDateTime } from '@/lib/datetime/format-kst';
+import { formatKstDateTime } from '@/lib/datetime/formatKst';
 
 import { ClickKpiCards } from './_components/ClickKpiCards';
 import { ConversionMatrix } from './_components/ConversionMatrix';

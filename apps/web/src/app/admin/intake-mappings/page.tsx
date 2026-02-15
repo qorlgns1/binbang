@@ -1,4 +1,4 @@
-import { FormQuestionMappingManagement } from './_components/formQuestionMappingManagement';
+import { FormQuestionMappingManagement } from './_components/FormQuestionMappingManagement';
 
 export default function IntakeMappingsPage() {
   return (

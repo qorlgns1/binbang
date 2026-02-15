@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts', 'radix-ui', '@workspace/shared', '@workspace/db'],
+    optimizePackageImports: ['lucide-react', 'recharts', 'radix-ui', '@workspace/db'],
   },
 };
 

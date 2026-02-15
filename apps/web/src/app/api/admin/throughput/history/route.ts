@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getThroughputHistory } from '@/services/admin/throughput.service';
+import { getThroughputHistory } from '@/services/admin/throughputService';
 
 const paramsSchema = z.object({
   from: z.string().datetime().optional(),

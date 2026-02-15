@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { updateUserPlan } from '@/services/admin/users.service';
+import { updateUserPlan } from '@/services/admin/usersService';
 
 const planUpdateSchema = z.object({
   planName: z.string(),

@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import Script from 'next/script';
 
 import { GoogleAnalytics } from '@/components/analytics';
-import { Providers } from '@/components/providers';
+import { Providers } from '@/components/Providers';
 import { getLocaleForHtmlLang } from '@/lib/i18n-runtime/server';
 import { SUPPORT_EMAIL } from '@/lib/support';
 

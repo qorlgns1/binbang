@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getHealthStatus } from '@/services/health.service';
+import { getHealthStatus } from '@/services/healthService';
 
 export async function GET(): Promise<Response> {
   const isDev = process.env.NODE_ENV === 'development';

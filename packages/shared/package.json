@@ -20,9 +20,14 @@
       "default": "./dist/checkers/index.js"
     },
     "./url-parser": {
-      "types": "./src/url-parser.ts",
-      "development": "./src/url-parser.ts",
-      "default": "./dist/url-parser.js"
+      "types": "./src/urlParser.ts",
+      "development": "./src/urlParser.ts",
+      "default": "./dist/urlParser.js"
+    },
+    "./urlParser": {
+      "types": "./src/urlParser.ts",
+      "development": "./src/urlParser.ts",
+      "default": "./dist/urlParser.js"
     },
     "./i18n": {
       "types": "./src/i18n/index.ts",

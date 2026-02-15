@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { checkEmailExists, createUserWithCredentials } from '@/services/auth.service';
+import { checkEmailExists, createUserWithCredentials } from '@/services/authService';
 
 const signupSchema = z.object({
   email: z.string().email('유효한 이메일을 입력해주세요'),

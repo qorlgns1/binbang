@@ -362,6 +362,12 @@ Boundaries are enforced by import rules, not by discipline.
 
 ## 12. Naming Conventions (Enforced)
 
+### 12.0 Applicability
+
+- This naming policy applies to **newly created files/folders** and **explicit rename tasks**.
+- Pre-existing legacy names MAY remain until migrated by a scoped refactor ticket.
+- Repository-wide bulk renames without an explicit, bounded migration plan are forbidden.
+
 ### 12.1 File Naming
 
 - React component files (`.tsx`) MUST use `PascalCase`.
@@ -384,6 +390,14 @@ Boundaries are enforced by import rules, not by discipline.
 
 - Next.js reserved file conventions MUST be preserved as-is.
   - `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`
+- Test and snapshot convention folders are allowed as-is.
+  - `__tests__`, `__snapshots__`
+- Locale folders MAY use BCP-47 style names.
+  - Example: `ko`, `en`, `ja`, `zh-CN`
+- Prisma migration directories under `packages/db/prisma/migrations/**` are immutable and exempt from folder naming rules.
+- External/tooling contract filenames MAY keep upstream conventions when required for integration.
+  - Example: `next-auth.d.ts`
+- `apps/web/src/components/ui/**` MAY use kebab-case component filenames to keep upstream shadcn-style compatibility.
 
 ---
 

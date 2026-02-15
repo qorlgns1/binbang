@@ -12,12 +12,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { authOptions } from '@/lib/auth';
-import { getAccommodationById } from '@/services/accommodations.service';
+import { getAccommodationById } from '@/services/accommodationsService';
 import type { PageParams } from '@/types/api';
 
-import { PriceTrendSection } from './_components/priceTrendSection';
-import { DeleteButton, ToggleActiveButton } from './actions';
-import { CheckLogList } from './checkLogList';
+import { PriceTrendSection } from './_components/PriceTrendSection';
+import { DeleteButton, ToggleActiveButton } from './Actions';
+import { CheckLogList } from './CheckLogList';
 
 const statusColors: Record<string, string> = {
   AVAILABLE: 'bg-status-success text-status-success-foreground border-transparent',

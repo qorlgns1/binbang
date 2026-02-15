@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { retryNotificationForCase } from '@/services/notifications.service';
+import { retryNotificationForCase } from '@/services/notificationsService';
 
 export async function POST(
   _request: Request,

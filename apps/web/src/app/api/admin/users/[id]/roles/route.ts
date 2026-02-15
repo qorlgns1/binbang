@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { updateUserRoles } from '@/services/admin/users.service';
+import { updateUserRoles } from '@/services/admin/usersService';
 
 const rolesUpdateSchema = z.object({
   roles: z.array(z.string()).min(1, '최소 1개의 역할이 필요합니다'),

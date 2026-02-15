@@ -3,11 +3,11 @@ import { Suspense } from 'react';
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
-import { pauseExpiredAccommodations } from '@/services/accommodations.service';
-import { hasKakaoToken } from '@/services/user.service';
+import { pauseExpiredAccommodations } from '@/services/accommodationsService';
+import { hasKakaoToken } from '@/services/userService';
 
-import { SectionSkeleton } from './_components/section-skeleton';
-import { DashboardContent } from './dashboardContent';
+import { SectionSkeleton } from './_components/SectionSkeleton';
+import { DashboardContent } from './DashboardContent';
 
 export const metadata = {
   title: '대시보드',

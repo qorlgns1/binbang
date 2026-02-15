@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { deletePattern, updatePattern } from '@/services/admin/patterns.service';
+import { deletePattern, updatePattern } from '@/services/admin/patternsService';
 import type { UpdatePatternPayload } from '@/types/admin';
 
 interface RouteParams {

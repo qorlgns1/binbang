@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { getAuditLogs } from '@/services/admin/audit-logs.service';
+import { getAuditLogs } from '@/services/admin/auditLogsService';
 
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();

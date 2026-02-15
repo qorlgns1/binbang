@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getAccommodationPriceHistory } from '@/services/accommodations.service';
+import { getAccommodationPriceHistory } from '@/services/accommodationsService';
 import type { RouteParams } from '@/types/api';
 
 export async function GET(request: NextRequest, { params }: RouteParams): Promise<Response> {

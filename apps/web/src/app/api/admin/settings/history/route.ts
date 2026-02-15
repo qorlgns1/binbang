@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getSettingsHistory } from '@/services/admin/settings.service';
+import { getSettingsHistory } from '@/services/admin/settingsService';
 
 const historyParamsSchema = z.object({
   settingKey: z.string().optional(),

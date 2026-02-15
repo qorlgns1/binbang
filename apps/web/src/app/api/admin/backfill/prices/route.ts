@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { backfillPrices } from '@/services/admin/backfill.service';
+import { backfillPrices } from '@/services/admin/backfillService';
 
 export async function POST(): Promise<Response> {
   const session = await requireAdmin();

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { authOptions } from '@/lib/auth';
 
-import { UserDetailView } from './_components/userDetailView';
+import { UserDetailView } from './_components/UserDetailView';
 
 interface Props {
   params: Promise<{ id: string }>;

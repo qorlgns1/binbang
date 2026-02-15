@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { AuthBrandPanel } from '@/app/(public)/_components/authBrandPanel';
+import { AuthBrandPanel } from '@/app/(public)/_components/AuthBrandPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { LANDING_CLICK_EVENT_NAMES } from '@/lib/analytics/click-event-names';
-import { createLandingClickEvent } from '@/services/analytics-click.service';
+import { LANDING_CLICK_EVENT_NAMES } from '@/lib/analytics/clickEventNames';
+import { createLandingClickEvent } from '@/services/analyticsClickService';
 
 const utcIsoSchema = z
   .string()

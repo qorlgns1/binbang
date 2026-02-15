@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Globe } from 'lucide-react';
 
-import { trackLocaleToggled } from '@/lib/analytics/landing-tracker';
+import { trackLocaleToggled } from '@/lib/analytics/landingTracker';
 import { SUPPORTED_LOCALES, type Locale } from '@workspace/shared/i18n';
 import { cn } from '@/lib/utils';
 

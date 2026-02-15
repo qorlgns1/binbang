@@ -1,4 +1,4 @@
-import { AuditLogTimeline } from './_components/auditLogTimeline';
+import { AuditLogTimeline } from './_components/AuditLogTimeline';
 
 export default function AuditLogsPage() {
   return (

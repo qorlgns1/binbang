@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getThroughputCompare } from '@/services/admin/throughput.service';
+import { getThroughputCompare } from '@/services/admin/throughputService';
 
 const paramsSchema = z.object({
   compareBy: z.enum(['concurrency', 'browserPoolSize']),

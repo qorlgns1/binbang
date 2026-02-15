@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getAccommodationLogs, verifyAccommodationOwnership } from '@/services/accommodations.service';
+import { getAccommodationLogs, verifyAccommodationOwnership } from '@/services/accommodationsService';
 import type { RouteParams } from '@/types/api';
 
 const DEFAULT_LIMIT = 20;

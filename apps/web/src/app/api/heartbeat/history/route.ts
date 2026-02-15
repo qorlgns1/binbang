@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/lib/auth';
-import { getHeartbeatHistory } from '@/services/heartbeat.service';
+import { getHeartbeatHistory } from '@/services/heartbeatService';
 
 /**
  * Handle GET requests for admin-only heartbeat history and return recent heartbeat records.

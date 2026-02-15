@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { getMonitoringLogs } from '@/services/admin/monitoring.service';
+import { getMonitoringLogs } from '@/services/admin/monitoringService';
 
 const logsParamsSchema = z.object({
   status: z.enum(['AVAILABLE', 'UNAVAILABLE', 'ERROR', 'UNKNOWN']).optional(),

@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { trackClickEvent } from '@/lib/analytics/click-tracker';
+import { trackClickEvent } from '@/lib/analytics/clickTracker';
 import type { Locale } from '@workspace/shared/i18n';
 
 const Sheet = dynamic(() => import('@/components/ui/sheet').then((mod) => ({ default: mod.Sheet })), { ssr: false });

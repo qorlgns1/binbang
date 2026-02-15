@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { QuotaExceededError, useCreateAccommodation } from '@/hooks/useCreateAccommodation';
-import { parseAccommodationUrl } from '@/lib/url-parser';
+import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
 export default function NewAccommodationPage(): React.ReactElement {
