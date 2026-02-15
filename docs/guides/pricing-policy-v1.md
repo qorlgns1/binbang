@@ -5,7 +5,7 @@
 ## 정책 메타
 
 - `pricingPolicyVersion`: `v1`
-- 상태: 적용 예정(엔진 구현 전 정책 확정)
+- 상태: 적용 중 (2026-02-15 기준)
 - 기준 문서:
   - `docs/backlog/roadmap/master-backlog-executable-tickets.md` (`P0-10-T1`)
   - `docs/backlog/master-backlog-and-roadmap.md` (5.2)
@@ -83,6 +83,8 @@ roundedAmountKrw = clamp(roundedAmountKrw, 10000, 500000)
 | C10* | OVERRIDE | guardrail | guardrail | guardrail | guardrail | 550,000 | 500,000 |
 
 - `C09`, `C10`은 하한/상한 검증용 guardrail 벡터다.
+- `OVERRIDE`는 실제 입력 플랫폼 값이 아니며 guardrail 계산 전용 placeholder다.
+- `guardrail` 필드는 검증/테스트 전용 표기이며 실제 운영 입력 필드값이 아니다.
 
 ## 정책 변경 절차
 

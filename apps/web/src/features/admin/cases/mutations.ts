@@ -3,7 +3,7 @@
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { adminKeys } from '@/lib/queryKeys';
-import type { CaseDetail, CaseMessageItem, PricingInputSnapshot } from './queries';
+import type { CaseDetail, CaseMessageItem, CasePricePreview, PricingInputSnapshot } from './queries';
 
 // ============================================================================
 // Types
@@ -63,12 +63,8 @@ interface SaveCasePriceQuoteVariables extends PricingInputSnapshot {
 
 interface SaveCasePriceQuoteResponse {
   ok: true;
-  data: {
+  data: CasePricePreview & {
     quoteId: string;
-    caseId: string;
-    pricingPolicyVersion: 'v1';
-    computedAmountKrw: number;
-    roundedAmountKrw: number;
     changeReason: string;
     isActive: boolean;
     createdBy: string;
