@@ -3,10 +3,13 @@
 import { useMemo } from 'react';
 
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 
 import { BOARD_EMPTY_TEXT, BOARD_TAB_LABELS, SEVERITY_SCORE } from '@/app/(app)/dashboard/_lib/constants';
 import { trackBoardTabChanged } from '@/app/(app)/dashboard/_lib/dashboardTracker';
 import type { BoardTab } from '@/app/(app)/dashboard/_lib/types';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Accommodation } from '@/types/accommodation';
@@ -94,7 +97,15 @@ export function AccommodationBoard({
   if (isError) {
     return (
       <section>
-        <h2 className='mb-3 text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+        <div className='mb-3 flex items-center justify-between'>
+          <h2 className='text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+          <Button asChild size='sm'>
+            <Link href='/accommodations/new'>
+              <Plus className='mr-1.5 size-4' />
+              숙소 추가
+            </Link>
+          </Button>
+        </div>
         <SectionError onRetry={onRetry} />
       </section>
     );
@@ -103,7 +114,15 @@ export function AccommodationBoard({
   if (isLoading) {
     return (
       <section>
-        <h2 className='mb-3 text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+        <div className='mb-3 flex items-center justify-between'>
+          <h2 className='text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+          <Button asChild size='sm'>
+            <Link href='/accommodations/new'>
+              <Plus className='mr-1.5 size-4' />
+              숙소 추가
+            </Link>
+          </Button>
+        </div>
         <SectionSkeleton variant='board' />
       </section>
     );
@@ -121,7 +140,15 @@ export function AccommodationBoard({
 
   return (
     <section>
-      <h2 className='mb-3 text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+      <div className='mb-3 flex items-center justify-between'>
+        <h2 className='text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+        <Button asChild size='sm'>
+          <Link href='/accommodations/new'>
+            <Plus className='mr-1.5 size-4' />
+            숙소 추가
+          </Link>
+        </Button>
+      </div>
       <Card>
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <CardHeader className='border-b'>
