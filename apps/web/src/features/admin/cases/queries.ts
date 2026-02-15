@@ -194,7 +194,10 @@ export function useCaseDetailQuery(id: string): UseCaseDetailQueryResult {
   });
 }
 
-export function useCasePricePreviewQuery(caseId: string, input: PricingInputSnapshot | null): UseCasePricePreviewQueryResult {
+export function useCasePricePreviewQuery(
+  caseId: string,
+  input: PricingInputSnapshot | null,
+): UseCasePricePreviewQueryResult {
   const previewKey: Record<string, string> =
     input === null
       ? {}

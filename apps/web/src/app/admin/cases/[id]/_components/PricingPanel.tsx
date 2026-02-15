@@ -124,7 +124,9 @@ export function PricingPanel({ caseId }: Props) {
             <Label>플랫폼</Label>
             <Select
               value={input.platform}
-              onValueChange={(value: PricingInputSnapshot['platform']) => setInput((prev) => ({ ...prev, platform: value }))}
+              onValueChange={(value: PricingInputSnapshot['platform']) =>
+                setInput((prev) => ({ ...prev, platform: value }))
+              }
             >
               <SelectTrigger className='w-full'>
                 <SelectValue />
@@ -235,9 +237,7 @@ export function PricingPanel({ caseId }: Props) {
             ) : null}
           </div>
 
-          {previewQuery.isError ? (
-            <p className='text-sm text-destructive'>{previewQuery.error.message}</p>
-          ) : null}
+          {previewQuery.isError ? <p className='text-sm text-destructive'>{previewQuery.error.message}</p> : null}
 
           {preview ? (
             <>

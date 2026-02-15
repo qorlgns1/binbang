@@ -15,10 +15,7 @@ export const pricingInputSchema = z.object({
 });
 
 export const savePricingQuoteSchema = pricingInputSchema.extend({
-  changeReason: z
-    .string()
-    .trim()
-    .min(1, 'changeReason is required'),
+  changeReason: z.string().trim().min(1, 'changeReason is required'),
 });
 
 export type PricingInputPayload = z.infer<typeof pricingInputSchema>;
