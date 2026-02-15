@@ -66,9 +66,10 @@ export interface SaveCasePriceQuoteOutput extends PreviewCasePriceQuoteOutput {
   updatedAt: string;
 }
 
-export interface CasePriceQuoteHistoryItem extends PriceQuoteComputation {
+export interface CasePriceQuoteHistoryItem extends Omit<PriceQuoteComputation, 'pricingPolicyVersion'> {
   quoteId: string;
   caseId: string;
+  pricingPolicyVersion: string;
   changeReason: string;
   isActive: boolean;
   changedBy: string;
@@ -312,7 +313,7 @@ export async function getCasePriceQuoteHistory(caseId: string, limit = 50): Prom
     (row): CasePriceQuoteHistoryItem => ({
       quoteId: row.id,
       caseId: row.caseId,
-      pricingPolicyVersion: PRICING_POLICY_VERSION,
+      pricingPolicyVersion: row.pricingPolicyVersion,
       inputsSnapshot: toPricingInputSnapshot(row.inputsSnapshot),
       weightsSnapshot: toPricingWeightSnapshot(row.weightsSnapshot),
       computedAmountKrw: row.computedAmountKrw,

@@ -264,7 +264,7 @@ describe('pricing.service', (): void => {
         {
           id: 'pq-2',
           caseId: 'case-1',
-          pricingPolicyVersion: PRICING_POLICY_VERSION,
+          pricingPolicyVersion: 'v0',
           inputsSnapshot: {
             platform: 'AGODA',
             durationBucket: 'BETWEEN_24H_72H',
@@ -303,7 +303,7 @@ describe('pricing.service', (): void => {
         expect.objectContaining({
           quoteId: 'pq-2',
           caseId: 'case-1',
-          pricingPolicyVersion: PRICING_POLICY_VERSION,
+          pricingPolicyVersion: 'v0',
           roundedAmountKrw: 49000,
           changeReason: 'difficulty up',
           isActive: true,
