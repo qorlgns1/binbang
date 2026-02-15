@@ -25,7 +25,6 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
     other: {
       'naver-site-verification': [process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || ''],
-      'agd-partner-manual-verification': '',
     },
   },
   robots: {
@@ -89,6 +88,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang}>
       <head>
+        <meta name='agd-partner-manual-verification' />
         {/* JSON-LD: locale-specific descriptions from common messages */}
         <script
           type='application/ld+json'
