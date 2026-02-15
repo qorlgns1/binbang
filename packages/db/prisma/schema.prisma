@@ -228,6 +228,7 @@ model HeartbeatHistory {
 enum Platform {
   AIRBNB
   AGODA
+  HOTELBEDS
 }
 
 enum AvailabilityStatus {

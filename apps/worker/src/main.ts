@@ -5,6 +5,7 @@ import {
   type CheckerRuntimeConfig,
   checkAgoda,
   checkAirbnb,
+  checkHotelbeds,
   closeBrowserPool,
   initBrowserPool,
 } from '@workspace/worker-shared/browser';
@@ -246,7 +247,7 @@ async function main(): Promise<void> {
       });
       req.on('end', async (): Promise<void> => {
         try {
-          const { url, platform, checkIn, checkOut, adults } = JSON.parse(body);
+          const { url, platform, checkIn, checkOut, adults, rooms } = JSON.parse(body);
 
           if (!url || !platform) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -256,6 +257,8 @@ async function main(): Promise<void> {
 
           console.log(`Selector test requested: ${platform} - ${url}`);
 
+          const parsedRooms = Number(rooms);
+
           const testAccommodation = {
             id: 'test',
             name: 'Test Accommodation',
@@ -264,7 +267,7 @@ async function main(): Promise<void> {
             checkIn: checkIn ? new Date(checkIn) : new Date(),
             checkOut: checkOut ? new Date(checkOut) : new Date(Date.now() + 86400000),
             adults: adults || 2,
-            rooms: 1,
+            rooms: Number.isFinite(parsedRooms) && parsedRooms > 0 ? parsedRooms : 1,
           };
 
           const testSettings = getSettings();
@@ -279,7 +282,7 @@ async function main(): Promise<void> {
           };
 
           const selectorCache = getPlatformSelectors(platform);
-          const checker = platform === 'AIRBNB' ? checkAirbnb : checkAgoda;
+          const checker = platform === 'AIRBNB' ? checkAirbnb : platform === 'AGODA' ? checkAgoda : checkHotelbeds;
           const result = await checker(testAccommodation, {
             testableAttributes,
             runtimeConfig,

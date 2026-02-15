@@ -22,5 +22,9 @@ export function buildAccommodationUrl(params: BuildUrlParams): string {
       const rooms = params.rooms ?? 1;
       return `${baseUrl}?checkIn=${formatDate(params.checkIn)}&los=${nights}&adults=${params.adults}&rooms=${rooms}&cid=1890020`;
     }
+    case 'HOTELBEDS':
+      return params.url;
+    default:
+      return params.url;
   }
 }

@@ -2,11 +2,13 @@ import type { AccommodationToCheck, CheckResult } from '@workspace/shared';
 
 import { checkAgoda } from './agoda';
 import { checkAirbnb } from './airbnb';
+import { checkHotelbeds } from './hotelbeds';
 import type { CheckerRuntimeConfig } from './baseChecker';
 import type { PlatformSelectorCache } from './selectors';
 
 export { checkAgoda } from './agoda';
 export { checkAirbnb } from './airbnb';
+export { checkHotelbeds } from './hotelbeds';
 export { initBrowserPool, closeBrowserPool, acquireBrowser, releaseBrowser } from './browserPool';
 export type { PlatformSelectorCache, SelectorConfig } from './selectors';
 
@@ -32,6 +34,10 @@ export async function checkAccommodation(
 
   if (accommodation.platform === 'AGODA') {
     return checkAgoda(accommodation, { ...options, selectorCache: options.selectorCache });
+  }
+
+  if (accommodation.platform === 'HOTELBEDS') {
+    return checkHotelbeds(accommodation, { runtimeConfig: options.runtimeConfig });
   }
 
   return {

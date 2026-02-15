@@ -1,6 +1,7 @@
 export const Platform = {
   AIRBNB: 'AIRBNB',
   AGODA: 'AGODA',
+  HOTELBEDS: 'HOTELBEDS',
 } as const;
 
 export type Platform = (typeof Platform)[keyof typeof Platform];
