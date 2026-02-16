@@ -45,8 +45,8 @@ Depends on: MVP (completed)
 
 - [x] P1-2-T1: **PlaceCard 리디자인** — 이미지 4:3 비율, 평점 별 5개, 가격 레벨 DollarSign 아이콘
 - [x] P1-2-T2: **PlaceCard 하단에 [빈방 알림 설정하기] 버튼 강조** — 지도 마커 클릭 시 뜨는 팝업/카드에서도 동일. (기능은 Phase 2·3 연동 시 구현 가능, UI만 선행)
-- [ ] P1-2-T3: WeatherCard 리디자인 - 월별 차트/그래프 시각화, 아이콘 추가
-- [ ] P1-2-T4: CurrencyCard 리디자인 - 환율 변화 트렌드, 계산기 UI
+- [x] P1-2-T3: **WeatherCard 리디자인** — 월별 온도 막대 차트, 아이콘·헤더 정리
+- [x] P1-2-T4: **CurrencyCard 리디자인** — 계산기 입력(금액)×환율, 헤더 아이콘
 - [x] P1-2-T5: **카드 클릭 시 지도 하이라이트** — selectedPlaceId 연동·지도 팬·인포윈도우 (기존 구현)
 - [x] P1-2-T6: **카드 스켈레톤 로딩 UI** — 도구 호출 대기 중 PlaceCard 형태 스켈레톤 2개
 
