@@ -87,9 +87,6 @@ CREATE INDEX "PublicAvailabilitySnapshot_openRate_idx" ON "PublicAvailabilitySna
 CREATE UNIQUE INDEX "PublicAvailabilitySnapshot_publicPropertyId_snapshotDate_key" ON "PublicAvailabilitySnapshot"("publicPropertyId", "snapshotDate");
 
 -- CreateIndex
-CREATE INDEX "PublicAvailabilityPrediction_publicPropertyId_predictedAt_idx" ON "PublicAvailabilityPrediction"("publicPropertyId", "predictedAt");
-
--- CreateIndex
 CREATE UNIQUE INDEX "PublicAvailabilityPrediction_publicPropertyId_predictedAt_key" ON "PublicAvailabilityPrediction"("publicPropertyId", "predictedAt");
 
 -- AddForeignKey

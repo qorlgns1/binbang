@@ -638,6 +638,7 @@ export async function getRegionalAvailabilityData(
     let maxPrice: number | null = null;
     let currency: string | null = null;
     let validCount = 0;
+    let priceValidCount = 0;
 
     for (const property of properties) {
       const snapshot = property.snapshots[0];
@@ -652,6 +653,7 @@ export async function getRegionalAvailabilityData(
 
       if (typeof snapshot.avgPriceAmount === 'number') {
         totalPrice += snapshot.avgPriceAmount;
+        priceValidCount += 1;
 
         if (minPrice === null || snapshot.avgPriceAmount < minPrice) {
           minPrice = snapshot.avgPriceAmount;
@@ -667,7 +669,7 @@ export async function getRegionalAvailabilityData(
     }
 
     const avgOpenRate = validCount > 0 ? totalOpenRate / validCount : 0;
-    const avgPriceAmount = validCount > 0 ? Math.round(totalPrice / validCount) : null;
+    const avgPriceAmount = priceValidCount > 0 ? Math.round(totalPrice / priceValidCount) : null;
 
     return {
       region: {

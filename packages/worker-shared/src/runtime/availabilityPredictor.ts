@@ -67,18 +67,25 @@ function buildReasoning(
 function findNextOccurrence(targetDayOfWeek: number, now: Date): Date {
   const currentDay = now.getUTCDay();
   let daysUntil = targetDayOfWeek - currentDay;
-  if (daysUntil <= 0) daysUntil += DAYS_OF_WEEK;
+  if (daysUntil < 0) daysUntil += DAYS_OF_WEEK;
 
   const nextDate = addUtcDays(startOfUtcDay(now), daysUntil);
   nextDate.setUTCHours(15, 0, 0, 0);
+  if (daysUntil === 0 && nextDate <= now) {
+    return addUtcDays(nextDate, DAYS_OF_WEEK);
+  }
   return nextDate;
 }
 
 export async function generatePredictions(input: GeneratePredictionsInput = {}): Promise<GeneratePredictionsResult> {
   const now = input.now ?? new Date();
-  const windowDays = input.windowDays ?? DEFAULT_PREDICTION_WINDOW_DAYS;
+  const rawWindowDays = input.windowDays ?? DEFAULT_PREDICTION_WINDOW_DAYS;
+  const windowDays =
+    typeof rawWindowDays === 'number' && Number.isFinite(rawWindowDays) && rawWindowDays > 0
+      ? Math.floor(rawWindowDays)
+      : DEFAULT_PREDICTION_WINDOW_DAYS;
   const limit = input.limit ?? 500;
-  const windowStart = startOfUtcDay(addUtcDays(now, -windowDays));
+  const windowStart = startOfUtcDay(addUtcDays(now, -(windowDays - 1)));
   const predictedAt = startOfUtcDay(now);
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

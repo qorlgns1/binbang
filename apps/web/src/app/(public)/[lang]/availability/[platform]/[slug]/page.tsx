@@ -314,7 +314,9 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
               <div className='rounded-lg border border-border/70 bg-card/80 p-3'>
                 <dt className='text-xs text-muted-foreground'>{t('stats.priceRange')}</dt>
                 <dd className='mt-1 text-sm font-medium'>
-                  {data.latestSnapshot
+                  {data.latestSnapshot &&
+                  typeof data.latestSnapshot.minPriceAmount === 'number' &&
+                  typeof data.latestSnapshot.maxPriceAmount === 'number'
                     ? `${formatCurrency(locale, data.latestSnapshot.minPriceAmount, data.latestSnapshot.currency)} - ${formatCurrency(
                         locale,
                         data.latestSnapshot.maxPriceAmount,
