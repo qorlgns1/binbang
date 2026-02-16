@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "title": "{platform} {propertyName} 可订趋势 | Binbang",
+    "description": "查看 {location} 的 {propertyName} 最新可订率、价格区间和替代房源。",
+    "ogDescription": "查看 {platform} 上 {propertyName} 的可订率和价格变化，并立即设置空房提醒。",
+    "descriptionWithData": "{location}的{propertyName}，最近预订率{openRate}{trend}。平均价格{avgPrice}。接收空房提醒",
+    "trendUp": " 上升",
+    "trendDown": " 下降"
+  },
+  "platform": {
+    "AIRBNB": "Airbnb",
+    "AGODA": "Agoda"
+  },
+  "labels": {
+    "unknownLocation": "未知位置"
+  },
+  "list": {
+    "metaTitle": "公开可订列表 | Binbang",
+    "metaDescription": "在一个页面查看公开房源的最新可订率与价格趋势。",
+    "metaOgDescription": "这里汇总了 Binbang 收集的公开房源可订快照，可进入详情页查看趋势。",
+    "heading": "公开可订列表",
+    "subheading": "查看最近观测到的房源，并在详情页继续查看可订率和价格趋势。",
+    "empty": "当前还没有公开可订数据。请在 worker 快照任务执行后再试。",
+    "updatedAt": "最近观测: {value}"
+  },
+  "hero": {
+    "eyebrow": "{platform} 可订快照",
+    "summary": "{location} 的近期预订趋势。当前可订率为 {openRate}。",
+    "window": "统计区间: {window}",
+    "ctaPrimary": "立即设置提醒",
+    "sourceLink": "查看原始房源页"
+  },
+  "stats": {
+    "title": "关键指标",
+    "openRate": "可订率",
+    "avgPrice": "平均价格",
+    "priceRange": "价格区间",
+    "sampleSize": "样本数",
+    "updatedAt": "最近更新时间: {value}",
+    "noData": "正在收集数据"
+  },
+  "trend": {
+    "openRateTitle": "可订率变化",
+    "priceTitle": "均价变化",
+    "vsPrevious": "相比上一期快照",
+    "notEnoughHistory": "需要更多历史快照才能比较"
+  },
+  "prediction": {
+    "title": "空房预测",
+    "nextAvailableAt": "下次可能空房时间",
+    "confidence": "可信度",
+    "confidenceHigh": "高",
+    "confidenceMedium": "中",
+    "confidenceLow": "低",
+    "reasoning": "分析依据",
+    "predictedAt": "预测基准日: {value}",
+    "noData": "预测数据尚不充分。"
+  },
+  "alternatives": {
+    "title": "附近替代房源",
+    "empty": "当前暂无同区域替代房源。"
+  },
+  "cta": {
+    "title": "一有空房就立即收到提醒",
+    "description": "创建 Binbang 免费账号，无需反复刷新预订页面，也能及时收到空房通知。",
+    "button": "免费创建提醒"
+  },
+  "faq": {
+    "title": "常见问题",
+    "q1": "{propertyName} 的可订趋势如何计算？",
+    "a1": "Binbang 会聚合 {platform} 公共页面上的近期检查结果，并以每日快照展示可订率趋势。",
+    "q2": "价格和可订状态会实时变化吗？",
+    "a2": "会。平台库存和价格可能随时变化，建议将此页面作为趋势参考并同时开启提醒。",
+    "q3": "设置提醒需要付费吗？",
+    "a3": "可先使用免费套餐，仅在需要更高频率检查或更多监控房源时再升级。"
+  },
+  "region": {
+    "metaTitle": "{platform} {region}地区住宿预订情况 | Binbang",
+    "metaDescription": "{region}地区{platform}房源{propertyCount}个，平均预订率{avgOpenRate}。查看地区整体价格范围和预订趋势。",
+    "eyebrow": "{platform} 地区统计",
+    "subtitle": "{platform}可查看的{propertyCount}个住宿的预订情况。",
+    "topProperties": "热门房源列表",
+    "stats": {
+      "avgOpenRate": "平均预订率",
+      "avgPrice": "平均价格",
+      "priceRange": "价格范围",
+      "properties": "房源总数"
+    },
+    "cta": {
+      "title": "接收心仪住宿的空房提醒",
+      "description": "查看完地区整体统计后，立即注册感兴趣的住宿，一旦有空房就能收到提醒。",
+      "button": "免费创建提醒"
+    }
+  }
+}

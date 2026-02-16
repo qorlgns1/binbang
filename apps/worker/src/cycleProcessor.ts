@@ -2,12 +2,16 @@ import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
   anonymizeExpiredLandingEventPii,
   createCheckCycle,
+  expireOverdueCases,
   findActiveCaseLinks,
   findActiveAccommodations,
   getSettings,
   loadSettings,
+  refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
   updateHeartbeat,
+  type ActiveAccommodation,
+  type ActiveCaseLink,
   type Job,
   type Queue,
 } from '@workspace/worker-shared/runtime';
@@ -32,6 +36,29 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       const result = await anonymizeExpiredLandingEventPii({ retentionDays });
       console.log(
         `[landing-event-pii-retention] retentionDays=${result.retentionDays} cutoffAt=${result.cutoffAt} anonymized=${result.anonymizedCount}`,
+      );
+      return;
+    }
+
+    if (job.name === 'public-availability-snapshot') {
+      const windowDaysRaw = (job.data as { windowDays?: unknown } | undefined)?.windowDays;
+      let windowDays: number | undefined;
+      if (typeof windowDaysRaw === 'number' && Number.isFinite(windowDaysRaw)) {
+        const floored = Math.floor(windowDaysRaw);
+        windowDays = floored > 0 ? floored : undefined;
+      }
+
+      const result = await refreshPublicAvailabilitySnapshots({ windowDays });
+      console.log(
+        `[public-availability-snapshot] snapshotDate=${result.snapshotDate} window=${result.windowStartAt}~${result.windowEndAt} scanned=${result.scannedAccommodations} properties=${result.upsertedProperties} snapshots=${result.upsertedSnapshots} skippedWithoutKey=${result.skippedWithoutKey} queryMs=${result.queryTimeMs} aggregationMs=${result.aggregationTimeMs} upsertMs=${result.upsertTimeMs}`,
+      );
+      return;
+    }
+
+    if (job.name === 'case-expiration') {
+      const result = await expireOverdueCases();
+      console.log(
+        `[case-expiration] scanned=${result.scannedCount} expired=${result.expiredCount} skippedNoWindow=${result.skippedNoWindow} elapsedMs=${result.elapsedMs}`,
       );
       return;
     }
@@ -65,7 +92,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       return;
     }
 
-    const expectedJobCount = accommodations.reduce((sum, acc) => {
+    const expectedJobCount = accommodations.reduce((sum: number, acc: ActiveAccommodation) => {
       const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
       return sum + Math.max(1, caseLinks.length);
     }, 0);
@@ -80,7 +107,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       maxRetries: settings.checker.maxRetries,
     });
 
-    const jobs = accommodations.flatMap((acc): { name: string; data: CheckJobPayload }[] => {
+    const jobs = accommodations.flatMap((acc: ActiveAccommodation): { name: string; data: CheckJobPayload }[] => {
       const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
 
       const baseData = {
@@ -101,7 +128,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
         return [{ name: 'check', data: baseData }];
       }
 
-      return caseLinks.map((caseLink) => ({
+      return caseLinks.map((caseLink: ActiveCaseLink) => ({
         name: 'check',
         data: {
           ...baseData,

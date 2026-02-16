@@ -39,6 +39,17 @@ describe('getNamespacesForPathname', () => {
     });
   });
 
+  describe('public 라우트 — availability 추가', () => {
+    it('availability detail (/ko/availability/airbnb/sample)', () => {
+      expect(getNamespacesForPathname('/ko/availability/airbnb/sample')).toEqual([
+        'common',
+        'landing',
+        'pricing',
+        'availability',
+      ]);
+    });
+  });
+
   describe('public 라우트 — legal 추가', () => {
     it('terms (/ko/terms)', () => {
       expect(getNamespacesForPathname('/ko/terms')).toEqual(['common', 'landing', 'pricing', 'legal']);
@@ -75,9 +86,9 @@ describe('getNamespacesForPathname', () => {
 });
 
 describe('getAllNamespaces', () => {
-  it('7개 전체 namespace를 반환한다', () => {
+  it('8개 전체 namespace를 반환한다', () => {
     const all = getAllNamespaces();
-    expect(all).toHaveLength(7);
+    expect(all).toHaveLength(8);
     expect(all).toContain('common');
     expect(all).toContain('landing');
     expect(all).toContain('legal');
@@ -85,5 +96,6 @@ describe('getAllNamespaces', () => {
     expect(all).toContain('pricing');
     expect(all).toContain('faq');
     expect(all).toContain('about');
+    expect(all).toContain('availability');
   });
 });

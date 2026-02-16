@@ -24,6 +24,7 @@ const loaders: Record<string, (locale: Locale) => Promise<Record<string, unknown
   pricing: (l) => import(`../../messages/${l}/pricing.json`).then((m) => m.default),
   faq: (l) => import(`../../messages/${l}/faq.json`).then((m) => m.default),
   about: (l) => import(`../../messages/${l}/about.json`).then((m) => m.default),
+  availability: (l) => import(`../../messages/${l}/availability.json`).then((m) => m.default),
 };
 
 export default getRequestConfig(async ({ requestLocale }) => {
