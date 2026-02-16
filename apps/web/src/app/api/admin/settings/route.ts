@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError } from '@/lib/handleServiceError';
 import { getSettings, updateSettings } from '@/services/admin/settings.service';
 
 const settingsUpdateSchema = z.object({
@@ -29,8 +30,7 @@ export async function GET(): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Admin settings GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin settings GET error');
   }
 }
 
@@ -55,14 +55,6 @@ export async function PATCH(request: Request): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Setting "')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof Error && error.message.startsWith('Unknown setting key:')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    console.error('Admin settings PATCH error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin settings PATCH error');
   }
 }

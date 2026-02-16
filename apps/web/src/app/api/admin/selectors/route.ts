@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError } from '@/lib/handleServiceError';
 import { createSelector, getSelectors } from '@/services/admin/selectors.service';
 import type { CreateSelectorPayload } from '@/types/admin';
 
@@ -44,9 +45,6 @@ export async function POST(request: Request): Promise<Response> {
 
     return NextResponse.json({ selector });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Selector with same name already exists') {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    throw error;
+    return handleServiceError(error, 'Admin selector create error');
   }
 }

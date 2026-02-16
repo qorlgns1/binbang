@@ -1,4 +1,5 @@
 import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
+import { ConflictError, NotFoundError } from '@workspace/shared/errors';
 import type {
   CreateSelectorPayload,
   PlatformSelectorItem,
@@ -129,7 +130,7 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
   });
 
   if (existing) {
-    throw new Error('Selector with same name already exists');
+    throw new ConflictError('Selector with same name already exists');
   }
 
   // 생성
@@ -215,7 +216,7 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
   });
 
   if (!existing) {
-    throw new Error('Selector not found');
+    throw new NotFoundError('Selector not found');
   }
 
   // 업데이트
@@ -301,7 +302,7 @@ export async function deleteSelector(input: DeleteSelectorInput): Promise<void> 
   });
 
   if (!existing) {
-    throw new Error('Selector not found');
+    throw new NotFoundError('Selector not found');
   }
 
   await prisma.$transaction(async (tx): Promise<void> => {
