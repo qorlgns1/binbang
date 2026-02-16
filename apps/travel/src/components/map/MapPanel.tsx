@@ -1,6 +1,15 @@
 'use client';
 
-import { APIProvider, AdvancedMarker, Map as GoogleMap, Pin, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps';
+import {
+  APIProvider,
+  AdvancedMarker,
+  InfoWindow,
+  Map as GoogleMap,
+  Pin,
+  useMap,
+  useApiIsLoaded,
+} from '@vis.gl/react-google-maps';
+import { Bell } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { MapEntity } from '@/lib/types';
@@ -9,6 +18,8 @@ interface MapPanelProps {
   entities: MapEntity[];
   selectedEntityId?: string;
   onEntitySelect?: (entityId: string) => void;
+  onAlertClick?: (entityId: string) => void;
+  onCloseInfoWindow?: () => void;
   apiKey: string;
 }
 
@@ -22,7 +33,7 @@ const TYPE_COLORS: Record<string, { background: string; glyph: string }> = {
   attraction: { background: '#10b981', glyph: '#ffffff' },
 };
 
-export function MapPanel({ entities, selectedEntityId, onEntitySelect, apiKey }: MapPanelProps) {
+export function MapPanel({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow, apiKey }: MapPanelProps) {
   if (!apiKey) {
     return (
       <div className='flex h-full items-center justify-center bg-muted/30'>
@@ -44,7 +55,13 @@ export function MapPanel({ entities, selectedEntityId, onEntitySelect, apiKey }:
         disableDefaultUI={false}
         className='h-full w-full'
       >
-        <MapContent entities={entities} selectedEntityId={selectedEntityId} onEntitySelect={onEntitySelect} />
+        <MapContent
+          entities={entities}
+          selectedEntityId={selectedEntityId}
+          onEntitySelect={onEntitySelect}
+          onAlertClick={onAlertClick}
+          onCloseInfoWindow={onCloseInfoWindow}
+        />
       </GoogleMap>
     </APIProvider>
   );
@@ -54,12 +71,15 @@ interface MapContentProps {
   entities: MapEntity[];
   selectedEntityId?: string;
   onEntitySelect?: (entityId: string) => void;
+  onAlertClick?: (entityId: string) => void;
+  onCloseInfoWindow?: () => void;
 }
 
-function MapContent({ entities, selectedEntityId, onEntitySelect }: MapContentProps) {
+function MapContent({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow }: MapContentProps) {
   const map = useMap();
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
 
   const fitEntities = useCallback(() => {
     if (!map || !isLoaded || entities.length === 0) return;
@@ -124,6 +144,25 @@ function MapContent({ entities, selectedEntityId, onEntitySelect }: MapContentPr
           </AdvancedMarker>
         );
       })}
+      {selectedEntity && (
+        <InfoWindow
+          position={{ lat: selectedEntity.latitude, lng: selectedEntity.longitude }}
+          onCloseClick={() => onCloseInfoWindow?.()}
+        >
+          <div className='min-w-[200px] max-w-[280px] p-2 text-left'>
+            <h4 className='font-semibold text-sm text-gray-900 dark:text-gray-100 truncate'>{selectedEntity.name}</h4>
+            <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 capitalize'>{selectedEntity.type}</p>
+            <button
+              type='button'
+              onClick={() => onAlertClick?.(selectedEntity.id)}
+              className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium py-2 px-3 transition-colors'
+            >
+              <Bell className='h-4 w-4 shrink-0' aria-hidden />
+              빈방 알림 설정하기
+            </button>
+          </div>
+        </InfoWindow>
+      )}
     </>
   );
 }

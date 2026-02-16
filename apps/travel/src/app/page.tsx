@@ -2,6 +2,7 @@
 
 import { Compass, Map as MapIcon, MessageSquare } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { MapPanel } from '@/components/map/MapPanel';
@@ -22,6 +23,14 @@ export default function HomePage() {
 
   const handleMapEntitySelect = useCallback((entityId: string) => {
     setSelectedPlaceId(entityId);
+  }, []);
+
+  const handleMapAlertClick = useCallback((_entityId: string) => {
+    toast.info('빈방 알림 기능은 준비 중이에요.');
+  }, []);
+
+  const handleCloseMapInfo = useCallback(() => {
+    setSelectedPlaceId(undefined);
   }, []);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
@@ -72,6 +81,8 @@ export default function HomePage() {
             entities={entities}
             selectedEntityId={selectedPlaceId}
             onEntitySelect={handleMapEntitySelect}
+            onAlertClick={handleMapAlertClick}
+            onCloseInfoWindow={handleCloseMapInfo}
             apiKey={apiKey}
           />
         </div>
