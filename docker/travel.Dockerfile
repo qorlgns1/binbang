@@ -36,7 +36,8 @@ COPY . .
 
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
-ARG DATABASE_URL
+# Prisma generate requires DATABASE_URL at build time (for schema validation only)
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV DATABASE_URL=${DATABASE_URL}
 
 RUN pnpm turbo run build --filter=@workspace/travel
