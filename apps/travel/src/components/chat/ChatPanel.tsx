@@ -138,10 +138,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
               const isLast = idx === messages.length - 1;
               const isStreamingAssistant = status === 'streaming' && isLast && message.role === 'assistant';
               return (
-                <div
-                  key={message.id}
-                  className='py-4 border-b border-border/40 last:border-0 last:pb-2'
-                >
+                <div key={message.id} className='py-4 border-b border-border/40 last:border-0 last:pb-2'>
                   <ChatMessage
                     message={message}
                     onPlaceSelect={onPlaceSelect}
@@ -152,8 +149,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
                 </div>
               );
             })}
-            {status === 'streaming' &&
-              (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
+            {status === 'streaming' && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
               <div className='flex gap-3 py-4' aria-live='polite' aria-busy='true'>
                 <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border/50'>
                   <Bot className='h-4 w-4' aria-hidden />

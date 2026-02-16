@@ -35,7 +35,14 @@ const TYPE_COLORS: Record<string, { background: string; glyph: string }> = {
   attraction: { background: '#10b981', glyph: '#ffffff' },
 };
 
-export function MapPanel({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow, apiKey }: MapPanelProps) {
+export function MapPanel({
+  entities,
+  selectedEntityId,
+  onEntitySelect,
+  onAlertClick,
+  onCloseInfoWindow,
+  apiKey,
+}: MapPanelProps) {
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -123,7 +130,14 @@ interface MapContentProps {
   onLoadTimeout?: () => void;
 }
 
-function MapContent({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow, onLoadTimeout }: MapContentProps) {
+function MapContent({
+  entities,
+  selectedEntityId,
+  onEntitySelect,
+  onAlertClick,
+  onCloseInfoWindow,
+  onLoadTimeout,
+}: MapContentProps) {
   const map = useMap();
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);

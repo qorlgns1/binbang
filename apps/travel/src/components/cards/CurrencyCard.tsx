@@ -36,9 +36,7 @@ export function CurrencyCard({ data }: CurrencyCardProps) {
         {ratesList.map(([currency, rate]) => (
           <div key={currency} className='flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2'>
             <span className='text-sm font-medium'>{currency}</span>
-            <span className='text-sm font-semibold text-primary'>
-              {(amount * rate).toFixed(2)}
-            </span>
+            <span className='text-sm font-semibold text-primary'>{(amount * rate).toFixed(2)}</span>
           </div>
         ))}
       </div>

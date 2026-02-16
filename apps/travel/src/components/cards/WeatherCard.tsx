@@ -9,8 +9,7 @@ interface WeatherCardProps {
   data: WeatherData;
 }
 
-const maxTemp = (monthly: WeatherData['monthly']) =>
-  monthly.length ? Math.max(...monthly.map((m) => m.avgTempC)) : 0;
+const maxTemp = (monthly: WeatherData['monthly']) => (monthly.length ? Math.max(...monthly.map((m) => m.avgTempC)) : 0);
 
 export function WeatherCard({ data }: WeatherCardProps) {
   const peak = useMemo(() => maxTemp(data.monthly), [data.monthly]);

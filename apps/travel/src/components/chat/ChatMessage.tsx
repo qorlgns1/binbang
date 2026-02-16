@@ -48,7 +48,10 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
                   >
                     <Markdown>{part.text}</Markdown>
                     {isStreaming && (
-                      <span className='ml-0.5 inline-block h-4 w-1 animate-pulse rounded-sm bg-primary align-middle' aria-hidden />
+                      <span
+                        className='ml-0.5 inline-block h-4 w-1 animate-pulse rounded-sm bg-primary align-middle'
+                        aria-hidden
+                      />
                     )}
                   </div>
                 );
@@ -58,7 +61,9 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
               const key = toolPart.toolCallId ?? `part-${part.type}`;
               return renderToolPart(part, key, onPlaceSelect, onAlertClick, selectedPlaceId);
             })}
-            <p className='text-[10px] text-muted-foreground mt-1' aria-hidden>방금</p>
+            <p className='text-[10px] text-muted-foreground mt-1' aria-hidden>
+              방금
+            </p>
           </div>
         )}
       </div>
@@ -185,19 +190,19 @@ function CardSkeleton({ key: _key, label }: { key: string; label?: string }) {
         </div>
       )}
       <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
-      {[1, 2].map((i) => (
-        <div key={i} className='overflow-hidden rounded-xl border border-border bg-card'>
-          <div className='h-32 w-full bg-muted animate-pulse' />
-          <div className='space-y-2 p-3'>
-            <div className='h-4 w-[80%] rounded bg-muted animate-pulse' />
-            <div className='h-3 w-3/4 rounded bg-muted animate-pulse' />
-            <div className='flex gap-2'>
-              <div className='h-3 w-12 rounded bg-muted animate-pulse' />
-              <div className='h-3 w-16 rounded bg-muted animate-pulse' />
+        {[1, 2].map((i) => (
+          <div key={i} className='overflow-hidden rounded-xl border border-border bg-card'>
+            <div className='h-32 w-full bg-muted animate-pulse' />
+            <div className='space-y-2 p-3'>
+              <div className='h-4 w-[80%] rounded bg-muted animate-pulse' />
+              <div className='h-3 w-3/4 rounded bg-muted animate-pulse' />
+              <div className='flex gap-2'>
+                <div className='h-3 w-12 rounded bg-muted animate-pulse' />
+                <div className='h-3 w-16 rounded bg-muted animate-pulse' />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
       </div>
     </div>
   );

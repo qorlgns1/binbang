@@ -65,7 +65,10 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
               </div>
             )}
             {place.priceLevel && (
-              <span className='flex items-center gap-0.5 text-xs text-muted-foreground' title={formatPriceLevel(place.priceLevel)}>
+              <span
+                className='flex items-center gap-0.5 text-xs text-muted-foreground'
+                title={formatPriceLevel(place.priceLevel)}
+              >
                 <DollarSign className='h-3 w-3 shrink-0' />
                 {formatPriceLevel(place.priceLevel)}
               </span>

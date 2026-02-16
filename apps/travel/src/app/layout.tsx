@@ -14,9 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang='en' suppressHydrationWarning>
       <body className='min-h-screen overflow-hidden'>
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
+        <ErrorBoundary>{children}</ErrorBoundary>
         <Toaster position='top-center' richColors closeButton />
       </body>
     </html>
