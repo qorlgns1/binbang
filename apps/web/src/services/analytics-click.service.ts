@@ -1,9 +1,9 @@
 import { prisma } from '@workspace/db';
 
-import type { LandingClickEventName } from '@/lib/analytics/clickEventNames';
+import type { LandingEventName } from '@/lib/analytics/clickEventNames';
 
 export interface CreateLandingClickEventInput {
-  eventName: LandingClickEventName;
+  eventName: LandingEventName;
   source?: string;
   sessionId?: string;
   locale?: string;
@@ -16,11 +16,11 @@ export interface CreateLandingClickEventInput {
 
 export interface LandingClickEventRecord {
   eventId: string;
-  eventName: LandingClickEventName;
+  eventName: LandingEventName;
   occurredAt: string;
 }
 
-export async function createLandingClickEvent(input: CreateLandingClickEventInput): Promise<LandingClickEventRecord> {
+export async function createLandingEvent(input: CreateLandingClickEventInput): Promise<LandingClickEventRecord> {
   let occurredAt = new Date();
   if (input.occurredAt) {
     const parsed = new Date(input.occurredAt);
@@ -48,7 +48,10 @@ export async function createLandingClickEvent(input: CreateLandingClickEventInpu
 
   return {
     eventId: created.id,
-    eventName: created.eventName as LandingClickEventName,
+    eventName: created.eventName as LandingEventName,
     occurredAt: created.occurredAt.toISOString(),
   };
 }
+
+/** @deprecated Use createLandingEvent. Kept for tests. */
+export const createLandingClickEvent = createLandingEvent;
