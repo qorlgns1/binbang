@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { MapPanel } from '@/components/map/MapPanel';
+import { OnlineStatus } from '@/components/OnlineStatus';
 import type { MapEntity, PlaceEntity } from '@/lib/types';
 
 export default function HomePage() {
@@ -46,6 +47,7 @@ export default function HomePage() {
           <h1 className='truncate text-base font-bold md:text-lg'>빈방</h1>
         </div>
         <div className='flex shrink-0 items-center gap-2'>
+          <OnlineStatus />
           {entities.length > 0 && (
             <span className='text-xs text-muted-foreground bg-muted hidden rounded-full px-2 py-1 sm:inline-flex'>
               {entities.length}곳

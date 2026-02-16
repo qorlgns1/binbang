@@ -73,7 +73,7 @@ Depends on: MVP (completed)
 ### P1-5: 에러 핸들링
 
 - [x] P1-5-T1: **AI API 실패 시 사용자 친화적 에러 메시지** — 채팅 하단 배너 + "다시 시도" / "닫기" 버튼
-- [ ] P1-5-T2: 네트워크 끊김 감지 및 알림 (온/오프라인 상태 표시)
+- [x] P1-5-T2: **네트워크 끊김 감지 및 알림** — OnlineStatus 컴포넌트, 헤더 온라인/오프라인 표시, 전환 시 토스트
 - [ ] P1-5-T3: 도구 호출(Places/Weather/Currency API) 실패 시 부분 응답 처리
 - [ ] P1-5-T4: Rate limit 초과 시 안내 메시지
 - [x] P1-5-T5: 전역 에러 바운더리 (React Error Boundary) 적용
