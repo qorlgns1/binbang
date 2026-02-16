@@ -27,7 +27,7 @@ export function CurrencyCard({ data }: CurrencyCardProps) {
           min={0}
           step={0.01}
           value={amount}
-          onChange={(e) => setAmount(Number(e.target.value) || 0)}
+          onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
           className='w-20 rounded border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20'
         />
         <span className='text-sm text-muted-foreground'>{data.baseCurrency} =</span>

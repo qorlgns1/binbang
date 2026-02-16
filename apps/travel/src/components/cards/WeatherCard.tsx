@@ -9,10 +9,15 @@ interface WeatherCardProps {
   data: WeatherData;
 }
 
-const maxTemp = (monthly: WeatherData['monthly']) => (monthly.length ? Math.max(...monthly.map((m) => m.avgTempC)) : 0);
+const tempRange = (monthly: WeatherData['monthly']) => {
+  if (!monthly.length) return { min: 0, max: 0 };
+  const temps = monthly.map((m) => m.avgTempC);
+  return { min: Math.min(...temps), max: Math.max(...temps) };
+};
 
 export function WeatherCard({ data }: WeatherCardProps) {
-  const peak = useMemo(() => maxTemp(data.monthly), [data.monthly]);
+  const { min, max } = useMemo(() => tempRange(data.monthly), [data.monthly]);
+  const range = max - min || 1;
   return (
     <div className='my-2 rounded-xl border border-border bg-card p-4'>
       <div className='mb-3 flex items-center gap-2'>
@@ -28,7 +33,7 @@ export function WeatherCard({ data }: WeatherCardProps) {
           <div
             key={m.month}
             className='flex-1 rounded-t bg-amber-500/80 transition-all'
-            style={{ height: peak > 0 ? `${(m.avgTempC / peak) * 100}%` : 0 }}
+            style={{ height: `${((m.avgTempC - min) / range) * 100}%` }}
             title={`${m.monthName}: ${m.avgTempC}°C`}
           />
         ))}

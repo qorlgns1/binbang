@@ -41,17 +41,17 @@ export function ChatMessage({
       <div className={`flex-1 min-w-0 space-y-1.5 ${isUser ? 'text-right' : ''}`}>
         {isUser ? (
           <div className='inline-block rounded-2xl rounded-tr-sm bg-primary/[0.08] dark:bg-primary/15 border border-primary/20 text-foreground px-4 py-2.5 text-sm shadow-sm max-w-[85%]'>
-            {message.parts.map((part) =>
-              part.type === 'text' ? <span key={`text-${part.text.slice(0, 20)}`}>{part.text}</span> : null,
+            {message.parts.map((part, idx) =>
+              part.type === 'text' ? <span key={`text-${message.id ?? 'msg'}-${idx}`}>{part.text}</span> : null,
             )}
           </div>
         ) : (
           <div className='space-y-2'>
-            {message.parts.map((part) => {
+            {message.parts.map((part, idx) => {
               if (part.type === 'text') {
                 return (
                   <div
-                    key={`md-${part.text.slice(0, 30)}`}
+                    key={`md-${message.id ?? 'msg'}-${idx}`}
                     className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 border border-border/50 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-0.5 prose-pre:my-2 prose-pre:rounded-lg prose-pre:bg-muted/80 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/50 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none'
                   >
                     <Markdown>{part.text}</Markdown>
@@ -122,14 +122,16 @@ function renderToolPart(
         return (
           <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
-              // Hover wrapper for map marker highlight; div is intentional (not a form group).
-              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a fieldset.
+              // Hover wrapper for map marker highlight; focus/blur for keyboard a11y (tab order via PlaceCard).
+              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
               <div
                 key={place.placeId}
                 role='group'
                 data-place-id={place.placeId}
                 onMouseEnter={() => onPlaceHover?.(place.placeId)}
                 onMouseLeave={() => onPlaceHover?.(undefined)}
+                onFocus={() => onPlaceHover?.(place.placeId)}
+                onBlur={() => onPlaceHover?.(undefined)}
               >
                 <PlaceCard
                   place={place}
@@ -185,14 +187,15 @@ function renderToolPart(
         return (
           <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
-              // Hover wrapper for map marker highlight; div is intentional (not a form group).
-              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a fieldset.
+              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
               <div
                 key={place.placeId}
                 role='group'
                 data-place-id={place.placeId}
                 onMouseEnter={() => onPlaceHover?.(place.placeId)}
                 onMouseLeave={() => onPlaceHover?.(undefined)}
+                onFocus={() => onPlaceHover?.(place.placeId)}
+                onBlur={() => onPlaceHover?.(undefined)}
               >
                 <PlaceCard
                   place={place}
@@ -225,7 +228,7 @@ function renderToolPart(
   return null;
 }
 
-function CardSkeleton({ key: _key, label }: { key: string; label?: string }) {
+function CardSkeleton({ label }: { label?: string }) {
   return (
     <div className='my-2'>
       {label && (

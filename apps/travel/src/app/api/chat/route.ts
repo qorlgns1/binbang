@@ -11,6 +11,7 @@ export const maxDuration = 60;
 
 const postBodySchema = z.object({
   messages: z.array(z.unknown()).min(1, 'messages array is required'),
+  sessionId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -32,7 +33,10 @@ export async function POST(req: Request) {
     });
   }
 
-  const { messages } = parsed.data as { messages: UIMessage[] };
+  const { messages, sessionId: clientSessionId } = parsed.data as {
+    messages: UIMessage[];
+    sessionId?: string;
+  };
   const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
   const lastUserText =
     lastUserMessage?.parts
@@ -40,10 +44,16 @@ export async function POST(req: Request) {
       .map((p) => p.text)
       .join('') ?? '';
 
+  if (!lastUserText.trim()) {
+    return new Response(JSON.stringify({ error: 'No user message found' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const modelMessages = await convertToModelMessages(messages);
 
-  // Phase 2: use client-provided sessionId (or authenticated userId) for conversation history
-  const sessionId = `server_${Date.now()}`;
+  const sessionId = clientSessionId?.trim() ?? `server_${Date.now()}`;
 
   const result = streamText({
     model: geminiFlashLite,

@@ -14,11 +14,11 @@ interface ChatInputProps {
 export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!isLoading && input.trim()) {
-        onSubmit(e);
+        e.currentTarget.form?.requestSubmit();
       }
     }
   };

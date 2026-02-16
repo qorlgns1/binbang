@@ -52,7 +52,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
             const data = partAny.output as { places: PlaceEntity[] };
             if (data.places) {
               for (const place of data.places) {
-                if (place.latitude && place.longitude) {
+                if (place.latitude != null && place.longitude != null) {
                   entities.push({
                     id: place.placeId,
                     name: place.name,

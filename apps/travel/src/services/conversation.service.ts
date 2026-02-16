@@ -14,7 +14,7 @@ export async function saveConversationMessages(params: SaveMessageParams) {
   const { sessionId, userMessage, assistantMessage, toolCalls, toolResults } = params;
   let { conversationId } = params;
 
-  await prisma.$transaction(async (tx) => {
+  const resultId = await prisma.$transaction(async (tx) => {
     if (!conversationId) {
       const conversation = await tx.travelConversation.create({
         data: {
@@ -50,9 +50,11 @@ export async function saveConversationMessages(params: SaveMessageParams) {
         await tx.travelEntity.createMany({ data: entities });
       }
     }
+
+    return conversationId;
   });
 
-  return conversationId;
+  return resultId;
 }
 
 export async function getConversation(conversationId: string) {

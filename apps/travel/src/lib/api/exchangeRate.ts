@@ -32,6 +32,10 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
       time_last_update_utc?: string;
     };
 
+    if (data.result !== 'success') {
+      return createFallbackRates(base, params.targetCurrencies);
+    }
+
     const allRates = data.conversion_rates ?? data.rates ?? {};
 
     const rates: Record<string, number> = {};

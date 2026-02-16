@@ -36,7 +36,7 @@ COPY . .
 
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
-ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
 RUN pnpm turbo run build --filter=@workspace/travel
