@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError } from '@/lib/handleServiceError';
 import { getThroughputHistory } from '@/services/admin/throughput.service';
 
 const paramsSchema = z.object({
@@ -34,7 +35,6 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Throughput history error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Throughput history error');
   }
 }

@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { ClickKpiCards } from './ClickKpiCards';
 import { ConversionMatrix } from './ConversionMatrix';
 import { DateFilter } from './DateFilter';
+import { GrowthConversionMatrix } from './GrowthConversionMatrix';
+import { GrowthKpiCards } from './GrowthKpiCards';
 import { KpiCards } from './KpiCards';
 
 describe('admin/funnel components', () => {
@@ -48,6 +50,38 @@ describe('admin/funnel components', () => {
           mobileMenuOpen: 2,
           mobileMenuCta: 1,
           total: 15,
+        }}
+      />,
+    );
+
+    expect(html).toMatchSnapshot();
+  });
+
+  it('renders growth KPI cards snapshot', () => {
+    const html = renderToStaticMarkup(
+      <GrowthKpiCards
+        kpis={{
+          organicVisit: 12,
+          availabilityCtaClick: 8,
+          signupCompleted: 4,
+          firstAlertCreated: 2,
+          totalAlertsCreated: 5,
+          alertsPerUser: 2.5,
+        }}
+      />,
+    );
+
+    expect(html).toMatchSnapshot();
+  });
+
+  it('renders growth conversion matrix snapshot', () => {
+    const html = renderToStaticMarkup(
+      <GrowthConversionMatrix
+        conversion={{
+          visitToSignup: 0.333,
+          signupToAlert: 0.5,
+          visitToAlert: 0.167,
+          ctaToSignup: 0.5,
         }}
       />,
     );

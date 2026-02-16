@@ -33,15 +33,15 @@
     "clean": "rm -rf generated node_modules"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.3.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/adapter-pg": "^7.4.0",
+    "@prisma/client": "^7.4.0",
     "pg": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.9",
     "@types/pg": "^8.11.11",
     "dotenv": "^17.2.3",
-    "prisma": "^7.3.0",
+    "prisma": "^7.4.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },

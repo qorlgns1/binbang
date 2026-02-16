@@ -1,1 +1,1 @@
-export { parseAccommodationUrl } from '@workspace/shared/urlParser';
+export { parseAccommodationUrl } from '@workspace/shared';
