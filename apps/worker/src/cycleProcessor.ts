@@ -10,6 +10,8 @@ import {
   refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
   updateHeartbeat,
+  type ActiveAccommodation,
+  type ActiveCaseLink,
   type Job,
   type Queue,
 } from '@workspace/worker-shared/runtime';
@@ -90,7 +92,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       return;
     }
 
-    const expectedJobCount = accommodations.reduce((sum, acc) => {
+    const expectedJobCount = accommodations.reduce((sum: number, acc: ActiveAccommodation) => {
       const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
       return sum + Math.max(1, caseLinks.length);
     }, 0);
@@ -105,7 +107,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       maxRetries: settings.checker.maxRetries,
     });
 
-    const jobs = accommodations.flatMap((acc): { name: string; data: CheckJobPayload }[] => {
+    const jobs = accommodations.flatMap((acc: ActiveAccommodation): { name: string; data: CheckJobPayload }[] => {
       const caseLinks = caseByAccommodationId.get(acc.id) ?? [];
 
       const baseData = {
@@ -126,7 +128,7 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
         return [{ name: 'check', data: baseData }];
       }
 
-      return caseLinks.map((caseLink) => ({
+      return caseLinks.map((caseLink: ActiveCaseLink) => ({
         name: 'check',
         data: {
           ...baseData,
