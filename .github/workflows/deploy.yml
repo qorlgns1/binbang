@@ -27,6 +27,7 @@ jobs:
       image_tag: ${{ steps.vars.outputs.image_tag }}
       web_digest: ${{ steps.digests.outputs.web_digest }}
       worker_digest: ${{ steps.digests.outputs.worker_digest }}
+      travel_digest: ${{ steps.digests.outputs.travel_digest }}
     steps:
       - uses: actions/checkout@v6
 
@@ -57,6 +58,7 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           NEXT_PUBLIC_NAVER_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }}
           NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
 
       - name: Extract digests
         id: digests
@@ -65,8 +67,10 @@ jobs:
         run: |
           web_digest=$(jq -r '.web["containerimage.digest"]' <<<"$METADATA")
           worker_digest=$(jq -r '.worker["containerimage.digest"]' <<<"$METADATA")
+          travel_digest=$(jq -r '.travel["containerimage.digest"]' <<<"$METADATA")
           echo "web_digest=$web_digest" >> "$GITHUB_OUTPUT"
           echo "worker_digest=$worker_digest" >> "$GITHUB_OUTPUT"
+          echo "travel_digest=$travel_digest" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy to OCI
@@ -131,9 +135,11 @@ jobs:
               IMAGE_TAG=${{ needs.docker.outputs.image_tag }}
               WEB_DIGEST=${{ needs.docker.outputs.web_digest }}
               WORKER_DIGEST=${{ needs.docker.outputs.worker_digest }}
+              TRAVEL_DIGEST=${{ needs.docker.outputs.travel_digest }}
               update_env_var IMAGE_TAG "$IMAGE_TAG" .env.production
               update_env_var IMAGE_WEB_DIGEST "$WEB_DIGEST" .env.production
               update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST" .env.production
+              update_env_var IMAGE_TRAVEL_DIGEST "$TRAVEL_DIGEST" .env.production
               update_env_var DEPLOY_SHA "${{ github.sha }}" .env.production
               update_env_var DEPLOYED_AT "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" .env.production
 

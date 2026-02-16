@@ -38,6 +38,16 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  travel:
+    image: kihoonbae/binbang:travel-${IMAGE_TAG}@${IMAGE_TRAVEL_DIGEST}
+    ports:
+      - '3300:3300'
+    networks:
+      - shared-network
+    env_file:
+      - ../.env.production
+    restart: unless-stopped
+
 networks:
   shared-network:
     driver: bridge
