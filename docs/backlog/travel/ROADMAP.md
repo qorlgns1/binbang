@@ -1,4 +1,4 @@
-# AI Travel Planner - Long-term Roadmap
+# 빈방 (Binbang) Travel - Long-term Roadmap
 
 Last updated: 2026-02-16
 Owner: KIHOON BAE
@@ -6,6 +6,25 @@ Owner: KIHOON BAE
 ## Service Vision
 
 mindtrip.ai 스타일의 AI 기반 여행 플래닝 서비스. 실시간 장소 검색, 날씨 분석, 환율 비교를 통합한 대화형 여행 어시스턴트.
+
+**추가 방향(빈방 정체성)**: 유럽 등 인기 여행지의 **상시 품절 숙소**를 추적하여 **무료 취소분**을 선점할 수 있도록 돕는 솔루션으로 확장. AI 채팅으로 장소·숙소 추천과 실시간 날씨·환율을 제공하고, 추천 장소에서 **빈방 알림** 설정까지 한 흐름으로 연결한다.
+
+## Target Persona
+
+**스마트 지름길 탐색가** — 정보 과잉에 지친, 효율 지상주의 여행자. "빈방이 밤새 불을 밝혀둘게요"라는 신뢰감 있는 조력자 톤으로 다가간다.
+
+## Revenue Model
+
+Agoda 제휴 모델 기반. 무료 서비스로 유저 확보 후, 예약 시 레퍼럴 수수료 수익 창출 (Phase 3에서 본격 도입).
+
+## Brand Identity (등대 컨셉)
+
+- **비주얼 모티브**: 어두운 밤바다를 비추는 등대 — 안도감과 길잡이 역할.
+- **톤앤매너**: 다정하고 차분하며 신뢰감 있는 조력자. "당신이 잠든 사이에도 등대는 불을 밝힙니다."
+- **컬러 팔레트** (구체 색상은 UI 확정 시 선택):
+  - **메인**: 딥 네이비 계열 — `#001F3F` 또는 `#1e3a5f` (차콜 블루).
+  - **포인트**: 앰버/골드 계열 — `#FFBF00` 또는 `#e6a23c` (허니 골드).
+  - 가독성·밝기 조정이 필요하면 메인을 `#1e3a5f`, 포인트를 `#e6a23c` 조합 권장.
 
 ## Current State (MVP)
 
@@ -35,7 +54,7 @@ mindtrip.ai 스타일의 AI 기반 여행 플래닝 서비스. 실시간 장소 
 
 | Item | Decision | Rationale |
 |------|----------|-----------|
-| UI/UX | mindtrip.ai 스타일 | 지도+채팅 사이드바 레이아웃이 여행 서비스에 최적 |
+| UI/UX | mindtrip.ai 스타일·시각적 유사도 유지 | 레이아웃(지도+채팅), 스트리밍 카드/마커 UX, 전체적인 비주얼 톤을 mindtrip.ai와 유사하게. 브랜드(등대·컬러)만 빈방 정체성으로 적용 |
 | 인증 | 게스트 우선 + 선택적 로그인 | 진입 장벽 제거, 전환율 향상 |
 | 대화 히스토리 | 풍부함 + 비용 제어 | 목록/검색/자동제목 + sliding window/rate limiting |
 | SEO | 랜딩 + 여행지별 페이지 | AI 자동 생성으로 유지비용 최소화, 유기적 트래픽 확보 |
@@ -59,7 +78,7 @@ Handling    Control
 
 | Phase | Name | Focus | Detail Doc |
 |-------|------|-------|------------|
-| 1 | UI/UX 고도화 | mindtrip 스타일 리디자인 + 모바일 + 에러 핸들링 | [phase1-ui-polish.md](phase1-ui-polish.md) |
+| 1 | UI/UX 고도화 | mindtrip 스타일 유지 + 브랜드(등대/빈방) 반영 + Empty State·PlaceCard CTA + 모바일 + 에러 핸들링 | [phase1-ui-polish.md](phase1-ui-polish.md) |
 | 2 | 인증 + 히스토리 | 게스트 세션 + OAuth + 대화 관리 + 비용 제어 | [phase2-auth-history.md](phase2-auth-history.md) |
 | 3 | 수익화 + 캐싱 | Agoda Affiliate + API 캐싱 + 사전 데이터 로딩 | [phase3-monetization.md](phase3-monetization.md) |
 | 4 | SEO + i18n | 랜딩 페이지 + 여행지 SSR 페이지 + 한/영 다국어 | [phase4-seo-i18n.md](phase4-seo-i18n.md) |
