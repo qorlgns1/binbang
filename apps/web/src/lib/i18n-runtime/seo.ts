@@ -18,7 +18,26 @@ export function getBaseUrl(): string {
 }
 
 /** Public path segments (no leading slash for root). Used for sitemap and canonical. */
-export const PUBLIC_PATHS = ['', '/pricing', '/faq', '/about', '/login', '/signup', '/terms', '/privacy'] as const;
+export const PUBLIC_PATHS = [
+  '',
+  '/availability',
+  '/pricing',
+  '/faq',
+  '/about',
+  '/login',
+  '/signup',
+  '/terms',
+  '/privacy',
+] as const;
+
+function normalizePathSegment(segment: string): string {
+  return encodeURIComponent(segment.trim().toLowerCase());
+}
+
+/** Build canonical public path for dynamic availability pages. */
+export function buildAvailabilityPath(platformSegment: string, slugSegment: string): string {
+  return `/availability/${normalizePathSegment(platformSegment)}/${normalizePathSegment(slugSegment)}`;
+}
 
 /**
  * Build canonical URL and hreflang alternates for a Public page.
