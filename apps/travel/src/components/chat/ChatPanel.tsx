@@ -58,6 +58,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
                     latitude: place.latitude,
                     longitude: place.longitude,
                     type: inferType(place.types),
+                    photoUrl: place.photoUrl,
                   });
                 }
               }
