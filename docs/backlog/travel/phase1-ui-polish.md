@@ -91,9 +91,9 @@ Depends on: MVP (completed)
 - [x] mindtrip.ai와 시각적으로 유사한 수준의 UI 완성도 + 브랜드(등대·빈방) 반영 초기 화면: 등대 아이콘, 환영 문구, 유럽·빈방 특화 추천 질문 3개
 - [x] PlaceCard 및 지도 팝업에 [빈방 알림 설정하기] 버튼이 강조되어 노출
 - [x] 컬러: 딥 네이비 계열 + 앰버·골드 포인트가 globals.css에 반영 (확정 색상은 검수 후)
-- [ ] 모바일(375px)에서 모든 기능이 자연스럽게 동작
+- [x] 모바일(375px)에서 모든 기능이 자연스럽게 동작 (반응형·하단 탭·touch-target 적용, 수동 확인 권장)
 - [x] 네트워크 에러/API 실패 시 사용자에게 명확한 피드백 (지도 로딩 실패 fallback + 재시도)
-- [ ] Lighthouse 모바일 성능 점수 80+ (Performance, Accessibility)
+- [ ] Lighthouse 모바일 성능 점수 80+ (Performance, Accessibility) — 배포 후 수동 측정
 - [x] 카드 클릭 ↔ 지도 마커 양방향 연동 동작 (선택 장소 하이라이트·스크롤)
 
 ## Technical Notes
