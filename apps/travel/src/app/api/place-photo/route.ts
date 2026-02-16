@@ -4,15 +4,33 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const FETCH_TIMEOUT_MS = 10000;
+const MAX_DIMENSION_PX = 4800; // Places API v1 maximum dimension
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const photoName = searchParams.get('photoName');
-  const maxHeightPx = searchParams.get('maxHeightPx') ?? '400';
-  const maxWidthPx = searchParams.get('maxWidthPx') ?? '600';
+  const maxHeightPx = Number.parseInt(searchParams.get('maxHeightPx') ?? '400', 10);
+  const maxWidthPx = Number.parseInt(searchParams.get('maxWidthPx') ?? '600', 10);
 
   if (!photoName) {
     return new Response('Missing photoName parameter', { status: 400 });
+  }
+
+  // Validate photoName format: places/{PLACE_ID}/photos/{PHOTO_RESOURCE}
+  if (!photoName.startsWith('places/') || !photoName.includes('/photos/')) {
+    return new Response('Invalid photoName format', { status: 400 });
+  }
+
+  // Validate image dimensions: 1-4800 pixels (Places API v1 range)
+  if (
+    !Number.isFinite(maxHeightPx) ||
+    !Number.isFinite(maxWidthPx) ||
+    maxHeightPx < 1 ||
+    maxWidthPx < 1 ||
+    maxHeightPx > MAX_DIMENSION_PX ||
+    maxWidthPx > MAX_DIMENSION_PX
+  ) {
+    return new Response('Invalid image dimensions (must be 1-4800)', { status: 400 });
   }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -20,7 +38,7 @@ export async function GET(req: NextRequest) {
     return new Response('Server configuration error', { status: 500 });
   }
 
-  const url = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=${maxHeightPx}&maxWidthPx=${maxWidthPx}&key=${apiKey}`;
+  const url = `https://places.googleapis.com/v1/${encodeURIComponent(photoName)}/media?maxHeightPx=${maxHeightPx}&maxWidthPx=${maxWidthPx}&key=${apiKey}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
