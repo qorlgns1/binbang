@@ -145,7 +145,7 @@ function MapContent({
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
-  const markerRefs = useRef<(unknown)[]>([]);
+  const markerRefs = useRef<unknown[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
 
   useEffect(() => {
