@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "title": "{platform} {propertyName} 예약 가능성 | 빈방",
+    "description": "{location}에 있는 {propertyName}의 최근 예약 가능성, 가격 범위, 대체 숙소를 한 번에 확인하세요.",
+    "descriptionWithData": "{location}의 {propertyName}, 최근 예약률 {openRate}{trend}. 평균 가격 {avgPrice}. 빈방 알림 받기",
+    "trendUp": " 상승세",
+    "trendDown": " 하락세",
+    "ogDescription": "{platform} {propertyName}의 예약 가능성과 가격 추이를 확인하고, 알림을 설정해 빈방이 나오면 바로 받아보세요."
+  },
+  "platform": {
+    "AIRBNB": "에어비앤비",
+    "AGODA": "아고다"
+  },
+  "labels": {
+    "unknownLocation": "위치 정보 없음"
+  },
+  "list": {
+    "metaTitle": "공개 숙소 예약 가능성 목록 | 빈방",
+    "metaDescription": "플랫폼별 공개 숙소의 최근 예약 가능성과 가격 추이를 한 번에 확인하세요.",
+    "metaOgDescription": "빈방이 수집한 공개 숙소 예약 가능성 목록입니다. 상세 페이지에서 추이를 바로 확인할 수 있습니다.",
+    "heading": "공개 예약 가능성 목록",
+    "subheading": "수집된 공개 숙소를 플랫폼별로 확인하고, 상세 페이지에서 오픈율과 가격 추이를 확인하세요.",
+    "empty": "아직 공개 숙소 데이터가 없습니다. 워커 스냅샷 실행 후 다시 확인해주세요.",
+    "updatedAt": "최근 관측: {value}"
+  },
+  "hero": {
+    "eyebrow": "{platform} 예약 가능성 스냅샷",
+    "summary": "{location} 기준 최근 예약 추이입니다. 현재 오픈율은 {openRate} 입니다.",
+    "window": "집계 기간: {window}",
+    "ctaPrimary": "지금 알림 설정",
+    "sourceLink": "원본 숙소 페이지 보기"
+  },
+  "stats": {
+    "title": "핵심 지표",
+    "openRate": "오픈율",
+    "avgPrice": "평균 가격",
+    "priceRange": "가격 범위",
+    "sampleSize": "샘플 수",
+    "updatedAt": "최근 관측 시각: {value}",
+    "noData": "데이터 수집 중"
+  },
+  "trend": {
+    "openRateTitle": "오픈율 변동",
+    "priceTitle": "평균 가격 변동",
+    "vsPrevious": "이전 스냅샷 대비",
+    "notEnoughHistory": "변동 비교를 위한 이전 데이터가 더 필요합니다"
+  },
+  "prediction": {
+    "title": "빈방 예측",
+    "nextAvailableAt": "다음 빈방 예상 시점",
+    "confidence": "신뢰도",
+    "confidenceHigh": "높음",
+    "confidenceMedium": "보통",
+    "confidenceLow": "낮음",
+    "reasoning": "분석 근거",
+    "predictedAt": "예측 기준일: {value}",
+    "noData": "아직 예측할 데이터가 충분하지 않습니다."
+  },
+  "alternatives": {
+    "title": "주변 대체 숙소",
+    "empty": "동일 지역에서 대체 숙소를 아직 찾지 못했습니다."
+  },
+  "cta": {
+    "title": "빈방이 열리는 즉시 알림 받기",
+    "description": "빈방 계정을 무료로 만들고, 예약 페이지를 반복 새로고침하지 않아도 빈방 발생 시 바로 알림을 받아보세요.",
+    "button": "무료로 알림 만들기"
+  },
+  "faq": {
+    "title": "자주 묻는 질문",
+    "q1": "{propertyName} 예약 가능성 추이는 어떻게 계산하나요?",
+    "a1": "빈방은 {platform} 공개 페이지의 최근 체크 결과를 집계해 일 단위 스냅샷으로 오픈율 추이를 보여줍니다.",
+    "q2": "가격과 예약 가능 여부는 실시간으로 바뀌나요?",
+    "a2": "네. 플랫폼 재고와 가격은 수시로 바뀔 수 있어요. 이 페이지로 추이를 확인하고 알림을 함께 설정하는 것을 권장합니다.",
+    "q3": "알림 설정은 유료인가요?",
+    "a3": "무료 요금제로 시작할 수 있으며, 더 빠른 체크 주기나 더 많은 숙소가 필요할 때만 업그레이드하면 됩니다."
+  },
+  "region": {
+    "metaTitle": "{platform} {region} 지역 숙소 예약 현황 | 빈방",
+    "metaDescription": "{region} 지역의 {platform} 숙소 {propertyCount}개, 평균 예약률 {avgOpenRate}. 지역 전체 가격 범위와 예약 추이를 확인하세요.",
+    "eyebrow": "{platform} 지역 통계",
+    "subtitle": "{platform}에서 확인 가능한 {propertyCount}개 숙소의 예약 현황입니다.",
+    "topProperties": "상위 숙소 목록",
+    "stats": {
+      "avgOpenRate": "평균 예약률",
+      "avgPrice": "평균 가격",
+      "priceRange": "가격 범위",
+      "properties": "총 숙소 수"
+    },
+    "cta": {
+      "title": "원하는 숙소의 빈방 알림 받기",
+      "description": "지역 전체 통계를 확인했다면, 이제 관심 숙소를 등록하고 빈방이 생기는 즉시 알림을 받아보세요.",
+      "button": "무료로 알림 만들기"
+    }
+  }
+}

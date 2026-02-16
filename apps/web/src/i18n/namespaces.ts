@@ -10,7 +10,7 @@
 const PUBLIC_BASE = ['common', 'landing', 'pricing'] as const;
 
 /** 모든 namespace (fallback용) */
-const ALL_NAMESPACES = ['common', 'landing', 'legal', 'auth', 'pricing', 'faq', 'about'] as const;
+const ALL_NAMESPACES = ['common', 'landing', 'legal', 'auth', 'pricing', 'faq', 'about', 'availability'] as const;
 
 /** Public pathname의 locale prefix + 첫 세그먼트만 캡처 (하위 경로 무시) */
 const LOCALE_PREFIX_REGEX = /^\/(ko|en|ja|zh-CN|es-419)(?:\/([^/]*))?(?:\/.*)?$/;
@@ -51,6 +51,8 @@ export function getNamespacesForPathname(pathname: string): readonly string[] {
       return [...PUBLIC_BASE, 'faq'];
     case 'about':
       return [...PUBLIC_BASE, 'about'];
+    case 'availability':
+      return [...PUBLIC_BASE, 'availability'];
     case 'login':
     case 'signup':
       return [...PUBLIC_BASE, 'auth'];

@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "title": "Disponibilidad de {propertyName} en {platform} | Binbang",
+    "description": "Revisa la tendencia de disponibilidad, rango de precios y alternativas de {propertyName} en {location}.",
+    "ogDescription": "Consulta la disponibilidad y tendencia de precios de {propertyName} en {platform} y activa alertas al instante.",
+    "descriptionWithData": "{propertyName} en {location}, tasa de reserva reciente {openRate}{trend}. Precio promedio {avgPrice}. Recibir alertas",
+    "trendUp": " en aumento",
+    "trendDown": " en descenso"
+  },
+  "platform": {
+    "AIRBNB": "Airbnb",
+    "AGODA": "Agoda"
+  },
+  "labels": {
+    "unknownLocation": "Ubicación no disponible"
+  },
+  "list": {
+    "metaTitle": "Lista pública de disponibilidad | Binbang",
+    "metaDescription": "Revisa en un solo lugar la disponibilidad y precios recientes de anuncios públicos.",
+    "metaOgDescription": "Explora snapshots públicos de disponibilidad recopilados por Binbang y entra al detalle de cada alojamiento.",
+    "heading": "Lista pública de disponibilidad",
+    "subheading": "Consulta alojamientos observados recientemente y abre cada detalle para ver tendencia de apertura y precio.",
+    "empty": "Aún no hay datos públicos de disponibilidad. Vuelve a intentarlo después de ejecutar el snapshot del worker.",
+    "updatedAt": "Última observación: {value}"
+  },
+  "hero": {
+    "eyebrow": "Resumen de disponibilidad en {platform}",
+    "summary": "Tendencia reciente de reservas en {location}. Tasa de apertura actual: {openRate}.",
+    "window": "Ventana de datos: {window}",
+    "ctaPrimary": "Activar alerta ahora",
+    "sourceLink": "Ver anuncio original"
+  },
+  "stats": {
+    "title": "Métricas clave",
+    "openRate": "Tasa de apertura",
+    "avgPrice": "Precio promedio",
+    "priceRange": "Rango de precios",
+    "sampleSize": "Muestras",
+    "updatedAt": "Última actualización: {value}",
+    "noData": "Recopilando datos"
+  },
+  "trend": {
+    "openRateTitle": "Cambio en tasa de apertura",
+    "priceTitle": "Cambio en precio promedio",
+    "vsPrevious": "Comparado con el snapshot anterior",
+    "notEnoughHistory": "Se necesita más historial para comparar"
+  },
+  "prediction": {
+    "title": "Predicción de disponibilidad",
+    "nextAvailableAt": "Próxima disponibilidad probable",
+    "confidence": "Confianza",
+    "confidenceHigh": "Alta",
+    "confidenceMedium": "Media",
+    "confidenceLow": "Baja",
+    "reasoning": "Análisis",
+    "predictedAt": "Predicción del: {value}",
+    "noData": "Aún no hay suficientes datos para predicciones."
+  },
+  "alternatives": {
+    "title": "Propiedades alternativas cercanas",
+    "empty": "Aún no hay alternativas en la misma zona."
+  },
+  "cta": {
+    "title": "Recibe una alerta apenas se abra una habitación",
+    "description": "Crea una cuenta gratuita en Binbang y recibe alertas sin recargar páginas de reservas.",
+    "button": "Crear alerta gratis"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "q1": "¿Cómo se calcula la tendencia de disponibilidad de {propertyName}?",
+    "a1": "Binbang agrega resultados recientes de verificación en páginas públicas de {platform} y muestra la tendencia diaria de tasa de apertura.",
+    "q2": "¿La disponibilidad y el precio cambian en tiempo real?",
+    "a2": "Sí. El inventario y los precios pueden cambiar en cualquier momento, por eso recomendamos usar esta página como referencia y activar alertas.",
+    "q3": "¿Configurar alertas es de pago?",
+    "a3": "Puedes empezar con un plan gratuito y mejorar solo si necesitas verificaciones más rápidas o más alojamientos monitoreados."
+  },
+  "region": {
+    "metaTitle": "Disponibilidad de Alojamiento {platform} {region} | Binbang",
+    "metaDescription": "{propertyCount} propiedades {platform} en {region}, tasa de reserva promedio {avgOpenRate}. Consulte rangos de precios y tendencias regionales.",
+    "eyebrow": "Estadísticas Regionales {platform}",
+    "subtitle": "Estado de disponibilidad de {propertyCount} propiedades disponibles en {platform}.",
+    "topProperties": "Mejores Propiedades",
+    "stats": {
+      "avgOpenRate": "Tasa Prom. Reserva",
+      "avgPrice": "Precio Promedio",
+      "priceRange": "Rango de Precios",
+      "properties": "Total Propiedades"
+    },
+    "cta": {
+      "title": "Reciba Alertas para su Propiedad Deseada",
+      "description": "Ahora que ha verificado las estadísticas regionales, registre su propiedad de interés y reciba alertas tan pronto como haya vacantes.",
+      "button": "Crear Alerta Gratis"
+    }
+  }
+}
