@@ -79,6 +79,7 @@ function validateCronToken(token: string, min: number, max: number): boolean {
 
   const [base, step] = parts;
   if (step !== undefined && !isPositiveIntegerText(step)) return false;
+  if (step !== undefined && !isInRange(Number(step), 1, max)) return false;
 
   if (base === '*') return true;
 
