@@ -13,11 +13,7 @@ Depends on: Phase 1
 ```
 방문자 → 게스트 세션 (sessionId: UUID, cookie)
          ↓
-<<<<<<< Updated upstream
-       AI 채팅 (게스트: 하루 5대화까지, 초과 시 로그인 유도)
-=======
        AI 채팅 (게스트: 대화 1개, 5턴까지. 초과 시 로그인 유도)
->>>>>>> Stashed changes
          ↓
        저장/히스토리 접근 시 → 로그인 유도 모달
          ↓
