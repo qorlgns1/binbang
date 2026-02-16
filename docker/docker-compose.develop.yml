@@ -39,6 +39,18 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  travel:
+    image: kihoonbae/binbang:travel-develop
+    ports:
+      - '3301:3300'
+    networks:
+      - shared-network
+    env_file:
+      - ../.env.development
+    environment:
+      NODE_ENV: development
+    restart: unless-stopped
+
 networks:
   shared-network:
     driver: bridge
