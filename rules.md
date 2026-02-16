@@ -30,6 +30,7 @@ In case of conflict:
 ```
 apps/
   web/            # Next.js (UI + Server Components + Route Handlers)
+  travel/         # Next.js 여행 앱 (AI planner); apps/web과 동일 레이어 규칙 (DB는 services/** 만)
   worker/         # 워커 엔트리포인트 + wiring만 담당 (로직 금지)
 
 packages/
@@ -227,6 +228,7 @@ Observability records behavior but does not control it.
 
 - `apps/web` Client Components MUST NOT access the database directly or indirectly.
 - `apps/web` Server-side code MAY access the database **only** through `apps/web/src/services/**` (see Section 6).
+- `apps/travel` follows the same rule as `apps/web`: DB access **only** through `apps/travel/src/services/**`; Route Handlers MUST NOT call `prisma.*` directly.
 - `apps/worker` MAY access the database via `@workspace/db` but SHOULD do so via `@workspace/worker-shared/runtime` where possible.
 - `packages/shared` MUST NOT depend on the database.
 - `packages/worker-shared` MAY depend on the database **ONLY** in `runtime/**` (enforced above).
@@ -235,7 +237,7 @@ Observability records behavior but does not control it.
 
 ### 5.3 Query Discipline
 
-- Route Handlers MUST NOT call `prisma.*` directly. They MUST delegate DB work to `apps/web/src/services/**` (see Section 6).
+- Route Handlers MUST NOT call `prisma.*` directly. They MUST delegate DB work to `apps/web/src/services/**` or `apps/travel/src/services/**` (see Section 6).
 - All queries MUST use `select` (no implicit “select all”).
 - Queries inside loops are forbidden.
 - Multi-step logical operations MUST use transactions.
@@ -254,9 +256,11 @@ Observability records behavior but does not control it.
 
 ## 6. Web Layering Rules (App Router: RSC / Actions / Route Handlers)
 
+Applies to both `apps/web` and `apps/travel`. In `apps/travel`, replace `apps/web` with `apps/travel` in paths below.
+
 ### 6.1 Definitions (Enforced)
 
-- **Route Handler**: `apps/web/src/app/api/**/route.ts`
+- **Route Handler**: `apps/web/src/app/api/**/route.ts` (or `apps/travel/src/app/api/**/route.ts`)
 - **Server Component**: default in `app/` unless marked `'use client'`
 - **Server Action**: functions marked with `"use server"` semantics
 
@@ -269,6 +273,8 @@ These three MUST be treated as distinct layers with distinct responsibilities.
 **Single Gate Rule**
 - In `apps/web`, database access is allowed **ONLY** inside:
   - `apps/web/src/services/**`
+- In `apps/travel`, database access is allowed **ONLY** inside:
+  - `apps/travel/src/services/**`
 
 **Route Handlers**
 - `apps/web/src/app/api/**` Route Handlers MUST NOT access the database directly.

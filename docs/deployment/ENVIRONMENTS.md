@@ -62,6 +62,14 @@ Owner: binbang
 - `WORKER_HEALTHY_THRESHOLD_MS`
 - `WORKER_DEGRADED_THRESHOLD_MS`
 
+### Travel app (apps/travel)
+- `GOOGLE_GENERATIVE_AI_API_KEY` — Gemini API (chat)
+- `GOOGLE_MAPS_API_KEY` — server-side Maps (Places etc.)
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — client-side map display
+- `OPENWEATHERMAP_API_KEY` — weather tool
+- `EXCHANGERATE_API_KEY` — exchange rate tool  
+- `DATABASE_URL` — same as common (travel uses `@workspace/db` for conversations/entities)
+
 ## 5) Access and Guardrails
 - Deployment entrypoint: GitHub Actions `deploy.yml`
 - Deployment authority: users with push permission to `main`/`develop` and environment secret access

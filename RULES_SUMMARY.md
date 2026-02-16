@@ -15,6 +15,7 @@
 ## Authoritative Structure
 
 - `apps/web`: Next.js UI, Server Components, Route Handlers.
+- `apps/travel`: Next.js travel app (AI planner); same layering as `apps/web` (DB only via `apps/travel/src/services/**`).
 - `apps/worker`: worker entrypoints and wiring only.
 - `packages/db`: Prisma schema, migrations, DB client ownership.
 - `packages/shared`: universal pure shared code.
@@ -86,13 +87,14 @@ Access policy:
 
 - `apps/web` client components: no DB access.
 - `apps/web` server-side code: DB access only via `apps/web/src/services/**`.
+- `apps/travel`: same as `apps/web` — DB access only via `apps/travel/src/services/**`; Route Handlers must not call `prisma.*` directly.
 - `apps/worker`: may use DB directly, but should prefer `@workspace/worker-shared/runtime`.
 - `packages/shared`: no DB dependency.
 - `packages/worker-shared`: DB allowed only in `runtime/**`.
 
 Query discipline:
 
-- Route Handlers must never call `prisma.*` directly; delegate DB work to `apps/web/src/services/**`.
+- Route Handlers must never call `prisma.*` directly; delegate DB work to `apps/web/src/services/**` (or `apps/travel/src/services/**` for travel).
 - All queries must use `select`.
 - No queries inside loops.
 - Multi-step logical operations must use transactions.
@@ -107,13 +109,14 @@ Migration discipline:
 
 ---
 
-## Web Layering Rules (`apps/web`)
+## Web Layering Rules (`apps/web` and `apps/travel`)
 
-Distinct layers: Route Handlers, Server Components, Server Actions.
+Distinct layers: Route Handlers, Server Components, Server Actions. Same rules apply to `apps/travel`.
 
 Single Gate Rule:
 
 - In `apps/web`, DB access is allowed only inside `apps/web/src/services/**`.
+- In `apps/travel`, DB access is allowed only inside `apps/travel/src/services/**`.
 
 Route Handlers (`apps/web/src/app/api/**/route.ts`):
 

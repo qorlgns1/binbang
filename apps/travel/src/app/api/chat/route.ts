@@ -1,5 +1,6 @@
 import type { UIMessage } from 'ai';
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
+import { z } from 'zod';
 
 import { geminiFlashLite } from '@/lib/ai/model';
 import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
@@ -8,12 +9,30 @@ import { saveConversationMessages } from '@/services/conversation.service';
 
 export const maxDuration = 60;
 
-export async function POST(req: Request) {
-  const body = (await req.json()) as {
-    messages: UIMessage[];
-  };
+const postBodySchema = z.object({
+  messages: z.array(z.unknown()).min(1, 'messages array is required'),
+});
 
-  const { messages } = body;
+export async function POST(req: Request) {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const parsed = postBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { messages } = parsed.data as { messages: UIMessage[] };
   const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
   const lastUserText =
     lastUserMessage?.parts
@@ -22,6 +41,9 @@ export async function POST(req: Request) {
       .join('') ?? '';
 
   const modelMessages = await convertToModelMessages(messages);
+
+  // Phase 2: use client-provided sessionId (or authenticated userId) for conversation history
+  const sessionId = `server_${Date.now()}`;
 
   const result = streamText({
     model: geminiFlashLite,
@@ -32,7 +54,7 @@ export async function POST(req: Request) {
     onFinish: async ({ text, toolCalls, toolResults }) => {
       try {
         await saveConversationMessages({
-          sessionId: `server_${Date.now()}`,
+          sessionId,
           userMessage: lastUserText,
           assistantMessage: text,
           toolCalls: toolCalls as unknown[],
