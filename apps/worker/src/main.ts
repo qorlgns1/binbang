@@ -58,7 +58,10 @@ async function main(): Promise<void> {
   const checkWorker = createCheckWorker(checkWorkerConnection, processCheck, { concurrency: config.concurrency });
 
   // 5. Repeatable job 설정
-  await setupRepeatableJobs(cycleQueue, config.schedule);
+  await setupRepeatableJobs(cycleQueue, config.schedule, {
+    publicAvailabilitySnapshotSchedule: settings.worker.publicAvailabilitySnapshotSchedule,
+    publicAvailabilityWindowDays: settings.worker.publicAvailabilitySnapshotWindowDays,
+  });
 
   // 6. 시작 로그
   console.log(`\nWorker started`);
@@ -192,6 +195,67 @@ async function main(): Promise<void> {
           );
         }
       })();
+      return;
+    }
+
+    if (pathname === '/public-availability-snapshot/run' && req.method === 'POST') {
+      let body = '';
+      req.on('data', (chunk): void => {
+        body += chunk.toString();
+      });
+      req.on('end', (): void => {
+        void (async (): Promise<void> => {
+          let parsed: { windowDays?: unknown } = {};
+          if (body) {
+            try {
+              parsed = JSON.parse(body) as { windowDays?: unknown };
+            } catch {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+              return;
+            }
+          }
+
+          try {
+            const rawWindowDays = parsed.windowDays;
+            const hasWindowDays = rawWindowDays !== undefined;
+            let windowDays: number | undefined;
+            if (typeof rawWindowDays === 'number' && Number.isFinite(rawWindowDays)) {
+              const floored = Math.floor(rawWindowDays);
+              windowDays = floored > 0 ? floored : undefined;
+            }
+
+            if (hasWindowDays && windowDays === undefined) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'windowDays must be a positive integer' }));
+              return;
+            }
+
+            const job = await cycleQueue.add('public-availability-snapshot', {
+              triggeredAt: new Date().toISOString(),
+              windowDays,
+              source: 'manual-admin',
+            });
+
+            res.writeHead(202, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                success: true,
+                message: 'Public availability snapshot job queued',
+                jobId: job.id,
+                windowDays: windowDays ?? null,
+              }),
+            );
+          } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                error: error instanceof Error ? error.message : 'Unknown error',
+              }),
+            );
+          }
+        })();
+      });
       return;
     }
 

@@ -16,6 +16,16 @@ export {
   DEFAULT_LANDING_EVENT_PII_RETENTION_DAYS,
 } from './landingEventRetention';
 export type { LandingEventPiiRetentionInput, LandingEventPiiRetentionResult } from './landingEventRetention';
+export {
+  refreshPublicAvailabilitySnapshots,
+  DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS,
+} from './publicAvailabilitySnapshots';
+export type {
+  RefreshPublicAvailabilitySnapshotsInput,
+  RefreshPublicAvailabilitySnapshotsResult,
+} from './publicAvailabilitySnapshots';
+export { generatePredictions, DEFAULT_PREDICTION_WINDOW_DAYS } from './availabilityPredictor';
+export type { GeneratePredictionsInput, GeneratePredictionsResult } from './availabilityPredictor';
 
 // Heartbeat
 export {

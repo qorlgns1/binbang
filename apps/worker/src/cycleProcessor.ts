@@ -2,10 +2,12 @@ import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
   anonymizeExpiredLandingEventPii,
   createCheckCycle,
+  expireOverdueCases,
   findActiveCaseLinks,
   findActiveAccommodations,
   getSettings,
   loadSettings,
+  refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
   updateHeartbeat,
   type Job,
@@ -32,6 +34,29 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       const result = await anonymizeExpiredLandingEventPii({ retentionDays });
       console.log(
         `[landing-event-pii-retention] retentionDays=${result.retentionDays} cutoffAt=${result.cutoffAt} anonymized=${result.anonymizedCount}`,
+      );
+      return;
+    }
+
+    if (job.name === 'public-availability-snapshot') {
+      const windowDaysRaw = (job.data as { windowDays?: unknown } | undefined)?.windowDays;
+      let windowDays: number | undefined;
+      if (typeof windowDaysRaw === 'number' && Number.isFinite(windowDaysRaw)) {
+        const floored = Math.floor(windowDaysRaw);
+        windowDays = floored > 0 ? floored : undefined;
+      }
+
+      const result = await refreshPublicAvailabilitySnapshots({ windowDays });
+      console.log(
+        `[public-availability-snapshot] snapshotDate=${result.snapshotDate} window=${result.windowStartAt}~${result.windowEndAt} scanned=${result.scannedAccommodations} properties=${result.upsertedProperties} snapshots=${result.upsertedSnapshots} skippedWithoutKey=${result.skippedWithoutKey} queryMs=${result.queryTimeMs} aggregationMs=${result.aggregationTimeMs} upsertMs=${result.upsertTimeMs}`,
+      );
+      return;
+    }
+
+    if (job.name === 'case-expiration') {
+      const result = await expireOverdueCases();
+      console.log(
+        `[case-expiration] scanned=${result.scannedCount} expired=${result.expiredCount} skippedNoWindow=${result.skippedNoWindow} elapsedMs=${result.elapsedMs}`,
       );
       return;
     }
