@@ -70,7 +70,8 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .e
 
 ## 5) Database Migration Policy
 - Migration tool: Prisma Migrate
-- Command: `pnpm --filter @workspace/db exec prisma migrate deploy`
+- **On OCI host** (this document’s procedure): `pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy` — loads `.env.production.local` and `.env.production`.
+- **Alternative (no .local)**: 루트에서 `APP_ENV=production pnpm db:migrate:deploy`는 `.env.production`만 사용합니다. 서버에 `.env.production.local`이 있으면 위 `with-env:production:host` 명령을 사용하세요.
 - Timing: before final `compose up -d`
 - Compatibility: maintain backward-compatible schema for rolling restart windows
 - Prohibited flow: `prisma db push` (repo rule)
