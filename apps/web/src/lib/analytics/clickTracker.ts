@@ -1,4 +1,4 @@
-import type { LandingClickEventName } from '@/lib/analytics/clickEventNames';
+import type { LandingEventName } from '@/lib/analytics/clickEventNames';
 import { sendGa4Event } from '@/lib/analytics/gtag';
 
 const DEDUPE_WINDOW_MS = 800;
@@ -9,7 +9,7 @@ let sessionId: string | null = null;
 let fallbackSequence = 0;
 
 interface TrackClickEventInput {
-  eventName: LandingClickEventName;
+  eventName: LandingEventName;
   source: string;
   locale?: string;
   path?: string;
@@ -39,7 +39,7 @@ function createSessionEntropy(): string {
   return `${Date.now().toString(36)}_${fallbackSequence.toString(36)}`;
 }
 
-function shouldDropDuplicate(eventName: LandingClickEventName, path: string): boolean {
+function shouldDropDuplicate(eventName: LandingEventName, path: string): boolean {
   const key = `${eventName}:${path}`;
   const now = Date.now();
   const previous = recentEvents.get(key);

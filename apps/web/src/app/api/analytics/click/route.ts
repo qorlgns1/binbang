@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
-import { LANDING_CLICK_EVENT_NAMES } from '@/lib/analytics/clickEventNames';
-import { createLandingClickEvent } from '@/services/analytics-click.service';
+import { LANDING_EVENT_NAMES } from '@/lib/analytics/clickEventNames';
+import { createLandingEvent } from '@/services/analytics-click.service';
 
 const utcIsoSchema = z
   .string()
@@ -14,7 +14,7 @@ const utcIsoSchema = z
   });
 
 const bodySchema = z.object({
-  eventName: z.enum(LANDING_CLICK_EVENT_NAMES),
+  eventName: z.enum(LANDING_EVENT_NAMES),
   source: z.string().max(64).optional(),
   sessionId: z.string().max(128).optional(),
   locale: z.string().max(16).optional(),
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const userAgent = request.headers.get('user-agent');
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? null;
-    const data = await createLandingClickEvent({
+    const data = await createLandingEvent({
       eventName: parsed.data.eventName,
       source: parsed.data.source,
       sessionId: parsed.data.sessionId,
