@@ -676,3 +676,83 @@ model CaseMessage {
   @@index([sentById])
   @@index([createdAt])
 }
+
+// ── Public SEO Snapshot ──
+
+model PublicProperty {
+  id                 String   @id @default(cuid())
+  platform           Platform
+  platformPropertyKey String
+  slug               String
+  name               String
+  sourceUrl          String
+  imageUrl           String?
+  description        String?  @db.Text
+  countryKey         String?
+  cityKey            String?
+  addressRegion      String?
+  addressLocality    String?
+  ratingValue        Float?
+  reviewCount        Int?
+  latitude           Float?
+  longitude          Float?
+  lastObservedAt     DateTime?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  snapshots   PublicAvailabilitySnapshot[]
+  predictions PublicAvailabilityPrediction[]
+
+  @@unique([platform, platformPropertyKey])
+  @@unique([platform, slug])
+  @@index([countryKey, cityKey])
+  @@index([isActive])
+}
+
+model PublicAvailabilitySnapshot {
+  id               String         @id @default(cuid())
+  publicPropertyId String
+  publicProperty   PublicProperty @relation(fields: [publicPropertyId], references: [id], onDelete: Cascade)
+  snapshotDate     DateTime
+  windowStartAt    DateTime
+  windowEndAt      DateTime
+  sampleSize       Int
+  availableCount   Int
+  unavailableCount Int
+  errorCount       Int
+  avgPriceAmount   Int?
+  minPriceAmount   Int?
+  maxPriceAmount   Int?
+  currency         String?
+  openRate         Float?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([publicPropertyId, snapshotDate])
+  @@index([snapshotDate])
+  @@index([openRate])
+}
+
+model PublicAvailabilityPrediction {
+  id                    String               @id @default(cuid())
+  publicPropertyId      String
+  publicProperty        PublicProperty       @relation(fields: [publicPropertyId], references: [id], onDelete: Cascade)
+  predictedAt           DateTime             @default(now())
+  nextLikelyAvailableAt DateTime?
+  confidence            PredictionConfidence
+  reasoning             String               @db.Text
+  windowDays            Int                  @default(28)
+  algorithmVersion      String               @default("v1.0")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([publicPropertyId, predictedAt])
+  @@index([publicPropertyId, predictedAt])
+}
+
+enum PredictionConfidence {
+  HIGH
+  MEDIUM
+  LOW
+}
