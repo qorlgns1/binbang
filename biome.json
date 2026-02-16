@@ -148,6 +148,45 @@
       }
     },
     {
+      "includes": ["apps/travel/src/services/**/*.ts", "!apps/travel/src/services/**/*.d.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "filenameCases": ["kebab-case"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/travel/**/*.{ts,tsx}", "!apps/travel/src/services/**/*.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@workspace/worker-shared", "@workspace/worker-shared/*"],
+                    "message": "apps/travel에서 worker 전용 모듈 임포트는 금지입니다. (rules.md 3.2)"
+                  },
+                  {
+                    "group": ["@/generated/prisma", "@/generated/prisma/*"],
+                    "message": "@/generated/prisma 직접 임포트는 금지입니다. @workspace/db를 사용하세요. (rules.md 5.2)"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["apps/web/**/*.{ts,tsx}", "!apps/web/src/services/**/*.{ts,tsx}"],
       "linter": {
         "rules": {

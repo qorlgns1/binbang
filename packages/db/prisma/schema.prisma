@@ -70,6 +70,9 @@ model User {
   selectorChangeLogs SelectorChangeLog[] @relation("SelectorChangeLogBy")
   caseMessages       CaseMessage[]
 
+  // Travel AI
+  travelConversations TravelConversation[]
+
   // 튜토리얼
   tutorialCompletedAt DateTime?
   tutorialDismissedAt DateTime?
@@ -659,6 +662,137 @@ model LandingEvent {
   @@index([sessionId])
 }
 
+// ── Public SEO Snapshot ──
+
+model PublicProperty {
+  id                String   @id @default(cuid())
+  platform          Platform
+  platformPropertyKey String
+  slug              String
+  name              String
+  sourceUrl         String
+  imageUrl          String?
+  description       String?  @db.Text
+  countryKey        String?
+  cityKey           String?
+  addressRegion     String?
+  addressLocality   String?
+  ratingValue       Float?
+  reviewCount       Int?
+  latitude          Float?
+  longitude         Float?
+  lastObservedAt    DateTime?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  snapshots    PublicAvailabilitySnapshot[]
+  predictions  PublicAvailabilityPrediction[]
+
+  @@unique([platform, platformPropertyKey])
+  @@unique([platform, slug])
+  @@index([countryKey, cityKey])
+  @@index([isActive])
+}
+
+model PublicAvailabilitySnapshot {
+  id                String         @id @default(cuid())
+  publicPropertyId  String
+  publicProperty    PublicProperty @relation(fields: [publicPropertyId], references: [id], onDelete: Cascade)
+  snapshotDate      DateTime
+  windowStartAt     DateTime
+  windowEndAt       DateTime
+  sampleSize        Int
+  availableCount    Int
+  unavailableCount  Int
+  errorCount        Int
+  avgPriceAmount    Int?
+  minPriceAmount    Int?
+  maxPriceAmount    Int?
+  currency          String?
+  openRate          Float?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([publicPropertyId, snapshotDate])
+  @@index([snapshotDate])
+  @@index([openRate])
+}
+
+model PublicAvailabilityPrediction {
+  id                    String               @id @default(cuid())
+  publicPropertyId      String
+  publicProperty        PublicProperty       @relation(fields: [publicPropertyId], references: [id], onDelete: Cascade)
+
+  predictedAt           DateTime             @default(now())
+
+  nextLikelyAvailableAt DateTime?
+  confidence            PredictionConfidence
+  reasoning             String               @db.Text
+
+  windowDays            Int                  @default(28)
+  algorithmVersion      String               @default("v1.0")
+
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@unique([publicPropertyId, predictedAt])
+  @@index([publicPropertyId, predictedAt])
+}
+
+enum PredictionConfidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+// ── Travel AI Conversations ──
+
+model TravelConversation {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String?
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages TravelMessage[]
+  entities TravelEntity[]
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model TravelMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String
+  content        String   @db.Text
+  toolCalls      Json?
+  toolResults    Json?
+  createdAt      DateTime @default(now())
+
+  conversation TravelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+model TravelEntity {
+  id             String   @id @default(cuid())
+  conversationId String
+  type           String
+  name           String
+  latitude       Float?
+  longitude      Float?
+  metadata       Json
+  createdAt      DateTime @default(now())
+
+  conversation TravelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
 // ── Operator Messages ──
 
 model CaseMessage {
@@ -675,84 +809,4 @@ model CaseMessage {
   @@index([caseId])
   @@index([sentById])
   @@index([createdAt])
-}
-
-// ── Public SEO Snapshot ──
-
-model PublicProperty {
-  id                 String   @id @default(cuid())
-  platform           Platform
-  platformPropertyKey String
-  slug               String
-  name               String
-  sourceUrl          String
-  imageUrl           String?
-  description        String?  @db.Text
-  countryKey         String?
-  cityKey            String?
-  addressRegion      String?
-  addressLocality    String?
-  ratingValue        Float?
-  reviewCount        Int?
-  latitude           Float?
-  longitude          Float?
-  lastObservedAt     DateTime?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  snapshots   PublicAvailabilitySnapshot[]
-  predictions PublicAvailabilityPrediction[]
-
-  @@unique([platform, platformPropertyKey])
-  @@unique([platform, slug])
-  @@index([countryKey, cityKey])
-  @@index([isActive])
-}
-
-model PublicAvailabilitySnapshot {
-  id               String         @id @default(cuid())
-  publicPropertyId String
-  publicProperty   PublicProperty @relation(fields: [publicPropertyId], references: [id], onDelete: Cascade)
-  snapshotDate     DateTime
-  windowStartAt    DateTime
-  windowEndAt      DateTime
-  sampleSize       Int
-  availableCount   Int
-  unavailableCount Int
-  errorCount       Int
-  avgPriceAmount   Int?
-  minPriceAmount   Int?
-  maxPriceAmount   Int?
-  currency         String?
-  openRate         Float?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  @@unique([publicPropertyId, snapshotDate])
-  @@index([snapshotDate])
-  @@index([openRate])
-}
-
-model PublicAvailabilityPrediction {
-  id                    String               @id @default(cuid())
-  publicPropertyId      String
-  publicProperty        PublicProperty       @relation(fields: [publicPropertyId], references: [id], onDelete: Cascade)
-  predictedAt           DateTime             @default(now())
-  nextLikelyAvailableAt DateTime?
-  confidence            PredictionConfidence
-  reasoning             String               @db.Text
-  windowDays            Int                  @default(28)
-  algorithmVersion      String               @default("v1.0")
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
-
-  @@unique([publicPropertyId, predictedAt])
-  @@index([publicPropertyId, predictedAt])
-}
-
-enum PredictionConfidence {
-  HIGH
-  MEDIUM
-  LOW
 }

@@ -49,7 +49,9 @@
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "KAKAO_CLIENT_ID",
-        "KAKAO_CLIENT_SECRET"
+        "KAKAO_CLIENT_SECRET",
+        "OPENWEATHERMAP_API_KEY",
+        "EXCHANGERATE_API_KEY"
       ],
       "cache": false,
       "persistent": true
@@ -75,6 +77,34 @@
     },
     "@workspace/worker#typecheck": {
       "dependsOn": ["@workspace/worker-shared#build", "@workspace/db#db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
+    },
+    "@workspace/travel#build": {
+      "dependsOn": ["^build", "@workspace/db#db:generate"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GOOGLE_MAPS_API_KEY",
+        "OPENWEATHERMAP_API_KEY",
+        "EXCHANGERATE_API_KEY"
+      ],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "@workspace/travel#dev": {
+      "dependsOn": ["@workspace/db#db:generate"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GOOGLE_MAPS_API_KEY",
+        "OPENWEATHERMAP_API_KEY",
+        "EXCHANGERATE_API_KEY"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "@workspace/travel#typecheck": {
+      "dependsOn": ["@workspace/travel#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
     "clean": {

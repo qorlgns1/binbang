@@ -14,8 +14,12 @@ variable "NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION" {
   default = ""
 }
 
+variable "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" {
+  default = ""
+}
+
 group "default" {
-  targets = ["web", "worker"]
+  targets = ["web", "worker", "travel"]
 }
 
 target "_common" {
@@ -40,4 +44,13 @@ target "worker" {
   inherits   = ["_common"]
   dockerfile = "docker/worker.Dockerfile"
   tags       = ["kihoonbae/binbang:worker-${TAG}"]
+}
+
+target "travel" {
+  inherits   = ["_common"]
+  dockerfile = "docker/travel.Dockerfile"
+  tags       = ["kihoonbae/binbang:travel-${TAG}"]
+  args = {
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  }
 }
