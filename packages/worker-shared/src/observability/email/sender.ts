@@ -10,6 +10,12 @@ export interface SendEmailParams {
   html: string;
 }
 
+/** 호출부(runtime/settings)에서 env를 읽어 전달한다. observability는 process.env에 접근하지 않는다. */
+export interface SendEmailConfig {
+  apiKey: string;
+  from: string;
+}
+
 export type SendEmailResult = 'sent' | 'invalid_config' | 'failed';
 
 // ============================================================================
@@ -18,18 +24,25 @@ export type SendEmailResult = 'sent' | 'invalid_config' | 'failed';
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
+function redactEmail(email: string): string {
+  const at = email.indexOf('@');
+  if (at <= 0) return '***';
+  const local = email.slice(0, at);
+  const domain = email.slice(at);
+  const safeLocal = local.length <= 2 ? `${local[0]}*` : `${local.slice(0, 2)}***`;
+  return `${safeLocal}${domain}`;
+}
+
 /**
  * Resend HTTP API를 통해 이메일을 전송한다.
  *
- * 환경변수 RESEND_API_KEY / EMAIL_FROM이 없으면 'invalid_config'를 반환한다.
- * 이를 통해 이메일이 설정되지 않은 환경에서도 안전하게 동작한다.
+ * config는 runtime/settings getEmailConfig()로 얻어 전달한다. null이면 'invalid_config'를 반환한다.
  */
-export async function sendEmailHttp(params: SendEmailParams): Promise<SendEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-
-  if (!apiKey || !from) {
-    console.warn('[email] RESEND_API_KEY 또는 EMAIL_FROM이 설정되지 않아 이메일을 전송할 수 없습니다.');
+export async function sendEmailHttp(
+  params: SendEmailParams,
+  config: SendEmailConfig | null,
+): Promise<SendEmailResult> {
+  if (!config) {
     return 'invalid_config';
   }
 
@@ -37,25 +50,25 @@ export async function sendEmailHttp(params: SendEmailParams): Promise<SendEmailR
     await axios.post(
       RESEND_API_URL,
       {
-        from,
+        from: config.from,
         to: [params.to],
         subject: params.subject,
         html: params.html,
       },
       {
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${config.apiKey}`,
           'Content-Type': 'application/json',
         },
         timeout: 10_000,
       },
     );
 
-    console.log(`[email] 이메일 전송 성공: ${params.to}`);
+    console.log(`[email] 이메일 전송 성공: ${redactEmail(params.to)}`);
     return 'sent';
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('[email] 이메일 전송 실패:', error.response?.status, error.response?.data);
+      console.error('[email] 이메일 전송 실패:', error.response?.status);
     } else {
       console.error('[email] 이메일 전송 오류:', error instanceof Error ? error.message : error);
     }

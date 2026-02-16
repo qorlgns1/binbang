@@ -8,13 +8,13 @@ import {
   sendKakaoMessageHttp,
 } from '@workspace/worker-shared/observability';
 import { getSettings } from './settings';
-import { getEnv } from './settings/env';
+import { getEmailConfig, getEnv } from './settings/env';
 
 // ── Types ──
 
 export interface NotificationFallbackResult {
   sent: boolean;
-  channel: 'KAKAO' | 'EMAIL';
+  channel: 'KAKAO' | 'EMAIL' | 'NONE';
   failReason?: string;
 }
 
@@ -185,7 +185,7 @@ export async function notifyAvailable(
 
 /**
  * 사용자에게 이메일 알림을 전송한다.
- * User.email이 없으면 false를 반환한다.
+ * User.email이 없거나 이메일 설정(Resend)이 없으면 false를 반환한다.
  */
 export async function sendEmailNotification(params: SendMessageParams): Promise<boolean> {
   const user = await prisma.user.findUnique({
@@ -198,13 +198,22 @@ export async function sendEmailNotification(params: SendMessageParams): Promise<
     return false;
   }
 
+  const emailConfig = getEmailConfig();
+  if (!emailConfig) {
+    console.warn('[email] RESEND_API_KEY 또는 EMAIL_FROM이 설정되지 않아 이메일을 전송할 수 없습니다.');
+    return false;
+  }
+
   const html = buildNotificationEmailHtml(params.title, params.description, params.buttonText, params.buttonUrl);
 
-  const result = await sendEmailHttp({
-    to: user.email,
-    subject: params.title,
-    html,
-  });
+  const result = await sendEmailHttp(
+    {
+      to: user.email,
+      subject: params.title,
+      html,
+    },
+    emailConfig,
+  );
 
   return result === 'sent';
 }
@@ -229,5 +238,5 @@ export async function sendNotificationWithFallback(params: SendMessageParams): P
     return { sent: true, channel: 'EMAIL' };
   }
 
-  return { sent: false, channel: 'EMAIL', failReason: '카카오 및 이메일 모두 전송 실패' };
+  return { sent: false, channel: 'NONE', failReason: '카카오 및 이메일 모두 전송 실패' };
 }

@@ -43,6 +43,7 @@ export async function expireOverdueCases(input: ExpireOverdueCasesInput = {}): P
 
   const activeCases = await prisma.case.findMany({
     where: { status: 'ACTIVE_MONITORING' },
+    orderBy: { id: 'asc' },
     take: batchSize,
     select: {
       id: true,
@@ -68,15 +69,16 @@ export async function expireOverdueCases(input: ExpireOverdueCasesInput = {}): P
     }
 
     await prisma.$transaction(async (tx): Promise<void> => {
-      await tx.case.update({
-        where: { id: c.id },
+      const updateResult = await tx.case.updateMany({
+        where: { id: c.id, status: 'ACTIVE_MONITORING' },
         data: {
           status: 'EXPIRED',
           statusChangedAt: now,
           statusChangedBy: SYSTEM_ACTOR_ID,
         },
-        select: { id: true },
       });
+
+      if (updateResult.count === 0) return;
 
       await tx.caseStatusLog.create({
         data: {
