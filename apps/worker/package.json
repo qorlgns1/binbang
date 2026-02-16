@@ -16,9 +16,9 @@
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
     "@workspace/worker-shared": "workspace:*",
-    "bullmq": "^5.67.3",
+    "bullmq": "^5.69.3",
     "dotenv": "^16.6.0",
-    "ioredis": "^5.9.2",
+    "ioredis": "^5.9.3",
     "playwright": "^1.58.2"
   },
   "devDependencies": {
