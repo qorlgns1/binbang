@@ -1,9 +1,22 @@
 import { prisma } from '@workspace/db';
 import axios from 'axios';
 
-import { type SendMessageParams, sendKakaoMessageHttp } from '@workspace/worker-shared/observability';
+import {
+  type SendMessageParams,
+  buildNotificationEmailHtml,
+  sendEmailHttp,
+  sendKakaoMessageHttp,
+} from '@workspace/worker-shared/observability';
 import { getSettings } from './settings';
-import { getEnv } from './settings/env';
+import { getEmailConfig, getEnv } from './settings/env';
+
+// ── Types ──
+
+export interface NotificationFallbackResult {
+  sent: boolean;
+  channel: 'KAKAO' | 'EMAIL' | 'NONE';
+  failReason?: string;
+}
 
 // ── Kakao Token Management ──
 
@@ -166,4 +179,64 @@ export async function notifyAvailable(
     buttonText: '예약하러 가기',
     buttonUrl: checkUrl,
   });
+}
+
+// ── Email Notification ──
+
+/**
+ * 사용자에게 이메일 알림을 전송한다.
+ * User.email이 없거나 이메일 설정(Resend)이 없으면 false를 반환한다.
+ */
+export async function sendEmailNotification(params: SendMessageParams): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { email: true },
+  });
+
+  if (!user?.email) {
+    console.warn('[email-fallback] 사용자 이메일이 없습니다:', params.userId);
+    return false;
+  }
+
+  const emailConfig = getEmailConfig();
+  if (!emailConfig) {
+    console.warn('[email] RESEND_API_KEY 또는 EMAIL_FROM이 설정되지 않아 이메일을 전송할 수 없습니다.');
+    return false;
+  }
+
+  const html = buildNotificationEmailHtml(params.title, params.description, params.buttonText, params.buttonUrl);
+
+  const result = await sendEmailHttp(
+    {
+      to: user.email,
+      subject: params.title,
+      html,
+    },
+    emailConfig,
+  );
+
+  return result === 'sent';
+}
+
+// ── Fallback Chain: Kakao → Email ──
+
+/**
+ * 카카오 알림을 시도하고, 실패 시 이메일로 자동 전환한다.
+ *
+ * 반환값에 실제 전송된 채널과 실패 사유가 포함된다.
+ */
+export async function sendNotificationWithFallback(params: SendMessageParams): Promise<NotificationFallbackResult> {
+  const kakaoSent = await sendKakaoNotification(params);
+  if (kakaoSent) {
+    return { sent: true, channel: 'KAKAO' };
+  }
+
+  console.log('[fallback] 카카오 실패 → 이메일 전환 시도:', params.userId);
+
+  const emailSent = await sendEmailNotification(params);
+  if (emailSent) {
+    return { sent: true, channel: 'EMAIL' };
+  }
+
+  return { sent: false, channel: 'NONE', failReason: '카카오 및 이메일 모두 전송 실패' };
 }

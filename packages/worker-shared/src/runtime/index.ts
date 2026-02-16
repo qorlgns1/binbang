@@ -28,7 +28,14 @@ export {
 export type { HeartbeatHistoryItem } from './heartbeat';
 
 // Notifications
-export { notifyAvailable, sendKakaoNotification, sendAlertNotification } from './notifications';
+export {
+  notifyAvailable,
+  sendKakaoNotification,
+  sendAlertNotification,
+  sendEmailNotification,
+  sendNotificationWithFallback,
+} from './notifications';
+export type { NotificationFallbackResult } from './notifications';
 
 // Selectors (DB-backed loader; browser receives data via injection)
 export {
@@ -55,6 +62,10 @@ export type { RetryCaseNotificationsOptions, RetryCaseNotificationsResult } from
 // Cases
 export { findActiveCaseLinks } from './cases';
 export type { ActiveCaseLink } from './cases';
+
+// Case expiration
+export { expireOverdueCases } from './caseExpiration';
+export type { ExpireOverdueCasesInput, ExpireOverdueCasesResult } from './caseExpiration';
 
 // Status utilities
 export { determineStatus, nightsBetween, isSameStayDates, shouldSendAvailabilityNotification } from './status';
