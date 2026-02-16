@@ -3,7 +3,11 @@
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ES2023"],
     "jsx": "preserve",
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
       "@/*": ["./src/*"],
       "@/generated/*": ["../../packages/db/generated/*"],
@@ -11,7 +15,9 @@
       "@workspace/db/enums": ["../../packages/db/src/enums.ts"],
       "@workspace/shared": ["../../packages/shared/src"],
       "@workspace/shared/i18n": ["../../packages/shared/src/i18n"]
-    }
+    },
+    "declaration": false,
+    "declarationMap": false
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules", "src/generated"]

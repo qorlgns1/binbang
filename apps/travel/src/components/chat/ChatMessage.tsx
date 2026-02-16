@@ -122,8 +122,11 @@ function renderToolPart(
         return (
           <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
+              // Hover wrapper for map marker highlight; div is intentional (not a form group).
+              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a fieldset.
               <div
                 key={place.placeId}
+                role='group'
                 data-place-id={place.placeId}
                 onMouseEnter={() => onPlaceHover?.(place.placeId)}
                 onMouseLeave={() => onPlaceHover?.(undefined)}
@@ -182,8 +185,11 @@ function renderToolPart(
         return (
           <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
+              // Hover wrapper for map marker highlight; div is intentional (not a form group).
+              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a fieldset.
               <div
                 key={place.placeId}
+                role='group'
                 data-place-id={place.placeId}
                 onMouseEnter={() => onPlaceHover?.(place.placeId)}
                 onMouseLeave={() => onPlaceHover?.(undefined)}
