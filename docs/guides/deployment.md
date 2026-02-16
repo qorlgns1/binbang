@@ -47,3 +47,44 @@ DATABASE_URL=postgresql://username:password@your-db-host:5432/accommodation_moni
 docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
 docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
 ```
+
+### 3) DB 마이그레이션 적용 (필수)
+
+`.env.production`만 사용하는 환경(로컬에서 원격 DB 대상 등)에서는:
+
+```bash
+APP_ENV=production pnpm db:migrate:deploy
+```
+
+**서버(OCI 호스트)에서 배포할 때**는 호스트별 설정(`.env.production.local`)을 쓰는 표준 절차가 따로 있습니다. 이 경우 **배포 SOT**인 [docs/deployment/DEPLOYMENT.md](../deployment/DEPLOYMENT.md)의 "4) Standard Deploy Procedure"를 따르고, 해당 문서의 `pnpm with-env:production:host ... prisma migrate deploy` 명령을 사용하세요.
+
+초기 배포이거나 `systemSettings` 기본값이 비어 있는 환경이라면 아래도 1회 실행합니다.
+
+```bash
+APP_ENV=production pnpm db:seed:deploy
+```
+
+### 4) PublicAvailability 초기 스냅샷 1회 생성 (권장)
+
+`PublicProperty` / `PublicAvailabilitySnapshot` 테이블은 워커 스케줄 실행 전까지 비어 있을 수 있습니다. 배포 직후 즉시 공개 페이지/사이트맵을 채우려면 아래를 1회 실행하세요.
+
+```bash
+APP_ENV=production pnpm with-env:production pnpm --filter @workspace/worker snapshot:public-availability -- --windowDays=30
+```
+
+## 서버 리소스 스냅샷 (2026-02-15 기준)
+
+```text
+OS: Ubuntu 24.04.3 LTS (aarch64)
+CPU: 3 vCPU (ARM Neoverse-N1)
+Memory: total 15Gi / available 13Gi / swap 0B
+Disk(/): total 96G / used 18G / avail 79G (18%)
+```
+
+실시간으로 다시 확인할 때:
+
+```bash
+free -h
+df -h /
+lscpu | head -n 15
+```
