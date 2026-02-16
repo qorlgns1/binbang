@@ -33,6 +33,20 @@ interface EventParams {
 // Session management
 let sessionId: string | null = null;
 const sentEvents = new Set<string>();
+const SEARCH_REFERRER_HOST_KEYWORDS = [
+  'google.',
+  'bing.com',
+  'search.yahoo.com',
+  'duckduckgo.com',
+  'naver.com',
+  'daum.net',
+  'yandex.',
+  'baidu.com',
+] as const;
+
+function clampSource(value: string): string {
+  return value.length > 64 ? value.slice(0, 64) : value;
+}
 
 /**
  * Get or create a persistent session identifier for the current page session.
@@ -84,6 +98,27 @@ function getCommonParams(locale: string, theme: string): EventParams {
   };
 }
 
+function detectOrganicSource(): string | null {
+  const urlParams = new URLSearchParams(window.location.search);
+  const utmMedium = urlParams.get('utm_medium')?.toLowerCase();
+  const utmSource = urlParams.get('utm_source')?.toLowerCase();
+
+  if (utmMedium === 'organic') {
+    return clampSource(utmSource ? `utm:${utmSource}` : 'utm:organic');
+  }
+
+  if (!document.referrer) return null;
+
+  try {
+    const host = new URL(document.referrer).hostname.toLowerCase();
+    const isSearchReferrer = SEARCH_REFERRER_HOST_KEYWORDS.some((keyword): boolean => host.includes(keyword));
+    if (!isSearchReferrer) return null;
+    return clampSource(`referrer:${host}`);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Record a landing page view event, ensuring it is sent at most once per session.
  *
@@ -99,6 +134,14 @@ export function trackLandingViewed(locale: string, theme: string): void {
 
   const params = getCommonParams(locale, theme);
   sendEvent('landing_viewed', params);
+  const organicSource = detectOrganicSource();
+  if (organicSource) {
+    trackClickEvent({
+      eventName: 'organic_landing',
+      source: organicSource,
+      locale,
+    });
+  }
   sentEvents.add(eventKey);
 }
 
@@ -113,6 +156,11 @@ export function trackPrimaryCTAClicked(locale: string, theme: string): void {
   sendEvent('hero_primary_cta_clicked', params);
   trackClickEvent({
     eventName: 'nav_request',
+    source: 'hero_primary_cta',
+    locale,
+  });
+  trackClickEvent({
+    eventName: 'availability_cta',
     source: 'hero_primary_cta',
     locale,
   });
@@ -174,6 +222,11 @@ export function trackLocaleToggled(locale: string, theme: string): void {
 export function trackClosingCTAClicked(locale: string, theme: string): void {
   const params = getCommonParams(locale, theme);
   sendEvent('closing_cta_clicked', params);
+  trackClickEvent({
+    eventName: 'availability_cta',
+    source: 'landing_closing_cta',
+    locale,
+  });
 }
 
 /**

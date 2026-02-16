@@ -34,8 +34,8 @@ export interface GetThroughputCompareInput {
 
 function autoBucketMinutes(fromDate: Date, toDate: Date): number {
   const spanHours = (toDate.getTime() - fromDate.getTime()) / (60 * 60 * 1000);
-  if (spanHours <= 1) return 5;
-  if (spanHours <= 6) return 15;
+  if (spanHours <= 1) return 2;
+  if (spanHours <= 6) return 10;
   if (spanHours <= 24) return 30;
   return 180;
 }

@@ -1,9 +1,9 @@
 import { prisma } from '@workspace/db';
+import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
 
 import { LANDING_CLICK_EVENT_NAMES, type LandingClickEventName } from '@/lib/analytics/clickEventNames';
 import type { FunnelRangePreset } from '@/services/admin/funnel.service';
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_RANGE: FunnelRangePreset = '30d';
 
 export interface AdminFunnelClickTotals {
@@ -41,18 +41,6 @@ export interface GetAdminFunnelClicksInput {
   from?: string;
   to?: string;
   now?: Date;
-}
-
-function startOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
-}
-
-function endOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
-}
-
-function addUtcDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * MS_PER_DAY);
 }
 
 function parseIsoDate(value: string, label: 'from' | 'to'): Date {

@@ -270,6 +270,37 @@ export interface AdminFunnelClicksResponse {
   series: AdminFunnelClickSeriesItem[];
 }
 
+// ── Funnel Growth ──
+
+export interface AdminFunnelGrowthKpis {
+  organicVisit: number;
+  availabilityCtaClick: number;
+  signupCompleted: number;
+  firstAlertCreated: number;
+  totalAlertsCreated: number;
+  alertsPerUser: number;
+}
+
+export interface AdminFunnelGrowthConversion {
+  visitToSignup: number;
+  signupToAlert: number;
+  visitToAlert: number;
+  ctaToSignup: number;
+}
+
+export interface AdminFunnelGrowthSeriesItem extends AdminFunnelGrowthKpis {
+  date: string;
+}
+
+export interface AdminFunnelGrowthResponse {
+  range: { from: string; to: string; timezone: 'UTC' };
+  filter: { from: string; to: string };
+  displayTimezone: 'Asia/Seoul';
+  kpis: AdminFunnelGrowthKpis;
+  conversion: AdminFunnelGrowthConversion;
+  series: AdminFunnelGrowthSeriesItem[];
+}
+
 // ── Platform Selector Management ──
 
 export interface PlatformSelectorItem {

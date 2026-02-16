@@ -9,18 +9,23 @@ import { formatKstDateTime } from '@/lib/datetime/formatKst';
 import { ClickKpiCards } from './_components/ClickKpiCards';
 import { ConversionMatrix } from './_components/ConversionMatrix';
 import { DateFilter, buildUtcFilterFromRange, type FunnelUtcFilter } from './_components/DateFilter';
+import { GrowthConversionMatrix } from './_components/GrowthConversionMatrix';
+import { GrowthKpiCards } from './_components/GrowthKpiCards';
 import { KpiCards } from './_components/KpiCards';
 import { useFunnelClicksQuery } from './_hooks/useFunnelClicksQuery';
+import { useFunnelGrowthQuery } from './_hooks/useFunnelGrowthQuery';
 import { useFunnelQuery } from './_hooks/useFunnelQuery';
 
 export default function FunnelPage() {
   const [filter, setFilter] = useState<FunnelUtcFilter>(() => buildUtcFilterFromRange('30d'));
   const query = useFunnelQuery(filter);
   const clickQuery = useFunnelClicksQuery(filter);
-  const isPending = query.isPending || clickQuery.isPending;
+  const growthQuery = useFunnelGrowthQuery(filter);
+  const isPending = query.isPending || clickQuery.isPending || growthQuery.isPending;
   const errorMessages = [
     query.isError ? query.error.message : null,
     clickQuery.isError ? clickQuery.error.message : null,
+    growthQuery.isError ? growthQuery.error.message : null,
   ].filter((value): value is string => Boolean(value));
   const errorMessage = errorMessages.length > 0 ? errorMessages.join('; ') : null;
 
@@ -64,7 +69,7 @@ export default function FunnelPage() {
         </Card>
       )}
 
-      {query.data && clickQuery.data && (
+      {query.data && clickQuery.data && growthQuery.data && (
         <>
           <Card className='animate-dashboard-enter'>
             <CardHeader>
@@ -105,6 +110,20 @@ export default function FunnelPage() {
               </p>
             </CardContent>
           </Card>
+
+          <Card className='animate-dashboard-enter'>
+            <CardHeader>
+              <CardTitle>Growth 지표 (3차)</CardTitle>
+              <CardDescription>Organic 유입부터 가입/첫 알림 생성까지 전환을 조회합니다.</CardDescription>
+            </CardHeader>
+            <CardContent className='text-sm text-muted-foreground'>
+              {formatKstDateTime(growthQuery.data.filter.from)} ~ {formatKstDateTime(growthQuery.data.filter.to)}
+            </CardContent>
+          </Card>
+
+          <GrowthKpiCards kpis={growthQuery.data.kpis} />
+
+          <GrowthConversionMatrix conversion={growthQuery.data.conversion} />
 
           <Card className='animate-dashboard-enter'>
             <CardHeader>
