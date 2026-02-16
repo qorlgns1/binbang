@@ -18,6 +18,10 @@ variable "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" {
   default = ""
 }
 
+variable "DATABASE_URL" {
+  default = "postgresql://dummy:dummy@localhost:5432/dummy"
+}
+
 group "default" {
   targets = ["web", "worker", "travel"]
 }
@@ -52,5 +56,6 @@ target "travel" {
   tags       = ["kihoonbae/binbang:travel-${TAG}"]
   args = {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    DATABASE_URL                    = DATABASE_URL
   }
 }
