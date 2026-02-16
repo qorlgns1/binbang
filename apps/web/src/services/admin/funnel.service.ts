@@ -1,4 +1,5 @@
 import { prisma } from '@workspace/db';
+import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
 
 export type FunnelRangePreset = 'today' | '7d' | '30d' | 'all';
 
@@ -47,20 +48,7 @@ export interface GetAdminFunnelInput {
   now?: Date;
 }
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_RANGE: FunnelRangePreset = '30d';
-
-function startOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
-}
-
-function endOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
-}
-
-function addUtcDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * MS_PER_DAY);
-}
 
 function parseIsoDate(value: string, label: 'from' | 'to'): Date {
   const parsed = new Date(value);

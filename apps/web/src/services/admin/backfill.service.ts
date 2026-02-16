@@ -1,4 +1,4 @@
-import { parsePrice } from '@workspace/shared/checkers';
+import { parsePrice } from '@workspace/shared';
 
 import { prisma } from '@workspace/db';
 

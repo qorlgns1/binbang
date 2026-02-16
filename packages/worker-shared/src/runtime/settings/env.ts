@@ -77,3 +77,14 @@ export function getEnvNumber(key: string, defaultValue: number): number {
   }
   return parsed;
 }
+
+/**
+ * 이메일 전송(Resend)용 설정. 둘 다 있을 때만 반환한다.
+ * observability는 env에 직접 접근하지 않으므로, runtime에서 이 값을 읽어 sendEmailHttp에 전달한다.
+ */
+export function getEmailConfig(): { apiKey: string; from: string } | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey?.trim() || !from?.trim()) return null;
+  return { apiKey: apiKey.trim(), from: from.trim() };
+}
