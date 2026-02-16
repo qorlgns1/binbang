@@ -9,6 +9,8 @@ export interface ExchangeRateResult {
   lastUpdated: string;
 }
 
+const FETCH_TIMEOUT_MS = 10000;
+
 export async function fetchExchangeRate(params: ExchangeRateParams): Promise<ExchangeRateResult> {
   const apiKey = process.env.EXCHANGERATE_API_KEY;
   const base = params.baseCurrency.toUpperCase();
@@ -18,8 +20,11 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
     ? `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${base}`
     : `https://open.er-api.com/v6/latest/${base}`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
 
     if (!response.ok) {
       return createFallbackRates(base, params.targetCurrencies);
@@ -51,8 +56,13 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
       rates,
       lastUpdated: data.time_last_update_utc ?? new Date().toISOString(),
     };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Exchange rate API request timed out');
+    }
     return createFallbackRates(base, params.targetCurrencies);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

@@ -89,7 +89,7 @@ export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
         priceLevel: place.priceLevel,
         types: place.types ?? [],
         photoUrl: place.photos?.[0]
-          ? `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxHeightPx=400&maxWidthPx=600&key=${apiKey}`
+          ? `/api/place-photo?photoName=${encodeURIComponent(place.photos[0].name)}&maxHeightPx=400&maxWidthPx=600`
           : undefined,
         placeId: place.id,
       }));
