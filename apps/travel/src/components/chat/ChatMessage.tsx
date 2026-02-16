@@ -89,7 +89,14 @@ function renderToolPart(
     return null;
   }
 
-  const toolPart = part as { type: string; state: string; toolCallId: string; output?: unknown };
+  const toolPart = part as { type: string; state: string; toolCallId: string; output?: unknown; errorMessage?: string };
+  if (toolPart.state === 'output-error') {
+    return (
+      <div key={key} className='my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive'>
+        일부 정보를 불러오지 못했어요. 다른 결과는 위에 표시됩니다.
+      </div>
+    );
+  }
   if (toolPart.state !== 'output-available') {
     return <CardSkeleton key={key} label='장소 검색 중…' />;
   }
@@ -140,6 +147,13 @@ function renderToolPart(
       toolCallId: string;
       output?: unknown;
     };
+    if (dynPart.state === 'output-error') {
+      return (
+        <div key={key} className='my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive'>
+          일부 정보를 불러오지 못했어요. 다른 결과는 위에 표시됩니다.
+        </div>
+      );
+    }
     if (dynPart.state !== 'output-available') return <CardSkeleton key={key} label='장소 검색 중…' />;
 
     if (dynPart.toolName === 'searchPlaces' && dynPart.output) {

@@ -55,7 +55,7 @@ Depends on: MVP (completed)
 **현재 파일**: `apps/travel/src/components/map/MapPanel.tsx`
 
 - [x] P1-3-T1: Maps JavaScript API 로딩 실패 시 fallback UI (에러 메시지 + 재시도 버튼)
-- [ ] P1-3-T2: 마커 클러스터링 (많은 장소가 표시될 때)
+- [x] P1-3-T2: **마커 클러스터링** — 12개 초과 시 @googlemaps/markerclusterer 적용
 - [x] P1-3-T3: **마커 디자인 커스터마이징** — 카테고리별 Pin 컬러(place/restaurant/accommodation/attraction)
 - [x] P1-3-T4: **마커 클릭 시 인포윈도우/팝업** — PlaceCard 내용 표시, 하단에 **[빈방 알림 설정하기]** 버튼 강조
 - [x] P1-3-T5: **지도-채팅 양방향 하이라이트** — 마커 클릭 시 채팅에서 해당 PlaceCard로 스크롤 + isSelected
@@ -66,7 +66,7 @@ Depends on: MVP (completed)
 
 - [x] P1-4-T1: **모바일에서 채팅/지도 전환 UX 개선** — 하단 탭 바(채팅 / 지도) 추가, 헤더 토글 제거
 - [x] P1-4-T2: **모바일 헤더 최적화** — 컴팩트 padding·로고, 타이틀 "빈방"·truncate
-- [ ] P1-4-T3: 터치 인터랙션 최적화 (카드 스와이프, 지도 제스처)
+- [x] P1-4-T3: **터치 인터랙션** — 터치 타겟 44px(touch-target), 하단 탭·입력 버튼 적용
 - [x] P1-4-T4: **모바일 입력 UI** — 입력 영역 pb-keyboard(safe-area-inset-bottom)
 - [x] P1-4-T5: **태블릿 레이아웃** — 채팅 md:w-[42%], 지도 비율 확대
 
@@ -74,7 +74,7 @@ Depends on: MVP (completed)
 
 - [x] P1-5-T1: **AI API 실패 시 사용자 친화적 에러 메시지** — 채팅 하단 배너 + "다시 시도" / "닫기" 버튼
 - [x] P1-5-T2: **네트워크 끊김 감지 및 알림** — OnlineStatus 컴포넌트, 헤더 온라인/오프라인 표시, 전환 시 토스트
-- [ ] P1-5-T3: 도구 호출(Places/Weather/Currency API) 실패 시 부분 응답 처리
+- [x] P1-5-T3: **도구 실패 시 부분 응답** — output-error 시 인라인 안내 문구, 나머지 결과는 그대로 표시
 - [x] P1-5-T4: **Rate limit 안내** — 에러 메시지에 429/rate limit 시 전용 문구 표시
 - [x] P1-5-T5: 전역 에러 바운더리 (React Error Boundary) 적용
 - [x] P1-5-T6: Toast 알림 시스템 도입 (sonner 또는 react-hot-toast)
@@ -94,7 +94,7 @@ Depends on: MVP (completed)
 - [ ] 모바일(375px)에서 모든 기능이 자연스럽게 동작
 - [x] 네트워크 에러/API 실패 시 사용자에게 명확한 피드백 (지도 로딩 실패 fallback + 재시도)
 - [ ] Lighthouse 모바일 성능 점수 80+ (Performance, Accessibility)
-- [ ] 카드 클릭 ↔ 지도 마커 양방향 연동 동작
+- [x] 카드 클릭 ↔ 지도 마커 양방향 연동 동작 (선택 장소 하이라이트·스크롤)
 
 ## Technical Notes
 

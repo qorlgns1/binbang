@@ -50,7 +50,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
             <button
               type='button'
               onClick={onStop}
-              className='flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors'
+              className='touch-target flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors md:h-8 md:w-8'
             >
               <Loader2 className='h-4 w-4 animate-spin' />
             </button>
@@ -58,7 +58,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
             <button
               type='submit'
               disabled={!input.trim()}
-              className='flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+              className='touch-target flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors md:h-8 md:w-8'
             >
               <ArrowUp className='h-4 w-4' />
             </button>

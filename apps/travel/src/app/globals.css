@@ -108,6 +108,10 @@
   .pb-keyboard {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

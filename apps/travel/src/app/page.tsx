@@ -91,7 +91,7 @@ export default function HomePage() {
           <button
             type='button'
             onClick={() => setShowMap(false)}
-            className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+            className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
               !showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
             }`}
             aria-current={!showMap ? 'page' : undefined}
@@ -102,7 +102,7 @@ export default function HomePage() {
           <button
             type='button'
             onClick={() => setShowMap(true)}
-            className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+            className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
               showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
             }`}
             aria-current={showMap ? 'page' : undefined}

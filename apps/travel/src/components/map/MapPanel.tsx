@@ -9,10 +9,13 @@ import {
   useMap,
   useApiIsLoaded,
 } from '@vis.gl/react-google-maps';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { Bell, MapPin, RefreshCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { MapEntity } from '@/lib/types';
+
+const CLUSTER_THRESHOLD = 12;
 
 const MAP_LOAD_TIMEOUT_MS = 15000;
 
@@ -69,7 +72,7 @@ export function MapPanel({
           type='button'
           onClick={() => {
             setLoadError(false);
-            setRetryKey((k) => k + 1);
+            setRetryKey((k: number) => k + 1);
           }}
           className='flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
         >
@@ -142,12 +145,35 @@ function MapContent({
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
+  const markerRefs = useRef<(unknown)[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
 
   useEffect(() => {
     if (isLoaded) return;
     const t = setTimeout(() => onLoadTimeout?.(), MAP_LOAD_TIMEOUT_MS);
     return () => clearTimeout(t);
   }, [isLoaded, onLoadTimeout]);
+
+  useEffect(() => {
+    if (!map || !isLoaded || entities.length <= CLUSTER_THRESHOLD) {
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+        clustererRef.current = null;
+      }
+      return;
+    }
+    const timer = setTimeout(() => {
+      const markers = markerRefs.current.filter(Boolean);
+      if (markers.length === 0) return;
+      clustererRef.current?.clearMarkers();
+      clustererRef.current = new MarkerClusterer({ map, markers });
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      clustererRef.current?.clearMarkers();
+      clustererRef.current = null;
+    };
+  }, [map, isLoaded, entities]);
 
   const fitEntities = useCallback(() => {
     if (!map || !isLoaded || entities.length === 0) return;
@@ -191,9 +217,11 @@ function MapContent({
     handleSelectedEntity();
   }, [handleSelectedEntity]);
 
+  markerRefs.current = new Array(entities.length);
+
   return (
     <>
-      {entities.map((entity) => {
+      {entities.map((entity, index) => {
         const isSelected = entity.id === selectedEntityId;
         const isHovered = entity.id === hoveredId;
         const colors = TYPE_COLORS[entity.type] ?? TYPE_COLORS.place;
@@ -202,6 +230,9 @@ function MapContent({
         return (
           <AdvancedMarker
             key={entity.id}
+            ref={(el: unknown) => {
+              markerRefs.current[index] = el;
+            }}
             position={{ lat: entity.latitude, lng: entity.longitude }}
             title={entity.name}
             onClick={() => onEntitySelect?.(entity.id)}
