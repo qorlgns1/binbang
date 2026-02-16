@@ -134,19 +134,24 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
           </div>
         ) : (
           <div className='space-y-0'>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className='py-4 border-b border-border/40 last:border-0 last:pb-2'
-              >
-                <ChatMessage
-                  message={message}
-                  onPlaceSelect={onPlaceSelect}
-                  onAlertClick={handleAlertClick}
-                  selectedPlaceId={selectedPlaceId}
-                />
-              </div>
-            ))}
+            {messages.map((message, idx) => {
+              const isLast = idx === messages.length - 1;
+              const isStreamingAssistant = status === 'streaming' && isLast && message.role === 'assistant';
+              return (
+                <div
+                  key={message.id}
+                  className='py-4 border-b border-border/40 last:border-0 last:pb-2'
+                >
+                  <ChatMessage
+                    message={message}
+                    onPlaceSelect={onPlaceSelect}
+                    onAlertClick={handleAlertClick}
+                    selectedPlaceId={selectedPlaceId}
+                    isStreaming={isStreamingAssistant}
+                  />
+                </div>
+              );
+            })}
             {status === 'streaming' &&
               (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
               <div className='flex gap-3 py-4' aria-live='polite' aria-busy='true'>
@@ -167,7 +172,10 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
       {error && (
         <div className='border-t border-border bg-destructive/10 px-4 py-3 flex items-center justify-between gap-3'>
           <p className='text-sm text-destructive font-medium flex-1'>
-            답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.
+            {typeof error?.message === 'string' &&
+            (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message))
+              ? '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
+              : '답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.'}
           </p>
           <div className='flex items-center gap-2 shrink-0'>
             <button
@@ -188,7 +196,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
           </div>
         </div>
       )}
-      <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4'>
+      <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4 pb-keyboard'>
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
     </div>

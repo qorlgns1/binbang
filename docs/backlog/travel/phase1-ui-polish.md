@@ -26,7 +26,7 @@ Depends on: MVP (completed)
 **현재 파일**: `apps/travel/src/components/chat/ChatPanel.tsx`, `ChatMessage.tsx`, `ChatInput.tsx`
 
 - [x] P1-1-T1: **메시지 버블 스타일 개선** — 사용자/AI 구분, 아바타(ring), AI 버블 배경·테두리, 타임스탬프(방금)
-- [ ] P1-1-T2: 스트리밍 텍스트 타이핑 애니메이션 추가
+- [x] P1-1-T2: **스트리밍 텍스트 타이핑 애니메이션** — 스트리밍 중 버블 끝 깜빡임 커서
 - [x] P1-1-T3: **도구 호출 중 로딩 인디케이터** — CardSkeleton 위 "장소 검색 중…" + 스피너
 - [x] P1-1-T4: **초기 화면(Empty State) 브랜드 반영**
   - 중앙 히어로: 따뜻한 앰버·골드 컬러의 **등대 아이콘** + 환영 메시지
@@ -67,7 +67,7 @@ Depends on: MVP (completed)
 - [x] P1-4-T1: **모바일에서 채팅/지도 전환 UX 개선** — 하단 탭 바(채팅 / 지도) 추가, 헤더 토글 제거
 - [x] P1-4-T2: **모바일 헤더 최적화** — 컴팩트 padding·로고, 타이틀 "빈방"·truncate
 - [ ] P1-4-T3: 터치 인터랙션 최적화 (카드 스와이프, 지도 제스처)
-- [ ] P1-4-T4: 모바일 입력 UI 개선 (키보드 올라올 때 레이아웃 처리)
+- [x] P1-4-T4: **모바일 입력 UI** — 입력 영역 pb-keyboard(safe-area-inset-bottom)
 - [x] P1-4-T5: **태블릿 레이아웃** — 채팅 md:w-[42%], 지도 비율 확대
 
 ### P1-5: 에러 핸들링
@@ -75,7 +75,7 @@ Depends on: MVP (completed)
 - [x] P1-5-T1: **AI API 실패 시 사용자 친화적 에러 메시지** — 채팅 하단 배너 + "다시 시도" / "닫기" 버튼
 - [x] P1-5-T2: **네트워크 끊김 감지 및 알림** — OnlineStatus 컴포넌트, 헤더 온라인/오프라인 표시, 전환 시 토스트
 - [ ] P1-5-T3: 도구 호출(Places/Weather/Currency API) 실패 시 부분 응답 처리
-- [ ] P1-5-T4: Rate limit 초과 시 안내 메시지
+- [x] P1-5-T4: **Rate limit 안내** — 에러 메시지에 429/rate limit 시 전용 문구 표시
 - [x] P1-5-T5: 전역 에러 바운더리 (React Error Boundary) 적용
 - [x] P1-5-T6: Toast 알림 시스템 도입 (sonner 또는 react-hot-toast)
 
