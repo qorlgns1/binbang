@@ -43,7 +43,7 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
                 return (
                   <div
                     key={`md-${part.text.slice(0, 30)}`}
-                    className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted border border-border/50'
+                    className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 border border-border/50 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-0.5 prose-pre:my-2 prose-pre:rounded-lg prose-pre:bg-muted/80 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/50 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none'
                   >
                     <Markdown>{part.text}</Markdown>
                   </div>
@@ -81,7 +81,9 @@ function renderToolPart(
   }
 
   const toolPart = part as { type: string; state: string; toolCallId: string; output?: unknown };
-  if (toolPart.state !== 'output-available') return null;
+  if (toolPart.state !== 'output-available') {
+    return <CardSkeleton key={key} />;
+  }
 
   if (part.type.startsWith('tool-')) {
     const toolName = part.type.slice(5);
@@ -128,7 +130,7 @@ function renderToolPart(
       toolCallId: string;
       output?: unknown;
     };
-    if (dynPart.state !== 'output-available') return null;
+    if (dynPart.state !== 'output-available') return <CardSkeleton key={key} />;
 
     if (dynPart.toolName === 'searchPlaces' && dynPart.output) {
       const data = dynPart.output as { places: PlaceEntity[] };
@@ -165,4 +167,24 @@ function renderToolPart(
   }
 
   return null;
+}
+
+function CardSkeleton({ key: _key }: { key: string }) {
+  return (
+    <div className='my-2 grid grid-cols-1 gap-2 sm:grid-cols-2'>
+      {[1, 2].map((i) => (
+        <div key={i} className='overflow-hidden rounded-xl border border-border bg-card'>
+          <div className='h-32 w-full bg-muted animate-pulse' />
+          <div className='space-y-2 p-3'>
+            <div className='h-4 w-[80%] rounded bg-muted animate-pulse' />
+            <div className='h-3 w-3/4 rounded bg-muted animate-pulse' />
+            <div className='flex gap-2'>
+              <div className='h-3 w-12 rounded bg-muted animate-pulse' />
+              <div className='h-3 w-16 rounded bg-muted animate-pulse' />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
