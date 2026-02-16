@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, MapPin, Star } from 'lucide-react';
+import { Bell, DollarSign, MapPin, Star } from 'lucide-react';
 import Image from 'next/image';
 
 import type { PlaceEntity } from '@/lib/types';
@@ -25,7 +25,7 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
         className='w-full text-left hover:opacity-95 transition-opacity'
       >
         {place.photoUrl && (
-          <div className='relative h-32 w-full overflow-hidden'>
+          <div className='relative aspect-[4/3] w-full overflow-hidden bg-muted'>
             <Image
               src={place.photoUrl}
               alt={place.name}
@@ -38,22 +38,37 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
         )}
         <div className='p-3'>
           <h4 className='font-semibold text-sm text-card-foreground truncate'>{place.name}</h4>
-          <div className='flex items-center gap-1 mt-1 text-xs text-muted-foreground'>
+          <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
             <MapPin className='h-3 w-3 shrink-0' />
             <span className='truncate'>{place.address}</span>
           </div>
-          <div className='flex items-center gap-2 mt-2'>
-            {place.rating && (
-              <div className='flex items-center gap-0.5'>
-                <Star className='h-3 w-3 fill-yellow-400 text-yellow-400' />
-                <span className='text-xs font-medium'>{place.rating}</span>
-                {place.userRatingsTotal && (
+          <div className='mt-2 flex flex-wrap items-center gap-2'>
+            {place.rating != null && (
+              <div className='flex items-center gap-1'>
+                <div className='flex gap-0.5' aria-hidden>
+                  {[1, 2, 3, 4, 5].map((i) => {
+                    const r = place.rating ?? 0;
+                    return (
+                      <Star
+                        key={i}
+                        className={`h-3.5 w-3.5 shrink-0 ${
+                          i <= Math.round(r) ? 'fill-amber-400 text-amber-400' : 'text-muted/60'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+                <span className='text-xs font-medium text-card-foreground'>{place.rating}</span>
+                {place.userRatingsTotal != null && (
                   <span className='text-xs text-muted-foreground'>({place.userRatingsTotal.toLocaleString()})</span>
                 )}
               </div>
             )}
             {place.priceLevel && (
-              <span className='text-xs text-muted-foreground'>{formatPriceLevel(place.priceLevel)}</span>
+              <span className='flex items-center gap-0.5 text-xs text-muted-foreground' title={formatPriceLevel(place.priceLevel)}>
+                <DollarSign className='h-3 w-3 shrink-0' />
+                {formatPriceLevel(place.priceLevel)}
+              </span>
             )}
           </div>
         </div>

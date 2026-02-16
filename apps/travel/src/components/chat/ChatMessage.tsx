@@ -82,7 +82,7 @@ function renderToolPart(
 
   const toolPart = part as { type: string; state: string; toolCallId: string; output?: unknown };
   if (toolPart.state !== 'output-available') {
-    return <CardSkeleton key={key} />;
+    return <CardSkeleton key={key} label='장소 검색 중…' />;
   }
 
   if (part.type.startsWith('tool-')) {
@@ -92,15 +92,16 @@ function renderToolPart(
       const data = toolPart.output as { places: PlaceEntity[] };
       if (data.places && data.places.length > 0) {
         return (
-          <div key={key} className='grid grid-cols-1 sm:grid-cols-2 gap-2 my-2'>
+          <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
-              <PlaceCard
-                key={place.placeId}
-                place={place}
-                isSelected={selectedPlaceId === place.placeId}
-                onSelect={onPlaceSelect}
-                onAlertClick={onAlertClick}
-              />
+              <div key={place.placeId} data-place-id={place.placeId}>
+                <PlaceCard
+                  place={place}
+                  isSelected={selectedPlaceId === place.placeId}
+                  onSelect={onPlaceSelect}
+                  onAlertClick={onAlertClick}
+                />
+              </div>
             ))}
           </div>
         );
@@ -130,21 +131,22 @@ function renderToolPart(
       toolCallId: string;
       output?: unknown;
     };
-    if (dynPart.state !== 'output-available') return <CardSkeleton key={key} />;
+    if (dynPart.state !== 'output-available') return <CardSkeleton key={key} label='장소 검색 중…' />;
 
     if (dynPart.toolName === 'searchPlaces' && dynPart.output) {
       const data = dynPart.output as { places: PlaceEntity[] };
       if (data.places && data.places.length > 0) {
         return (
-          <div key={key} className='grid grid-cols-1 sm:grid-cols-2 gap-2 my-2'>
+          <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
-              <PlaceCard
-                key={place.placeId}
-                place={place}
-                isSelected={selectedPlaceId === place.placeId}
-                onSelect={onPlaceSelect}
-                onAlertClick={onAlertClick}
-              />
+              <div key={place.placeId} data-place-id={place.placeId}>
+                <PlaceCard
+                  place={place}
+                  isSelected={selectedPlaceId === place.placeId}
+                  onSelect={onPlaceSelect}
+                  onAlertClick={onAlertClick}
+                />
+              </div>
             ))}
           </div>
         );
@@ -169,9 +171,16 @@ function renderToolPart(
   return null;
 }
 
-function CardSkeleton({ key: _key }: { key: string }) {
+function CardSkeleton({ key: _key, label }: { key: string; label?: string }) {
   return (
-    <div className='my-2 grid grid-cols-1 gap-2 sm:grid-cols-2'>
+    <div className='my-2'>
+      {label && (
+        <div className='mb-2 flex items-center gap-2 text-sm text-muted-foreground'>
+          <span className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+          <span>{label}</span>
+        </div>
+      )}
+      <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
       {[1, 2].map((i) => (
         <div key={i} className='overflow-hidden rounded-xl border border-border bg-card'>
           <div className='h-32 w-full bg-muted animate-pulse' />
@@ -185,6 +194,7 @@ function CardSkeleton({ key: _key }: { key: string }) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

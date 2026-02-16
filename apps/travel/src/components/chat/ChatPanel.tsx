@@ -24,6 +24,7 @@ const EXAMPLE_QUERIES = [
 
 export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
 
   const { messages, sendMessage, status, stop, error, regenerate, clearError } = useChat();
@@ -79,6 +80,12 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messagesLength]);
 
+  useEffect(() => {
+    if (!selectedPlaceId || !scrollAreaRef.current) return;
+    const el = scrollAreaRef.current.querySelector(`[data-place-id="${selectedPlaceId}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [selectedPlaceId]);
+
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       e?.preventDefault?.();
@@ -101,7 +108,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
 
   return (
     <div className='flex h-full flex-col'>
-      <div className='flex-1 overflow-y-auto scrollbar-hide px-4 py-4 space-y-6'>
+      <div ref={scrollAreaRef} className='flex-1 overflow-y-auto scrollbar-hide px-4 py-4 space-y-6'>
         {messages.length === 0 ? (
           <div className='flex flex-col items-center justify-center min-h-[60vh] text-center px-4'>
             <div className='flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-6 ring-2 ring-amber-200 dark:ring-amber-800/50'>

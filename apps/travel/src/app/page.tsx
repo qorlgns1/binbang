@@ -61,7 +61,7 @@ export default function HomePage() {
         <div className='flex flex-1 overflow-hidden'>
           {/* Chat Panel */}
           <div
-            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 md:w-1/2 md:max-w-2xl flex-col border-r border-border`}
+            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 flex-col border-r border-border md:w-[42%] lg:max-w-2xl`}
           >
             <ChatPanel
               onEntitiesUpdate={handleEntitiesUpdate}
