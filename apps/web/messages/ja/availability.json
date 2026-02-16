@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "title": "{platform} {propertyName} の空室傾向 | Binbang",
+    "description": "{location} にある {propertyName} の最新空室率、価格帯、代替候補をまとめて確認できます。",
+    "ogDescription": "{platform} の {propertyName} の空室率と価格推移を確認し、空室通知を設定できます。",
+    "descriptionWithData": "{location}の{propertyName}、最近の予約率{openRate}{trend}。平均価格{avgPrice}。空室アラート受信",
+    "trendUp": " 上昇",
+    "trendDown": " 下降"
+  },
+  "platform": {
+    "AIRBNB": "Airbnb",
+    "AGODA": "Agoda"
+  },
+  "labels": {
+    "unknownLocation": "場所情報なし"
+  },
+  "list": {
+    "metaTitle": "公開空室リスト | Binbang",
+    "metaDescription": "公開掲載の最新空室率と価格傾向を一覧で確認できます。",
+    "metaOgDescription": "Binbang が収集した公開宿泊施設の空室スナップショット一覧です。詳細ページで推移を確認できます。",
+    "heading": "公開空室リスト",
+    "subheading": "最近観測された宿を一覧で確認し、詳細ページで空室率と価格推移をチェックしてください。",
+    "empty": "公開空室データがまだありません。ワーカーのスナップショット実行後に再度ご確認ください。",
+    "updatedAt": "最終観測: {value}"
+  },
+  "hero": {
+    "eyebrow": "{platform} 空室スナップショット",
+    "summary": "{location} の最近の予約トレンドです。現在の空室率は {openRate} です。",
+    "window": "集計期間: {window}",
+    "ctaPrimary": "今すぐ通知を設定",
+    "sourceLink": "元の掲載ページを見る"
+  },
+  "stats": {
+    "title": "主要指標",
+    "openRate": "空室率",
+    "avgPrice": "平均価格",
+    "priceRange": "価格帯",
+    "sampleSize": "サンプル数",
+    "updatedAt": "最終更新: {value}",
+    "noData": "データ収集中"
+  },
+  "trend": {
+    "openRateTitle": "空室率の変化",
+    "priceTitle": "平均価格の変化",
+    "vsPrevious": "前回スナップショット比",
+    "notEnoughHistory": "比較にはもう1回分のデータが必要です"
+  },
+  "prediction": {
+    "title": "空室予測",
+    "nextAvailableAt": "次の空室予想時期",
+    "confidence": "信頼度",
+    "confidenceHigh": "高",
+    "confidenceMedium": "中",
+    "confidenceLow": "低",
+    "reasoning": "分析根拠",
+    "predictedAt": "予測基準日: {value}",
+    "noData": "予測に必要なデータがまだ十分ではありません。"
+  },
+  "alternatives": {
+    "title": "近くの代替宿",
+    "empty": "同じエリアの代替候補はまだありません。"
+  },
+  "cta": {
+    "title": "空室が出たらすぐ通知",
+    "description": "Binbang の無料アカウントを作成すると、予約サイトを再読込しなくても空室通知を受け取れます。",
+    "button": "無料で通知を作成"
+  },
+  "faq": {
+    "title": "よくある質問",
+    "q1": "{propertyName} の空室トレンドはどう計算されますか？",
+    "a1": "Binbang は {platform} の公開ページの最近のチェック結果を集計し、日次スナップショットとして空室率を表示します。",
+    "q2": "価格と空室状況はリアルタイムで変わりますか？",
+    "a2": "はい。在庫と価格はいつでも変わるため、このページで傾向を確認しつつ通知設定をおすすめします。",
+    "q3": "通知設定は有料ですか？",
+    "a3": "無料プランで開始でき、より高速なチェックや監視件数が必要な場合のみアップグレードできます。"
+  },
+  "region": {
+    "metaTitle": "{platform} {region}地域の宿泊施設予約状況 | ビンバン",
+    "metaDescription": "{region}地域の{platform}物件{propertyCount}件、平均予約率{avgOpenRate}。地域全体の価格帯と予約動向を確認できます。",
+    "eyebrow": "{platform} 地域統計",
+    "subtitle": "{platform}で確認可能な{propertyCount}件の宿泊施設の予約状況です。",
+    "topProperties": "上位物件リスト",
+    "stats": {
+      "avgOpenRate": "平均予約率",
+      "avgPrice": "平均価格",
+      "priceRange": "価格帯",
+      "properties": "総物件数"
+    },
+    "cta": {
+      "title": "希望する宿泊施設の空室アラートを受信",
+      "description": "地域全体の統計を確認したら、興味のある宿泊施設を登録して空室が出たらすぐにアラートを受け取りましょう。",
+      "button": "無料でアラート作成"
+    }
+  }
+}

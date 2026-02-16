@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "title": "{propertyName} availability on {platform} | Binbang",
+    "description": "See the latest availability trend, price range, and alternatives for {propertyName} in {location}.",
+    "ogDescription": "Availability and price trend for {propertyName} on {platform}. Create an alert to get notified instantly.",
+    "descriptionWithData": "{propertyName} in {location}, recent booking rate {openRate}{trend}. Average price {avgPrice}. Get availability alerts",
+    "trendUp": " rising",
+    "trendDown": " falling"
+  },
+  "platform": {
+    "AIRBNB": "Airbnb",
+    "AGODA": "Agoda"
+  },
+  "labels": {
+    "unknownLocation": "Unknown location"
+  },
+  "list": {
+    "metaTitle": "Public availability list | Binbang",
+    "metaDescription": "Browse recently observed availability and prices across public listings in one place.",
+    "metaOgDescription": "Explore public availability snapshots from Binbang and open each listing for detailed trends.",
+    "heading": "Public availability list",
+    "subheading": "Check recently observed listings by platform, then open each detail page for open-rate and price trends.",
+    "empty": "No public availability data yet. Please check again after the worker snapshot runs.",
+    "updatedAt": "Last observed: {value}"
+  },
+  "hero": {
+    "eyebrow": "{platform} availability snapshot",
+    "summary": "Recent booking trend for {location}. Current open rate: {openRate}.",
+    "window": "Data window: {window}",
+    "ctaPrimary": "Set alert now",
+    "sourceLink": "View original listing"
+  },
+  "stats": {
+    "title": "Key metrics",
+    "openRate": "Open rate",
+    "avgPrice": "Average price",
+    "priceRange": "Price range",
+    "sampleSize": "Samples",
+    "updatedAt": "Last updated: {value}",
+    "noData": "Collecting data"
+  },
+  "trend": {
+    "openRateTitle": "Open rate change",
+    "priceTitle": "Average price change",
+    "vsPrevious": "Compared with previous snapshot",
+    "notEnoughHistory": "Need one more snapshot for trend"
+  },
+  "prediction": {
+    "title": "Availability prediction",
+    "nextAvailableAt": "Next likely available",
+    "confidence": "Confidence",
+    "confidenceHigh": "High",
+    "confidenceMedium": "Medium",
+    "confidenceLow": "Low",
+    "reasoning": "Analysis",
+    "predictedAt": "Predicted on: {value}",
+    "noData": "Not enough data for predictions yet."
+  },
+  "alternatives": {
+    "title": "Alternative properties nearby",
+    "empty": "No alternatives in the same area yet."
+  },
+  "cta": {
+    "title": "Get notified as soon as a room opens",
+    "description": "Create a free Binbang account and receive vacancy alerts without refreshing booking pages.",
+    "button": "Create free alert"
+  },
+  "faq": {
+    "title": "FAQ",
+    "q1": "How is the availability trend for {propertyName} calculated?",
+    "a1": "Binbang aggregates recent check results from public booking pages on {platform}, then shows the open-rate trend as a daily snapshot.",
+    "q2": "Can price and availability change in real time?",
+    "a2": "Yes. Booking platforms can update room inventory and prices at any time, so use this page as a trend reference and set an alert for immediate updates.",
+    "q3": "Do I need to pay to create alerts?",
+    "a3": "You can start with a free plan and upgrade only when you need faster checks or more monitored listings."
+  },
+  "region": {
+    "metaTitle": "{platform} {region} Accommodation Availability | Binbang",
+    "metaDescription": "{propertyCount} {platform} properties in {region}, average booking rate {avgOpenRate}. Check regional price ranges and availability trends.",
+    "eyebrow": "{platform} Regional Stats",
+    "subtitle": "Availability status for {propertyCount} properties available on {platform}.",
+    "topProperties": "Top Properties",
+    "stats": {
+      "avgOpenRate": "Avg Booking Rate",
+      "avgPrice": "Avg Price",
+      "priceRange": "Price Range",
+      "properties": "Total Properties"
+    },
+    "cta": {
+      "title": "Get Alerts for Your Desired Property",
+      "description": "Now that you have checked regional statistics, register your property of interest and receive alerts as soon as vacancies become available.",
+      "button": "Create Free Alert"
+    }
+  }
+}

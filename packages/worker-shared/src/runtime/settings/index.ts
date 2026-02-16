@@ -8,6 +8,8 @@ interface WorkerSettings {
   browserPoolSize: number;
   startupDelayMs: number;
   shutdownTimeoutMs: number;
+  publicAvailabilitySnapshotSchedule: string;
+  publicAvailabilitySnapshotWindowDays: number;
 }
 
 interface BrowserSettings {
@@ -63,6 +65,8 @@ const DEFAULTS: Record<string, { env?: string; default: string }> = {
   'worker.browserPoolSize': { env: 'BROWSER_POOL_SIZE', default: '1' },
   'worker.startupDelayMs': { default: '10000' },
   'worker.shutdownTimeoutMs': { default: '60000' },
+  'worker.publicAvailabilitySnapshotSchedule': { default: '7 1 * * *' },
+  'worker.publicAvailabilitySnapshotWindowDays': { default: '14' },
   'browser.navigationTimeoutMs': { env: 'NAVIGATION_TIMEOUT_MS', default: '25000' },
   'browser.contentWaitMs': { env: 'CONTENT_WAIT_MS', default: '10000' },
   'browser.patternRetryMs': { env: 'PATTERN_RETRY_MS', default: '5000' },
@@ -135,6 +139,8 @@ function buildCache(dbMap: Map<string, string>): SystemSettingsCache {
       browserPoolSize: toInt(r('worker.browserPoolSize'), 1),
       startupDelayMs: toInt(r('worker.startupDelayMs'), 10000),
       shutdownTimeoutMs: toInt(r('worker.shutdownTimeoutMs'), 60000),
+      publicAvailabilitySnapshotSchedule: r('worker.publicAvailabilitySnapshotSchedule'),
+      publicAvailabilitySnapshotWindowDays: toInt(r('worker.publicAvailabilitySnapshotWindowDays'), 14),
     },
     browser: {
       navigationTimeoutMs: toInt(r('browser.navigationTimeoutMs'), 25000),
