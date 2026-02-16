@@ -233,7 +233,18 @@ function MapContent({
   useEffect(() => {
     if (!map || !onCloseInfoWindow) return;
     const handler = () => onCloseInfoWindow();
-    const g = (globalThis as unknown as { google?: { maps?: { event?: { addListener: (target: unknown, name: string, fn: () => void) => { remove: () => void }; removeListener: (listener: { remove: () => void }) => void } } } }).google;
+    const g = (
+      globalThis as unknown as {
+        google?: {
+          maps?: {
+            event?: {
+              addListener: (target: unknown, name: string, fn: () => void) => { remove: () => void };
+              removeListener: (listener: { remove: () => void }) => void;
+            };
+          };
+        };
+      }
+    ).google;
     const listener = g?.maps?.event?.addListener(map, 'click', handler);
     return () => {
       if (listener?.remove) listener.remove();
@@ -284,15 +295,17 @@ function MapContent({
             )}
             <div className='p-2'>
               <h4 className='font-semibold text-sm text-gray-900 dark:text-gray-100 truncate'>{selectedEntity.name}</h4>
-              <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>{TYPE_LABELS[selectedEntity.type] ?? selectedEntity.type}</p>
+              <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
+                {TYPE_LABELS[selectedEntity.type] ?? selectedEntity.type}
+              </p>
               <button
-              type='button'
-              onClick={() => onAlertClick?.(selectedEntity.id)}
-              className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium py-2 px-3 transition-colors'
-            >
-              <Bell className='h-4 w-4 shrink-0' aria-hidden />
-              빈방 알림 설정하기
-            </button>
+                type='button'
+                onClick={() => onAlertClick?.(selectedEntity.id)}
+                className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium py-2 px-3 transition-colors'
+              >
+                <Bell className='h-4 w-4 shrink-0' aria-hidden />
+                빈방 알림 설정하기
+              </button>
             </div>
           </div>
         </InfoWindow>

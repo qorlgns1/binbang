@@ -18,7 +18,14 @@ interface ChatMessageProps {
   isStreaming?: boolean;
 }
 
-export function ChatMessage({ message, onPlaceSelect, onPlaceHover, onAlertClick, selectedPlaceId, isStreaming }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  onPlaceSelect,
+  onPlaceHover,
+  onAlertClick,
+  selectedPlaceId,
+  isStreaming,
+}: ChatMessageProps) {
   const isUser = message.role === 'user';
 
   return (
