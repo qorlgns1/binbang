@@ -126,15 +126,21 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
             </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              message={message}
-              onPlaceSelect={onPlaceSelect}
-              onAlertClick={handleAlertClick}
-              selectedPlaceId={selectedPlaceId}
-            />
-          ))
+          <div className='space-y-0'>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className='py-4 border-b border-border/40 last:border-0 last:pb-2'
+              >
+                <ChatMessage
+                  message={message}
+                  onPlaceSelect={onPlaceSelect}
+                  onAlertClick={handleAlertClick}
+                  selectedPlaceId={selectedPlaceId}
+                />
+              </div>
+            ))}
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>

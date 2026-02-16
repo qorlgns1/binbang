@@ -22,15 +22,16 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
       <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-border/50 ${
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
         }`}
+        aria-hidden
       >
         {isUser ? <User className='h-4 w-4' /> : <Bot className='h-4 w-4' />}
       </div>
-      <div className={`flex-1 space-y-2 ${isUser ? 'text-right' : ''}`}>
+      <div className={`flex-1 min-w-0 space-y-1.5 ${isUser ? 'text-right' : ''}`}>
         {isUser ? (
-          <div className='inline-block rounded-2xl rounded-tr-sm bg-primary px-4 py-2 text-primary-foreground text-sm'>
+          <div className='inline-block rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-primary-foreground text-sm shadow-sm max-w-[85%]'>
             {message.parts.map((part) =>
               part.type === 'text' ? <span key={`text-${part.text.slice(0, 20)}`}>{part.text}</span> : null,
             )}
@@ -42,7 +43,7 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
                 return (
                   <div
                     key={`md-${part.text.slice(0, 30)}`}
-                    className='prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted'
+                    className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted border border-border/50'
                   >
                     <Markdown>{part.text}</Markdown>
                   </div>
@@ -53,6 +54,7 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
               const key = toolPart.toolCallId ?? `part-${part.type}`;
               return renderToolPart(part, key, onPlaceSelect, onAlertClick, selectedPlaceId);
             })}
+            <p className='text-[10px] text-muted-foreground mt-1' aria-hidden>방금</p>
           </div>
         )}
       </div>
