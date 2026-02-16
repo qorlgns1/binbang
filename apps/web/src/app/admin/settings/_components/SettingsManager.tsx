@@ -14,11 +14,31 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useUpdateSystemSettings } from '@/hooks/useUpdateSystemSettings';
+import { useWorkerControl } from '@/hooks/useWorkerControl';
 import type { SystemSettingItem } from '@/types/admin';
 
 import { SettingsHistory } from './SettingsHistory';
 
 type TimeUnit = 'ms' | 's' | 'min';
+
+const MINUTES_ONLY_CRON_SETTING_KEY = 'worker.cronSchedule';
+const PUBLIC_SNAPSHOT_CRON_SETTING_KEY = 'worker.publicAvailabilitySnapshotSchedule';
+const CRON_TEXT_SETTING_KEYS = new Set([MINUTES_ONLY_CRON_SETTING_KEY, 'worker.publicAvailabilitySnapshotSchedule']);
+const WORKER_RESTART_REQUIRED_KEYS = new Set([
+  'worker.cronSchedule',
+  'worker.publicAvailabilitySnapshotSchedule',
+  'worker.publicAvailabilitySnapshotWindowDays',
+  'worker.concurrency',
+  'worker.browserPoolSize',
+  'worker.startupDelayMs',
+  'worker.shutdownTimeoutMs',
+]);
+
+const PUBLIC_SNAPSHOT_CRON_PRESETS = [
+  { label: '매일 01:07 UTC (10:07 KST)', value: '7 1 * * *' },
+  { label: '매일 00:00 UTC (09:00 KST)', value: '0 0 * * *' },
+  { label: '6시간마다', value: '0 */6 * * *' },
+] as const;
 
 function msToDisplay(ms: number, unit: TimeUnit): number {
   if (unit === 'min') return ms / 60000;
@@ -45,6 +65,64 @@ function minutesToCron(minutes: number): string {
 
 function isMsSetting(key: string): boolean {
   return key.endsWith('Ms');
+}
+
+function requiresWorkerRestart(key: string): boolean {
+  return WORKER_RESTART_REQUIRED_KEYS.has(key);
+}
+
+function parseCronNumber(field: string, min: number, max: number): number | null {
+  if (!/^\d+$/.test(field)) return null;
+  const value = Number(field);
+  if (!Number.isInteger(value) || value < min || value > max) return null;
+  return value;
+}
+
+function toTwoDigits(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function formatClock(hour: number, minute: number): string {
+  return `${toTwoDigits(hour)}:${toTwoDigits(minute)}`;
+}
+
+function toKstClock(hour: number, minute: number): string {
+  const totalMinutes = hour * 60 + minute + 9 * 60;
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const kstHour = Math.floor(normalized / 60);
+  const kstMinute = normalized % 60;
+  return formatClock(kstHour, kstMinute);
+}
+
+function describeCronExpression(expression: string): string {
+  const trimmed = expression.trim();
+  const fields = trimmed.split(/\s+/);
+  if (fields.length !== 5) {
+    return '형식: 분 시 일 월 요일 (예: 7 1 * * *)';
+  }
+
+  const [minuteField, hourField, dayOfMonth, month, dayOfWeek] = fields;
+
+  const stepMatch = minuteField.match(/^\*\/(\d+)$/);
+  if (stepMatch && hourField === '*' && dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
+    return `매 ${stepMatch[1]}분마다 실행`;
+  }
+
+  const minute = parseCronNumber(minuteField, 0, 59);
+  const hour = parseCronNumber(hourField, 0, 23);
+
+  if (minute !== null && hour !== null && dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
+    return `매일 ${formatClock(hour, minute)} UTC (${toKstClock(hour, minute)} KST) 실행`;
+  }
+
+  const dayOfWeekNumber = parseCronNumber(dayOfWeek, 0, 7);
+  if (minute !== null && hour !== null && dayOfMonth === '*' && month === '*' && dayOfWeekNumber !== null) {
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'] as const;
+    const normalizedDay = dayOfWeekNumber === 7 ? 0 : dayOfWeekNumber;
+    return `매주 ${dayNames[normalizedDay]}요일 ${formatClock(hour, minute)} UTC (${toKstClock(hour, minute)} KST) 실행`;
+  }
+
+  return `사용자 정의 cron: ${trimmed}`;
 }
 
 function computeUnits(
@@ -89,10 +167,16 @@ const LOADING_SKELETON_KEYS = ['settings-loading-1', 'settings-loading-2', 'sett
 export function SettingsManager() {
   const { data, isLoading, isError } = useSystemSettings();
   const mutation = useUpdateSystemSettings();
+  const { restartWorker, isRestarting } = useWorkerControl();
 
   const [values, setValues] = useState<Record<string, string>>({});
   const [units, setUnits] = useState<Record<string, TimeUnit>>({});
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [manualSnapshotFeedback, setManualSnapshotFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [isManualSnapshotRunning, setIsManualSnapshotRunning] = useState(false);
 
   // MIN/MAX 상태
   const [minValues, setMinValues] = useState<Record<string, string>>({});
@@ -240,7 +324,49 @@ export function SettingsManager() {
     setFeedback(null);
   };
 
-  const handleSave = () => {
+  const handleManualSnapshotRun = useCallback(async () => {
+    if (isManualSnapshotRunning) return;
+
+    setManualSnapshotFeedback(null);
+    setIsManualSnapshotRunning(true);
+
+    try {
+      const rawWindowDays = values['worker.publicAvailabilitySnapshotWindowDays'];
+      const parsedWindowDays = Number.parseInt(rawWindowDays ?? '', 10);
+      const windowDays = Number.isInteger(parsedWindowDays) && parsedWindowDays > 0 ? parsedWindowDays : undefined;
+
+      const response = await fetch('/api/admin/worker/public-availability/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(windowDays ? { windowDays } : {}),
+      });
+
+      const payload = (await response.json().catch((): null => null)) as {
+        error?: string;
+        message?: string;
+        jobId?: string | number;
+      } | null;
+
+      if (!response.ok) {
+        throw new Error(payload?.error || '공개 가용성 스냅샷 즉시 실행에 실패했습니다.');
+      }
+
+      const message = payload?.message || '공개 가용성 스냅샷 작업이 큐에 등록되었습니다.';
+      const jobSuffix = payload?.jobId !== undefined ? ` (job: ${String(payload.jobId)})` : '';
+      setManualSnapshotFeedback({ type: 'success', message: `${message}${jobSuffix}` });
+    } catch (error) {
+      setManualSnapshotFeedback({
+        type: 'error',
+        message: error instanceof Error ? error.message : '공개 가용성 스냅샷 즉시 실행에 실패했습니다.',
+      });
+    } finally {
+      setIsManualSnapshotRunning(false);
+    }
+  }, [isManualSnapshotRunning, values]);
+
+  const isBusy = mutation.isPending || isRestarting;
+
+  const handleSave = async () => {
     if (!hasChanges || hasValidationErrors) return;
     setFeedback(null);
 
@@ -258,18 +384,33 @@ export function SettingsManager() {
       return update;
     });
 
-    mutation.mutate(
-      { settings: updates },
-      {
-        onSuccess: () => {
-          setLimitEditKeys(new Set());
-          setFeedback({ type: 'success', message: `${updates.length}개 설정이 저장되었습니다.` });
-        },
-        onError: (error) => {
-          setFeedback({ type: 'error', message: error.message });
-        },
-      },
-    );
+    const restartRequired = updates.some((update): boolean => requiresWorkerRestart(update.key));
+
+    try {
+      await mutation.mutateAsync({ settings: updates });
+      setLimitEditKeys(new Set());
+
+      if (!restartRequired) {
+        setFeedback({ type: 'success', message: `${updates.length}개 설정이 저장되었습니다.` });
+        return;
+      }
+
+      setFeedback({ type: 'success', message: `${updates.length}개 설정 저장 완료. 워커를 재시작합니다...` });
+
+      try {
+        await restartWorker();
+        setFeedback({ type: 'success', message: `${updates.length}개 설정 저장 및 워커 재시작 완료` });
+      } catch (restartError) {
+        const message =
+          restartError instanceof Error ? restartError.message : '알 수 없는 오류로 워커 재시작에 실패했습니다.';
+        setFeedback({
+          type: 'error',
+          message: `설정은 저장됐지만 워커 재시작에 실패했습니다. 수동 재시작이 필요합니다. (${message})`,
+        });
+      }
+    } catch (error) {
+      setFeedback({ type: 'error', message: error instanceof Error ? error.message : '설정 저장에 실패했습니다.' });
+    }
   };
 
   if (isLoading) {
@@ -296,11 +437,11 @@ export function SettingsManager() {
       <div className='flex items-center justify-between'>
         <h2 className='text-xl font-semibold'>시스템 설정</h2>
         <div className='flex gap-2'>
-          <Button variant='outline' onClick={handleReset} disabled={!hasChanges || mutation.isPending}>
+          <Button variant='outline' onClick={handleReset} disabled={!hasChanges || isBusy}>
             초기화
           </Button>
-          <Button onClick={handleSave} disabled={!hasChanges || hasValidationErrors || mutation.isPending}>
-            {mutation.isPending ? '저장 중...' : '저장'}
+          <Button onClick={() => void handleSave()} disabled={!hasChanges || hasValidationErrors || isBusy}>
+            {mutation.isPending ? '저장 중...' : isRestarting ? '워커 재시작 중...' : '저장'}
           </Button>
         </div>
       </div>
@@ -309,6 +450,12 @@ export function SettingsManager() {
         <Alert variant={feedback.type === 'error' ? 'destructive' : 'default'}>
           <AlertTitle>{feedback.type === 'success' ? '성공' : '오류'}</AlertTitle>
           <AlertDescription>{feedback.message}</AlertDescription>
+        </Alert>
+      )}
+      {manualSnapshotFeedback && (
+        <Alert variant={manualSnapshotFeedback.type === 'error' ? 'destructive' : 'default'}>
+          <AlertTitle>{manualSnapshotFeedback.type === 'success' ? '작업 등록됨' : '작업 실패'}</AlertTitle>
+          <AlertDescription>{manualSnapshotFeedback.message}</AlertDescription>
         </Alert>
       )}
 
@@ -335,12 +482,14 @@ export function SettingsManager() {
                     isOutOfRange={outOfRangeKeys.has(item.key)}
                     isInvalidLimit={invalidLimitKeys.has(item.key)}
                     isLimitEditEnabled={limitEditKeys.has(item.key)}
-                    isPending={mutation.isPending}
+                    isPending={isBusy}
                     onValueChange={handleChange}
                     onUnitChange={(key, newUnit) => setUnits((prev) => ({ ...prev, [key]: newUnit }))}
                     onMinChange={handleMinChange}
                     onMaxChange={handleMaxChange}
                     onToggleLimitEdit={toggleLimitEdit}
+                    isManualSnapshotRunning={isManualSnapshotRunning}
+                    onManualSnapshotRun={handleManualSnapshotRun}
                   />
                 ))}
               </div>
@@ -377,6 +526,8 @@ interface SettingRowProps {
   onMinChange: (key: string, value: string) => void;
   onMaxChange: (key: string, value: string) => void;
   onToggleLimitEdit: (key: string) => void;
+  isManualSnapshotRunning: boolean;
+  onManualSnapshotRun: () => void;
 }
 
 function SettingRow({
@@ -395,9 +546,13 @@ function SettingRow({
   onMinChange,
   onMaxChange,
   onToggleLimitEdit,
+  isManualSnapshotRunning,
+  onManualSnapshotRun,
 }: SettingRowProps) {
   const isMs = isMsSetting(item.key);
-  const isCron = item.key === 'worker.cronSchedule';
+  const isMinutesCron = item.key === MINUTES_ONLY_CRON_SETTING_KEY;
+  const isCronExpression = CRON_TEXT_SETTING_KEYS.has(item.key);
+  const isPublicSnapshotCron = item.key === PUBLIC_SNAPSHOT_CRON_SETTING_KEY;
   const isInt = item.type === 'int';
   const currentUnit = unit;
 
@@ -470,7 +625,7 @@ function SettingRow({
             </SelectContent>
           </Select>
         </div>
-      ) : isCron ? (
+      ) : isMinutesCron ? (
         <div className='flex items-center gap-2'>
           <Input
             id={item.key}
@@ -493,6 +648,16 @@ function SettingRow({
           />
           <span className='text-sm text-muted-foreground whitespace-nowrap'>분마다</span>
         </div>
+      ) : isCronExpression ? (
+        <Input
+          id={item.key}
+          type='text'
+          placeholder='분 시 일 월 요일 (예: 7 1 * * *)'
+          className='font-mono text-sm'
+          value={value}
+          onChange={(e) => onValueChange(item.key, e.target.value)}
+          disabled={isPending}
+        />
       ) : (
         <Input
           id={item.key}
@@ -503,6 +668,40 @@ function SettingRow({
           onChange={(e) => onValueChange(item.key, e.target.value)}
           disabled={isPending}
         />
+      )}
+      {isCronExpression && <p className='text-xs text-muted-foreground'>현재 해석: {describeCronExpression(value)}</p>}
+      {isCronExpression && !isMinutesCron && (
+        <p className='text-xs text-muted-foreground'>형식: 분 시 일 월 요일 (UTC 기준)</p>
+      )}
+      {isPublicSnapshotCron && (
+        <div className='flex flex-wrap gap-1.5'>
+          {PUBLIC_SNAPSHOT_CRON_PRESETS.map((preset) => (
+            <Button
+              key={preset.value}
+              type='button'
+              variant={value === preset.value ? 'default' : 'outline'}
+              size='sm'
+              className='h-7 px-2 text-xs'
+              onClick={() => onValueChange(item.key, preset.value)}
+              disabled={isPending}
+            >
+              {preset.label}
+            </Button>
+          ))}
+          <Button
+            type='button'
+            variant='secondary'
+            size='sm'
+            className='h-7 px-2 text-xs'
+            onClick={onManualSnapshotRun}
+            disabled={isPending || isManualSnapshotRunning}
+          >
+            {isManualSnapshotRunning ? '즉시 실행 중...' : '지금 즉시 실행'}
+          </Button>
+        </div>
+      )}
+      {requiresWorkerRestart(item.key) && (
+        <p className='text-xs text-muted-foreground'>저장 시 워커 재시작이 자동으로 실행됩니다.</p>
       )}
 
       {/* 범위 밖 경고 */}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError } from '@/lib/handleServiceError';
 import { deleteSelector, updateSelector } from '@/services/admin/selectors.service';
 import type { UpdateSelectorPayload } from '@/types/admin';
 
@@ -27,15 +28,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
 
     return NextResponse.json({ selector });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Selector not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'Selector with same name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-    }
-    throw error;
+    return handleServiceError(error, 'Admin selector update error');
   }
 }
 
@@ -56,9 +49,6 @@ export async function DELETE(_request: Request, { params }: RouteParams): Promis
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Selector not found') {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    throw error;
+    return handleServiceError(error, 'Admin selector delete error');
   }
 }
