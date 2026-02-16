@@ -75,24 +75,42 @@ export function MapPanel({ entities, selectedEntityId, onEntitySelect, onAlertCl
 
   return (
     <APIProvider apiKey={apiKey} key={retryKey}>
-      <GoogleMap
-        defaultCenter={DEFAULT_CENTER}
-        defaultZoom={DEFAULT_ZOOM}
-        mapId='travel-planner-map'
-        gestureHandling='greedy'
-        disableDefaultUI={false}
-        className='h-full w-full'
-      >
-        <MapContent
-          entities={entities}
-          selectedEntityId={selectedEntityId}
-          onEntitySelect={onEntitySelect}
-          onAlertClick={onAlertClick}
-          onCloseInfoWindow={onCloseInfoWindow}
-          onLoadTimeout={() => setLoadError(true)}
-        />
-      </GoogleMap>
+      <div className='relative h-full w-full'>
+        <GoogleMap
+          defaultCenter={DEFAULT_CENTER}
+          defaultZoom={DEFAULT_ZOOM}
+          mapId='travel-planner-map'
+          gestureHandling='greedy'
+          disableDefaultUI={false}
+          className='h-full w-full'
+        >
+          <MapContent
+            entities={entities}
+            selectedEntityId={selectedEntityId}
+            onEntitySelect={onEntitySelect}
+            onAlertClick={onAlertClick}
+            onCloseInfoWindow={onCloseInfoWindow}
+            onLoadTimeout={() => setLoadError(true)}
+          />
+        </GoogleMap>
+        <MapLoadingOverlay />
+      </div>
     </APIProvider>
+  );
+}
+
+function MapLoadingOverlay() {
+  const isLoaded = useApiIsLoaded();
+  if (isLoaded) return null;
+  return (
+    <div
+      className='absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm'
+      aria-live='polite'
+      aria-busy='true'
+    >
+      <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+      <p className='text-sm font-medium text-muted-foreground'>지도 불러오는 중...</p>
+    </div>
   );
 }
 

@@ -47,45 +47,68 @@ export default function HomePage() {
         </div>
         <div className='flex items-center gap-2'>
           {entities.length > 0 && (
-            <span className='text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full'>
+            <span className='text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full hidden sm:inline-flex'>
               {entities.length} places on map
             </span>
           )}
-          {/* Mobile map toggle */}
-          <button
-            type='button'
-            onClick={() => setShowMap(!showMap)}
-            className='md:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-accent transition-colors'
-          >
-            {showMap ? <MessageSquare className='h-4 w-4' /> : <MapIcon className='h-4 w-4' />}
-          </button>
         </div>
       </header>
 
-      {/* Main Content: Chat + Map split */}
-      <div className='flex flex-1 overflow-hidden'>
-        {/* Chat Panel */}
-        <div
-          className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 md:w-1/2 md:max-w-2xl flex-col border-r border-border`}
-        >
-          <ChatPanel
-            onEntitiesUpdate={handleEntitiesUpdate}
-            onPlaceSelect={handlePlaceSelect}
-            selectedPlaceId={selectedPlaceId}
-          />
+      {/* Main Content: Chat + Map split (desktop) / single view + bottom tabs (mobile) */}
+      <div className='flex flex-1 flex-col overflow-hidden'>
+        <div className='flex flex-1 overflow-hidden'>
+          {/* Chat Panel */}
+          <div
+            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 md:w-1/2 md:max-w-2xl flex-col border-r border-border`}
+          >
+            <ChatPanel
+              onEntitiesUpdate={handleEntitiesUpdate}
+              onPlaceSelect={handlePlaceSelect}
+              selectedPlaceId={selectedPlaceId}
+            />
+          </div>
+
+          {/* Map Panel */}
+          <div className={`${showMap ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
+            <MapPanel
+              entities={entities}
+              selectedEntityId={selectedPlaceId}
+              onEntitySelect={handleMapEntitySelect}
+              onAlertClick={handleMapAlertClick}
+              onCloseInfoWindow={handleCloseMapInfo}
+              apiKey={apiKey}
+            />
+          </div>
         </div>
 
-        {/* Map Panel */}
-        <div className={`${showMap ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
-          <MapPanel
-            entities={entities}
-            selectedEntityId={selectedPlaceId}
-            onEntitySelect={handleMapEntitySelect}
-            onAlertClick={handleMapAlertClick}
-            onCloseInfoWindow={handleCloseMapInfo}
-            apiKey={apiKey}
-          />
-        </div>
+        {/* Mobile: bottom tab bar (Chat / Map) */}
+        <nav
+          className='md:hidden flex shrink-0 items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm py-3'
+          aria-label='채팅과 지도 전환'
+        >
+          <button
+            type='button'
+            onClick={() => setShowMap(false)}
+            className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+              !showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
+            }`}
+            aria-current={!showMap ? 'page' : undefined}
+          >
+            <MessageSquare className='h-5 w-5' aria-hidden />
+            채팅
+          </button>
+          <button
+            type='button'
+            onClick={() => setShowMap(true)}
+            className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+              showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
+            }`}
+            aria-current={showMap ? 'page' : undefined}
+          >
+            <MapIcon className='h-5 w-5' aria-hidden />
+            지도
+          </button>
+        </nav>
       </div>
     </div>
   );

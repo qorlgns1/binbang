@@ -2,7 +2,7 @@
 
 import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { Landmark } from 'lucide-react';
+import { Landmark, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
 
-  const { messages, sendMessage, status, stop } = useChat();
+  const { messages, sendMessage, status, stop, error, regenerate, clearError } = useChat();
 
   const isLoading = status !== 'ready';
 
@@ -138,6 +138,30 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
         )}
         <div ref={messagesEndRef} />
       </div>
+      {error && (
+        <div className='border-t border-border bg-destructive/10 px-4 py-3 flex items-center justify-between gap-3'>
+          <p className='text-sm text-destructive font-medium flex-1'>
+            답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.
+          </p>
+          <div className='flex items-center gap-2 shrink-0'>
+            <button
+              type='button'
+              onClick={() => regenerate()}
+              className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
+            >
+              <RefreshCw className='h-4 w-4' aria-hidden />
+              다시 시도
+            </button>
+            <button
+              type='button'
+              onClick={() => clearError()}
+              className='text-sm text-muted-foreground hover:text-foreground transition-colors'
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
       <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4'>
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
