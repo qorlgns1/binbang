@@ -7,7 +7,7 @@ interface RateLimitEntry {
 
 const MAX_ENTRIES = 1000;
 const CLEANUP_AGE_MS = 60 * 60 * 1000; // 1시간
-const WINDOW_MS = 60 * 1000; // 1분
+const DEFAULT_WINDOW_MS = 60 * 1000; // 1분
 
 const store = new Map<string, RateLimitEntry>();
 
@@ -15,14 +15,52 @@ export function getClientIp(request: NextRequest): string {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown';
 }
 
-export function getRateLimit(pathname: string): number | null {
+export function isCrawler(userAgent: string | null): boolean {
+  if (!userAgent) return false;
+  const crawlerPatterns = [
+    'googlebot',
+    'bingbot',
+    'slurp', // Yahoo
+    'duckduckbot',
+    'baiduspider',
+    'yandexbot',
+    'facebookexternalhit',
+    'twitterbot',
+    'rogerbot',
+    'linkedinbot',
+    'embedly',
+    'quora link preview',
+    'showyoubot',
+    'outbrain',
+    'pinterest',
+    'slackbot',
+    'vkShare',
+    'W3C_Validator',
+    'whatsapp',
+  ];
+  const lowerUA = userAgent.toLowerCase();
+  return crawlerPatterns.some((pattern) => lowerUA.includes(pattern));
+}
+
+export interface RateLimitConfig {
+  limit: number;
+  windowMs: number;
+}
+
+export function getRateLimit(pathname: string): RateLimitConfig | null {
   if (pathname === '/api/health') return null;
+
+  // Availability pages - 10초당 20 요청
+  if (pathname.includes('/availability/')) {
+    return { limit: 20, windowMs: 10 * 1000 };
+  }
+
   // Credentials endpoints – brute-force 방지 (1분 기준)
   // 실패 시에만 카운트하는 것이 이상적이지만, 현재는 모든 요청을 카운트
-  if (pathname === '/api/auth/credentials-login') return 30; // 1분에 30회 (2초에 1회)
-  if (pathname === '/api/auth/signup') return 10; // 1분에 10회
-  if (pathname.startsWith('/api/auth/')) return 60;
-  if (pathname.startsWith('/api/')) return 120;
+  if (pathname === '/api/auth/credentials-login') return { limit: 30, windowMs: DEFAULT_WINDOW_MS }; // 1분에 30회 (2초에 1회)
+  if (pathname === '/api/auth/signup') return { limit: 10, windowMs: DEFAULT_WINDOW_MS }; // 1분에 10회
+  if (pathname.startsWith('/api/auth/')) return { limit: 60, windowMs: DEFAULT_WINDOW_MS };
+  if (pathname.startsWith('/api/')) return { limit: 120, windowMs: DEFAULT_WINDOW_MS };
   return null;
 }
 
@@ -33,9 +71,10 @@ export interface RateLimitResult {
   retryAfter: number;
 }
 
-export function checkRateLimit(ip: string, limit: number): RateLimitResult {
+export function checkRateLimit(ip: string, config: RateLimitConfig): RateLimitResult {
+  const { limit, windowMs } = config;
   const now = Date.now();
-  const windowStart = now - WINDOW_MS;
+  const windowStart = now - windowMs;
 
   let entry = store.get(ip);
   if (!entry) {
@@ -48,7 +87,7 @@ export function checkRateLimit(ip: string, limit: number): RateLimitResult {
 
   if (entry.timestamps.length >= limit) {
     const oldestInWindow = entry.timestamps[0];
-    const retryAfter = Math.ceil((oldestInWindow + WINDOW_MS - now) / 1000);
+    const retryAfter = Math.ceil((oldestInWindow + windowMs - now) / 1000);
 
     return {
       allowed: false,

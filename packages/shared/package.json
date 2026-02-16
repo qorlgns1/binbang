@@ -33,6 +33,16 @@
       "types": "./src/i18n/index.ts",
       "development": "./src/i18n/index.ts",
       "default": "./dist/i18n/index.js"
+    },
+    "./utils/date": {
+      "types": "./src/utils/date.ts",
+      "development": "./src/utils/date.ts",
+      "default": "./dist/utils/date.js"
+    },
+    "./errors": {
+      "types": "./src/errors/index.ts",
+      "development": "./src/errors/index.ts",
+      "default": "./dist/errors/index.js"
     }
   },
   "scripts": {
