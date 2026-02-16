@@ -1,9 +1,9 @@
 'use client';
 
+import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
+
 import { Button } from '@/components/ui/button';
 import type { FunnelRangePreset } from '@/types/admin';
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export const FUNNEL_DATE_FILTER_OPTIONS: Array<{ value: FunnelRangePreset; label: string }> = [
   { value: 'today', label: '오늘' },
@@ -11,18 +11,6 @@ export const FUNNEL_DATE_FILTER_OPTIONS: Array<{ value: FunnelRangePreset; label
   { value: '30d', label: '30일' },
   { value: 'all', label: '전체' },
 ];
-
-function startOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
-}
-
-function endOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
-}
-
-function addUtcDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * MS_PER_DAY);
-}
 
 export interface FunnelUtcFilter {
   range: FunnelRangePreset;
