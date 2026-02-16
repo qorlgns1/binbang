@@ -14,7 +14,7 @@ Do not guess or invent behavior.
 
 Before suggesting any server/deploy change, read these files first:
 
-1. `DEPLOYMENT.md`
-2. `ENVIRONMENTS.md`
-3. `RUNBOOK.md`
-4. `llm-context.yaml`
+1. `docs/deployment/DEPLOYMENT.md`
+2. `docs/deployment/ENVIRONMENTS.md`
+3. `docs/deployment/RUNBOOK.md`
+4. `docs/llm-context.yaml`
