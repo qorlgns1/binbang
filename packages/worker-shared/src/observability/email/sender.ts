@@ -38,10 +38,7 @@ function redactEmail(email: string): string {
  *
  * config는 runtime/settings getEmailConfig()로 얻어 전달한다. null이면 'invalid_config'를 반환한다.
  */
-export async function sendEmailHttp(
-  params: SendEmailParams,
-  config: SendEmailConfig | null,
-): Promise<SendEmailResult> {
+export async function sendEmailHttp(params: SendEmailParams, config: SendEmailConfig | null): Promise<SendEmailResult> {
   if (!config) {
     return 'invalid_config';
   }
