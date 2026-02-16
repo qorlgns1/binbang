@@ -59,7 +59,7 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
 
               const toolPart = part as unknown as { type: string; toolCallId?: string };
               const key = toolPart.toolCallId ?? `part-${part.type}`;
-              return renderToolPart(part, key, onPlaceSelect, onAlertClick, selectedPlaceId);
+              return renderToolPart(part, key, onPlaceSelect, onPlaceHover, onAlertClick, selectedPlaceId);
             })}
             <p className='text-[10px] text-muted-foreground mt-1' aria-hidden>
               방금
