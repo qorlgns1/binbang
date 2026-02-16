@@ -12,12 +12,13 @@ import type { ExchangeRateData, PlaceEntity, WeatherData } from '@/lib/types';
 interface ChatMessageProps {
   message: UIMessage;
   onPlaceSelect?: (place: PlaceEntity) => void;
+  onPlaceHover?: (placeId: string | undefined) => void;
   onAlertClick?: (place: PlaceEntity) => void;
   selectedPlaceId?: string;
   isStreaming?: boolean;
 }
 
-export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlaceId, isStreaming }: ChatMessageProps) {
+export function ChatMessage({ message, onPlaceSelect, onPlaceHover, onAlertClick, selectedPlaceId, isStreaming }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
   return (
@@ -32,7 +33,7 @@ export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlac
       </div>
       <div className={`flex-1 min-w-0 space-y-1.5 ${isUser ? 'text-right' : ''}`}>
         {isUser ? (
-          <div className='inline-block rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-primary-foreground text-sm shadow-sm max-w-[85%]'>
+          <div className='inline-block rounded-2xl rounded-tr-sm bg-primary/[0.08] dark:bg-primary/15 border border-primary/20 text-foreground px-4 py-2.5 text-sm shadow-sm max-w-[85%]'>
             {message.parts.map((part) =>
               part.type === 'text' ? <span key={`text-${part.text.slice(0, 20)}`}>{part.text}</span> : null,
             )}
@@ -75,6 +76,7 @@ function renderToolPart(
   part: UIMessage['parts'][number],
   key: string,
   onPlaceSelect?: (place: PlaceEntity) => void,
+  onPlaceHover?: (placeId: string | undefined) => void,
   onAlertClick?: (place: PlaceEntity) => void,
   selectedPlaceId?: string,
 ) {
@@ -113,7 +115,12 @@ function renderToolPart(
         return (
           <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
-              <div key={place.placeId} data-place-id={place.placeId}>
+              <div
+                key={place.placeId}
+                data-place-id={place.placeId}
+                onMouseEnter={() => onPlaceHover?.(place.placeId)}
+                onMouseLeave={() => onPlaceHover?.(undefined)}
+              >
                 <PlaceCard
                   place={place}
                   isSelected={selectedPlaceId === place.placeId}
@@ -168,7 +175,12 @@ function renderToolPart(
         return (
           <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
             {data.places.map((place) => (
-              <div key={place.placeId} data-place-id={place.placeId}>
+              <div
+                key={place.placeId}
+                data-place-id={place.placeId}
+                onMouseEnter={() => onPlaceHover?.(place.placeId)}
+                onMouseLeave={() => onPlaceHover?.(undefined)}
+              >
                 <PlaceCard
                   place={place}
                   isSelected={selectedPlaceId === place.placeId}

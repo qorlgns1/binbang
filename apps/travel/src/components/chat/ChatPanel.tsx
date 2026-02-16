@@ -13,6 +13,7 @@ import type { MapEntity, PlaceEntity } from '@/lib/types';
 interface ChatPanelProps {
   onEntitiesUpdate: (entities: MapEntity[]) => void;
   onPlaceSelect: (place: PlaceEntity) => void;
+  onPlaceHover?: (placeId: string | undefined) => void;
   selectedPlaceId?: string;
 }
 
@@ -22,7 +23,7 @@ const EXAMPLE_QUERIES = [
   '특정 숙소의 빈 방 알림을 설정하고 싶어.',
 ];
 
-export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: ChatPanelProps) {
+export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
@@ -143,6 +144,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
                   <ChatMessage
                     message={message}
                     onPlaceSelect={onPlaceSelect}
+                    onPlaceHover={onPlaceHover}
                     onAlertClick={handleAlertClick}
                     selectedPlaceId={selectedPlaceId}
                     isStreaming={isStreamingAssistant}

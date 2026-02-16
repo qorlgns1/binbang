@@ -12,6 +12,7 @@ import type { MapEntity, PlaceEntity } from '@/lib/types';
 export default function HomePage() {
   const [entities, setEntities] = useState<MapEntity[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
+  const [hoveredPlaceId, setHoveredPlaceId] = useState<string | undefined>();
   const [showMap, setShowMap] = useState(true);
 
   const handleEntitiesUpdate = useCallback((newEntities: MapEntity[]) => {
@@ -32,6 +33,10 @@ export default function HomePage() {
 
   const handleCloseMapInfo = useCallback(() => {
     setSelectedPlaceId(undefined);
+  }, []);
+
+  const handlePlaceHover = useCallback((placeId: string | undefined) => {
+    setHoveredPlaceId(placeId);
   }, []);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
@@ -66,6 +71,7 @@ export default function HomePage() {
             <ChatPanel
               onEntitiesUpdate={handleEntitiesUpdate}
               onPlaceSelect={handlePlaceSelect}
+              onPlaceHover={handlePlaceHover}
               selectedPlaceId={selectedPlaceId}
             />
           </div>
@@ -75,6 +81,7 @@ export default function HomePage() {
             <MapPanel
               entities={entities}
               selectedEntityId={selectedPlaceId}
+              hoveredEntityId={hoveredPlaceId}
               onEntitySelect={handleMapEntitySelect}
               onAlertClick={handleMapAlertClick}
               onCloseInfoWindow={handleCloseMapInfo}
