@@ -9,10 +9,12 @@ import {
   useMap,
   useApiIsLoaded,
 } from '@vis.gl/react-google-maps';
-import { Bell } from 'lucide-react';
+import { Bell, MapPin, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { MapEntity } from '@/lib/types';
+
+const MAP_LOAD_TIMEOUT_MS = 15000;
 
 interface MapPanelProps {
   entities: MapEntity[];
@@ -34,6 +36,9 @@ const TYPE_COLORS: Record<string, { background: string; glyph: string }> = {
 };
 
 export function MapPanel({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow, apiKey }: MapPanelProps) {
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
   if (!apiKey) {
     return (
       <div className='flex h-full items-center justify-center bg-muted/30'>
@@ -45,8 +50,31 @@ export function MapPanel({ entities, selectedEntityId, onEntitySelect, onAlertCl
     );
   }
 
+  if (loadError) {
+    return (
+      <div className='flex h-full flex-col items-center justify-center gap-4 bg-muted/30 px-4'>
+        <div className='flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10'>
+          <MapPin className='h-7 w-7 text-destructive' aria-hidden />
+        </div>
+        <p className='text-center font-medium text-foreground'>지도를 불러오지 못했어요</p>
+        <p className='text-center text-sm text-muted-foreground'>네트워크를 확인한 뒤 다시 시도해 주세요.</p>
+        <button
+          type='button'
+          onClick={() => {
+            setLoadError(false);
+            setRetryKey((k) => k + 1);
+          }}
+          className='flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
+        >
+          <RefreshCw className='h-4 w-4' aria-hidden />
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <APIProvider apiKey={apiKey}>
+    <APIProvider apiKey={apiKey} key={retryKey}>
       <GoogleMap
         defaultCenter={DEFAULT_CENTER}
         defaultZoom={DEFAULT_ZOOM}
@@ -61,6 +89,7 @@ export function MapPanel({ entities, selectedEntityId, onEntitySelect, onAlertCl
           onEntitySelect={onEntitySelect}
           onAlertClick={onAlertClick}
           onCloseInfoWindow={onCloseInfoWindow}
+          onLoadTimeout={() => setLoadError(true)}
         />
       </GoogleMap>
     </APIProvider>
@@ -73,13 +102,20 @@ interface MapContentProps {
   onEntitySelect?: (entityId: string) => void;
   onAlertClick?: (entityId: string) => void;
   onCloseInfoWindow?: () => void;
+  onLoadTimeout?: () => void;
 }
 
-function MapContent({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow }: MapContentProps) {
+function MapContent({ entities, selectedEntityId, onEntitySelect, onAlertClick, onCloseInfoWindow, onLoadTimeout }: MapContentProps) {
   const map = useMap();
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
+
+  useEffect(() => {
+    if (isLoaded) return;
+    const t = setTimeout(() => onLoadTimeout?.(), MAP_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [isLoaded, onLoadTimeout]);
 
   const fitEntities = useCallback(() => {
     if (!map || !isLoaded || entities.length === 0) return;

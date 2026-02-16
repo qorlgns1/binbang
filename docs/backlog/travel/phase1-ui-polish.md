@@ -1,6 +1,6 @@
 # Phase 1: UI/UX 고도화 + 모바일 + 에러 핸들링
 
-Status: NOT STARTED
+Status: IN PROGRESS
 Priority: HIGH
 Depends on: MVP (completed)
 
@@ -28,7 +28,7 @@ Depends on: MVP (completed)
 - [ ] P1-1-T1: 메시지 버블 스타일 개선 (사용자/AI 구분, 아바타, 타임스탬프)
 - [ ] P1-1-T2: 스트리밍 텍스트 타이핑 애니메이션 추가
 - [ ] P1-1-T3: 도구 호출 중 로딩 인디케이터 개선 (현재 "Searching..." → 애니메이션 + 진행 상태)
-- [ ] P1-1-T4: **초기 화면(Empty State) 브랜드 반영**
+- [x] P1-1-T4: **초기 화면(Empty State) 브랜드 반영**
   - 중앙 히어로: 따뜻한 앰버·골드 컬러의 **등대 아이콘** + 환영 메시지
   - 환영 문구: "반가워요. 당신의 휴식이 길을 잃지 않도록, 빈방이 밤새 불을 밝혀둘게요."
   - **추천 질문 카드 3개** (유럽·빈방 특화):
@@ -44,7 +44,7 @@ Depends on: MVP (completed)
 **현재 파일**: `apps/travel/src/components/cards/PlaceCard.tsx`, `WeatherCard.tsx`, `CurrencyCard.tsx`
 
 - [ ] P1-2-T1: PlaceCard 리디자인 - 이미지 비율, 평점 별표, 가격 레벨 아이콘
-- [ ] P1-2-T2: **PlaceCard 하단에 [빈방 알림 설정하기] 버튼 강조** — 지도 마커 클릭 시 뜨는 팝업/카드에서도 동일. (기능은 Phase 2·3 연동 시 구현 가능, UI만 선행)
+- [x] P1-2-T2: **PlaceCard 하단에 [빈방 알림 설정하기] 버튼 강조** — 지도 마커 클릭 시 뜨는 팝업/카드에서도 동일. (기능은 Phase 2·3 연동 시 구현 가능, UI만 선행)
 - [ ] P1-2-T3: WeatherCard 리디자인 - 월별 차트/그래프 시각화, 아이콘 추가
 - [ ] P1-2-T4: CurrencyCard 리디자인 - 환율 변화 트렌드, 계산기 UI
 - [ ] P1-2-T5: 카드 클릭 시 지도에서 해당 장소 하이라이트 연동 강화
@@ -54,10 +54,10 @@ Depends on: MVP (completed)
 
 **현재 파일**: `apps/travel/src/components/map/MapPanel.tsx`
 
-- [ ] P1-3-T1: Maps JavaScript API 로딩 실패 시 fallback UI (에러 메시지 + 재시도 버튼)
+- [x] P1-3-T1: Maps JavaScript API 로딩 실패 시 fallback UI (에러 메시지 + 재시도 버튼)
 - [ ] P1-3-T2: 마커 클러스터링 (많은 장소가 표시될 때)
 - [ ] P1-3-T3: 마커 디자인 커스터마이징 (카테고리별 아이콘: 호텔, 식당, 관광지)
-- [ ] P1-3-T4: **마커 클릭 시 인포윈도우/팝업** — PlaceCard 내용 표시, 하단에 **[빈방 알림 설정하기]** 버튼 강조
+- [x] P1-3-T4: **마커 클릭 시 인포윈도우/팝업** — PlaceCard 내용 표시, 하단에 **[빈방 알림 설정하기]** 버튼 강조
 - [ ] P1-3-T5: 지도-채팅 간 양방향 상호작용 강화 (마커 클릭 → 채팅에서 해당 장소 하이라이트)
 
 ### P1-4: 모바일 반응형
@@ -76,8 +76,8 @@ Depends on: MVP (completed)
 - [ ] P1-5-T2: 네트워크 끊김 감지 및 알림 (온/오프라인 상태 표시)
 - [ ] P1-5-T3: 도구 호출(Places/Weather/Currency API) 실패 시 부분 응답 처리
 - [ ] P1-5-T4: Rate limit 초과 시 안내 메시지
-- [ ] P1-5-T5: 전역 에러 바운더리 (React Error Boundary) 적용
-- [ ] P1-5-T6: Toast 알림 시스템 도입 (sonner 또는 react-hot-toast)
+- [x] P1-5-T5: 전역 에러 바운더리 (React Error Boundary) 적용
+- [x] P1-5-T6: Toast 알림 시스템 도입 (sonner 또는 react-hot-toast)
 
 ### P1-6: 로딩/스켈레톤 UI
 
@@ -88,11 +88,11 @@ Depends on: MVP (completed)
 
 ## Acceptance Criteria
 
-- [ ] mindtrip.ai와 시각적으로 유사한 수준의 UI 완성도 + 브랜드(등대·빈방) 반영 초기 화면: 등대 아이콘, 환영 문구, 유럽·빈방 특화 추천 질문 3개
-- [ ] PlaceCard 및 지도 팝업에 [빈방 알림 설정하기] 버튼이 강조되어 노출
-- [ ] 컬러: 딥 네이비 계열 + 앰버·골드 포인트가 globals.css에 반영 (확정 색상은 검수 후)
+- [x] mindtrip.ai와 시각적으로 유사한 수준의 UI 완성도 + 브랜드(등대·빈방) 반영 초기 화면: 등대 아이콘, 환영 문구, 유럽·빈방 특화 추천 질문 3개
+- [x] PlaceCard 및 지도 팝업에 [빈방 알림 설정하기] 버튼이 강조되어 노출
+- [x] 컬러: 딥 네이비 계열 + 앰버·골드 포인트가 globals.css에 반영 (확정 색상은 검수 후)
 - [ ] 모바일(375px)에서 모든 기능이 자연스럽게 동작
-- [ ] 네트워크 에러/API 실패 시 사용자에게 명확한 피드백
+- [x] 네트워크 에러/API 실패 시 사용자에게 명확한 피드백 (지도 로딩 실패 fallback + 재시도)
 - [ ] Lighthouse 모바일 성능 점수 80+ (Performance, Accessibility)
 - [ ] 카드 클릭 ↔ 지도 마커 양방향 연동 동작
 
