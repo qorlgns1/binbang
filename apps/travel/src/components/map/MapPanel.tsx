@@ -11,6 +11,7 @@ import {
 } from '@vis.gl/react-google-maps';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { Bell, MapPin, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { MapEntity } from '@/lib/types';
@@ -22,6 +23,7 @@ const MAP_LOAD_TIMEOUT_MS = 15000;
 interface MapPanelProps {
   entities: MapEntity[];
   selectedEntityId?: string;
+  hoveredEntityId?: string;
   onEntitySelect?: (entityId: string) => void;
   onAlertClick?: (entityId: string) => void;
   onCloseInfoWindow?: () => void;
@@ -38,9 +40,17 @@ const TYPE_COLORS: Record<string, { background: string; glyph: string }> = {
   attraction: { background: '#10b981', glyph: '#ffffff' },
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  place: '장소',
+  restaurant: '음식점',
+  accommodation: '숙소',
+  attraction: '관광지',
+};
+
 export function MapPanel({
   entities,
   selectedEntityId,
+  hoveredEntityId,
   onEntitySelect,
   onAlertClick,
   onCloseInfoWindow,
@@ -97,6 +107,7 @@ export function MapPanel({
           <MapContent
             entities={entities}
             selectedEntityId={selectedEntityId}
+            hoveredEntityId={hoveredEntityId}
             onEntitySelect={onEntitySelect}
             onAlertClick={onAlertClick}
             onCloseInfoWindow={onCloseInfoWindow}
@@ -127,6 +138,7 @@ function MapLoadingOverlay() {
 interface MapContentProps {
   entities: MapEntity[];
   selectedEntityId?: string;
+  hoveredEntityId?: string;
   onEntitySelect?: (entityId: string) => void;
   onAlertClick?: (entityId: string) => void;
   onCloseInfoWindow?: () => void;
@@ -136,6 +148,7 @@ interface MapContentProps {
 function MapContent({
   entities,
   selectedEntityId,
+  hoveredEntityId,
   onEntitySelect,
   onAlertClick,
   onCloseInfoWindow,
@@ -217,13 +230,21 @@ function MapContent({
     handleSelectedEntity();
   }, [handleSelectedEntity]);
 
-  markerRefs.current = new Array(entities.length);
+  useEffect(() => {
+    if (!map || !onCloseInfoWindow) return;
+    const handler = () => onCloseInfoWindow();
+    const g = (globalThis as unknown as { google?: { maps?: { event?: { addListener: (target: unknown, name: string, fn: () => void) => { remove: () => void }; removeListener: (listener: { remove: () => void }) => void } } } }).google;
+    const listener = g?.maps?.event?.addListener(map, 'click', handler);
+    return () => {
+      if (listener?.remove) listener.remove();
+    };
+  }, [map, onCloseInfoWindow]);
 
   return (
     <>
       {entities.map((entity, index) => {
         const isSelected = entity.id === selectedEntityId;
-        const isHovered = entity.id === hoveredId;
+        const isHovered = entity.id === hoveredId || entity.id === hoveredEntityId;
         const colors = TYPE_COLORS[entity.type] ?? TYPE_COLORS.place;
         const scale = isSelected || isHovered ? 1.3 : 1;
 
@@ -248,10 +269,23 @@ function MapContent({
           position={{ lat: selectedEntity.latitude, lng: selectedEntity.longitude }}
           onCloseClick={() => onCloseInfoWindow?.()}
         >
-          <div className='min-w-[200px] max-w-[280px] p-2 text-left'>
-            <h4 className='font-semibold text-sm text-gray-900 dark:text-gray-100 truncate'>{selectedEntity.name}</h4>
-            <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 capitalize'>{selectedEntity.type}</p>
-            <button
+          <div className='min-w-[200px] max-w-[280px] text-left'>
+            {selectedEntity.photoUrl && (
+              <div className='relative aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-muted'>
+                <Image
+                  src={selectedEntity.photoUrl}
+                  alt={selectedEntity.name}
+                  fill
+                  className='object-cover'
+                  unoptimized
+                  sizes='280px'
+                />
+              </div>
+            )}
+            <div className='p-2'>
+              <h4 className='font-semibold text-sm text-gray-900 dark:text-gray-100 truncate'>{selectedEntity.name}</h4>
+              <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>{TYPE_LABELS[selectedEntity.type] ?? selectedEntity.type}</p>
+              <button
               type='button'
               onClick={() => onAlertClick?.(selectedEntity.id)}
               className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium py-2 px-3 transition-colors'
@@ -259,6 +293,7 @@ function MapContent({
               <Bell className='h-4 w-4 shrink-0' aria-hidden />
               빈방 알림 설정하기
             </button>
+            </div>
           </div>
         </InfoWindow>
       )}
