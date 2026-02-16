@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { AppError, type ValidationError } from '@workspace/shared/errors';
 
+/** API 에러 응답 본문 형식. `handleServiceError`가 반환하는 JSON 구조와 일치합니다. */
 export interface ErrorResponseBody {
   error: {
     code: string;
