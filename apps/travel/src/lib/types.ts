@@ -41,4 +41,5 @@ export interface MapEntity {
   latitude: number;
   longitude: number;
   type: 'place' | 'restaurant' | 'accommodation' | 'attraction';
+  photoUrl?: string;
 }
