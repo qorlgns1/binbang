@@ -203,8 +203,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
 }
 
 function inferType(types: string[]): MapEntity['type'] {
-  if (types.includes('restaurant') || types.includes('food')) return 'restaurant';
   if (types.includes('lodging') || types.includes('hotel')) return 'accommodation';
+  if (types.includes('restaurant') || types.includes('food')) return 'restaurant';
   if (types.includes('tourist_attraction') || types.includes('museum')) return 'attraction';
   return 'place';
 }
