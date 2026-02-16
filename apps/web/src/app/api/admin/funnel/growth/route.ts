@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError } from '@/lib/handleServiceError';
 import { getAdminFunnelGrowth } from '@/services/admin/funnel-growth.service';
 import type { FunnelRangePreset } from '@/services/admin/funnel.service';
 
@@ -107,8 +108,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       data,
     });
   } catch (error) {
-    const latencyMs = Date.now() - startedAt;
-    console.error('[admin/funnel/growth] error', { requestId, latencyMs, error });
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Internal server error', requestId);
+    return handleServiceError(error, 'Funnel growth');
   }
 }
