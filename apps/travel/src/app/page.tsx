@@ -37,18 +37,18 @@ export default function HomePage() {
 
   return (
     <div className='flex h-screen flex-col'>
-      {/* Header */}
-      <header className='flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-4 py-3'>
-        <div className='flex items-center gap-2'>
-          <div className='flex h-8 w-8 items-center justify-center rounded-lg bg-primary'>
-            <Compass className='h-5 w-5 text-primary-foreground' />
+      {/* Header: compact on mobile */}
+      <header className='flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-3 py-2 md:px-4 md:py-3'>
+        <div className='flex min-w-0 items-center gap-2'>
+          <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary md:h-8 md:w-8'>
+            <Compass className='h-4 w-4 text-primary-foreground md:h-5 md:w-5' />
           </div>
-          <h1 className='text-lg font-bold'>AI Travel Planner</h1>
+          <h1 className='truncate text-base font-bold md:text-lg'>빈방</h1>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex shrink-0 items-center gap-2'>
           {entities.length > 0 && (
-            <span className='text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full hidden sm:inline-flex'>
-              {entities.length} places on map
+            <span className='text-xs text-muted-foreground bg-muted hidden rounded-full px-2 py-1 sm:inline-flex'>
+              {entities.length}곳
             </span>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { Landmark, RefreshCw } from 'lucide-react';
+import { Bot, Landmark, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -140,6 +140,19 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
                 />
               </div>
             ))}
+            {status === 'streaming' &&
+              (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
+              <div className='flex gap-3 py-4' aria-live='polite' aria-busy='true'>
+                <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border/50'>
+                  <Bot className='h-4 w-4' aria-hidden />
+                </div>
+                <div className='flex flex-1 items-center gap-1 rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 border border-border/50 px-4 py-3 w-fit'>
+                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]' />
+                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]' />
+                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]' />
+                </div>
+              </div>
+            )}
           </div>
         )}
         <div ref={messagesEndRef} />
