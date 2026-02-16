@@ -2,8 +2,9 @@
 
 import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { Compass } from 'lucide-react';
+import { Landmark } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatMessage } from '@/components/chat/ChatMessage';
@@ -16,10 +17,9 @@ interface ChatPanelProps {
 }
 
 const EXAMPLE_QUERIES = [
-  'Plan a 5-day trip to Tokyo in spring',
-  'Best beaches in Southeast Asia for December',
-  'Budget-friendly European cities for a week',
-  "What's the weather like in Bali in March?",
+  '파리 에펠탑 근처, 취소분이 자주 나오는 가성비 숙소 찾아줘.',
+  '런던에서 지금 당장 예약 가능한 4성급 호텔 리스트 보여줘.',
+  '특정 숙소의 빈 방 알림을 설정하고 싶어.',
 ];
 
 export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: ChatPanelProps) {
@@ -95,26 +95,30 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
     sendMessage({ text: query });
   };
 
+  const handleAlertClick = useCallback((_place: PlaceEntity) => {
+    toast.info('빈방 알림 기능은 준비 중이에요.');
+  }, []);
+
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto scrollbar-hide px-4 py-4 space-y-6'>
         {messages.length === 0 ? (
-          <div className='flex flex-col items-center justify-center h-full text-center px-4'>
-            <div className='flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-6'>
-              <Compass className='h-8 w-8 text-primary' />
+          <div className='flex flex-col items-center justify-center min-h-[60vh] text-center px-4'>
+            <div className='flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-6 ring-2 ring-amber-200 dark:ring-amber-800/50'>
+              <Landmark className='h-10 w-10 text-amber-600 dark:text-amber-400' aria-hidden />
             </div>
-            <h2 className='text-2xl font-bold mb-2'>AI Travel Planner</h2>
-            <p className='text-muted-foreground mb-8 max-w-md'>
-              Tell me where you want to go, and I&apos;ll help you plan the perfect trip with real-time data on places,
-              weather, and exchange rates.
+            <h2 className='text-2xl font-bold mb-2 text-foreground'>빈방</h2>
+            <p className='text-muted-foreground mb-8 max-w-md leading-relaxed'>
+              반가워요. 당신의 휴식이 길을 잃지 않도록, 빈방이 밤새 불을 밝혀둘게요.
             </p>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg'>
+            <p className='text-xs text-muted-foreground mb-3'>추천 질문</p>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg'>
               {EXAMPLE_QUERIES.map((query) => (
                 <button
                   key={query}
                   type='button'
                   onClick={() => handleExampleClick(query)}
-                  className='rounded-xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent hover:border-primary/30 transition-colors'
+                  className='rounded-xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent hover:border-amber-400/50 dark:hover:border-amber-500/50 transition-colors shadow-sm'
                 >
                   {query}
                 </button>
@@ -127,6 +131,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, selectedPlaceId }: 
               key={message.id}
               message={message}
               onPlaceSelect={onPlaceSelect}
+              onAlertClick={handleAlertClick}
               selectedPlaceId={selectedPlaceId}
             />
           ))

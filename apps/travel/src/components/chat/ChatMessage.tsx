@@ -12,10 +12,11 @@ import type { ExchangeRateData, PlaceEntity, WeatherData } from '@/lib/types';
 interface ChatMessageProps {
   message: UIMessage;
   onPlaceSelect?: (place: PlaceEntity) => void;
+  onAlertClick?: (place: PlaceEntity) => void;
   selectedPlaceId?: string;
 }
 
-export function ChatMessage({ message, onPlaceSelect, selectedPlaceId }: ChatMessageProps) {
+export function ChatMessage({ message, onPlaceSelect, onAlertClick, selectedPlaceId }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
   return (
@@ -50,7 +51,7 @@ export function ChatMessage({ message, onPlaceSelect, selectedPlaceId }: ChatMes
 
               const toolPart = part as unknown as { type: string; toolCallId?: string };
               const key = toolPart.toolCallId ?? `part-${part.type}`;
-              return renderToolPart(part, key, onPlaceSelect, selectedPlaceId);
+              return renderToolPart(part, key, onPlaceSelect, onAlertClick, selectedPlaceId);
             })}
           </div>
         )}
@@ -63,6 +64,7 @@ function renderToolPart(
   part: UIMessage['parts'][number],
   key: string,
   onPlaceSelect?: (place: PlaceEntity) => void,
+  onAlertClick?: (place: PlaceEntity) => void,
   selectedPlaceId?: string,
 ) {
   if (
@@ -93,6 +95,7 @@ function renderToolPart(
                 place={place}
                 isSelected={selectedPlaceId === place.placeId}
                 onSelect={onPlaceSelect}
+                onAlertClick={onAlertClick}
               />
             ))}
           </div>
@@ -136,6 +139,7 @@ function renderToolPart(
                 place={place}
                 isSelected={selectedPlaceId === place.placeId}
                 onSelect={onPlaceSelect}
+                onAlertClick={onAlertClick}
               />
             ))}
           </div>

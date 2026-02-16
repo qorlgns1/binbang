@@ -31,6 +31,7 @@
   --radius-xl: calc(var(--radius) + 0.25rem);
 }
 
+/* 빈방 브랜드: 메인 딥 네이비(#1e3a5f), 포인트 앰버·골드(#e6a23c). 배경은 mindtrip 시각 유사도 위해 밝게 유지 */
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
@@ -41,7 +42,7 @@
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  --primary: #2563eb;
+  --primary: #1e3a5f;
   --primary-foreground: #ffffff;
 
   --secondary: #f1f5f9;
@@ -50,15 +51,15 @@
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
 
-  --accent: #eff6ff;
-  --accent-foreground: #1e40af;
+  --accent: #fef3c7;
+  --accent-foreground: #92400e;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #2563eb;
+  --ring: #1e3a5f;
 }
 
 .dark {
@@ -71,7 +72,7 @@
   --popover: #1e293b;
   --popover-foreground: #f1f5f9;
 
-  --primary: #3b82f6;
+  --primary: #1e3a5f;
   --primary-foreground: #ffffff;
 
   --secondary: #1e293b;
@@ -80,15 +81,15 @@
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
 
-  --accent: #1e3a5f;
-  --accent-foreground: #93c5fd;
+  --accent: #78350f;
+  --accent-foreground: #fef3c7;
 
   --destructive: #ef4444;
   --destructive-foreground: #fef2f2;
 
   --border: #334155;
   --input: #334155;
-  --ring: #3b82f6;
+  --ring: #1e3a5f;
 }
 
 @layer base {
