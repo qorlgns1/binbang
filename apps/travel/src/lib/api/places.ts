@@ -1,3 +1,5 @@
+import { generateCacheKey, getCachedData, setCachedData } from '@/services/cache.service';
+
 export interface SearchPlacesParams {
   query: string;
   location?: string;
@@ -18,11 +20,19 @@ export interface PlaceResult {
 }
 
 const FETCH_TIMEOUT_MS = 10000;
+const PLACES_CACHE_TTL = 86400; // 24 hours
 
 export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
   places: PlaceResult[];
   query: string;
 }> {
+  // Try cache first
+  const cacheKey = generateCacheKey('places', params);
+  const cached = await getCachedData<{ places: PlaceResult[]; query: string }>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     return { places: [], query: params.query };
@@ -94,7 +104,12 @@ export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
         placeId: place.id,
       }));
 
-    return { places, query: params.query };
+    const result = { places, query: params.query };
+
+    // Cache the successful result
+    await setCachedData(cacheKey, result, { ttl: PLACES_CACHE_TTL });
+
+    return result;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       console.error('Google Places API request timed out');

@@ -1,3 +1,5 @@
+import { generateCacheKey, getCachedData, setCachedData } from '@/services/cache.service';
+
 export interface WeatherParams {
   city: string;
   month?: number;
@@ -37,8 +39,16 @@ const MONTH_NAMES = [
 ];
 
 const FETCH_TIMEOUT_MS = 10000;
+const WEATHER_CACHE_TTL = 604800; // 7 days (historical weather data doesn't change)
 
 export async function fetchWeatherHistory(params: WeatherParams): Promise<WeatherResult> {
+  // Try cache first
+  const cacheKey = generateCacheKey('weather', params);
+  const cached = await getCachedData<WeatherResult>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const apiKey = process.env.OPENWEATHERMAP_API_KEY;
   if (!apiKey) {
     return createFallbackWeather(params.city, params.month);
@@ -100,11 +110,16 @@ export async function fetchWeatherHistory(params: WeatherParams): Promise<Weathe
 
     const filteredMonthly = params.month ? monthly.filter((m) => m.month === params.month) : monthly;
 
-    return {
+    const result = {
       city: params.city,
       country,
       monthly: filteredMonthly,
     };
+
+    // Cache the successful result
+    await setCachedData(cacheKey, result, { ttl: WEATHER_CACHE_TTL });
+
+    return result;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       console.error('Weather API request timed out');

@@ -1,3 +1,5 @@
+import { generateCacheKey, getCachedData, setCachedData } from '@/services/cache.service';
+
 export interface ExchangeRateParams {
   baseCurrency: string;
   targetCurrencies: string[];
@@ -10,8 +12,16 @@ export interface ExchangeRateResult {
 }
 
 const FETCH_TIMEOUT_MS = 10000;
+const EXCHANGE_RATE_CACHE_TTL = 3600; // 1 hour (exchange rates change frequently)
 
 export async function fetchExchangeRate(params: ExchangeRateParams): Promise<ExchangeRateResult> {
+  // Try cache first
+  const cacheKey = generateCacheKey('exchange_rate', params);
+  const cached = await getCachedData<ExchangeRateResult>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const apiKey = process.env.EXCHANGERATE_API_KEY;
   const base = params.baseCurrency.toUpperCase();
 
@@ -51,11 +61,16 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
       }
     }
 
-    return {
+    const result = {
       baseCurrency: base,
       rates,
       lastUpdated: data.time_last_update_utc ?? new Date().toISOString(),
     };
+
+    // Cache the successful result
+    await setCachedData(cacheKey, result, { ttl: EXCHANGE_RATE_CACHE_TTL });
+
+    return result;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       console.error('Exchange rate API request timed out');
