@@ -1,28 +1,31 @@
-import { prisma } from '@workspace/db';
+import { cleanupGuestConversations } from '@/services/conversation.service';
 
 /**
  * 게스트 세션 정리 Cron
  * - 7일 이상 된 게스트 대화(userId=null) 삭제
  * - Vercel Cron 또는 수동 호출
+ * - CRON_SECRET 헤더로 인증 (설정된 경우)
  */
-export async function GET() {
-  try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+export async function GET(req: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
-    const result = await prisma.travelConversation.deleteMany({
-      where: {
-        userId: null, // 게스트 대화만
-        createdAt: {
-          lt: sevenDaysAgo,
-        },
-      },
-    });
+  try {
+    const deletedCount = await cleanupGuestConversations();
 
     return new Response(
       JSON.stringify({
         success: true,
-        deletedCount: result.count,
-        message: `${result.count} guest conversations deleted`,
+        deletedCount,
+        message: `${deletedCount} guest conversations deleted`,
       }),
       {
         status: 200,

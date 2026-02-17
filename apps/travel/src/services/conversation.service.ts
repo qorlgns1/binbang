@@ -102,20 +102,6 @@ export async function getConversation(conversationId: string) {
   });
 }
 
-export async function getConversationsBySession(sessionId: string) {
-  return prisma.travelConversation.findMany({
-    where: { sessionId },
-    select: {
-      id: true,
-      title: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 50,
-  });
-}
-
 interface EntityCreateData {
   conversationId: string;
   type: string;
@@ -204,4 +190,44 @@ export async function getConversationsByUser(userId: string) {
     orderBy: { updatedAt: 'desc' },
     take: 50,
   });
+}
+
+/**
+ * 대화 삭제 (소유권 확인 포함)
+ * @returns 삭제 성공 여부. 대화가 없거나 소유자가 아니면 false 반환.
+ */
+export async function deleteConversation(conversationId: string, userId: string): Promise<boolean> {
+  const conversation = await prisma.travelConversation.findUnique({
+    where: { id: conversationId },
+    select: { userId: true },
+  });
+
+  if (!conversation || conversation.userId !== userId) {
+    return false;
+  }
+
+  await prisma.travelConversation.delete({
+    where: { id: conversationId },
+  });
+
+  return true;
+}
+
+/**
+ * 7일 이상 된 게스트 대화(userId=null) 정리
+ * @returns 삭제된 대화 수
+ */
+export async function cleanupGuestConversations(): Promise<number> {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const result = await prisma.travelConversation.deleteMany({
+    where: {
+      userId: null,
+      createdAt: {
+        lt: sevenDaysAgo,
+      },
+    },
+  });
+
+  return result.count;
 }
