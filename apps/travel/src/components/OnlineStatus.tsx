@@ -40,7 +40,7 @@ export function OnlineStatus() {
       title={isOnline ? '온라인' : '오프라인'}
       aria-live='polite'
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-amber-500'}`} aria-hidden />
+      <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-brand-amber'}`} aria-hidden />
       {isOnline ? '온라인' : '오프라인'}
     </span>
   );

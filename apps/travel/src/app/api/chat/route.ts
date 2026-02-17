@@ -1,17 +1,22 @@
 import type { UIMessage } from 'ai';
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
+import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
+import { applyContextWindow } from '@/lib/ai/contextWindow';
 import { geminiFlashLite } from '@/lib/ai/model';
 import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { travelTools } from '@/lib/ai/tools';
+import { authOptions } from '@/lib/auth';
 import { saveConversationMessages } from '@/services/conversation.service';
+import { GUEST_LIMITS, USER_LIMITS, checkRateLimit, incrementCount } from '@/services/rate-limit.service';
 
 export const maxDuration = 60;
 
 const postBodySchema = z.object({
   messages: z.array(z.unknown()).min(1, 'messages array is required'),
   sessionId: z.string().optional(),
+  conversationId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -33,9 +38,14 @@ export async function POST(req: Request) {
     });
   }
 
-  const { messages, sessionId: clientSessionId } = parsed.data as {
+  const {
+    messages,
+    sessionId: clientSessionId,
+    conversationId: clientConversationId,
+  } = parsed.data as {
     messages: UIMessage[];
     sessionId?: string;
+    conversationId?: string;
   };
   const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
   const lastUserText =
@@ -51,7 +61,22 @@ export async function POST(req: Request) {
     });
   }
 
-  const modelMessages = await convertToModelMessages(messages);
+  // Rate limiting 확인
+  const session = await getServerSession(authOptions);
+  const rateLimitKey = session?.user?.id ?? clientSessionId ?? `anon_${Date.now()}`;
+  const limits = session?.user ? USER_LIMITS : GUEST_LIMITS;
+
+  const rateCheck = await checkRateLimit(rateLimitKey, limits, clientConversationId);
+  if (!rateCheck.allowed) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded', reason: rateCheck.reason }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const rawModelMessages = await convertToModelMessages(messages);
+  const windowSize = Number.parseInt(process.env.CONTEXT_WINDOW_SIZE ?? '10', 10);
+  const modelMessages = applyContextWindow(rawModelMessages, windowSize);
 
   const sessionId = clientSessionId?.trim() ?? `server_${Date.now()}`;
 
@@ -63,13 +88,17 @@ export async function POST(req: Request) {
     stopWhen: stepCountIs(5),
     onFinish: async ({ text, toolCalls, toolResults }) => {
       try {
-        await saveConversationMessages({
+        const result = await saveConversationMessages({
+          conversationId: clientConversationId,
           sessionId,
           userMessage: lastUserText,
           assistantMessage: text,
           toolCalls: toolCalls as unknown[],
           toolResults: toolResults as unknown[],
         });
+
+        // Rate limit 카운터 증가
+        incrementCount(rateLimitKey, result.conversationId, result.isNewConversation);
       } catch (error) {
         console.error('Failed to save conversation:', error);
       }

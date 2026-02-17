@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { MapEntity } from '@/lib/types';
+import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
 
 const CLUSTER_THRESHOLD = 12;
 
@@ -84,7 +85,8 @@ export function MapPanel({
             setLoadError(false);
             setRetryKey((k: number) => k + 1);
           }}
-          className='flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
+          className='flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
+          aria-label='지도 다시 불러오기'
         >
           <RefreshCw className='h-4 w-4' aria-hidden />
           다시 시도
@@ -129,8 +131,8 @@ function MapLoadingOverlay() {
       aria-live='polite'
       aria-busy='true'
     >
-      <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
-      <p className='text-sm font-medium text-muted-foreground'>지도 불러오는 중...</p>
+      <LighthouseSpinner size='lg' />
+      <p className='text-sm font-medium text-muted-foreground'>어둠 속에서 길을 찾고 있어요...</p>
     </div>
   );
 }
@@ -282,14 +284,14 @@ function MapContent({
         >
           <div className='min-w-[200px] max-w-[280px] text-left'>
             {selectedEntity.photoUrl && (
-              <div className='relative aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-muted'>
+              <div className='relative aspect-4/3 w-full overflow-hidden rounded-t-lg bg-muted'>
                 <Image
                   src={selectedEntity.photoUrl}
                   alt={selectedEntity.name}
                   fill
+                  sizes='280px'
                   className='object-cover'
                   unoptimized
-                  sizes='280px'
                 />
               </div>
             )}
@@ -301,7 +303,8 @@ function MapContent({
               <button
                 type='button'
                 onClick={() => onAlertClick?.(selectedEntity.id)}
-                className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium py-2 px-3 transition-colors'
+                className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2 px-3 transition-all duration-150'
+                aria-label={`${selectedEntity.name}의 빈방 알림 설정하기`}
               >
                 <Bell className='h-4 w-4 shrink-0' aria-hidden />
                 빈방 알림 설정하기

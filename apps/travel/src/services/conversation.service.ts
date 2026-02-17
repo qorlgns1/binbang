@@ -15,6 +15,8 @@ export async function saveConversationMessages(params: SaveMessageParams) {
   let { conversationId } = params;
 
   const resultId = await prisma.$transaction(async (tx) => {
+    const isNewConversation = !conversationId;
+
     if (!conversationId) {
       const conversation = await tx.travelConversation.create({
         data: {
@@ -43,6 +45,15 @@ export async function saveConversationMessages(params: SaveMessageParams) {
       ],
     });
 
+    // messageCount 업데이트
+    await tx.travelConversation.update({
+      where: { id: conversationId },
+      data: {
+        messageCount: { increment: 2 }, // user + assistant
+      },
+      select: { id: true },
+    });
+
     // Extract entities from tool results and save them
     if (toolResults && toolResults.length > 0) {
       const entities = extractEntitiesFromToolResults(toolResults, conversationId);
@@ -51,7 +62,7 @@ export async function saveConversationMessages(params: SaveMessageParams) {
       }
     }
 
-    return conversationId;
+    return { conversationId, isNewConversation };
   });
 
   return resultId;
@@ -63,6 +74,7 @@ export async function getConversation(conversationId: string) {
     select: {
       id: true,
       sessionId: true,
+      userId: true,
       title: true,
       createdAt: true,
       messages: {
@@ -155,4 +167,41 @@ function inferPlaceType(types?: string[]): string {
   if (types.includes('lodging') || types.includes('hotel')) return 'accommodation';
   if (types.includes('tourist_attraction') || types.includes('museum')) return 'attraction';
   return 'place';
+}
+
+/**
+ * 게스트 세션의 모든 대화를 사용자 계정으로 병합
+ */
+export async function mergeGuestSessionToUser(sessionId: string, userId: string): Promise<{ mergedCount: number }> {
+  const result = await prisma.travelConversation.updateMany({
+    where: {
+      sessionId,
+      userId: null, // 게스트 대화만
+    },
+    data: {
+      userId,
+    },
+  });
+
+  return { mergedCount: result.count };
+}
+
+/**
+ * 사용자의 모든 대화 조회 (userId 기준)
+ */
+export async function getConversationsByUser(userId: string) {
+  return prisma.travelConversation.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: { messages: true },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 50,
+  });
 }

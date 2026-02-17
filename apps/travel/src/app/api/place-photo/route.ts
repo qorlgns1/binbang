@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
     return new Response('Server configuration error', { status: 500 });
   }
 
-  const url = `https://places.googleapis.com/v1/${encodeURIComponent(photoName)}/media?maxHeightPx=${maxHeightPx}&maxWidthPx=${maxWidthPx}&key=${apiKey}`;
+  // photoName is already URL-safe from Places API, don't double-encode
+  const url = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=${maxHeightPx}&maxWidthPx=${maxWidthPx}&key=${apiKey}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
