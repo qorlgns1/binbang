@@ -552,7 +552,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '니스는 프랑스 리비에라의 진주로 불리는 지중해 휴양 도시입니다. 코발트블루 바다와 프롬나드 데 장글레의 야자수 가로수길, 구시가지의 파스텔톤 건물들이 완벽한 조화를 이룹니다. 따뜻한 햇살 아래 즐기는 니스 사라드와 소카는 여행의 즐거움을 배가합니다.',
     descriptionEn:
-      "Nice, known as the Pearl of the French Riviera, is a Mediterranean resort city. Cobalt blue seas, palm-lined Promenade des Anglais, and pastel buildings in the old town create perfect harmony. Enjoying Niçoise salad and socca under warm sunshine doubles travel pleasure.",
+      'Nice, known as the Pearl of the French Riviera, is a Mediterranean resort city. Cobalt blue seas, palm-lined Promenade des Anglais, and pastel buildings in the old town create perfect harmony. Enjoying Niçoise salad and socca under warm sunshine doubles travel pleasure.',
     highlightsKo: [
       '프롬나드 데 장글레 해변 산책',
       '구시가지 쿠르 살레야 시장',
@@ -572,7 +572,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '로마는 "영원한 도시"로 불리는 이탈리아의 수도이자 고대 로마 제국의 심장입니다. 콜로세움과 포로 로마노의 웅장한 유적, 바티칸의 성 베드로 대성당과 시스티나 성당의 천장화는 인류 문명의 정수를 보여줍니다. 트레비 분수에 동전을 던지며 다시 로마를 찾을 것을 약속하세요.',
     descriptionEn:
-      'Rome, the "Eternal City," is Italy\'s capital and heart of the ancient Roman Empire. Magnificent ruins of the Colosseum and Roman Forum, Vatican\'s St. Peter\'s Basilica, and Sistine Chapel ceiling frescoes showcase human civilization\'s pinnacle. Toss a coin in Trevi Fountain to promise your return to Rome.',
+      "Rome, the \"Eternal City,\" is Italy's capital and heart of the ancient Roman Empire. Magnificent ruins of the Colosseum and Roman Forum, Vatican's St. Peter's Basilica, and Sistine Chapel ceiling frescoes showcase human civilization's pinnacle. Toss a coin in Trevi Fountain to promise your return to Rome.",
     highlightsKo: [
       '콜로세움과 고대 로마 유적',
       '바티칸 시스티나 성당 천장화',
@@ -582,7 +582,7 @@ const DESTINATION_CONTENT: Record<
     ],
     highlightsEn: [
       'Colosseum and ancient Roman ruins',
-      "Vatican Sistine Chapel ceiling",
+      'Vatican Sistine Chapel ceiling',
       'Toss coin at Trevi Fountain',
       'Spanish Steps and gelato',
       'Pantheon and Piazza Navona',
@@ -592,7 +592,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '베네치아는 물 위에 세워진 환상적인 도시입니다. 곤돌라를 타고 좁은 운하를 누비며 산 마르코 광장과 리알토 다리를 구경하는 것은 마치 중세 시대로 시간여행을 하는 듯합니다. 베네치안 마스크와 무라노 유리 공예품은 특별한 기념품이 됩니다.',
     descriptionEn:
-      'Venice is a fantastical city built on water. Navigating narrow canals in a gondola past St. Mark\'s Square and Rialto Bridge feels like time-traveling to medieval times. Venetian masks and Murano glass crafts make unique souvenirs.',
+      "Venice is a fantastical city built on water. Navigating narrow canals in a gondola past St. Mark's Square and Rialto Bridge feels like time-traveling to medieval times. Venetian masks and Murano glass crafts make unique souvenirs.",
     highlightsKo: [
       '곤돌라 타고 대운하 투어',
       '산 마르코 대성당과 광장',
@@ -641,7 +641,7 @@ const DESTINATION_CONTENT: Record<
       '코벤트 가든과 애프터눈 티',
     ],
     highlightsEn: [
-      "Buckingham Palace Changing of Guard",
+      'Buckingham Palace Changing of Guard',
       'Free admission British Museum',
       'Big Ben and Westminster Abbey',
       'London Eye Thames River view',
@@ -672,7 +672,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '마드리드는 스페인의 활기찬 수도로 낮과 밤이 다른 매력을 지닙니다. 프라도 미술관의 벨라스케스와 고야 작품, 레티로 공원의 여유로운 오후, 그랑 비아의 쇼핑과 타파스 바 호핑까지 다채롭습니다. 플라멩코 공연은 스페인 문화의 열정을 느낄 수 있는 특별한 경험입니다.',
     descriptionEn:
-      'Madrid is Spain\'s vibrant capital with different charms day and night. Prado Museum\'s Velázquez and Goya works, leisurely afternoons in Retiro Park, Gran Vía shopping, and tapas bar hopping offer diversity. Flamenco shows provide a passionate Spanish cultural experience.',
+      "Madrid is Spain's vibrant capital with different charms day and night. Prado Museum's Velázquez and Goya works, leisurely afternoons in Retiro Park, Gran Vía shopping, and tapas bar hopping offer diversity. Flamenco shows provide a passionate Spanish cultural experience.",
     highlightsKo: [
       '프라도 미술관 명화 감상',
       '레티로 공원 보트 타기',
@@ -692,7 +692,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '뉴욕은 "잠들지 않는 도시"로 불리는 미국 최대의 도시입니다. 자유의 여신상과 타임스퀘어의 네온사인, 센트럴 파크의 푸른 숲과 브로드웨이 뮤지컬까지 끊임없는 활력이 넘칩니다. 세계 각국의 음식을 맛볼 수 있는 다문화 도시이자, 현대 예술과 패션의 메카입니다.',
     descriptionEn:
-      'New York is America\'s largest city, "The City That Never Sleeps." From the Statue of Liberty and Times Square\'s neon lights to Central Park\'s greenery and Broadway musicals, endless energy flows. This multicultural metropolis offers global cuisine and serves as a mecca for contemporary art and fashion.',
+      "New York is America's largest city, \"The City That Never Sleeps.\" From the Statue of Liberty and Times Square's neon lights to Central Park's greenery and Broadway musicals, endless energy flows. This multicultural metropolis offers global cuisine and serves as a mecca for contemporary art and fashion.",
     highlightsKo: [
       '자유의 여신상 페리 투어',
       '타임스퀘어와 브로드웨이 뮤지컬',
@@ -732,7 +732,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '샌프란시스코는 금문교가 상징인 아름다운 항구 도시입니다. 케이블카를 타고 언덕을 오르내리며 피셔맨스 워프의 신선한 해산물을 맛보고, 알카트라즈 감옥 투어를 즐길 수 있습니다. 실리콘밸리와 가까워 IT 혁신의 현장도 느낄 수 있는 독특한 도시입니다.',
     descriptionEn:
-      'San Francisco is a beautiful port city symbolized by the Golden Gate Bridge. Ride cable cars up and down hills, savor fresh seafood at Fisherman\'s Wharf, and tour Alcatraz prison. Its proximity to Silicon Valley offers a unique glimpse into IT innovation.',
+      "San Francisco is a beautiful port city symbolized by the Golden Gate Bridge. Ride cable cars up and down hills, savor fresh seafood at Fisherman's Wharf, and tour Alcatraz prison. Its proximity to Silicon Valley offers a unique glimpse into IT innovation.",
     highlightsKo: [
       '금문교 전망대',
       '케이블카 투어',
@@ -752,7 +752,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '싱가포르는 아시아의 정원 도시 국가입니다. 마리나 베이 샌즈의 인피니티 풀과 가든스 바이 더 베이의 슈퍼트리, 다양한 에스닉 푸드가 공존하는 호커 센터까지 완벽한 조화를 이룹니다. 청결하고 안전한 도시에서 동서양 문화가 융합된 특별한 경험을 할 수 있습니다.',
     descriptionEn:
-      'Singapore is Asia\'s garden city-state. Marina Bay Sands\' infinity pool, Gardens by the Bay\'s Supertrees, and hawker centers offering diverse ethnic foods create perfect harmony. This clean, safe city offers a unique blend of Eastern and Western cultures.',
+      "Singapore is Asia's garden city-state. Marina Bay Sands' infinity pool, Gardens by the Bay's Supertrees, and hawker centers offering diverse ethnic foods create perfect harmony. This clean, safe city offers a unique blend of Eastern and Western cultures.",
     highlightsKo: [
       '마리나 베이 샌즈 인피니티 풀',
       '가든스 바이 더 베이 슈퍼트리',
@@ -772,7 +772,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '시드니는 오페라 하우스가 상징인 호주 최대 도시입니다. 하버 브리지를 배경으로 한 오페라 하우스의 야경과 본다이 비치의 서핑, 달링 하버의 활기찬 분위기가 매력적입니다. 신선한 시푸드와 와인을 즐기며 남반구의 아름다운 자연을 만끽할 수 있습니다.',
     descriptionEn:
-      'Sydney is Australia\'s largest city, symbolized by the Opera House. The Opera House night view with Harbour Bridge backdrop, Bondi Beach surfing, and vibrant Darling Harbour atmosphere captivate visitors. Enjoy fresh seafood and wine while experiencing the Southern Hemisphere\'s natural beauty.',
+      "Sydney is Australia's largest city, symbolized by the Opera House. The Opera House night view with Harbour Bridge backdrop, Bondi Beach surfing, and vibrant Darling Harbour atmosphere captivate visitors. Enjoy fresh seafood and wine while experiencing the Southern Hemisphere's natural beauty.",
     highlightsKo: [
       '시드니 오페라 하우스 투어',
       '하버 브리지 클라이밍',
@@ -792,7 +792,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '멜버른은 유럽 감성이 물씬 풍기는 호주의 문화 수도입니다. 빅토리아 양식 건물과 골목 곳곳의 스트리트 아트, 트램이 다니는 거리가 독특한 분위기를 만듭니다. 세계 최고 수준의 커피 문화와 다문화 음식, 연중 이어지는 예술 축제가 여행객들을 반깁니다.',
     descriptionEn:
-      'Melbourne is Australia\'s cultural capital with strong European vibes. Victorian architecture, street art in laneways, and tram-filled streets create a unique atmosphere. World-class coffee culture, multicultural cuisine, and year-round art festivals welcome travelers.',
+      "Melbourne is Australia's cultural capital with strong European vibes. Victorian architecture, street art in laneways, and tram-filled streets create a unique atmosphere. World-class coffee culture, multicultural cuisine, and year-round art festivals welcome travelers.",
     highlightsKo: [
       '연방 광장과 플린더스 역',
       '퀸 빅토리아 마켓',
@@ -832,7 +832,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '하노이는 천년 역사를 간직한 베트남의 수도입니다. 호안끼엠 호수와 구시가지의 프랑스 식민지 건축물, 분주한 오토바이 행렬이 독특한 풍경을 만듭니다. 쌀국수 포와 반미, 에그 커피 등 베트남 특유의 음식 문화를 만끽할 수 있는 미식의 도시입니다.',
     descriptionEn:
-      'Hanoi is Vietnam\'s capital with a thousand-year history. Hoan Kiem Lake, French colonial architecture in the Old Quarter, and bustling motorcycle traffic create unique scenery. This culinary city lets you savor Vietnamese food culture through pho, banh mi, and egg coffee.',
+      "Hanoi is Vietnam's capital with a thousand-year history. Hoan Kiem Lake, French colonial architecture in the Old Quarter, and bustling motorcycle traffic create unique scenery. This culinary city lets you savor Vietnamese food culture through pho, banh mi, and egg coffee.",
     highlightsKo: [
       '호안끼엠 호수와 옥산 사원',
       '구시가지 36거리',
@@ -852,7 +852,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '호치민은 구 사이공으로 불리는 베트남 최대의 상업 도시입니다. 프랑스 식민지 시대 건축물과 전쟁 박물관, 벤탄 시장의 활기가 도시의 역사를 말해줍니다. 메콩 델타 투어와 쌀국수, 반세오 등 남부 베트남 요리를 즐길 수 있는 활기찬 도시입니다.',
     descriptionEn:
-      'Ho Chi Minh, formerly Saigon, is Vietnam\'s largest commercial city. French colonial architecture, War Remnants Museum, and bustling Ben Thanh Market tell the city\'s history. This vibrant city offers Mekong Delta tours and southern Vietnamese cuisine like pho and banh xeo.',
+      "Ho Chi Minh, formerly Saigon, is Vietnam's largest commercial city. French colonial architecture, War Remnants Museum, and bustling Ben Thanh Market tell the city's history. This vibrant city offers Mekong Delta tours and southern Vietnamese cuisine like pho and banh xeo.",
     highlightsKo: [
       '노트르담 대성당과 중앙 우체국',
       '전쟁 박물관',
@@ -872,7 +872,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '쿠알라룸푸르는 페트로나스 트윈 타워가 상징인 말레이시아의 수도입니다. 이슬람 사원과 힌두 사원, 중국 사원이 공존하며 다문화 사회를 보여줍니다. 바투 동굴의 계단과 부킷 빈탕 쇼핑, 나시 레막과 로티 차나이 등 다양한 음식도 매력적입니다.',
     descriptionEn:
-      'Kuala Lumpur is Malaysia\'s capital, symbolized by Petronas Twin Towers. Islamic mosques, Hindu temples, and Chinese temples coexist, showcasing a multicultural society. Batu Caves stairs, Bukit Bintang shopping, and diverse foods like nasi lemak and roti canai captivate visitors.',
+      "Kuala Lumpur is Malaysia's capital, symbolized by Petronas Twin Towers. Islamic mosques, Hindu temples, and Chinese temples coexist, showcasing a multicultural society. Batu Caves stairs, Bukit Bintang shopping, and diverse foods like nasi lemak and roti canai captivate visitors.",
     highlightsKo: [
       '페트로나스 트윈 타워 야경',
       '바투 동굴 힌두 사원',
@@ -912,7 +912,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '두바이는 사막 위에 세워진 미래 도시입니다. 세계 최고층 부르즈 칼리파와 인공섬 팜 주메이라, 럭셔리 쇼핑몰이 현대 문명의 극치를 보여줍니다. 사막 사파리와 골드 수크 시장, 전통 아랍 음식을 통해 중동 문화도 경험할 수 있습니다.',
     descriptionEn:
-      'Dubai is a futuristic city built on desert sands. The world\'s tallest Burj Khalifa, artificial Palm Jumeirah island, and luxury malls showcase modern civilization\'s pinnacle. Desert safaris, Gold Souk market, and traditional Arabic cuisine offer Middle Eastern cultural experiences.',
+      "Dubai is a futuristic city built on desert sands. The world's tallest Burj Khalifa, artificial Palm Jumeirah island, and luxury malls showcase modern civilization's pinnacle. Desert safaris, Gold Souk market, and traditional Arabic cuisine offer Middle Eastern cultural experiences.",
     highlightsKo: [
       '부르즈 칼리파 전망대',
       '두바이 몰과 분수 쇼',
@@ -932,7 +932,7 @@ const DESTINATION_CONTENT: Record<
     descriptionKo:
       '이스탄불은 유럽과 아시아를 잇는 문명의 교차로입니다. 블루 모스크와 아야 소피아의 장엄한 이슬람 건축, 그랜드 바자르의 활기찬 분위기가 동서양 문화의 융합을 보여줍니다. 보스포루스 크루즈와 터키식 커피, 케밥으로 이국적인 여행을 만끽할 수 있습니다.',
     descriptionEn:
-      'Istanbul is a crossroads of civilization linking Europe and Asia. Blue Mosque and Hagia Sophia\'s majestic Islamic architecture, Grand Bazaar\'s vibrant atmosphere showcase East-West cultural fusion. Bosphorus cruises, Turkish coffee, and kebabs offer exotic travel experiences.',
+      "Istanbul is a crossroads of civilization linking Europe and Asia. Blue Mosque and Hagia Sophia's majestic Islamic architecture, Grand Bazaar's vibrant atmosphere showcase East-West cultural fusion. Bosphorus cruises, Turkish coffee, and kebabs offer exotic travel experiences.",
     highlightsKo: [
       '블루 모스크와 아야 소피아',
       '그랜드 바자르 쇼핑',
