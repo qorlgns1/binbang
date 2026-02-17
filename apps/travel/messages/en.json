@@ -1,0 +1,127 @@
+{
+  "common": {
+    "appName": "Binbang",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "placesCount": "{count} places",
+    "chatTab": "Chat",
+    "mapTab": "Map",
+    "switchBetweenChatAndMap": "Switch between chat and map"
+  },
+  "chat": {
+    "title": "Chat with AI",
+    "placeholder": "Ask me anything about travel...",
+    "send": "Send",
+    "newConversation": "New Conversation",
+    "conversationHistory": "History",
+    "saveConversation": "Save Conversation",
+    "loginToSave": "Login to save your conversation",
+    "exampleQuestions": {
+      "title": "Example Questions",
+      "question1": "Find me budget-friendly hotels near the Eiffel Tower in Paris with frequent cancellations.",
+      "question2": "Show me a list of 4-star hotels available for immediate booking in London.",
+      "question3": "I want to set up a vacancy alert for a specific hotel."
+    },
+    "thinking": "Thinking...",
+    "typing": "Typing...",
+    "emptyState": "No messages yet. Ask me anything!",
+    "welcomeTitle": "Binbang",
+    "welcomeMessage": "Welcome! We'll keep the light on all night so your rest never loses its way.",
+    "conversationSaved": "Conversation saved",
+    "conversationLoaded": "Conversation loaded",
+    "conversationLoadFailed": "Failed to load conversation",
+    "alertFeatureComingSoon": "Vacancy alert feature is coming soon.",
+    "retryLastMessage": "Retry last message",
+    "retry": "Retry",
+    "closeError": "Close error message",
+    "close": "Close",
+    "rateLimitError": "Too many requests. Please try again later.",
+    "networkError": "Failed to load response. Please check your network and try again.",
+    "exampleQuestion": "Example question: {query}"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "signUp": "Sign Up",
+    "loginWithGoogle": "Login with Google",
+    "loginWithKakao": "Login with Kakao",
+    "guest": "Guest",
+    "loginPrompt": "Login to save your conversations"
+  },
+  "place": {
+    "rating": "Rating",
+    "reviews": "reviews",
+    "priceLevel": "Price Level",
+    "openNow": "Open Now",
+    "closed": "Closed",
+    "viewOnMap": "View on Map",
+    "noImage": "No image",
+    "setAlert": "Set vacancy alert",
+    "selectToViewOnMap": "Select {name} to view on map",
+    "setAlertFor": "Set vacancy alert for {name}"
+  },
+  "weather": {
+    "title": "Weather",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "rainfall": "Rainfall",
+    "monthly": "Monthly Weather",
+    "avgTemp": "Avg. Temperature",
+    "minTemp": "Min. Temperature",
+    "maxTemp": "Max. Temperature"
+  },
+  "exchange": {
+    "title": "Exchange Rate",
+    "base": "Base Currency",
+    "target": "Target Currency",
+    "rate": "Rate",
+    "lastUpdated": "Last Updated"
+  },
+  "error": {
+    "generic": "Something went wrong",
+    "networkError": "Network error occurred",
+    "notFound": "Page not found",
+    "unauthorized": "Login required",
+    "rateLimitExceeded": "Rate limit exceeded. Please try again later."
+  },
+  "landing": {
+    "hero": {
+      "title": "Perfect Travel Starts with AI",
+      "subtitle": "Real-time weather, exchange rates, and vacancy alerts. Your smart travel planner.",
+      "cta": "Start Planning"
+    },
+    "features": {
+      "title": "Features",
+      "aiChat": {
+        "title": "AI Travel Consultant",
+        "description": "Ask anything. AI provides personalized travel information."
+      },
+      "weather": {
+        "title": "Real-time Weather",
+        "description": "Check monthly weather and climate information at a glance."
+      },
+      "exchange": {
+        "title": "Exchange Rates",
+        "description": "Plan your travel budget with real-time exchange rate information."
+      },
+      "map": {
+        "title": "Interactive Map",
+        "description": "View and explore recommended places directly on the map."
+      }
+    },
+    "footer": {
+      "about": "About",
+      "contact": "Contact",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    }
+  }
+}

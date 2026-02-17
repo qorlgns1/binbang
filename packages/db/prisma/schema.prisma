@@ -811,3 +811,28 @@ model CaseMessage {
   @@index([sentById])
   @@index([createdAt])
 }
+
+// ── Travel Destinations (SEO Pages) ──
+
+model Destination {
+  id          String   @id @default(cuid())
+  slug        String   @unique    // "gyeongju", "tokyo"
+  nameKo      String              // "경주"
+  nameEn      String              // "Gyeongju"
+  country     String              // "South Korea"
+  countryCode String              // "KR"
+  description Json                // { ko: "...", en: "..." }
+  highlights  Json                // 주요 관광지 목록
+  weather     Json?               // 월별 기후 요약
+  currency    String?             // "KRW"
+  latitude    Float
+  longitude   Float
+  imageUrl    String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([country])
+  @@index([published])
+}

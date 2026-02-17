@@ -4,6 +4,7 @@ import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { Bot, History, Landmark, RefreshCw, Save } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -22,13 +23,8 @@ interface ChatPanelProps {
   selectedPlaceId?: string;
 }
 
-const EXAMPLE_QUERIES = [
-  '파리 에펠탑 근처, 취소분이 자주 나오는 가성비 숙소 찾아줘.',
-  '런던에서 지금 당장 예약 가능한 4성급 호텔 리스트 보여줘.',
-  '특정 숙소의 빈 방 알림을 설정하고 싶어.',
-];
-
 export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId }: ChatPanelProps) {
+  const t = useTranslations('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
@@ -119,18 +115,21 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     sendMessage({ text: query });
   };
 
-  const handleAlertClick = useCallback((_place: PlaceEntity) => {
-    toast.info('빈방 알림 기능은 준비 중이에요.');
-  }, []);
+  const handleAlertClick = useCallback(
+    (_place: PlaceEntity) => {
+      toast.info(t('alertFeatureComingSoon'));
+    },
+    [t],
+  );
 
   const handleSaveClick = useCallback(() => {
     if (authStatus === 'authenticated') {
-      toast.success('대화가 저장되었습니다');
+      toast.success(t('conversationSaved'));
     } else {
       setLoginModalTrigger('save');
       setShowLoginModal(true);
     }
-  }, [authStatus]);
+  }, [authStatus, t]);
 
   const handleHistoryClick = useCallback(() => {
     if (authStatus === 'authenticated') {
@@ -185,13 +184,13 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           }));
 
         onEntitiesUpdate(mapEntities);
-        toast.success('대화를 불러왔습니다');
+        toast.success(t('conversationLoaded'));
       } catch (err) {
         console.error('Failed to load conversation:', err);
-        toast.error('대화를 불러오지 못했습니다');
+        toast.error(t('conversationLoadFailed'));
       }
     },
-    [setMessages, onEntitiesUpdate],
+    [setMessages, onEntitiesUpdate, t],
   );
 
   const handleNewConversation = useCallback(() => {
@@ -210,9 +209,9 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
               type='button'
               onClick={handleNewConversation}
               className='text-sm text-muted-foreground hover:text-foreground transition-colors'
-              aria-label='새 대화 시작'
+              aria-label={t('newConversation')}
             >
-              새 대화
+              {t('newConversation')}
             </button>
           </div>
           <div className='flex items-center gap-2'>
@@ -220,8 +219,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
               type='button'
               onClick={handleSaveClick}
               className='p-2 rounded-lg hover:bg-muted transition-colors'
-              aria-label='대화 저장'
-              title='대화 저장'
+              aria-label={t('saveConversation')}
+              title={t('saveConversation')}
             >
               <Save className='h-4 w-4' />
             </button>
@@ -229,8 +228,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
               type='button'
               onClick={handleHistoryClick}
               className='p-2 rounded-lg hover:bg-muted transition-colors'
-              aria-label='대화 히스토리'
-              title='대화 히스토리'
+              aria-label={t('conversationHistory')}
+              title={t('conversationHistory')}
             >
               <History className='h-4 w-4' />
             </button>
@@ -244,23 +243,26 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
             <div className='flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-amber-light dark:bg-brand-amber-dark/30 mb-6 ring-2 ring-brand-amber/20 dark:ring-brand-amber/50'>
               <Landmark className='h-10 w-10 text-brand-amber dark:text-brand-amber' aria-hidden />
             </div>
-            <h2 className='text-2xl font-bold mb-2 text-foreground'>빈방</h2>
+            <h2 className='text-2xl font-bold mb-2 text-foreground'>{t('welcomeTitle')}</h2>
             <p className='text-muted-foreground mb-8 max-w-md leading-loose text-[0.9375rem] sm:text-base'>
-              반가워요. 당신의 휴식이 길을 잃지 않도록, 빈방이 밤새 불을 밝혀둘게요.
+              {t('welcomeMessage')}
             </p>
-            <p className='text-xs text-muted-foreground mb-3'>추천 질문</p>
+            <p className='text-xs text-muted-foreground mb-3'>{t('exampleQuestions.title')}</p>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg'>
-              {EXAMPLE_QUERIES.map((query) => (
-                <button
-                  key={query}
-                  type='button'
-                  onClick={() => handleExampleClick(query)}
-                  className='rounded-xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent hover:border-brand-amber/50 active:scale-[0.98] transition-all duration-150 shadow-sm hover:shadow-md'
-                  aria-label={`추천 질문: ${query}`}
-                >
-                  {query}
-                </button>
-              ))}
+              {(['question1', 'question2', 'question3'] as const).map((key) => {
+                const query = t(`exampleQuestions.${key}`);
+                return (
+                  <button
+                    key={key}
+                    type='button'
+                    onClick={() => handleExampleClick(query)}
+                    className='rounded-xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent hover:border-brand-amber/50 active:scale-[0.98] transition-all duration-150 shadow-sm hover:shadow-md'
+                    aria-label={t('exampleQuestion', { query })}
+                  >
+                    {query}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -302,26 +304,26 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           <p className='text-sm text-destructive font-medium flex-1'>
             {typeof error?.message === 'string' &&
             (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message))
-              ? '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
-              : '답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.'}
+              ? t('rateLimitError')
+              : t('networkError')}
           </p>
           <div className='flex items-center gap-2 shrink-0'>
             <button
               type='button'
               onClick={() => regenerate()}
               className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
-              aria-label='마지막 메시지 다시 생성'
+              aria-label={t('retryLastMessage')}
             >
               <RefreshCw className='h-4 w-4' aria-hidden />
-              다시 시도
+              {t('retry')}
             </button>
             <button
               type='button'
               onClick={() => clearError()}
               className='text-sm text-muted-foreground hover:text-foreground transition-colors'
-              aria-label='에러 메시지 닫기'
+              aria-label={t('closeError')}
             >
-              닫기
+              {t('close')}
             </button>
           </div>
         </div>

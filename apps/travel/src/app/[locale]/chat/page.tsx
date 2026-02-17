@@ -1,15 +1,18 @@
 'use client';
 
 import { Compass, Map as MapIcon, MessageSquare } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { MapPanel } from '@/components/map/MapPanel';
 import { OnlineStatus } from '@/components/OnlineStatus';
 import type { MapEntity, PlaceEntity } from '@/lib/types';
 
 export default function HomePage() {
+  const t = useTranslations();
   const [entities, setEntities] = useState<MapEntity[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | undefined>();
@@ -27,9 +30,12 @@ export default function HomePage() {
     setSelectedPlaceId(entityId);
   }, []);
 
-  const handleMapAlertClick = useCallback((_entityId: string) => {
-    toast.info('빈방 알림 기능은 준비 중이에요.');
-  }, []);
+  const handleMapAlertClick = useCallback(
+    (_entityId: string) => {
+      toast.info(t('chat.alertFeatureComingSoon'));
+    },
+    [t],
+  );
 
   const handleCloseMapInfo = useCallback(() => {
     setSelectedPlaceId(undefined);
@@ -49,13 +55,14 @@ export default function HomePage() {
           <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary md:h-8 md:w-8'>
             <Compass className='h-4 w-4 text-primary-foreground md:h-5 md:w-5' />
           </div>
-          <h1 className='truncate text-base font-bold md:text-lg'>빈방</h1>
+          <h1 className='truncate text-base font-bold md:text-lg'>{t('common.appName')}</h1>
         </div>
         <div className='flex shrink-0 items-center gap-2'>
+          <LanguageSwitcher />
           <OnlineStatus />
           {entities.length > 0 && (
             <span className='text-xs text-muted-foreground bg-muted hidden rounded-full px-2 py-1 sm:inline-flex'>
-              {entities.length}곳
+              {t('common.placesCount', { count: entities.length })}
             </span>
           )}
         </div>
@@ -93,7 +100,7 @@ export default function HomePage() {
         {/* Mobile: bottom tab bar (Chat / Map) */}
         <nav
           className='md:hidden flex shrink-0 items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm py-3'
-          aria-label='채팅과 지도 전환'
+          aria-label={t('common.switchBetweenChatAndMap')}
         >
           <button
             type='button'
@@ -104,7 +111,7 @@ export default function HomePage() {
             aria-current={!showMap ? 'page' : undefined}
           >
             <MessageSquare className='h-5 w-5' aria-hidden />
-            채팅
+            {t('common.chatTab')}
           </button>
           <button
             type='button'
@@ -115,7 +122,7 @@ export default function HomePage() {
             aria-current={showMap ? 'page' : undefined}
           >
             <MapIcon className='h-5 w-5' aria-hidden />
-            지도
+            {t('common.mapTab')}
           </button>
         </nav>
       </div>
