@@ -42,7 +42,7 @@ function addError(filePath, message) {
 
 function validateFolderSegments(filePath) {
   const segments = filePath.split('/');
-  const isAppRouterPath = filePath.startsWith('apps/web/src/app/');
+  const isAppRouterPath = filePath.startsWith('apps/web/src/app/') || filePath.startsWith('apps/travel/src/app/');
 
   for (let i = 3; i < segments.length - 1; i += 1) {
     const segment = segments[i];
@@ -65,7 +65,7 @@ function validateFolderSegments(filePath) {
 }
 
 function validateServiceSuffix(filePath) {
-  if (!filePath.startsWith('apps/web/src/services/')) return;
+  if (!filePath.startsWith('apps/web/src/services/') && !filePath.startsWith('apps/travel/src/services/')) return;
   if (!filePath.endsWith('.ts') || filePath.endsWith('.d.ts')) return;
 
   const baseName = path.basename(filePath);
