@@ -33,7 +33,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 - 히스토리: 사이드바 목록/상세 로드/삭제/새 대화 시작 구현
 - 비용 제어: Sliding Window + in-memory rate limiting + 429 에러 UI 처리
 - 프롬프트: 시스템 프롬프트에 이전 대화 요약 슬롯 추가(기본값 NONE)
-- 정리 작업: 7일 지난 guest conversation 삭제 cron API + Vercel cron 스케줄 설정
+- 정리 작업: 7일 지난 guest conversation 삭제 cron API + worker(BullMQ) 스케줄 등록
 
 ## Tasks
 
@@ -112,11 +112,11 @@ model TravelConversation {
 - [x] 10턴 이상 대화해도 LLM 비용이 선형 증가하지 않음 (sliding window, 기본 10턴)
 - [x] 게스트 사용 제한이 정상 동작 (in-memory 기준, 게스트 1대화/5턴)
 - [ ] 7일 이상 된 게스트 데이터 자동 삭제 확인  
-  cleanup API + Vercel cron schedule(`apps/travel/vercel.json`) 설정 완료, 실운영 실행 검증 필요
+  cleanup API + worker schedule(`travel-guest-cleanup`) 설정 완료, 실운영 실행 검증 필요
 
 ## Known Gaps
 
-- 운영 환경에서 guest cleanup cron 실행 검증 필요
+- 운영 환경에서 worker `travel-guest-cleanup` 실행 검증 필요
 
 ## Implemented Files (핵심)
 
@@ -139,4 +139,5 @@ model TravelConversation {
 - `apps/travel/src/components/modals/LoginPromptModal.tsx`
 - `apps/travel/src/components/chat/ChatPanel.tsx`
 - `packages/db/prisma/schema.prisma`
-- `apps/travel/vercel.json`
+- `apps/worker/src/travelGuestCleanup.ts`
+- `packages/worker-shared/src/runtime/scheduler.ts`
