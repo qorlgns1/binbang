@@ -108,8 +108,7 @@ model TravelConversation {
 - [x] 비로그인 사용자가 즉시 AI 채팅 가능
 - [x] 로그인 후 게스트 때 나눈 대화가 계정에 보존
 - [x] 사이드바에서 이전 대화 목록 확인 및 이어가기 가능
-- [ ] 대화 검색, 삭제, 제목 수정 동작  
-  검색/삭제/제목 수정 API 완료, 제목 수정 UI는 미완료
+- [x] 대화 검색, 삭제, 제목 수정 동작
 - [x] 10턴 이상 대화해도 LLM 비용이 선형 증가하지 않음 (sliding window, 기본 10턴)
 - [x] 게스트 사용 제한이 정상 동작 (in-memory 기준, 게스트 1대화/5턴)
 - [ ] 7일 이상 된 게스트 데이터 자동 삭제 확인  
@@ -117,7 +116,7 @@ model TravelConversation {
 
 ## Known Gaps
 
-- 대화 제목 수정 UI 미구현
+- 운영 환경에서 guest cleanup cron 스케줄 적용 및 실행 검증 필요
 
 ## Implemented Files (핵심)
 

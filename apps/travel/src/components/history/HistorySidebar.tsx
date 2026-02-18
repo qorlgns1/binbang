@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { MessageSquare, Search, Trash2, X } from 'lucide-react';
+import { Check, MessageSquare, Pencil, Search, Trash2, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import useSWR from 'swr';
 
@@ -31,6 +31,8 @@ const fetcher = async (url: string) => {
 
 export function HistorySidebar({ open, onClose, onSelectConversation, onNewConversation }: HistorySidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const trimmedSearchQuery = searchQuery.trim();
   const conversationsApiUrl =
     open && trimmedSearchQuery.length > 0
@@ -74,6 +76,46 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
       onClose();
     },
     [onSelectConversation, onClose],
+  );
+
+  const handleStartEdit = useCallback((conversationId: string, currentTitle: string | null, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingConversationId(conversationId);
+    setEditingTitle(currentTitle ?? '');
+  }, []);
+
+  const handleCancelEdit = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingConversationId(null);
+    setEditingTitle('');
+  }, []);
+
+  const handleSaveTitle = useCallback(
+    async (conversationId: string) => {
+      const title = editingTitle.trim();
+      if (!title) {
+        alert('제목은 비어 있을 수 없습니다.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/conversations/${conversationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title }),
+        });
+
+        if (!res.ok) throw new Error('Failed to update title');
+
+        setEditingConversationId(null);
+        setEditingTitle('');
+        await mutate();
+      } catch (err) {
+        console.error('Failed to update conversation title:', err);
+        alert('제목 수정에 실패했습니다.');
+      }
+    },
+    [editingTitle, mutate],
   );
 
   if (!open) return null;
@@ -158,11 +200,34 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                 type='button'
                 key={conv.id}
                 className='w-full p-4 border-b border-border hover:bg-muted cursor-pointer transition-colors group text-left'
-                onClick={() => handleSelect(conv.id)}
+                onClick={() => {
+                  if (editingConversationId === conv.id) return;
+                  handleSelect(conv.id);
+                }}
               >
                 <div className='flex items-start justify-between gap-2'>
                   <div className='flex-1 min-w-0'>
-                    <h3 className='font-medium text-sm truncate'>{conv.title || '제목 없음'}</h3>
+                    {editingConversationId === conv.id ? (
+                      <input
+                        type='text'
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            void handleSaveTitle(conv.id);
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingConversationId(null);
+                            setEditingTitle('');
+                          }
+                        }}
+                        className='w-full rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber'
+                        maxLength={100}
+                      />
+                    ) : (
+                      <h3 className='font-medium text-sm truncate'>{conv.title || '제목 없음'}</h3>
+                    )}
                     <div className='flex items-center gap-2 mt-1 text-xs text-muted-foreground'>
                       <MessageSquare className='h-3 w-3' />
                       <span>{conv._count.messages}개 메시지</span>
@@ -170,14 +235,50 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                       <span>{formatDistanceToNow(new Date(conv.updatedAt), { addSuffix: true, locale: ko })}</span>
                     </div>
                   </div>
-                  <button
-                    type='button'
-                    onClick={(e) => handleDelete(conv.id, e)}
-                    className='p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100'
-                    aria-label='삭제'
-                  >
-                    <Trash2 className='h-4 w-4' />
-                  </button>
+                  <div className='flex items-center gap-1'>
+                    {editingConversationId === conv.id ? (
+                      <>
+                        <button
+                          type='button'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleSaveTitle(conv.id);
+                          }}
+                          className='p-1.5 rounded-md hover:bg-emerald-100 text-muted-foreground hover:text-emerald-600 transition-colors'
+                          aria-label='제목 저장'
+                        >
+                          <Check className='h-4 w-4' />
+                        </button>
+                        <button
+                          type='button'
+                          onClick={handleCancelEdit}
+                          className='p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors'
+                          aria-label='제목 수정 취소'
+                        >
+                          <X className='h-4 w-4' />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type='button'
+                          onClick={(e) => handleStartEdit(conv.id, conv.title, e)}
+                          className='p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100'
+                          aria-label='제목 수정'
+                        >
+                          <Pencil className='h-4 w-4' />
+                        </button>
+                        <button
+                          type='button'
+                          onClick={(e) => handleDelete(conv.id, e)}
+                          className='p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100'
+                          aria-label='삭제'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </button>
             ))}
