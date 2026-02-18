@@ -1,4 +1,5 @@
 import { prisma } from '@workspace/db';
+import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 /**
  * Rate Limiting 서비스
@@ -49,21 +50,20 @@ interface RateLimits {
 
 type OwnerFilter = { type: 'session'; sessionId: string } | { type: 'user'; userId: string };
 
+const KST = 'Asia/Seoul';
+
 function getDailyWindow(now: Date) {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-
-  return { start, end };
+  const zonedNow = toZonedTime(now, KST);
+  const startLocal = new Date(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate(), 0, 0, 0, 0);
+  const endLocal = new Date(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate() + 1, 0, 0, 0, 0);
+  return {
+    start: fromZonedTime(startLocal, KST),
+    end: fromZonedTime(endLocal, KST),
+  };
 }
 
 function formatResetTime(resetAt: Date): string {
-  return resetAt.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatInTimeZone(resetAt, KST, 'HH:mm');
 }
 
 /**
@@ -181,10 +181,7 @@ export async function checkRateLimit(
   const isNewConversationAttempt = !normalizedConversationId || !isKnownConversation;
 
   if (isNewConversationAttempt && data.dailyCount >= limits.daily) {
-    const resetTime = data.dailyResetAt.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const resetTime = formatResetTime(data.dailyResetAt);
     return {
       allowed: false,
       reason: `일일 대화 생성 한도(${limits.daily}개)에 도달했습니다. ${resetTime}에 리셋됩니다.`,

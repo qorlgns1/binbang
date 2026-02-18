@@ -14,9 +14,8 @@ export function applyContextWindow(messages: ModelMessage[], maxTurns = DEFAULT_
       ? Math.floor(maxTurns)
       : DEFAULT_MAX_TURNS;
 
-  const systemMessages = messages.filter((m) => m.role === 'system');
-  const conversationMessages = messages.filter((m) => m.role !== 'system');
-  const recentMessages = conversationMessages.slice(-(safeTurns * 2));
+  const conversationIndexes = messages.map((m, idx) => (m.role === 'system' ? -1 : idx)).filter((idx) => idx >= 0);
+  const keepConversation = new Set(conversationIndexes.slice(-(safeTurns * 2)));
 
-  return [...systemMessages, ...recentMessages];
+  return messages.filter((m, idx) => m.role === 'system' || keepConversation.has(idx));
 }

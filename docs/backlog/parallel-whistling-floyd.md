@@ -67,10 +67,10 @@ Prisma는 migrations 디렉토리 내 폴더를 스캔할 때 `migration.sql`이
 pnpm --filter @workspace/db exec prisma migrate status
 
 # development 서버
-pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate status
+APP_ENV=development pnpm with-env pnpm --filter @workspace/db exec prisma migrate status
 
 # production 서버
-pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate status
+APP_ENV=production pnpm with-env pnpm --filter @workspace/db exec prisma migrate status
 ```
 
 출력에서 확인할 항목:
@@ -96,7 +96,7 @@ git에 추적되지 않으므로 커밋 불필요. 이후 로컬 `prisma migrate
 
 ```bash
 # development 서버
-pnpm with-env:development:host pnpm --filter @workspace/db exec \
+APP_ENV=development pnpm with-env pnpm --filter @workspace/db exec \
   prisma migrate resolve --applied "0_current_baseline"
 
 # 로컬 (로컬 DB가 이미 스키마를 갖고 있는 경우)
@@ -129,10 +129,10 @@ prisma migrate resolve --applied "0_init"
 
 ```bash
 # production
-pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
+APP_ENV=production pnpm with-env pnpm --filter @workspace/db exec prisma migrate deploy
 
 # development
-pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate deploy
+APP_ENV=development pnpm with-env pnpm --filter @workspace/db exec prisma migrate deploy
 
 # local
 pnpm --filter @workspace/db exec prisma migrate deploy
