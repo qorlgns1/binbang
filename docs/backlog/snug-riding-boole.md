@@ -440,7 +440,7 @@ CONTEXT_WINDOW_SIZE=10
 //   - 자정에 호출 (cron 또는 체크 로직)
 
 // 제한 정책:
-const GUEST_LIMITS = { daily: 5, perConversation: 20 };
+const GUEST_LIMITS = { daily: 1, perConversation: 5 };
 const USER_LIMITS = { daily: 20, perConversation: 50 };
 ```
 
