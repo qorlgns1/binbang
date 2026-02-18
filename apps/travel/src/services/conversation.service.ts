@@ -264,22 +264,18 @@ export async function getConversationsByUser(userId: string, searchQuery?: strin
 /**
  * 대화 삭제 (소유권 확인 포함)
  * @returns 삭제 성공 여부. 대화가 없거나 소유자가 아니면 false 반환.
+ *
+ * deleteMany로 소유권 조건을 where절에 포함시켜 read-then-delete 경쟁 조건을 제거한다.
  */
 export async function deleteConversation(conversationId: string, userId: string): Promise<boolean> {
-  const conversation = await prisma.travelConversation.findUnique({
-    where: { id: conversationId },
-    select: { userId: true },
+  const result = await prisma.travelConversation.deleteMany({
+    where: {
+      id: conversationId,
+      userId,
+    },
   });
 
-  if (!conversation || conversation.userId !== userId) {
-    return false;
-  }
-
-  await prisma.travelConversation.delete({
-    where: { id: conversationId },
-  });
-
-  return true;
+  return result.count > 0;
 }
 
 /**

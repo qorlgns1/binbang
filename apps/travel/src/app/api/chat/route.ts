@@ -9,7 +9,7 @@ import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { travelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
-import { mergeGuestSessionToUser, saveConversationMessages } from '@/services/conversation.service';
+import { saveConversationMessages } from '@/services/conversation.service';
 import {
   GUEST_LIMITS,
   USER_LIMITS,
@@ -84,14 +84,6 @@ export async function POST(req: Request) {
 
   const rateLimitKey = session?.user?.id ?? sessionId;
   const limits = session?.user ? USER_LIMITS : GUEST_LIMITS;
-
-  if (session?.user?.id) {
-    try {
-      await mergeGuestSessionToUser(sessionId, session.user.id);
-    } catch (error) {
-      console.error('Failed to auto-merge session during chat:', error);
-    }
-  }
 
   let rateCheck: Awaited<ReturnType<typeof checkRateLimit>>;
   if (session?.user?.id) {
