@@ -31,7 +31,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 - 병합: 로그인 시 `/api/auth/merge-session`으로 게스트 대화 `userId` 귀속 (다중 sessionId 지원)
 - 로그인 대화 저장: 인증 사용자는 대화 생성 시점부터 `userId`로 직접 저장
 - 히스토리: 사이드바 목록/상세 로드/삭제/새 대화 시작 구현
-- 비용 제어: Sliding Window + in-memory rate limiting + 429 에러 UI 처리
+- 비용 제어: Sliding Window + rate limiting + 429 에러 UI 처리(로그인 유도)
 - 프롬프트: 시스템 프롬프트에 이전 대화 요약 슬롯 추가(기본값 NONE)
 - 정리 작업: 7일 지난 guest conversation 삭제 cron API + worker(BullMQ) 스케줄 등록
 
@@ -110,9 +110,80 @@ model TravelConversation {
 - [x] 사이드바에서 이전 대화 목록 확인 및 이어가기 가능
 - [x] 대화 검색, 삭제, 제목 수정 동작
 - [x] 10턴 이상 대화해도 LLM 비용이 선형 증가하지 않음 (sliding window, 기본 10턴)
-- [x] 게스트 사용 제한이 정상 동작 (in-memory 기준, 게스트 1대화/5턴)
+- [x] 게스트 사용 제한이 정상 동작 (게스트 1대화/5턴, 로그인 20대화/50턴)
 - [ ] 7일 이상 된 게스트 데이터 자동 삭제 확인  
   cleanup API + worker schedule(`travel-guest-cleanup`) 설정 완료, 실운영 실행 검증 필요
+
+## Test Use Cases
+
+### TC-01: 게스트 세션 생성/동기화
+
+- 사전조건: 비로그인 브라우저, localStorage 초기화
+- 절차: `/travel` 진입 후 첫 질문 전송
+- 기대결과: `localStorage.travel_session_id` 생성, `/api/session` 호출 후 `travel_session_id` httpOnly cookie 생성, DB `TravelConversation.userId = null`
+
+### TC-02: 로그인 유도 모달 트리거
+
+- 사전조건: 비로그인 상태
+- 절차: 대화 저장 버튼 클릭, 히스토리 버튼 클릭, 빈방 알림(북마크) 클릭
+- 기대결과: 모두 `LoginPromptModal` 노출, "나중에" 클릭 시 현재 화면 유지
+
+### TC-03: 로그인 후 세션 병합 + 세션 재발급
+
+- 사전조건: 게스트 상태에서 대화 1개 이상 생성
+- 절차: OAuth 로그인 수행
+- 기대결과: `/api/auth/merge-session` 성공, 기존 guest 대화의 `userId`가 로그인 사용자로 갱신, 응답의 `refreshedSessionId`로 localStorage/cookie 교체
+
+### TC-04: 다중 세션 병합
+
+- 사전조건: 동일 사용자 기준 서로 다른 `sessionId`로 guest 대화 데이터 준비
+- 절차: `/api/auth/merge-session`에 `sessionIds` 배열 포함 호출
+- 기대결과: 전달한 복수 `sessionId`의 guest 대화가 모두 동일 사용자 `userId`로 귀속
+
+### TC-05: 히스토리 조회/검색/수정/삭제
+
+- 사전조건: 로그인 사용자 대화 2개 이상 존재(서로 다른 제목/내용)
+- 절차: 히스토리 열기 -> 검색어 입력 -> 항목 제목 인라인 수정 -> 항목 삭제
+- 기대결과: 검색은 제목/메시지 내용 기준 서버 필터(`/api/conversations?q=...`), 제목 수정은 `PATCH /api/conversations/:id` 200, 삭제 후 목록에서 즉시 제거
+
+### TC-06: Sliding Window 적용
+
+- 사전조건: `CONTEXT_WINDOW_SIZE=10`
+- 절차: 12턴 이상 대화 진행 후 응답 품질/속도 확인
+- 기대결과: 요청은 정상 처리되고 컨텍스트 길이가 무한 증가하지 않음(최근 window 기준 유지)
+
+### TC-07: Rate Limit 동작
+
+- 사전조건: 비로그인 상태
+- 절차: 하루 기준 정책 이상으로 요청(게스트 1대화/5턴 초과)
+- 기대결과: API 429 반환, UI에 제한 안내 문구 표시 + 로그인 버튼 노출
+
+### TC-08: worker 기반 guest cleanup 수동 검증
+
+- 사전조건: 로컬 worker 실행(`pnpm --filter @workspace/worker dev`), DB/Redis 정상
+- 절차: 7일 초과 guest 대화 1건 삽입 -> `accommodation-check-cycle` 큐에 `travel-guest-cleanup` enqueue -> worker 로그 확인
+- 기대결과: worker 로그에 `[travel-guest-cleanup] ... deleted=1` 출력, DB에서 테스트 레코드 삭제 확인
+
+```sql
+-- 샘플 삽입 (9일 전 guest 대화)
+insert into "TravelConversation"
+  (id, "sessionId", "userId", title, "messageCount", "createdAt", "updatedAt")
+values
+  ('manual_cleanup_probe_x', 'session_manual_cleanup_probe_x', null, 'cleanup probe', 0, now() - interval '9 days', now() - interval '9 days');
+```
+
+```bash
+# 샘플 enqueue (apps/worker에서 실행)
+node -e '(async () => {
+  const { Queue } = await import("bullmq");
+  const Redis = (await import("ioredis")).default;
+  const connection = new Redis(process.env.REDIS_URL);
+  const queue = new Queue("accommodation-check-cycle", { connection });
+  await queue.add("travel-guest-cleanup", { triggeredAt: new Date().toISOString(), retentionDays: 7, source: "manual-verify" });
+  await queue.close();
+  await connection.quit();
+})();'
+```
 
 ## Known Gaps
 

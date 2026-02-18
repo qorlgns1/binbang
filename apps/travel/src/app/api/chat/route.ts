@@ -10,7 +10,13 @@ import { travelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { mergeGuestSessionToUser, saveConversationMessages } from '@/services/conversation.service';
-import { GUEST_LIMITS, USER_LIMITS, checkRateLimit, incrementCount } from '@/services/rate-limit.service';
+import {
+  GUEST_LIMITS,
+  USER_LIMITS,
+  checkGuestRateLimitPersistent,
+  checkRateLimit,
+  incrementCount,
+} from '@/services/rate-limit.service';
 
 export const maxDuration = 60;
 
@@ -18,6 +24,7 @@ const postBodySchema = z.object({
   messages: z.array(z.unknown()).min(1, 'messages array is required'),
   sessionId: z.string().optional(),
   conversationId: z.string().optional(),
+  id: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -43,11 +50,15 @@ export async function POST(req: Request) {
     messages,
     sessionId: clientSessionId,
     conversationId: clientConversationId,
+    id: chatId,
   } = parsed.data as {
     messages: UIMessage[];
     sessionId?: string;
     conversationId?: string;
+    id?: string;
   };
+  const normalizedConversationId = clientConversationId?.trim() || chatId?.trim() || undefined;
+
   const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
   const lastUserText =
     lastUserMessage?.parts
@@ -82,7 +93,18 @@ export async function POST(req: Request) {
     }
   }
 
-  const rateCheck = await checkRateLimit(rateLimitKey, limits, clientConversationId);
+  let rateCheck: Awaited<ReturnType<typeof checkRateLimit>>;
+  if (session?.user?.id) {
+    rateCheck = await checkRateLimit(rateLimitKey, limits, normalizedConversationId);
+  } else {
+    try {
+      rateCheck = await checkGuestRateLimitPersistent(sessionId, limits, normalizedConversationId);
+    } catch (error) {
+      console.error('Guest persistent rate-limit check failed; falling back to in-memory check:', error);
+      rateCheck = await checkRateLimit(rateLimitKey, limits, normalizedConversationId);
+    }
+  }
+
   if (!rateCheck.allowed) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded', reason: rateCheck.reason }), {
       status: 429,
@@ -103,7 +125,7 @@ export async function POST(req: Request) {
     onFinish: async ({ text, toolCalls, toolResults }) => {
       try {
         const result = await saveConversationMessages({
-          conversationId: clientConversationId,
+          conversationId: normalizedConversationId,
           sessionId,
           userId: session?.user?.id,
           userMessage: lastUserText,

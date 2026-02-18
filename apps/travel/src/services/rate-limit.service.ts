@@ -1,3 +1,5 @@
+import { prisma } from '@workspace/db';
+
 /**
  * Rate Limiting 서비스
  * - In-memory Map 기반 (초기 구현)
@@ -13,10 +15,15 @@ interface RateLimitData {
 // In-memory storage
 const rateLimitStore = new Map<string, RateLimitData>();
 
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[name] ?? `${fallback}`, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 // 제한 정책
 export const GUEST_LIMITS = {
-  daily: 5, // 일일 대화 생성 한도
-  perConversation: 20, // 대화당 메시지 한도
+  daily: readPositiveIntEnv('TRAVEL_GUEST_DAILY_LIMIT', 1), // 기본: 1
+  perConversation: readPositiveIntEnv('TRAVEL_GUEST_PER_CONVERSATION_LIMIT', 5), // 기본: 5턴
 };
 
 export const USER_LIMITS = {
@@ -32,6 +39,91 @@ interface RateLimitCheck {
 interface RateLimits {
   daily: number;
   perConversation: number;
+}
+
+function getDailyWindow(now: Date) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  return { start, end };
+}
+
+function formatResetTime(resetAt: Date): string {
+  return resetAt.toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * 게스트 한도는 DB 기준으로 강제한다.
+ * - in-memory 상태 초기화(개발 리로드, 런타임 재시작)에 영향받지 않음
+ */
+export async function checkGuestRateLimitPersistent(
+  sessionId: string,
+  limits: RateLimits,
+  conversationId?: string,
+): Promise<RateLimitCheck> {
+  const now = new Date();
+  const { start: dayStart, end: dayEnd } = getDailyWindow(now);
+  const normalizedConversationId = conversationId?.trim() || undefined;
+
+  let isNewConversationAttempt = true;
+
+  if (normalizedConversationId) {
+    const existingConversation = await prisma.travelConversation.findFirst({
+      where: {
+        id: normalizedConversationId,
+        sessionId,
+      },
+      select: { id: true },
+    });
+
+    isNewConversationAttempt = !existingConversation;
+  }
+
+  if (isNewConversationAttempt) {
+    const dailyConversationCount = await prisma.travelConversation.count({
+      where: {
+        sessionId,
+        createdAt: {
+          gte: dayStart,
+          lt: dayEnd,
+        },
+      },
+    });
+
+    if (dailyConversationCount >= limits.daily) {
+      return {
+        allowed: false,
+        reason: `일일 대화 생성 한도(${limits.daily}개)에 도달했습니다. ${formatResetTime(dayEnd)}에 리셋됩니다.`,
+      };
+    }
+  }
+
+  if (normalizedConversationId) {
+    const conversationUserMessageCount = await prisma.travelMessage.count({
+      where: {
+        conversationId: normalizedConversationId,
+        role: 'user',
+        conversation: {
+          sessionId,
+        },
+      },
+    });
+
+    if (conversationUserMessageCount >= limits.perConversation) {
+      return {
+        allowed: false,
+        reason: `이 대화의 메시지 한도(${limits.perConversation}개)에 도달했습니다.`,
+      };
+    }
+  }
+
+  return { allowed: true };
 }
 
 /**
@@ -58,8 +150,14 @@ export async function checkRateLimit(
     rateLimitStore.set(key, data);
   }
 
+  const normalizedConversationId = conversationId?.trim();
+  const isKnownConversation = normalizedConversationId
+    ? data.conversationCounts.has(normalizedConversationId)
+    : false;
+  const isNewConversationAttempt = !normalizedConversationId || !isKnownConversation;
+
   // 일일 대화 생성 한도 확인 (새 대화 시작 시)
-  if (!conversationId && data.dailyCount >= limits.daily) {
+  if (isNewConversationAttempt && data.dailyCount >= limits.daily) {
     const resetTime = data.dailyResetAt.toLocaleTimeString('ko-KR', {
       hour: '2-digit',
       minute: '2-digit',
@@ -71,8 +169,8 @@ export async function checkRateLimit(
   }
 
   // 대화당 메시지 한도 확인
-  if (conversationId) {
-    const conversationCount = data.conversationCounts.get(conversationId) ?? 0;
+  if (normalizedConversationId) {
+    const conversationCount = data.conversationCounts.get(normalizedConversationId) ?? 0;
     if (conversationCount >= limits.perConversation) {
       return {
         allowed: false,

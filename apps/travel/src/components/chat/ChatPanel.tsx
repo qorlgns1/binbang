@@ -27,25 +27,127 @@ const EXAMPLE_QUERIES = [
   '런던에서 지금 당장 예약 가능한 4성급 호텔 리스트 보여줘.',
   '특정 숙소의 빈 방 알림을 설정하고 싶어.',
 ];
+const LAST_CONVERSATION_ID_STORAGE_KEY = 'travel_last_conversation_id';
+const PENDING_RESTORE_STORAGE_KEY = 'travel_pending_restore';
+
+interface PendingRestoreSnapshot {
+  conversationId: string;
+  updatedAt: number;
+  preview: string;
+}
+
+interface ConversationSummary {
+  id: string;
+}
+
+function createConversationId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function parsePendingRestoreSnapshot(value: string | null): PendingRestoreSnapshot | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as Partial<PendingRestoreSnapshot>;
+    const conversationId = typeof parsed.conversationId === 'string' ? parsed.conversationId.trim() : '';
+
+    if (!conversationId) {
+      return null;
+    }
+
+    return {
+      conversationId,
+      updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
+      preview: typeof parsed.preview === 'string' ? parsed.preview : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getUserMessagePreview(messages: UIMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (message.role !== 'user') {
+      continue;
+    }
+
+    const preview = message.parts
+      .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+      .map((part) => part.text)
+      .join('')
+      .trim();
+
+    if (preview) {
+      return preview.slice(0, 80);
+    }
+  }
+
+  return '';
+}
 
 export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const rateLimitModalShownForErrorRef = useRef<string | null>(null);
+  const hasAutoRestoredConversationRef = useRef(false);
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark'>('save');
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'failed'>('idle');
+  const [restoreTargetConversationId, setRestoreTargetConversationId] = useState<string | null>(null);
+  const [restorePreview, setRestorePreview] = useState('');
+  const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark' | 'limit'>('save');
+  const [currentConversationId, setCurrentConversationId] = useState<string>(() => createConversationId());
 
   const { sessionId } = useGuestSession();
   useSessionMerge();
   const { status: authStatus } = useSession();
 
-  const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat({
-    body: { sessionId, conversationId: currentConversationId },
-  } as Parameters<typeof useChat>[0]);
+  const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat();
+
+  const getChatRequestBody = useCallback(
+    () => ({
+      sessionId: sessionId ?? undefined,
+      conversationId: currentConversationId,
+    }),
+    [sessionId, currentConversationId],
+  );
 
   const isLoading = status !== 'ready';
+  const isRateLimitError =
+    typeof error?.message === 'string' && (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message));
+
+  useEffect(() => {
+    const errorMessage = typeof error?.message === 'string' ? error.message : null;
+
+    if (!errorMessage) {
+      rateLimitModalShownForErrorRef.current = null;
+      return;
+    }
+
+    const shouldPromptLogin =
+      authStatus !== 'authenticated' &&
+      (errorMessage.includes('429') || /rate\s*limit|too\s*many/i.test(errorMessage));
+
+    if (!shouldPromptLogin) {
+      return;
+    }
+
+    if (rateLimitModalShownForErrorRef.current === errorMessage) {
+      return;
+    }
+
+    setLoginModalTrigger('limit');
+    setShowLoginModal(true);
+    rateLimitModalShownForErrorRef.current = errorMessage;
+  }, [authStatus, error]);
 
   const extractEntities = useCallback(
     (msgs: UIMessage[]) => {
@@ -109,14 +211,14 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       if (!input.trim() || isLoading) return;
       const text = input.trim();
       setInput('');
-      sendMessage({ text });
+      sendMessage({ text }, { body: getChatRequestBody() });
     },
-    [input, isLoading, sendMessage],
+    [getChatRequestBody, input, isLoading, sendMessage],
   );
 
   const handleExampleClick = (query: string) => {
     setInput('');
-    sendMessage({ text: query });
+    sendMessage({ text: query }, { body: getChatRequestBody() });
   };
 
   const handleAlertClick = useCallback(
@@ -133,13 +235,18 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   );
 
   const handleSaveClick = useCallback(() => {
+    if (messages.length === 0) {
+      toast.info('저장할 대화가 아직 없어요.');
+      return;
+    }
+
     if (authStatus === 'authenticated') {
       toast.success('대화가 저장되었습니다');
     } else {
       setLoginModalTrigger('save');
       setShowLoginModal(true);
     }
-  }, [authStatus]);
+  }, [authStatus, messages.length]);
 
   const handleHistoryClick = useCallback(() => {
     if (authStatus === 'authenticated') {
@@ -150,13 +257,34 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     }
   }, [authStatus]);
 
-  const handleSelectConversation = useCallback(
-    async (conversationId: string) => {
-      try {
-        const res = await fetch(`/api/conversations/${conversationId}`);
-        if (!res.ok) throw new Error('Failed to load conversation');
+  const loadConversation = useCallback(
+    async (conversationId: string, options?: { silent?: boolean; retryCount?: number }) => {
+      const retryCount = options?.retryCount ?? 0;
 
-        const data = (await res.json()) as {
+      try {
+        let response: Response | null = null;
+
+        for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+          response = await fetch(`/api/conversations/${conversationId}`);
+          if (response.ok) {
+            break;
+          }
+
+          const shouldRetry = (response.status === 403 || response.status === 404) && attempt < retryCount;
+          if (!shouldRetry) {
+            break;
+          }
+
+          await new Promise((resolve) => {
+            setTimeout(resolve, 400 * (attempt + 1));
+          });
+        }
+
+        if (!response || !response.ok) {
+          throw new Error('Failed to load conversation');
+        }
+
+        const data = (await response.json()) as {
           conversation: {
             id: string;
             messages: Array<{ role: string; content: string }>;
@@ -173,13 +301,14 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
 
         // Convert messages to UIMessage format
         const uiMessages: UIMessage[] = data.conversation.messages.map((msg) => ({
-          id: crypto.randomUUID(),
+          id: createConversationId(),
           role: msg.role as 'user' | 'assistant',
           parts: [{ type: 'text' as const, text: msg.content }],
         }));
 
         setMessages(uiMessages);
         setCurrentConversationId(conversationId);
+        localStorage.setItem(LAST_CONVERSATION_ID_STORAGE_KEY, conversationId);
 
         // Extract and update entities
         const mapEntities: MapEntity[] = data.conversation.entities
@@ -194,54 +323,215 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           }));
 
         onEntitiesUpdate(mapEntities);
-        toast.success('대화를 불러왔습니다');
+
+        if (!options?.silent) {
+          toast.success('대화를 불러왔습니다');
+        }
+        return true;
       } catch (err) {
         console.error('Failed to load conversation:', err);
-        toast.error('대화를 불러오지 못했습니다');
+        if (!options?.silent) {
+          toast.error('대화를 불러오지 못했습니다');
+        }
+        return false;
       }
     },
     [setMessages, onEntitiesUpdate],
   );
 
+  const handleSelectConversation = useCallback(
+    async (conversationId: string) => {
+      const restored = await loadConversation(conversationId);
+      if (restored) {
+        setRestoreStatus('idle');
+        setRestoreTargetConversationId(null);
+        setRestorePreview('');
+      }
+    },
+    [loadConversation],
+  );
+
+  const findFallbackConversationId = useCallback(async (preview: string, excludeId: string): Promise<string | null> => {
+    const trimmedPreview = preview.trim();
+    const urls =
+      trimmedPreview.length >= 2
+        ? [`/api/conversations?q=${encodeURIComponent(trimmedPreview.slice(0, 32))}`, '/api/conversations']
+        : ['/api/conversations'];
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          continue;
+        }
+
+        const data = (await response.json()) as { conversations: ConversationSummary[] };
+        const fallback = data.conversations.find((conversation) => conversation.id !== excludeId)?.id ?? null;
+        if (fallback) {
+          return fallback;
+        }
+      } catch (error) {
+        console.error('Failed to find fallback conversation:', error);
+      }
+    }
+
+    return null;
+  }, []);
+
+  const restoreConversationWithFallback = useCallback(
+    async (targetConversationId: string, preview: string): Promise<boolean> => {
+      setRestoreStatus('restoring');
+
+      const restoredPrimary = await loadConversation(targetConversationId, { silent: true, retryCount: 3 });
+      if (restoredPrimary) {
+        setRestoreStatus('idle');
+        setRestoreTargetConversationId(null);
+        setRestorePreview('');
+        toast.success('이전 대화를 복원했어요.');
+        return true;
+      }
+
+      const fallbackConversationId = await findFallbackConversationId(preview, targetConversationId);
+      if (fallbackConversationId) {
+        const restoredFallback = await loadConversation(fallbackConversationId, { silent: true, retryCount: 1 });
+        if (restoredFallback) {
+          setRestoreStatus('idle');
+          setRestoreTargetConversationId(null);
+          setRestorePreview('');
+          toast.success('최근 대화로 복원했어요.');
+          return true;
+        }
+      }
+
+      setRestoreStatus('failed');
+      setRestoreTargetConversationId(targetConversationId);
+      setRestorePreview(preview);
+      toast.error('대화를 자동 복원하지 못했어요.');
+      return false;
+    },
+    [findFallbackConversationId, loadConversation],
+  );
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      return;
+    }
+    const snapshot: PendingRestoreSnapshot = {
+      conversationId: currentConversationId,
+      updatedAt: Date.now(),
+      preview: getUserMessagePreview(messages),
+    };
+
+    localStorage.setItem(LAST_CONVERSATION_ID_STORAGE_KEY, currentConversationId);
+    localStorage.setItem(PENDING_RESTORE_STORAGE_KEY, JSON.stringify(snapshot));
+  }, [messages, currentConversationId]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || hasAutoRestoredConversationRef.current) {
+      return;
+    }
+
+    hasAutoRestoredConversationRef.current = true;
+    if (messages.length > 0) {
+      return;
+    }
+
+    const pendingSnapshot = parsePendingRestoreSnapshot(localStorage.getItem(PENDING_RESTORE_STORAGE_KEY));
+    const storedConversationId = localStorage.getItem(LAST_CONVERSATION_ID_STORAGE_KEY);
+    const targetConversationId = pendingSnapshot?.conversationId ?? storedConversationId;
+
+    if (!targetConversationId) {
+      return;
+    }
+
+    setRestorePreview(pendingSnapshot?.preview ?? '');
+    localStorage.removeItem(PENDING_RESTORE_STORAGE_KEY);
+    localStorage.removeItem(LAST_CONVERSATION_ID_STORAGE_KEY);
+    setRestoreTargetConversationId(targetConversationId);
+    void restoreConversationWithFallback(targetConversationId, pendingSnapshot?.preview ?? '');
+  }, [authStatus, messages.length, restoreConversationWithFallback]);
+
+  const handleRetryRestore = useCallback(async () => {
+    if (!restoreTargetConversationId) {
+      return;
+    }
+
+    await restoreConversationWithFallback(restoreTargetConversationId, restorePreview);
+  }, [restoreConversationWithFallback, restorePreview, restoreTargetConversationId]);
+
   const handleNewConversation = useCallback(() => {
     setMessages([]);
-    setCurrentConversationId(null);
+    setCurrentConversationId(createConversationId());
+    setRestoreStatus('idle');
+    setRestoreTargetConversationId(null);
+    setRestorePreview('');
+    localStorage.removeItem(PENDING_RESTORE_STORAGE_KEY);
+    localStorage.removeItem(LAST_CONVERSATION_ID_STORAGE_KEY);
     onEntitiesUpdate([]);
   }, [setMessages, onEntitiesUpdate]);
 
   return (
     <div className='flex h-full flex-col'>
       {/* Header with actions */}
-      {messages.length > 0 && (
-        <div className='border-b border-border bg-background/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
+      <div className='border-b border-border bg-background/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <button
+            type='button'
+            onClick={handleNewConversation}
+            className='text-sm text-muted-foreground hover:text-foreground transition-colors'
+            aria-label='새 대화 시작'
+          >
+            새 대화
+          </button>
+        </div>
+        <div className='flex items-center gap-2'>
+          <button
+            type='button'
+            onClick={handleSaveClick}
+            className='p-2 rounded-lg hover:bg-muted transition-colors'
+            aria-label='대화 저장'
+            title='대화 저장'
+          >
+            <Save className='h-4 w-4' />
+          </button>
+          <button
+            type='button'
+            onClick={handleHistoryClick}
+            className='p-2 rounded-lg hover:bg-muted transition-colors'
+            aria-label='대화 히스토리'
+            title='대화 히스토리'
+          >
+            <History className='h-4 w-4' />
+          </button>
+        </div>
+      </div>
+
+      {restoreStatus === 'restoring' && (
+        <div className='border-b border-border bg-primary/10 px-4 py-2.5 flex items-center gap-2 text-sm text-foreground'>
+          <RefreshCw className='h-4 w-4 animate-spin text-primary' aria-hidden />
+          <span>이전 대화를 복원하는 중...</span>
+        </div>
+      )}
+
+      {restoreStatus === 'failed' && (
+        <div className='border-b border-border bg-destructive/10 px-4 py-2.5 flex items-center justify-between gap-3'>
+          <p className='text-sm text-destructive font-medium'>대화를 자동 복원하지 못했어요.</p>
+          <div className='flex items-center gap-2 shrink-0'>
             <button
               type='button'
-              onClick={handleNewConversation}
-              className='text-sm text-muted-foreground hover:text-foreground transition-colors'
-              aria-label='새 대화 시작'
+              onClick={() => void handleRetryRestore()}
+              className='inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors'
+              aria-label='대화 복원 다시 시도'
             >
-              새 대화
+              다시 시도
             </button>
-          </div>
-          <div className='flex items-center gap-2'>
             <button
               type='button'
-              onClick={handleSaveClick}
-              className='p-2 rounded-lg hover:bg-muted transition-colors'
-              aria-label='대화 저장'
-              title='대화 저장'
+              onClick={() => setShowHistory(true)}
+              className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
+              aria-label='대화 히스토리 열기'
             >
-              <Save className='h-4 w-4' />
-            </button>
-            <button
-              type='button'
-              onClick={handleHistoryClick}
-              className='p-2 rounded-lg hover:bg-muted transition-colors'
-              aria-label='대화 히스토리'
-              title='대화 히스토리'
-            >
-              <History className='h-4 w-4' />
+              히스토리 열기
             </button>
           </div>
         </div>
@@ -309,15 +599,27 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       {error && (
         <div className='border-t border-border bg-destructive/10 px-4 py-3 flex items-center justify-between gap-3'>
           <p className='text-sm text-destructive font-medium flex-1'>
-            {typeof error?.message === 'string' &&
-            (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message))
+            {isRateLimitError
               ? '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
               : '답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.'}
           </p>
           <div className='flex items-center gap-2 shrink-0'>
+            {authStatus !== 'authenticated' && isRateLimitError && (
+              <button
+                type='button'
+                onClick={() => {
+                  setLoginModalTrigger('limit');
+                  setShowLoginModal(true);
+                }}
+                className='inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors'
+                aria-label='로그인해서 계속 사용하기'
+              >
+                로그인
+              </button>
+            )}
             <button
               type='button'
-              onClick={() => regenerate()}
+              onClick={() => regenerate({ body: getChatRequestBody() })}
               className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
               aria-label='마지막 메시지 다시 생성'
             >
