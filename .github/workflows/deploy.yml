@@ -116,7 +116,7 @@ jobs:
             if [ "$BRANCH" = "main" ]; then
               export APP_ENV=production
               COMPOSE_FILE="docker/docker-compose.production.yml"
-              COMPOSE_OPTS=""
+              COMPOSE_OPTS="binbang-prod"
               # production만 compose 해석 시 ${IMAGE_TAG}, ${IMAGE_*_DIGEST} 필요
               COMPOSE_ENV_OPTS="--env-file .env.deploy.production"
             else
