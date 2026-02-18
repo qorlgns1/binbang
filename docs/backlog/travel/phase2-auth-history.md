@@ -31,6 +31,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 - 병합: 로그인 시 `/api/auth/merge-session`으로 게스트 대화 `userId` 귀속
 - 히스토리: 사이드바 목록/상세 로드/삭제/새 대화 시작 구현
 - 비용 제어: Sliding Window + in-memory rate limiting + 429 에러 UI 처리
+- 프롬프트: 시스템 프롬프트에 이전 대화 요약 슬롯 추가(기본값 NONE)
 - 정리 작업: 7일 지난 guest conversation 삭제 cron API 구현
 
 ## Tasks
@@ -80,7 +81,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 
 - [x] P2-6-T1: 최근 N턴만 LLM 컨텍스트에 포함하는 로직 구현 (기본값: 10턴)
 - [x] P2-6-T2: `apps/travel/src/app/api/chat/route.ts` 수정 - 메시지 슬라이싱
-- [ ] P2-6-T3: 시스템 프롬프트에 "이전 대화 요약" 슬롯 추가 (Phase 5에서 활용)
+- [x] P2-6-T3: 시스템 프롬프트에 "이전 대화 요약" 슬롯 추가 (Phase 5에서 활용)
 - [x] P2-6-T4: 컨텍스트 윈도우 크기 환경 변수로 설정 가능하게
 
 ### P2-7: 사용 제한 (Rate Limiting)
