@@ -42,14 +42,10 @@ export async function saveConversationMessages(params: SaveMessageParams) {
           where: { id: conversationId },
           data: { userId },
         });
-      } else if (
-        existingConversation.userId != null && existingConversation.userId !== userId
-      ) {
+      } else if (existingConversation.userId != null && existingConversation.userId !== userId) {
         // 다른 유저 소유 대화에는 메시지 추가 불가
         throw new Error('ConversationForbidden');
-      } else if (
-        existingConversation.userId == null && existingConversation.sessionId !== sessionId
-      ) {
+      } else if (existingConversation.userId == null && existingConversation.sessionId !== sessionId) {
         // 다른 게스트 세션의 대화에는 메시지 추가 불가 (sessionId 불일치)
         throw new Error('ConversationForbidden');
       }

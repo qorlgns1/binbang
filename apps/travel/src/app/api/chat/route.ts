@@ -73,9 +73,7 @@ export async function POST(req: Request) {
     const conversation = await getConversation(normalizedConversationId);
     if (conversation) {
       const isOwner =
-        conversation.userId != null
-          ? session?.user?.id === conversation.userId
-          : conversation.sessionId === sessionId;
+        conversation.userId != null ? session?.user?.id === conversation.userId : conversation.sessionId === sessionId;
       if (!isOwner) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 403,
