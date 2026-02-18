@@ -4,6 +4,7 @@ import { prisma } from '@workspace/db';
 interface SaveMessageParams {
   conversationId?: string;
   sessionId: string;
+  userId?: string | null;
   userMessage: string;
   assistantMessage: string;
   toolCalls?: unknown[];
@@ -11,7 +12,7 @@ interface SaveMessageParams {
 }
 
 export async function saveConversationMessages(params: SaveMessageParams) {
-  const { sessionId, userMessage, assistantMessage, toolCalls, toolResults } = params;
+  const { sessionId, userId, userMessage, assistantMessage, toolCalls, toolResults } = params;
   let { conversationId } = params;
 
   const resultId = await prisma.$transaction(async (tx) => {
@@ -21,11 +22,23 @@ export async function saveConversationMessages(params: SaveMessageParams) {
       const conversation = await tx.travelConversation.create({
         data: {
           sessionId,
+          userId: userId ?? null,
           title: userMessage.slice(0, 100),
         },
         select: { id: true },
       });
       conversationId = conversation.id;
+    } else if (userId) {
+      // 로그인 사용자가 기존 게스트 대화를 이어갈 때 소유권을 즉시 귀속
+      await tx.travelConversation.updateMany({
+        where: {
+          id: conversationId,
+          userId: null,
+        },
+        data: {
+          userId,
+        },
+      });
     }
 
     await tx.travelMessage.createMany({
@@ -159,9 +172,26 @@ function inferPlaceType(types?: string[]): string {
  * 게스트 세션의 모든 대화를 사용자 계정으로 병합
  */
 export async function mergeGuestSessionToUser(sessionId: string, userId: string): Promise<{ mergedCount: number }> {
+  return mergeGuestSessionsToUser([sessionId], userId);
+}
+
+/**
+ * 여러 게스트 세션의 대화를 사용자 계정으로 병합
+ */
+export async function mergeGuestSessionsToUser(
+  sessionIds: string[],
+  userId: string,
+): Promise<{ mergedCount: number }> {
+  if (sessionIds.length === 0) {
+    return { mergedCount: 0 };
+  }
+
+  const uniqueSessionIds = [...new Set(sessionIds)];
   const result = await prisma.travelConversation.updateMany({
     where: {
-      sessionId,
+      sessionId: {
+        in: uniqueSessionIds,
+      },
       userId: null, // 게스트 대화만
     },
     data: {

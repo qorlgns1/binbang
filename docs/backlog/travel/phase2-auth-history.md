@@ -28,7 +28,8 @@ Working branch: `feature/phase-2-guest-auth-history`
 - 인증: NextAuth(google/kakao) + Prisma Adapter 연동 완료
 - 세션: `travel_session_id` 기반 게스트 세션(localStorage, httpOnly cookie, 7일 TTL) 적용
 - 세션 추출: API 공통 추출 유틸(cookie -> header -> body) 적용
-- 병합: 로그인 시 `/api/auth/merge-session`으로 게스트 대화 `userId` 귀속
+- 병합: 로그인 시 `/api/auth/merge-session`으로 게스트 대화 `userId` 귀속 (다중 sessionId 지원)
+- 로그인 대화 저장: 인증 사용자는 대화 생성 시점부터 `userId`로 직접 저장
 - 히스토리: 사이드바 목록/상세 로드/삭제/새 대화 시작 구현
 - 비용 제어: Sliding Window + in-memory rate limiting + 429 에러 UI 처리
 - 프롬프트: 시스템 프롬프트에 이전 대화 요약 슬롯 추가(기본값 NONE)
@@ -64,7 +65,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 ### P2-4: 세션 병합
 
 - [x] P2-4-T1: 로그인 성공 시 게스트 sessionId → userId 매핑 로직
-- [ ] P2-4-T2: 여러 기기에서 같은 사용자가 게스트로 사용한 경우 병합 처리
+- [x] P2-4-T2: 여러 기기에서 같은 사용자가 게스트로 사용한 경우 병합 처리
 - [x] P2-4-T3: 병합 후 sessionId 쿠키 갱신
 
 ### P2-5: 대화 히스토리 UI
@@ -116,7 +117,6 @@ model TravelConversation {
 
 ## Known Gaps
 
-- 로그인 사용자의 신규 대화가 생성 시점에 `userId`로 직접 저장되지 않음 (현재 session merge 의존)
 - 대화 제목 수정 UI 미구현
 
 ## Implemented Files (핵심)

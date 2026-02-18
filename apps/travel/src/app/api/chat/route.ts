@@ -9,7 +9,7 @@ import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { travelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
-import { saveConversationMessages } from '@/services/conversation.service';
+import { mergeGuestSessionToUser, saveConversationMessages } from '@/services/conversation.service';
 import { GUEST_LIMITS, USER_LIMITS, checkRateLimit, incrementCount } from '@/services/rate-limit.service';
 
 export const maxDuration = 60;
@@ -74,6 +74,14 @@ export async function POST(req: Request) {
   const rateLimitKey = session?.user?.id ?? sessionId;
   const limits = session?.user ? USER_LIMITS : GUEST_LIMITS;
 
+  if (session?.user?.id) {
+    try {
+      await mergeGuestSessionToUser(sessionId, session.user.id);
+    } catch (error) {
+      console.error('Failed to auto-merge session during chat:', error);
+    }
+  }
+
   const rateCheck = await checkRateLimit(rateLimitKey, limits, clientConversationId);
   if (!rateCheck.allowed) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded', reason: rateCheck.reason }), {
@@ -97,6 +105,7 @@ export async function POST(req: Request) {
         const result = await saveConversationMessages({
           conversationId: clientConversationId,
           sessionId,
+          userId: session?.user?.id,
           userMessage: lastUserText,
           assistantMessage: text,
           toolCalls: toolCalls as unknown[],

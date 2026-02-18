@@ -5,14 +5,16 @@ import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import {
   createSessionId,
+  parseSessionId,
   TRAVEL_SESSION_COOKIE_NAME,
   TRAVEL_SESSION_TTL_SECONDS,
 } from '@/lib/session';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
-import { mergeGuestSessionToUser } from '@/services/conversation.service';
+import { mergeGuestSessionsToUser } from '@/services/conversation.service';
 
 const requestSchema = z.object({
   sessionId: z.string().optional(),
+  sessionIds: z.array(z.string()).optional(),
 });
 
 /**
@@ -44,20 +46,31 @@ export async function POST(req: Request) {
     });
   }
 
-  const sessionId = await extractSessionIdFromRequest({
+  const extractedSessionId = await extractSessionIdFromRequest({
     bodySessionId: parsed.data.sessionId,
     headerSessionId: req.headers.get('x-travel-session-id'),
   });
 
-  if (!sessionId) {
-    return new Response(JSON.stringify({ error: 'sessionId is required' }), {
+  const sessionIds = new Set<string>();
+  if (extractedSessionId) {
+    sessionIds.add(extractedSessionId);
+  }
+  for (const candidate of parsed.data.sessionIds ?? []) {
+    const parsedSessionId = parseSessionId(candidate);
+    if (parsedSessionId) {
+      sessionIds.add(parsedSessionId);
+    }
+  }
+
+  if (sessionIds.size === 0) {
+    return new Response(JSON.stringify({ error: 'sessionId or sessionIds is required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
   try {
-    const result = await mergeGuestSessionToUser(sessionId, session.user.id);
+    const result = await mergeGuestSessionsToUser([...sessionIds], session.user.id);
     const refreshedSessionId = createSessionId();
 
     const response = NextResponse.json(
