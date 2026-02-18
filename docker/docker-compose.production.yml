@@ -41,7 +41,7 @@ services:
   travel:
     image: kihoonbae/binbang:travel-${IMAGE_TAG}@${IMAGE_TRAVEL_DIGEST}
     ports:
-      - '3300:3300'
+      - '3300:3000'
     networks:
       - shared-network
     env_file:
