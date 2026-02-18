@@ -20,7 +20,11 @@ services:
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.production
+      - ../apps/web/.env.common
+      - path: ../apps/web/.env.production
+        required: false
     restart: unless-stopped
 
   worker:
@@ -30,7 +34,11 @@ services:
     expose:
       - '3500'
     env_file:
+      - ../.env.common
       - ../.env.production
+      - ../apps/worker/.env.common
+      - path: ../apps/worker/.env.production
+        required: false
     environment:
       REDIS_URL: redis://redis:6379
     depends_on:
@@ -45,7 +53,11 @@ services:
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.production
+      - ../apps/travel/.env.common
+      - path: ../apps/travel/.env.production
+        required: false
     restart: unless-stopped
 
 networks:

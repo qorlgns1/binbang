@@ -117,10 +117,14 @@ jobs:
               export APP_ENV=production
               COMPOSE_FILE="docker/docker-compose.production.yml"
               COMPOSE_OPTS=""
+              # production만 compose 해석 시 ${IMAGE_TAG}, ${IMAGE_*_DIGEST} 필요
+              COMPOSE_ENV_OPTS="--env-file .env.deploy.production"
             else
               export APP_ENV=development
               COMPOSE_FILE="docker/docker-compose.develop.yml"
               COMPOSE_OPTS="-p binbang-dev"
+              # develop은 이미지 이름 하드코딩이라 --env-file 불필요
+              COMPOSE_ENV_OPTS=""
             fi
             DEPLOY_FILE=".env.deploy.${APP_ENV}"
 
@@ -150,9 +154,7 @@ jobs:
             update_env_var DEPLOYED_AT        "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"         "$DEPLOY_FILE"
 
             # --- 이미지 pull ---
-            docker compose $COMPOSE_OPTS -f "$COMPOSE_FILE" \
-              --env-file ".env.${APP_ENV}" \
-              --env-file "$DEPLOY_FILE" \
+            docker compose $COMPOSE_OPTS -f "$COMPOSE_FILE" $COMPOSE_ENV_OPTS \
               pull
 
             # --- DB 마이그레이션 ---
@@ -166,7 +168,5 @@ jobs:
             fi
 
             # --- 서비스 재시작 ---
-            docker compose $COMPOSE_OPTS -f "$COMPOSE_FILE" \
-              --env-file ".env.${APP_ENV}" \
-              --env-file "$DEPLOY_FILE" \
+            docker compose $COMPOSE_OPTS -f "$COMPOSE_FILE" $COMPOSE_ENV_OPTS \
               up -d
