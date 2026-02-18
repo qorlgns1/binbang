@@ -16,9 +16,34 @@ export async function saveConversationMessages(params: SaveMessageParams) {
   let { conversationId } = params;
 
   const resultId = await prisma.$transaction(async (tx) => {
-    const isNewConversation = !conversationId;
+    let isNewConversation = false;
 
-    if (!conversationId) {
+    if (conversationId) {
+      const existingConversation = await tx.travelConversation.findUnique({
+        where: { id: conversationId },
+        select: { id: true, userId: true },
+      });
+
+      if (!existingConversation) {
+        const conversation = await tx.travelConversation.create({
+          data: {
+            id: conversationId,
+            sessionId,
+            userId: userId ?? null,
+            title: userMessage.slice(0, 100),
+          },
+          select: { id: true },
+        });
+        conversationId = conversation.id;
+        isNewConversation = true;
+      } else if (userId && existingConversation.userId == null) {
+        // 로그인 사용자가 기존 게스트 대화를 이어갈 때 소유권을 즉시 귀속
+        await tx.travelConversation.update({
+          where: { id: conversationId },
+          data: { userId },
+        });
+      }
+    } else {
       const conversation = await tx.travelConversation.create({
         data: {
           sessionId,
@@ -28,17 +53,7 @@ export async function saveConversationMessages(params: SaveMessageParams) {
         select: { id: true },
       });
       conversationId = conversation.id;
-    } else if (userId) {
-      // 로그인 사용자가 기존 게스트 대화를 이어갈 때 소유권을 즉시 귀속
-      await tx.travelConversation.updateMany({
-        where: {
-          id: conversationId,
-          userId: null,
-        },
-        data: {
-          userId,
-        },
-      });
+      isNewConversation = true;
     }
 
     await tx.travelMessage.createMany({

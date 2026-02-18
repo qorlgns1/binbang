@@ -17,23 +17,36 @@ export function useSessionMerge() {
     if (status !== 'authenticated' || hasMergedRef.current) return;
 
     const mergeSession = async () => {
-      const storedData = localStorage.getItem(TRAVEL_SESSION_STORAGE_KEY);
-      if (!storedData) return;
-
       try {
-        const parsed = JSON.parse(storedData) as { sessionId?: string };
-        const sessionId = parseSessionId(parsed.sessionId);
-
-        if (!sessionId) return;
+        const storedData = localStorage.getItem(TRAVEL_SESSION_STORAGE_KEY);
+        let sessionId: string | null = null;
+        if (storedData) {
+          const legacySessionId = parseSessionId(storedData);
+          if (legacySessionId) {
+            sessionId = legacySessionId;
+          } else {
+            try {
+              const parsed = JSON.parse(storedData) as { sessionId?: string };
+              sessionId = parseSessionId(parsed.sessionId);
+            } catch {
+              // ignore malformed localStorage payload and fallback to cookie-based merge
+            }
+          }
+        }
 
         const response = await fetch('/api/auth/merge-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId }),
+          body: JSON.stringify(sessionId ? { sessionId } : {}),
         });
 
         if (!response.ok) {
-          console.error('Failed to merge session:', await response.text());
+          const responseText = await response.text();
+          if (response.status === 400 && responseText.includes('sessionId or sessionIds is required')) {
+            hasMergedRef.current = true;
+            return;
+          }
+          console.error('Failed to merge session:', responseText);
           return;
         }
 

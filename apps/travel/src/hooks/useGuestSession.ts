@@ -24,21 +24,38 @@ export function useGuestSession() {
     const storedData = localStorage.getItem(TRAVEL_SESSION_STORAGE_KEY);
 
     let session: StoredTravelSession | null = null;
+    let shouldPersistSession = false;
 
     if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData) as Partial<StoredTravelSession>;
-        const parsedSessionId = parseSessionId(parsed.sessionId);
+      const legacySessionId = parseSessionId(storedData);
+      if (legacySessionId) {
+        session = {
+          sessionId: legacySessionId,
+          expiresAt: now + TRAVEL_SESSION_TTL_MS,
+        };
+        shouldPersistSession = true;
+      } else {
+        try {
+          const parsed = JSON.parse(storedData) as Partial<StoredTravelSession>;
+          const parsedSessionId = parseSessionId(parsed.sessionId);
 
-        if (parsedSessionId && typeof parsed.expiresAt === 'number' && parsed.expiresAt > now) {
-          // 유효한 세션
-          session = {
-            sessionId: parsedSessionId,
-            expiresAt: parsed.expiresAt,
-          };
+          if (parsedSessionId && typeof parsed.expiresAt === 'number' && parsed.expiresAt > now) {
+            // 유효한 세션
+            session = {
+              sessionId: parsedSessionId,
+              expiresAt: parsed.expiresAt,
+            };
+          } else if (parsedSessionId && typeof parsed.expiresAt !== 'number') {
+            // expiresAt이 없던 구버전 포맷은 TTL을 재부여한다.
+            session = {
+              sessionId: parsedSessionId,
+              expiresAt: now + TRAVEL_SESSION_TTL_MS,
+            };
+            shouldPersistSession = true;
+          }
+        } catch {
+          // 파싱 실패 시 무시하고 새로 생성
         }
-      } catch {
-        // 파싱 실패 시 무시하고 새로 생성
       }
     }
 
@@ -49,6 +66,10 @@ export function useGuestSession() {
         sessionId: newSessionId,
         expiresAt: now + TRAVEL_SESSION_TTL_MS,
       };
+      shouldPersistSession = true;
+    }
+
+    if (shouldPersistSession) {
       localStorage.setItem(TRAVEL_SESSION_STORAGE_KEY, JSON.stringify(session));
     }
 
