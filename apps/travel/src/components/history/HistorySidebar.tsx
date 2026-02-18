@@ -203,13 +203,21 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
           {!isLoading &&
             !error &&
             conversations.map((conv) => (
-              <button
-                type='button'
+              // biome-ignore lint/a11y/useSemanticElements: 내부에 편집/삭제 button이 있어 진짜 button으로 감싸면 HTML 규격 위반(중첩 button). div+role=button+onKeyDown으로 접근성 확보.
+              <div
                 key={conv.id}
+                role='button'
+                tabIndex={0}
                 className='w-full p-4 border-b border-border hover:bg-muted cursor-pointer transition-colors group text-left'
                 onClick={() => {
                   if (editingConversationId === conv.id) return;
                   handleSelect(conv.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (editingConversationId !== conv.id) handleSelect(conv.id);
+                  }
                 }}
               >
                 <div className='flex items-start justify-between gap-2'>
@@ -311,7 +319,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                     )}
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
         </div>
       </div>

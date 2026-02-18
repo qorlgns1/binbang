@@ -13,7 +13,8 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const rawCallback = searchParams.get('callbackUrl') || '/';
+  const callbackUrl = rawCallback.startsWith('/') ? rawCallback : '/';
   const error = searchParams.get('error');
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`) : null;
 

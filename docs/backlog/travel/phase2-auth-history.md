@@ -91,7 +91,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 - [x] P2-5-T1: 사이드바 대화 목록 UI (제목, 날짜, 미리보기)
 - [x] P2-5-T2: 대화 이어가기 기능 (기존 대화 로드 → 채팅 패널에 표시)
 - [x] P2-5-T3: 대화 제목 자동 생성 (첫 메시지 기반, 또는 LLM 요약)
-- [x] P2-5-T4: 대화 검색 기능 (제목/내용 풀텍스트 검색)
+- [x] P2-5-T4: 대화 검색 기능 (제목 기준 검색)
 - [x] P2-5-T5: 대화 삭제 기능
 - [x] P2-5-T6: 새 대화 시작 버튼
 - [x] P2-5-T7: 대화 목록 API endpoints 구현
@@ -187,7 +187,7 @@ model TravelConversation {
 
 - 사전조건: 로그인 사용자 대화 2개 이상 존재(서로 다른 제목/내용)
 - 절차: 히스토리 열기 -> 검색어 입력 -> 항목 제목 인라인 수정 -> 항목 삭제
-- 기대결과: 검색은 제목/메시지 내용 기준 서버 필터(`/api/conversations?q=...`), 제목 수정은 `PATCH /api/conversations/:id` 200, 삭제 후 목록에서 즉시 제거
+- 기대결과: 검색은 제목 기준 서버 필터(`/api/conversations?q=...`), 제목 수정은 `PATCH /api/conversations/:id` 200, 삭제 후 목록에서 즉시 제거
 
 ### TC-06: Sliding Window 적용
 

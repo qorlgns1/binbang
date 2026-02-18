@@ -9,7 +9,7 @@ import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { travelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
-import { saveConversationMessages } from '@/services/conversation.service';
+import { getConversation, saveConversationMessages } from '@/services/conversation.service';
 import {
   GUEST_LIMITS,
   USER_LIMITS,
@@ -60,6 +60,31 @@ export async function POST(req: Request) {
   };
   const normalizedConversationId = clientConversationId?.trim() || chatId?.trim() || undefined;
 
+  const session = await getServerSession(authOptions);
+  const sessionId =
+    (await extractSessionIdFromRequest({
+      bodySessionId: clientSessionId,
+      headerSessionId: req.headers.get('x-travel-session-id'),
+      generateIfMissing: true,
+    })) ?? crypto.randomUUID();
+
+  // 스트리밍 전에 대화 소유권 검증 (다른 유저/게스트 대화에 메시지 추가 방지)
+  if (normalizedConversationId) {
+    const conversation = await getConversation(normalizedConversationId);
+    if (conversation) {
+      const isOwner =
+        conversation.userId != null
+          ? session?.user?.id === conversation.userId
+          : conversation.sessionId === sessionId;
+      if (!isOwner) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+  }
+
   const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
   const lastUserText =
     lastUserMessage?.parts
@@ -75,13 +100,6 @@ export async function POST(req: Request) {
   }
 
   // Rate limiting 확인
-  const session = await getServerSession(authOptions);
-  const sessionId =
-    (await extractSessionIdFromRequest({
-      bodySessionId: clientSessionId,
-      headerSessionId: req.headers.get('x-travel-session-id'),
-      generateIfMissing: true,
-    })) ?? crypto.randomUUID();
 
   const rateLimitKey = session?.user?.id ?? sessionId;
   const limits = session?.user ? USER_LIMITS : GUEST_LIMITS;

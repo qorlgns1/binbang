@@ -33,6 +33,7 @@ export default function HomePage() {
 
   const handleMapAlertClick = useCallback(
     (_entityId: string) => {
+      if (authStatus === 'loading') return;
       if (authStatus === 'authenticated') {
         toast.info('빈방 알림 기능은 준비 중이에요.');
         return;

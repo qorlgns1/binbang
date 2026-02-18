@@ -16,8 +16,12 @@ export async function GET(req: NextRequest) {
     return new Response('Missing photoName parameter', { status: 400 });
   }
 
-  // Validate photoName format: places/{PLACE_ID}/photos/{PHOTO_RESOURCE}
-  if (!photoName.startsWith('places/') || !photoName.includes('/photos/')) {
+  // Validate photoName format: places/{PLACE_ID}/photos/{PHOTO_RESOURCE}; reject reserved chars that would break URL
+  if (
+    !photoName.startsWith('places/') ||
+    !photoName.includes('/photos/') ||
+    /[?#]/.test(photoName)
+  ) {
     return new Response('Invalid photoName format', { status: 400 });
   }
 
