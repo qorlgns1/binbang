@@ -77,6 +77,16 @@ export type { ActiveCaseLink } from './cases';
 export { expireOverdueCases } from './caseExpiration';
 export type { ExpireOverdueCasesInput, ExpireOverdueCasesResult } from './caseExpiration';
 
+// Travel guest cleanup
+export {
+  cleanupTravelGuestConversations,
+  DEFAULT_TRAVEL_GUEST_RETENTION_DAYS,
+} from './travelGuestCleanup';
+export type {
+  CleanupTravelGuestConversationsInput,
+  CleanupTravelGuestConversationsResult,
+} from './travelGuestCleanup';
+
 // Status utilities
 export { determineStatus, nightsBetween, isSameStayDates, shouldSendAvailabilityNotification } from './status';
 

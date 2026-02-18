@@ -7,6 +7,7 @@ import Markdown from 'react-markdown';
 import { CurrencyCard } from '@/components/cards/CurrencyCard';
 import { PlaceCard } from '@/components/cards/PlaceCard';
 import { WeatherCard } from '@/components/cards/WeatherCard';
+import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
 import type { ExchangeRateData, PlaceEntity, WeatherData } from '@/lib/types';
 
 interface ChatMessageProps {
@@ -52,7 +53,8 @@ export function ChatMessage({
                 return (
                   <div
                     key={`md-${message.id ?? 'msg'}-${idx}`}
-                    className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 border border-border/50 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-p:my-2 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-0.5 prose-pre:my-2 prose-pre:rounded-lg prose-pre:bg-muted/80 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/50 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none'
+                    className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 border border-border/50 prose prose-sm max-w-none dark:prose-invert prose-p:leading-loose prose-p:my-3 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-3 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-pre:my-3 prose-pre:rounded-lg prose-pre:bg-muted/80 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/50 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none text-[0.9375rem] sm:text-base'
+                    style={{ letterSpacing: '0.015em' }}
                   >
                     <Markdown>{part.text}</Markdown>
                     {isStreaming && (
@@ -233,7 +235,7 @@ function CardSkeleton({ label }: { label?: string }) {
     <div className='my-2'>
       {label && (
         <div className='mb-2 flex items-center gap-2 text-sm text-muted-foreground'>
-          <span className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+          <LighthouseSpinner size='sm' />
           <span>{label}</span>
         </div>
       )}

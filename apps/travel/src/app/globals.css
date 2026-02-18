@@ -24,6 +24,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Brand colors - Lighthouse theme */
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-amber-light: var(--brand-amber-light);
+  --color-brand-amber-dark: var(--brand-amber-dark);
+
   --radius: 0.75rem;
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
@@ -49,7 +55,7 @@
   --secondary-foreground: #1e293b;
 
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
 
   --accent: #fef3c7;
   --accent-foreground: #92400e;
@@ -60,6 +66,12 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #1e3a5f;
+
+  /* Brand colors - Lighthouse theme (등대 컨셉) */
+  --brand-amber: #e6a23c;
+  --brand-gold: #f59e0b;
+  --brand-amber-light: #fef3c7;
+  --brand-amber-dark: #92400e;
 }
 
 .dark {
@@ -79,7 +91,7 @@
   --secondary-foreground: #f1f5f9;
 
   --muted: #1e293b;
-  --muted-foreground: #94a3b8;
+  --muted-foreground: #cbd5e1;
 
   --accent: #78350f;
   --accent-foreground: #fef3c7;
@@ -90,6 +102,12 @@
   --border: #334155;
   --input: #334155;
   --ring: #1e3a5f;
+
+  /* Brand colors - Lighthouse theme (다크모드에서 더 밝게) */
+  --brand-amber: #fbbf24;
+  --brand-gold: #fbbf24;
+  --brand-amber-light: #fef3c7;
+  --brand-amber-dark: #78350f;
 }
 
 @layer base {
@@ -101,6 +119,14 @@
     font-feature-settings:
       "liga" 1,
       "calt" 1;
+    letter-spacing: 0.01em;
+  }
+
+  /* 모바일에서 더 나은 가독성을 위한 폰트 크기 조정 */
+  @media (max-width: 640px) {
+    body {
+      font-size: 16px;
+    }
   }
 }
 
@@ -118,6 +144,20 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* 등대 빛 회전 애니메이션 */
+  @keyframes lighthouse-beam {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-lighthouse-beam {
+    animation: lighthouse-beam 3s linear infinite;
   }
 }
 
