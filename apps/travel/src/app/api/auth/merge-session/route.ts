@@ -3,12 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import {
-  createSessionId,
-  parseSessionId,
-  TRAVEL_SESSION_COOKIE_NAME,
-  TRAVEL_SESSION_TTL_SECONDS,
-} from '@/lib/session';
+import { createSessionId, parseSessionId, TRAVEL_SESSION_COOKIE_NAME, TRAVEL_SESSION_TTL_SECONDS } from '@/lib/session';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { mergeGuestSessionsToUser } from '@/services/conversation.service';
 

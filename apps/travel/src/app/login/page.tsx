@@ -15,7 +15,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
   const error = searchParams.get('error');
-  const errorMessage = error ? ERROR_MESSAGES[error] ?? `로그인 오류: ${error}` : null;
+  const errorMessage = error ? (ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`) : null;
 
   const handleGoogleLogin = () => {
     void signIn('google', { callbackUrl });

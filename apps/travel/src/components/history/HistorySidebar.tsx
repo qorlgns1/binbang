@@ -42,10 +42,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
       : open
         ? '/api/conversations'
         : null;
-  const { data, error, mutate } = useSWR<{ conversations: Conversation[] }>(
-    conversationsApiUrl,
-    fetcher,
-  );
+  const { data, error, mutate } = useSWR<{ conversations: Conversation[] }>(conversationsApiUrl, fetcher);
 
   const conversations = data?.conversations ?? [];
   const isLoading = !data && !error;

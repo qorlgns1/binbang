@@ -1,22 +1,32 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { parseSessionId, TRAVEL_SESSION_STORAGE_KEY, TRAVEL_SESSION_TTL_MS } from '@/lib/session';
 
+export type MergeStatus = 'idle' | 'pending' | 'done';
+
 /**
  * 로그인 시 게스트 세션을 자동으로 병합하는 훅
+ *
+ * mergeStatus를 반환해 소비자가 merge 완료 시점에 후속 작업을 동기화할 수 있게 한다.
+ * - 'idle'   : 아직 인증되지 않아 merge가 시작되지 않은 상태
+ * - 'pending': merge API 요청 진행 중
+ * - 'done'   : merge 완료 (성공·no-op·오류 모두 포함 — "시도가 끝난" 상태)
  */
-export function useSessionMerge() {
+export function useSessionMerge(): { mergeStatus: MergeStatus } {
   const { status } = useSession();
   const hasMergedRef = useRef(false);
+  const [mergeStatus, setMergeStatus] = useState<MergeStatus>('idle');
 
   useEffect(() => {
     if (status !== 'authenticated' || hasMergedRef.current) return;
 
     const mergeSession = async () => {
+      setMergeStatus('pending');
+
       try {
         const storedData = localStorage.getItem(TRAVEL_SESSION_STORAGE_KEY);
         let sessionId: string | null = null;
@@ -43,6 +53,7 @@ export function useSessionMerge() {
         if (!response.ok) {
           const responseText = await response.text();
           if (response.status === 400 && responseText.includes('sessionId or sessionIds is required')) {
+            // 병합할 게스트 세션 없음 — 정상 no-op
             hasMergedRef.current = true;
             return;
           }
@@ -74,9 +85,13 @@ export function useSessionMerge() {
         hasMergedRef.current = true;
       } catch (error) {
         console.error('Session merge error:', error);
+      } finally {
+        setMergeStatus('done');
       }
     };
 
     void mergeSession();
   }, [status]);
+
+  return { mergeStatus };
 }

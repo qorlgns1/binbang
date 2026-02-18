@@ -193,10 +193,7 @@ export async function mergeGuestSessionToUser(sessionId: string, userId: string)
 /**
  * 여러 게스트 세션의 대화를 사용자 계정으로 병합
  */
-export async function mergeGuestSessionsToUser(
-  sessionIds: string[],
-  userId: string,
-): Promise<{ mergedCount: number }> {
+export async function mergeGuestSessionsToUser(sessionIds: string[], userId: string): Promise<{ mergedCount: number }> {
   if (sessionIds.length === 0) {
     return { mergedCount: 0 };
   }
@@ -219,30 +216,20 @@ export async function mergeGuestSessionsToUser(
 
 /**
  * 사용자의 모든 대화 조회 (userId 기준)
+ *
+ * 검색 범위: 제목(title)만 대상으로 한다.
+ * 메시지 content 전문 검색은 pg_trgm GIN 인덱스 없이 전체 스캔이 발생하므로
+ * Phase 3에서 full-text search 인덱스 적용 후 활성화한다.
  */
 export async function getConversationsByUser(userId: string, searchQuery?: string) {
   const trimmedQuery = searchQuery?.trim();
   const where: Prisma.TravelConversationWhereInput = { userId };
 
   if (trimmedQuery) {
-    where.OR = [
-      {
-        title: {
-          contains: trimmedQuery,
-          mode: 'insensitive',
-        },
-      },
-      {
-        messages: {
-          some: {
-            content: {
-              contains: trimmedQuery,
-              mode: 'insensitive',
-            },
-          },
-        },
-      },
-    ];
+    where.title = {
+      contains: trimmedQuery,
+      mode: 'insensitive',
+    };
   }
 
   return prisma.travelConversation.findMany({

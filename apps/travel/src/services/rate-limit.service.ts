@@ -114,8 +114,7 @@ async function checkRateLimitPersistentByOwner(
       where: {
         conversationId: normalizedConversationId,
         role: 'user',
-        conversation:
-          owner.type === 'session' ? { sessionId: owner.sessionId } : { userId: owner.userId },
+        conversation: owner.type === 'session' ? { sessionId: owner.sessionId } : { userId: owner.userId },
       },
     });
 
@@ -178,9 +177,7 @@ export async function checkRateLimit(
   }
 
   const normalizedConversationId = conversationId?.trim();
-  const isKnownConversation = normalizedConversationId
-    ? data.conversationCounts.has(normalizedConversationId)
-    : false;
+  const isKnownConversation = normalizedConversationId ? data.conversationCounts.has(normalizedConversationId) : false;
   const isNewConversationAttempt = !normalizedConversationId || !isKnownConversation;
 
   if (isNewConversationAttempt && data.dailyCount >= limits.daily) {

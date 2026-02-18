@@ -107,7 +107,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   const [currentConversationId, setCurrentConversationId] = useState<string>(() => createConversationId());
 
   const { sessionId } = useGuestSession();
-  useSessionMerge();
+  const { mergeStatus } = useSessionMerge();
   const { status: authStatus } = useSession();
 
   const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat();
@@ -122,7 +122,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
 
   const isLoading = status !== 'ready';
   const isRateLimitError =
-    typeof error?.message === 'string' && (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message));
+    typeof error?.message === 'string' &&
+    (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message));
 
   useEffect(() => {
     const errorMessage = typeof error?.message === 'string' ? error.message : null;
@@ -133,8 +134,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     }
 
     const shouldPromptLogin =
-      authStatus !== 'authenticated' &&
-      (errorMessage.includes('429') || /rate\s*limit|too\s*many/i.test(errorMessage));
+      authStatus !== 'authenticated' && (errorMessage.includes('429') || /rate\s*limit|too\s*many/i.test(errorMessage));
 
     if (!shouldPromptLogin) {
       return;
@@ -383,7 +383,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     async (targetConversationId: string, preview: string): Promise<boolean> => {
       setRestoreStatus('restoring');
 
-      const restoredPrimary = await loadConversation(targetConversationId, { silent: true, retryCount: 3 });
+      // merge 완료 후 트리거되므로 retry 1회로 충분하다 (네트워크 일시 오류 대비)
+      const restoredPrimary = await loadConversation(targetConversationId, { silent: true, retryCount: 1 });
       if (restoredPrimary) {
         setRestoreStatus('idle');
         setRestoreTargetConversationId(null);
@@ -427,8 +428,11 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     localStorage.setItem(PENDING_RESTORE_STORAGE_KEY, JSON.stringify(snapshot));
   }, [messages, currentConversationId]);
 
+  // merge 완료(done) 이후에 restore를 트리거한다.
+  // authStatus 기반이 아니라 mergeStatus 기반으로 순서를 보장하여,
+  // merge DB write 이전에 GET /api/conversations/:id 가 실행되는 race condition을 제거한다.
   useEffect(() => {
-    if (authStatus !== 'authenticated' || hasAutoRestoredConversationRef.current) {
+    if (mergeStatus !== 'done' || hasAutoRestoredConversationRef.current) {
       return;
     }
 
@@ -450,7 +454,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     localStorage.removeItem(LAST_CONVERSATION_ID_STORAGE_KEY);
     setRestoreTargetConversationId(targetConversationId);
     void restoreConversationWithFallback(targetConversationId, pendingSnapshot?.preview ?? '');
-  }, [authStatus, messages.length, restoreConversationWithFallback]);
+  }, [mergeStatus, messages.length, restoreConversationWithFallback]);
 
   const handleRetryRestore = useCallback(async () => {
     if (!restoreTargetConversationId) {
