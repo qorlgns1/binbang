@@ -175,9 +175,33 @@ export async function mergeGuestSessionToUser(sessionId: string, userId: string)
 /**
  * 사용자의 모든 대화 조회 (userId 기준)
  */
-export async function getConversationsByUser(userId: string) {
+export async function getConversationsByUser(userId: string, searchQuery?: string) {
+  const trimmedQuery = searchQuery?.trim();
+  const where: Prisma.TravelConversationWhereInput = { userId };
+
+  if (trimmedQuery) {
+    where.OR = [
+      {
+        title: {
+          contains: trimmedQuery,
+          mode: 'insensitive',
+        },
+      },
+      {
+        messages: {
+          some: {
+            content: {
+              contains: trimmedQuery,
+              mode: 'insensitive',
+            },
+          },
+        },
+      },
+    ];
+  }
+
   return prisma.travelConversation.findMany({
-    where: { userId },
+    where,
     select: {
       id: true,
       title: true,

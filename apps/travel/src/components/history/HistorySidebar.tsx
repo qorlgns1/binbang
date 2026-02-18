@@ -31,17 +31,20 @@ const fetcher = async (url: string) => {
 
 export function HistorySidebar({ open, onClose, onSelectConversation, onNewConversation }: HistorySidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const trimmedSearchQuery = searchQuery.trim();
+  const conversationsApiUrl =
+    open && trimmedSearchQuery.length > 0
+      ? `/api/conversations?q=${encodeURIComponent(trimmedSearchQuery)}`
+      : open
+        ? '/api/conversations'
+        : null;
   const { data, error, mutate } = useSWR<{ conversations: Conversation[] }>(
-    open ? '/api/conversations' : null,
+    conversationsApiUrl,
     fetcher,
   );
 
   const conversations = data?.conversations ?? [];
   const isLoading = !data && !error;
-
-  const filteredConversations = conversations.filter((conv) =>
-    conv.title?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   const handleDelete = useCallback(
     async (conversationId: string, e: React.MouseEvent) => {
@@ -142,7 +145,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
             </div>
           )}
 
-          {!isLoading && !error && filteredConversations.length === 0 && (
+          {!isLoading && !error && conversations.length === 0 && (
             <div className='p-4 text-center text-muted-foreground'>
               <p className='text-sm'>{searchQuery ? '검색 결과가 없습니다.' : '저장된 대화가 없습니다.'}</p>
             </div>
@@ -150,7 +153,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
 
           {!isLoading &&
             !error &&
-            filteredConversations.map((conv) => (
+            conversations.map((conv) => (
               <button
                 type='button'
                 key={conv.id}

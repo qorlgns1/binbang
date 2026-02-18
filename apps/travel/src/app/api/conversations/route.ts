@@ -7,7 +7,7 @@ import { deleteConversation, getConversationsByUser } from '@/services/conversat
  * 사용자의 대화 목록 조회
  * GET /api/conversations
  */
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -18,7 +18,9 @@ export async function GET() {
   }
 
   try {
-    const conversations = await getConversationsByUser(session.user.id);
+    const url = new URL(req.url);
+    const searchQuery = url.searchParams.get('q')?.trim();
+    const conversations = await getConversationsByUser(session.user.id, searchQuery);
 
     return new Response(
       JSON.stringify({
