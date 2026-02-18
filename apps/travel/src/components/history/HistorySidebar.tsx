@@ -2,8 +2,9 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Check, MessageSquare, Pencil, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, MessageSquare, Pencil, Search, Trash2, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import useSWR from 'swr';
 
 interface Conversation {
@@ -33,6 +34,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
   const [searchQuery, setSearchQuery] = useState('');
   const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const trimmedSearchQuery = searchQuery.trim();
   const conversationsApiUrl =
     open && trimmedSearchQuery.length > 0
@@ -48,12 +50,13 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
   const conversations = data?.conversations ?? [];
   const isLoading = !data && !error;
 
-  const handleDelete = useCallback(
-    async (conversationId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+  const handleDeleteRequest = useCallback((conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPendingDeleteId(conversationId);
+  }, []);
 
-      if (!confirm('이 대화를 삭제하시겠습니까?')) return;
-
+  const handleDeleteConfirm = useCallback(
+    async (conversationId: string) => {
       try {
         const res = await fetch(`/api/conversations?id=${conversationId}`, {
           method: 'DELETE',
@@ -61,14 +64,21 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
 
         if (!res.ok) throw new Error('Failed to delete');
 
+        setPendingDeleteId(null);
         await mutate();
       } catch (err) {
         console.error('Failed to delete conversation:', err);
-        alert('삭제에 실패했습니다.');
+        toast.error('삭제에 실패했습니다.');
+        setPendingDeleteId(null);
       }
     },
     [mutate],
   );
+
+  const handleDeleteCancel = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPendingDeleteId(null);
+  }, []);
 
   const handleSelect = useCallback(
     (conversationId: string) => {
@@ -94,7 +104,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
     async (conversationId: string) => {
       const title = editingTitle.trim();
       if (!title) {
-        alert('제목은 비어 있을 수 없습니다.');
+        toast.info('제목은 비어 있을 수 없습니다.');
         return;
       }
 
@@ -112,7 +122,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
         await mutate();
       } catch (err) {
         console.error('Failed to update conversation title:', err);
-        alert('제목 수정에 실패했습니다.');
+        toast.error('제목 수정에 실패했습니다.');
       }
     },
     [editingTitle, mutate],
@@ -258,6 +268,30 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                           <X className='h-4 w-4' />
                         </button>
                       </>
+                    ) : pendingDeleteId === conv.id ? (
+                      /* 인라인 삭제 확인 */
+                      <div className='flex items-center gap-1'>
+                        <AlertTriangle className='h-3.5 w-3.5 text-destructive shrink-0' aria-hidden />
+                        <button
+                          type='button'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDeleteConfirm(conv.id);
+                          }}
+                          className='rounded-md bg-destructive px-2 py-1 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors'
+                          aria-label='삭제 확인'
+                        >
+                          삭제
+                        </button>
+                        <button
+                          type='button'
+                          onClick={handleDeleteCancel}
+                          className='rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted/80 transition-colors'
+                          aria-label='삭제 취소'
+                        >
+                          취소
+                        </button>
+                      </div>
                     ) : (
                       <>
                         <button
@@ -270,7 +304,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                         </button>
                         <button
                           type='button'
-                          onClick={(e) => handleDelete(conv.id, e)}
+                          onClick={(e) => handleDeleteRequest(conv.id, e)}
                           className='p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100'
                           aria-label='삭제'
                         >

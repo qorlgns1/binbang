@@ -15,6 +15,7 @@ import {
   USER_LIMITS,
   checkGuestRateLimitPersistent,
   checkRateLimit,
+  checkUserRateLimitPersistent,
   incrementCount,
 } from '@/services/rate-limit.service';
 
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
 
   let rateCheck: Awaited<ReturnType<typeof checkRateLimit>>;
   if (session?.user?.id) {
-    rateCheck = await checkRateLimit(rateLimitKey, limits, normalizedConversationId);
+    rateCheck = await checkUserRateLimitPersistent(session.user.id, limits, normalizedConversationId);
   } else {
     try {
       rateCheck = await checkGuestRateLimitPersistent(sessionId, limits, normalizedConversationId);

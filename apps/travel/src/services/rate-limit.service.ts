@@ -2,8 +2,14 @@ import { prisma } from '@workspace/db';
 
 /**
  * Rate Limiting 서비스
- * - In-memory Map 기반 (초기 구현)
- * - 프로덕션에서는 Redis 사용 권장
+ *
+ * 체크 전략:
+ * - guest: DB 기반 persistent check (기본) / in-memory fallback (DB 장애 시)
+ * - user:  DB 기반 persistent check
+ *
+ * 한계:
+ * - 스트리밍 시작~완료 사이의 동시 요청은 한도를 1~2회 초과할 수 있음(스트리밍 특성상 허용 수준)
+ * - Redis 도입 시 이 파일의 DB 체크를 대체하고 원자적 카운터로 전환
  */
 
 interface RateLimitData {
@@ -12,7 +18,7 @@ interface RateLimitData {
   conversationCounts: Map<string, number>;
 }
 
-// In-memory storage
+// In-memory storage (게스트 DB 장애 시 fallback 전용)
 const rateLimitStore = new Map<string, RateLimitData>();
 
 function readPositiveIntEnv(name: string, fallback: number): number {
@@ -22,8 +28,8 @@ function readPositiveIntEnv(name: string, fallback: number): number {
 
 // 제한 정책
 export const GUEST_LIMITS = {
-  daily: readPositiveIntEnv('TRAVEL_GUEST_DAILY_LIMIT', 1), // 기본: 1
-  perConversation: readPositiveIntEnv('TRAVEL_GUEST_PER_CONVERSATION_LIMIT', 5), // 기본: 5턴
+  daily: readPositiveIntEnv('TRAVEL_GUEST_DAILY_LIMIT', 1),
+  perConversation: readPositiveIntEnv('TRAVEL_GUEST_PER_CONVERSATION_LIMIT', 5),
 };
 
 export const USER_LIMITS = {
@@ -40,6 +46,8 @@ interface RateLimits {
   daily: number;
   perConversation: number;
 }
+
+type OwnerFilter = { type: 'session'; sessionId: string } | { type: 'user'; userId: string };
 
 function getDailyWindow(now: Date) {
   const start = new Date(now);
@@ -59,11 +67,11 @@ function formatResetTime(resetAt: Date): string {
 }
 
 /**
- * 게스트 한도는 DB 기준으로 강제한다.
- * - in-memory 상태 초기화(개발 리로드, 런타임 재시작)에 영향받지 않음
+ * DB 기반 Rate limit 체크 공통 헬퍼
+ * guest(sessionId)와 user(userId) 양쪽에서 재사용한다.
  */
-export async function checkGuestRateLimitPersistent(
-  sessionId: string,
+async function checkRateLimitPersistentByOwner(
+  owner: OwnerFilter,
   limits: RateLimits,
   conversationId?: string,
 ): Promise<RateLimitCheck> {
@@ -75,10 +83,10 @@ export async function checkGuestRateLimitPersistent(
 
   if (normalizedConversationId) {
     const existingConversation = await prisma.travelConversation.findFirst({
-      where: {
-        id: normalizedConversationId,
-        sessionId,
-      },
+      where:
+        owner.type === 'session'
+          ? { id: normalizedConversationId, sessionId: owner.sessionId }
+          : { id: normalizedConversationId, userId: owner.userId },
       select: { id: true },
     });
 
@@ -87,13 +95,10 @@ export async function checkGuestRateLimitPersistent(
 
   if (isNewConversationAttempt) {
     const dailyConversationCount = await prisma.travelConversation.count({
-      where: {
-        sessionId,
-        createdAt: {
-          gte: dayStart,
-          lt: dayEnd,
-        },
-      },
+      where:
+        owner.type === 'session'
+          ? { sessionId: owner.sessionId, createdAt: { gte: dayStart, lt: dayEnd } }
+          : { userId: owner.userId, createdAt: { gte: dayStart, lt: dayEnd } },
     });
 
     if (dailyConversationCount >= limits.daily) {
@@ -109,9 +114,8 @@ export async function checkGuestRateLimitPersistent(
       where: {
         conversationId: normalizedConversationId,
         role: 'user',
-        conversation: {
-          sessionId,
-        },
+        conversation:
+          owner.type === 'session' ? { sessionId: owner.sessionId } : { userId: owner.userId },
       },
     });
 
@@ -127,7 +131,31 @@ export async function checkGuestRateLimitPersistent(
 }
 
 /**
- * Rate limit 확인
+ * 게스트 한도 체크 (DB 기반)
+ * - 서버리스 인스턴스 재시작에 영향받지 않음
+ */
+export async function checkGuestRateLimitPersistent(
+  sessionId: string,
+  limits: RateLimits,
+  conversationId?: string,
+): Promise<RateLimitCheck> {
+  return checkRateLimitPersistentByOwner({ type: 'session', sessionId }, limits, conversationId);
+}
+
+/**
+ * 인증 사용자 한도 체크 (DB 기반)
+ * - in-memory 방식과 달리 다중 서버리스 인스턴스 간 상태를 공유한다
+ */
+export async function checkUserRateLimitPersistent(
+  userId: string,
+  limits: RateLimits,
+  conversationId?: string,
+): Promise<RateLimitCheck> {
+  return checkRateLimitPersistentByOwner({ type: 'user', userId }, limits, conversationId);
+}
+
+/**
+ * In-memory Rate limit 확인 (게스트 DB 장애 시 fallback 전용)
  */
 export async function checkRateLimit(
   key: string,
@@ -137,7 +165,6 @@ export async function checkRateLimit(
   const now = new Date();
   let data = rateLimitStore.get(key);
 
-  // 데이터 초기화 또는 일일 리셋
   if (!data || data.dailyResetAt <= now) {
     const tomorrow = new Date(now);
     tomorrow.setHours(24, 0, 0, 0);
@@ -156,7 +183,6 @@ export async function checkRateLimit(
     : false;
   const isNewConversationAttempt = !normalizedConversationId || !isKnownConversation;
 
-  // 일일 대화 생성 한도 확인 (새 대화 시작 시)
   if (isNewConversationAttempt && data.dailyCount >= limits.daily) {
     const resetTime = data.dailyResetAt.toLocaleTimeString('ko-KR', {
       hour: '2-digit',
@@ -168,7 +194,6 @@ export async function checkRateLimit(
     };
   }
 
-  // 대화당 메시지 한도 확인
   if (normalizedConversationId) {
     const conversationCount = data.conversationCounts.get(normalizedConversationId) ?? 0;
     if (conversationCount >= limits.perConversation) {
@@ -183,7 +208,7 @@ export async function checkRateLimit(
 }
 
 /**
- * 카운터 증가
+ * In-memory 카운터 증가 (게스트 in-memory fallback 경로 전용)
  */
 export function incrementCount(key: string, conversationId: string, isNewConversation: boolean): void {
   const data = rateLimitStore.get(key);

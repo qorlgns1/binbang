@@ -241,7 +241,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     }
 
     if (authStatus === 'authenticated') {
-      toast.success('대화가 저장되었습니다');
+      // 대화는 매 턴마다 자동 저장됨 — 히스토리 사이드바에서 확인 가능
+      setShowHistory(true);
     } else {
       setLoginModalTrigger('save');
       setShowLoginModal(true);
