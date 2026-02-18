@@ -4,7 +4,7 @@ import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { Bot, History, Landmark, RefreshCw, Save } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -206,7 +206,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   }, [selectedPlaceId]);
 
   const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
+    (e?: FormEvent) => {
       e?.preventDefault?.();
       if (!input.trim() || isLoading) return;
       const text = input.trim();
