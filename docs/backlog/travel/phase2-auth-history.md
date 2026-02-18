@@ -64,7 +64,7 @@ Working branch: `feature/phase-2-guest-auth-history`
 
 - [x] P2-4-T1: 로그인 성공 시 게스트 sessionId → userId 매핑 로직
 - [ ] P2-4-T2: 여러 기기에서 같은 사용자가 게스트로 사용한 경우 병합 처리
-- [ ] P2-4-T3: 병합 후 sessionId 쿠키 갱신
+- [x] P2-4-T3: 병합 후 sessionId 쿠키 갱신
 
 ### P2-5: 대화 히스토리 UI
 
@@ -75,9 +75,7 @@ Working branch: `feature/phase-2-guest-auth-history`
   부분 구현: 제목 기준 클라이언트 필터만 구현
 - [x] P2-5-T5: 대화 삭제 기능
 - [x] P2-5-T6: 새 대화 시작 버튼
-- [ ] P2-5-T7: 대화 목록 API endpoints 구현  
-  부분 구현: `GET /api/conversations`, `GET /api/conversations/:id`, `DELETE /api/conversations?id=...` 완료  
-  미구현: `PATCH /api/conversations/:id`
+- [x] P2-5-T7: 대화 목록 API endpoints 구현
 
 ### P2-6: Sliding Window 컨텍스트 관리
 
@@ -110,7 +108,7 @@ model TravelConversation {
 - [x] 로그인 후 게스트 때 나눈 대화가 계정에 보존
 - [x] 사이드바에서 이전 대화 목록 확인 및 이어가기 가능
 - [ ] 대화 검색, 삭제, 제목 수정 동작  
-  삭제는 완료, 제목 수정 API와 내용 기반 검색은 미완료
+  삭제/제목 수정 API 완료, 내용 기반 검색 및 제목 수정 UI는 미완료
 - [x] 10턴 이상 대화해도 LLM 비용이 선형 증가하지 않음 (sliding window, 기본 10턴)
 - [x] 게스트 사용 제한이 정상 동작 (in-memory 기준, 게스트 1대화/5턴)
 - [ ] 7일 이상 된 게스트 데이터 자동 삭제 확인  
@@ -119,7 +117,7 @@ model TravelConversation {
 ## Known Gaps
 
 - 로그인 사용자의 신규 대화가 생성 시점에 `userId`로 직접 저장되지 않음 (현재 session merge 의존)
-- 대화 제목 수정(PATCH) 및 서버 측 검색(내용 포함) API 미구현
+- 서버 측 검색(내용 포함) API 미구현
 
 ## Implemented Files (핵심)
 

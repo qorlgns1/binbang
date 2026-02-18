@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-import { parseSessionId, TRAVEL_SESSION_STORAGE_KEY } from '@/lib/session';
+import { parseSessionId, TRAVEL_SESSION_STORAGE_KEY, TRAVEL_SESSION_TTL_MS } from '@/lib/session';
 
 /**
  * 로그인 시 게스트 세션을 자동으로 병합하는 훅
@@ -37,7 +37,22 @@ export function useSessionMerge() {
           return;
         }
 
-        const result = (await response.json()) as { success: boolean; mergedCount: number };
+        const result = (await response.json()) as {
+          success: boolean;
+          mergedCount: number;
+          refreshedSessionId?: string;
+        };
+
+        const refreshedSessionId = parseSessionId(result.refreshedSessionId);
+        if (refreshedSessionId) {
+          localStorage.setItem(
+            TRAVEL_SESSION_STORAGE_KEY,
+            JSON.stringify({
+              sessionId: refreshedSessionId,
+              expiresAt: Date.now() + TRAVEL_SESSION_TTL_MS,
+            }),
+          );
+        }
 
         if (result.success && result.mergedCount > 0) {
           toast.success(`대화 ${result.mergedCount}개가 계정에 저장되었습니다.`);

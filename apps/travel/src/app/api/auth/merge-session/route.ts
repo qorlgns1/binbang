@@ -1,7 +1,13 @@
 import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import {
+  createSessionId,
+  TRAVEL_SESSION_COOKIE_NAME,
+  TRAVEL_SESSION_TTL_SECONDS,
+} from '@/lib/session';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { mergeGuestSessionToUser } from '@/services/conversation.service';
 
@@ -52,17 +58,29 @@ export async function POST(req: Request) {
 
   try {
     const result = await mergeGuestSessionToUser(sessionId, session.user.id);
+    const refreshedSessionId = createSessionId();
 
-    return new Response(
-      JSON.stringify({
+    const response = NextResponse.json(
+      {
         success: true,
         mergedCount: result.mergedCount,
-      }),
+        refreshedSessionId,
+      },
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
       },
     );
+    response.cookies.set({
+      name: TRAVEL_SESSION_COOKIE_NAME,
+      value: refreshedSessionId,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: TRAVEL_SESSION_TTL_SECONDS,
+    });
+
+    return response;
   } catch (error) {
     console.error('Failed to merge session:', error);
     return new Response(

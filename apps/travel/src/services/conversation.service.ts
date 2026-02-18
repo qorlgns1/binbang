@@ -214,6 +214,24 @@ export async function deleteConversation(conversationId: string, userId: string)
 }
 
 /**
+ * 대화 제목 수정 (소유권 확인 포함)
+ * @returns 수정 성공 여부. 대화가 없거나 소유자가 아니면 false 반환.
+ */
+export async function updateConversationTitle(conversationId: string, userId: string, title: string): Promise<boolean> {
+  const result = await prisma.travelConversation.updateMany({
+    where: {
+      id: conversationId,
+      userId,
+    },
+    data: {
+      title,
+    },
+  });
+
+  return result.count > 0;
+}
+
+/**
  * 7일 이상 된 게스트 대화(userId=null) 정리
  * @returns 삭제된 대화 수
  */
