@@ -1,6 +1,6 @@
 # Environment Matrix
 
-Last verified: 2026-02-15
+Last verified: 2026-02-18
 Owner: binbang
 
 ## 1) Environments
@@ -33,8 +33,20 @@ Owner: binbang
 | Google Analytics | optional (`NEXT_PUBLIC_GA_MEASUREMENT_ID`) | `N/A` | optional | analytics visibility loss |
 | Docker Hub pull | required | `N/A` | required | deploy blocked |
 
-## 4) Env Vars (Names Only)
-### Common core
+## 4) Env File Structure (Server)
+각 환경별로 두 파일을 운영한다.
+
+```
+.env.<APP_ENV>           — 런타임 설정 (수동 관리)
+.env.<APP_ENV>.local     — 서버 로컬 오버라이드, gitignore (수동 관리, 선택)
+.env.deploy.<APP_ENV>    — 배포 메타데이터, gitignore (CI/CD 자동 기록)
+```
+
+Docker Compose는 `--env-file` 순서상 나중 파일이 이기므로 `.env.deploy.<APP_ENV>`를 마지막에 로드한다.
+`pnpm with-env`는 dotenv first-wins 규칙에 따라 `.env.<APP_ENV>.local`을 먼저 로드한다.
+
+## 5) Env Vars (Names Only)
+### Common core (`.env.<APP_ENV>`)
 - `APP_ENV`
 - `DATABASE_URL`
 - `REDIS_URL`
@@ -47,14 +59,15 @@ Owner: binbang
 - `WORKER_CONTROL_PORT`
 - `WORKER_INTERNAL_URL`
 
-### Deploy/runtime metadata
+### Deploy/runtime metadata (`.env.deploy.<APP_ENV>` — CI/CD 자동 기록)
 - `IMAGE_TAG`
 - `IMAGE_WEB_DIGEST`
 - `IMAGE_WORKER_DIGEST`
+- `IMAGE_TRAVEL_DIGEST`
 - `DEPLOY_SHA`
 - `DEPLOYED_AT`
 
-### Optional monitoring tuning
+### Optional monitoring tuning (`.env.<APP_ENV>`)
 - `HEARTBEAT_INTERVAL_MS`
 - `HEARTBEAT_MISSED_THRESHOLD`
 - `HEARTBEAT_CHECK_INTERVAL_MS`
@@ -62,30 +75,33 @@ Owner: binbang
 - `WORKER_HEALTHY_THRESHOLD_MS`
 - `WORKER_DEGRADED_THRESHOLD_MS`
 
-### Travel app (apps/travel)
+### Travel app (`.env.<APP_ENV>`)
 - `GOOGLE_GENERATIVE_AI_API_KEY` — Gemini API (chat)
 - `GOOGLE_MAPS_API_KEY` — server-side Maps (Places etc.)
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — client-side map display
 - `OPENWEATHERMAP_API_KEY` — weather tool
-- `EXCHANGERATE_API_KEY` — exchange rate tool  
+- `EXCHANGERATE_API_KEY` — exchange rate tool
+- `CONTEXT_WINDOW_SIZE` — AI 대화 컨텍스트 윈도우
+- `TRAVEL_GUEST_DAILY_LIMIT` — 게스트 일일 요청 제한
+- `TRAVEL_GUEST_PER_CONVERSATION_LIMIT` — 게스트 대화당 요청 제한
 - `DATABASE_URL` — same as common (travel uses `@workspace/db` for conversations/entities)
 
-## 5) Access and Guardrails
+## 6) Access and Guardrails
 - Deployment entrypoint: GitHub Actions `deploy.yml`
 - Deployment authority: users with push permission to `main`/`develop` and environment secret access
 - Production guardrail: run migration + health checks before completion
 - Recommended improvement: enforce branch protection and required reviews on `main`
 
-## 6) Validation Checklist Per Environment
+## 7) Validation Checklist Per Environment
 ### dev
 - [ ] `https://dev-binbang.moodybeard.com/api/health` returns `200`
 - [ ] `https://dev-travel.moodybeard.com` loads travel app
-- [ ] `docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development ps`
+- [ ] `docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development --env-file .env.deploy.development ps`
 - [ ] Basic login and accommodation list flow works
 
 ### production
 - [ ] `https://binbang.moodybeard.com/api/health` returns `200`
 - [ ] `https://travel.moodybeard.com` loads travel app
-- [ ] `docker compose -f docker/docker-compose.production.yml --env-file .env.production ps`
+- [ ] `docker compose -f docker/docker-compose.production.yml --env-file .env.production --env-file .env.deploy.production ps`
 - [ ] Admin heartbeat check (`/api/health/heartbeat`) is healthy
 - [ ] Recent logs show no recurring startup errors

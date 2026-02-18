@@ -1,117 +1,117 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [
-    "biome.json",
-    "packages/db/prisma/schema.prisma",
-    ".env",
-    ".env.local",
-    ".env.development",
-    ".env.development.local",
-    ".env.production",
-    ".env.production.local"
+  "globalDependencies": ["biome.json", "packages/db/prisma/schema.prisma"],
+  "globalEnv": ["APP_ENV", "NEXT_PUBLIC_*"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "NEXTAUTH_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "KAKAO_CLIENT_ID",
+    "KAKAO_CLIENT_SECRET"
   ],
-  "globalPassThroughEnv": ["APP_ENV", "WORKER_INTERNAL_URL"],
+
   "tasks": {
     "db:generate": {
       "cache": false,
-      "outputs": ["generated/**"],
-      "passThroughEnv": ["DATABASE_URL"]
+      "outputs": ["generated/**"]
     },
+
     "build": {
       "dependsOn": ["^build", "@workspace/db#db:generate"],
-      "passThroughEnv": [
-        "DATABASE_URL",
-        "REDIS_URL",
-        "NEXTAUTH_URL",
-        "NEXTAUTH_SECRET",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "KAKAO_CLIENT_ID",
-        "KAKAO_CLIENT_SECRET"
-      ],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "passThroughEnv": ["NEXTAUTH_URL"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+
+    "dev": {
+      "dependsOn": ["@workspace/db#db:generate"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "NEXTAUTH_URL",
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GOOGLE_MAPS_API_KEY",
+        "OPENWEATHERMAP_API_KEY",
+        "EXCHANGERATE_API_KEY",
+        "RESEND_API_KEY",
+        "EMAIL_FROM",
+        "GOOGLE_FORM_WEBHOOK_SECRET",
+        "DOCKER_ENV",
+        "WORKER_INTERNAL_URL",
+        "WORKER_CONTROL_PORT"
+      ]
+    },
+
     "start": {
       "dependsOn": ["build"],
       "cache": false,
-      "persistent": true
-    },
-    "dev": {
-      "dependsOn": ["@workspace/db#db:generate"],
+      "persistent": true,
       "passThroughEnv": [
-        "DATABASE_URL",
-        "REDIS_URL",
         "NEXTAUTH_URL",
-        "NEXTAUTH_SECRET",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "KAKAO_CLIENT_ID",
-        "KAKAO_CLIENT_SECRET",
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GOOGLE_MAPS_API_KEY",
         "OPENWEATHERMAP_API_KEY",
-        "EXCHANGERATE_API_KEY"
-      ],
-      "cache": false,
-      "persistent": true
+        "EXCHANGERATE_API_KEY",
+        "RESEND_API_KEY",
+        "EMAIL_FROM",
+        "GOOGLE_FORM_WEBHOOK_SECRET",
+        "DOCKER_ENV",
+        "WORKER_INTERNAL_URL",
+        "WORKER_CONTROL_PORT"
+      ]
     },
+
     "lint": {
       "inputs": ["$TURBO_DEFAULT$", "biome.json"]
     },
+
     "test": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "**/*.test.ts", "**/*.test.tsx"]
     },
+
     "typecheck": {
       "dependsOn": ["@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+
     "@workspace/worker-shared#typecheck": {
       "dependsOn": ["@workspace/shared#build", "@workspace/db#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+
     "@workspace/web#typecheck": {
       "dependsOn": ["@workspace/web#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+
     "@workspace/worker#typecheck": {
       "dependsOn": ["@workspace/worker-shared#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+
     "@workspace/travel#build": {
       "dependsOn": ["^build", "@workspace/db#db:generate"],
       "passThroughEnv": [
-        "DATABASE_URL",
         "NEXTAUTH_URL",
-        "NEXTAUTH_SECRET",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "KAKAO_CLIENT_ID",
-        "KAKAO_CLIENT_SECRET"
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GOOGLE_MAPS_API_KEY",
+        "OPENWEATHERMAP_API_KEY",
+        "EXCHANGERATE_API_KEY"
       ],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
-    "@workspace/travel#dev": {
-      "dependsOn": ["@workspace/db#db:generate"],
-      "passThroughEnv": [
-        "DATABASE_URL",
-        "NEXTAUTH_URL",
-        "NEXTAUTH_SECRET",
-        "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "KAKAO_CLIENT_ID",
-        "KAKAO_CLIENT_SECRET"
-      ],
-      "cache": false,
-      "persistent": true
-    },
+
     "@workspace/travel#typecheck": {
       "dependsOn": ["@workspace/travel#build", "@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
+
     "clean": {
       "cache": false
     }
   },
+
   "ui": "tui"
 }

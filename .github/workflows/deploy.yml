@@ -111,8 +111,20 @@ jobs:
               exit 1
             fi
 
-            # --- 리포 최신화 ---
+            # --- 브랜치/환경 변수 설정 ---
             BRANCH="${{ github.ref_name }}"
+            if [ "$BRANCH" = "main" ]; then
+              export APP_ENV=production
+              COMPOSE_FILE="docker/docker-compose.production.yml"
+              COMPOSE_OPTS=""
+            else
+              export APP_ENV=development
+              COMPOSE_FILE="docker/docker-compose.develop.yml"
+              COMPOSE_OPTS="-p binbang-dev"
+            fi
+            DEPLOY_FILE=".env.deploy.${APP_ENV}"
+
+            # --- 리포 최신화 ---
             git fetch origin "$BRANCH"
             git checkout -B "$BRANCH" "origin/$BRANCH"
             git reset --hard "origin/$BRANCH"
@@ -121,7 +133,6 @@ jobs:
               key="$1"
               value="$2"
               file="$3"
-              # sed replacement safety: escape delimiter(|), backslash, and &
               escaped_value=$(printf '%s' "$value" | sed -e 's/[\\&|]/\\&/g')
               if grep -q "^${key}=" "$file" 2>/dev/null; then
                 sed -i "s|^${key}=.*|${key}=${escaped_value}|" "$file"
@@ -130,32 +141,32 @@ jobs:
               fi
             }
 
-            # --- main: 프로덕션 배포 (셸은 .env.production.local, 컨테이너는 .env.production, seed 없음) ---
-            if [ "${{ github.ref_name }}" = "main" ]; then
-              IMAGE_TAG=${{ needs.docker.outputs.image_tag }}
-              WEB_DIGEST=${{ needs.docker.outputs.web_digest }}
-              WORKER_DIGEST=${{ needs.docker.outputs.worker_digest }}
-              TRAVEL_DIGEST=${{ needs.docker.outputs.travel_digest }}
-              update_env_var IMAGE_TAG "$IMAGE_TAG" .env.production
-              update_env_var IMAGE_WEB_DIGEST "$WEB_DIGEST" .env.production
-              update_env_var IMAGE_WORKER_DIGEST "$WORKER_DIGEST" .env.production
-              update_env_var IMAGE_TRAVEL_DIGEST "$TRAVEL_DIGEST" .env.production
-              update_env_var DEPLOY_SHA "${{ github.sha }}" .env.production
-              update_env_var DEPLOYED_AT "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" .env.production
+            # --- 배포 메타데이터 기록 (.env.deploy.<env>) ---
+            update_env_var IMAGE_TAG          "${{ needs.docker.outputs.image_tag }}"    "$DEPLOY_FILE"
+            update_env_var IMAGE_WEB_DIGEST   "${{ needs.docker.outputs.web_digest }}"   "$DEPLOY_FILE"
+            update_env_var IMAGE_WORKER_DIGEST "${{ needs.docker.outputs.worker_digest }}" "$DEPLOY_FILE"
+            update_env_var IMAGE_TRAVEL_DIGEST "${{ needs.docker.outputs.travel_digest }}" "$DEPLOY_FILE"
+            update_env_var DEPLOY_SHA         "${{ github.sha }}"                        "$DEPLOY_FILE"
+            update_env_var DEPLOYED_AT        "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"         "$DEPLOY_FILE"
 
-              docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
-              docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
-              pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
-              pnpm with-env:production:host pnpm --filter @workspace/db exec prisma generate
-              pnpm with-env:production:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
-              docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
-              exit 0
+            # --- 이미지 pull ---
+            docker compose $COMPOSE_OPTS -f "$COMPOSE_FILE" \
+              --env-file ".env.${APP_ENV}" \
+              --env-file "$DEPLOY_FILE" \
+              pull
+
+            # --- DB 마이그레이션 ---
+            pnpm db:migrate:deploy
+            pnpm db:generate
+            pnpm db:seed:base
+
+            # --- develop 전용: 테스트 데이터 seed ---
+            if [ "$APP_ENV" = "development" ]; then
+              pnpm db:seed
             fi
 
-            # --- develop: 셸에서는 .env.development.local(DATABASE_URL) 사용, 컨테이너는 .env.development만 사용 ---
-            docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development pull
-            pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate deploy
-            pnpm with-env:development:host pnpm --filter @workspace/db exec prisma generate
-            pnpm with-env:development:host pnpm --filter @workspace/db exec tsx prisma/seed-base.ts
-            pnpm with-env:development:host pnpm --filter @workspace/db db:seed
-            docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development up -d
+            # --- 서비스 재시작 ---
+            docker compose $COMPOSE_OPTS -f "$COMPOSE_FILE" \
+              --env-file ".env.${APP_ENV}" \
+              --env-file "$DEPLOY_FILE" \
+              up -d
