@@ -10,7 +10,7 @@
     ".env.production",
     ".env.production.local"
   ],
-  "globalPassThroughEnv": ["APP_ENV", "WEB_PORT"],
+  "globalPassThroughEnv": ["APP_ENV", "WORKER_INTERNAL_URL"],
   "tasks": {
     "db:generate": {
       "cache": false,
@@ -24,7 +24,6 @@
         "REDIS_URL",
         "NEXTAUTH_URL",
         "NEXTAUTH_SECRET",
-        "GOOGLE_FORM_WEBHOOK_SECRET",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "KAKAO_CLIENT_ID",
@@ -45,7 +44,6 @@
         "REDIS_URL",
         "NEXTAUTH_URL",
         "NEXTAUTH_SECRET",
-        "GOOGLE_FORM_WEBHOOK_SECRET",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "KAKAO_CLIENT_ID",
@@ -83,10 +81,12 @@
       "dependsOn": ["^build", "@workspace/db#db:generate"],
       "passThroughEnv": [
         "DATABASE_URL",
-        "GOOGLE_GENERATIVE_AI_API_KEY",
-        "GOOGLE_MAPS_API_KEY",
-        "OPENWEATHERMAP_API_KEY",
-        "EXCHANGERATE_API_KEY"
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "KAKAO_CLIENT_ID",
+        "KAKAO_CLIENT_SECRET"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
@@ -95,10 +95,12 @@
       "dependsOn": ["@workspace/db#db:generate"],
       "passThroughEnv": [
         "DATABASE_URL",
-        "GOOGLE_GENERATIVE_AI_API_KEY",
-        "GOOGLE_MAPS_API_KEY",
-        "OPENWEATHERMAP_API_KEY",
-        "EXCHANGERATE_API_KEY"
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "KAKAO_CLIENT_ID",
+        "KAKAO_CLIENT_SECRET"
       ],
       "cache": false,
       "persistent": true
