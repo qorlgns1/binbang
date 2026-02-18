@@ -1,8 +1,9 @@
 # Phase 2: 게스트 인증 + 대화 히스토리 + 비용 제어
 
-Status: NOT STARTED
-Priority: HIGH
-Depends on: Phase 1
+Status: IN PROGRESS (updated on 2026-02-18)  
+Priority: HIGH  
+Depends on: Phase 1  
+Working branch: `feature/phase-2-guest-auth-history`
 
 ## Goal
 
@@ -11,9 +12,9 @@ Depends on: Phase 1
 ## Architecture
 
 ```
-방문자 → 게스트 세션 (sessionId: UUID, cookie)
+방문자 → 게스트 세션 (sessionId: UUID, localStorage)
          ↓
-       AI 채팅 (제한 없이 사용)
+       AI 채팅
          ↓
        저장/히스토리 접근 시 → 로그인 유도 모달
          ↓
@@ -22,103 +23,122 @@ Depends on: Phase 1
        세션 병합 (게스트 대화 → 유저 계정 귀속)
 ```
 
+## Current Implementation Snapshot
+
+- 인증: NextAuth(google/kakao) + Prisma Adapter 연동 완료
+- 세션: `travel_session_id` 기반 게스트 세션(localStorage, httpOnly cookie, 7일 TTL) 적용
+- 세션 추출: API 공통 추출 유틸(cookie -> header -> body) 적용
+- 병합: 로그인 시 `/api/auth/merge-session`으로 게스트 대화 `userId` 귀속
+- 히스토리: 사이드바 목록/상세 로드/삭제/새 대화 시작 구현
+- 비용 제어: Sliding Window + in-memory rate limiting + 429 에러 UI 처리
+- 정리 작업: 7일 지난 guest conversation 삭제 cron API 구현
+
 ## Tasks
 
 ### P2-1: 게스트 세션 관리
 
-- [ ] P2-1-T1: sessionId 생성 로직 (UUID v4, 브라우저 cookie/localStorage 저장)
-- [ ] P2-1-T2: API route에서 sessionId 추출 미들웨어
-- [ ] P2-1-T3: `TravelConversation.sessionId`로 게스트 대화 저장 (userId=null)
-- [ ] P2-1-T4: 게스트 세션 만료 정책 (7일 TTL, cron으로 자동 삭제)
-- [ ] P2-1-T5: 게스트 데이터 정리 cron job 구현
-
-**현재 DB 스키마 참고**: `TravelConversation` 모델에 이미 `sessionId`와 nullable `userId` 필드 존재
+- [x] P2-1-T1: sessionId 생성 로직 (UUID v4, 브라우저 cookie/localStorage 저장)
+- [x] P2-1-T2: API route에서 sessionId 추출 미들웨어
+- [x] P2-1-T3: `TravelConversation.sessionId`로 게스트 대화 저장 (userId=null)
+- [x] P2-1-T4: 게스트 세션 만료 정책 (7일 TTL, cron으로 자동 삭제)
+- [x] P2-1-T5: 게스트 데이터 정리 cron job 구현
 
 ### P2-2: OAuth 인증 연동
 
 **기존 인프라**: `apps/web`에서 NextAuth 사용 중 (Google/Kakao OAuth)
 
-- [ ] P2-2-T1: apps/travel에 NextAuth 설정 (기존 `packages/db`의 User 모델 공유)
-- [ ] P2-2-T2: Google OAuth provider 설정
-- [ ] P2-2-T3: Kakao OAuth provider 설정
-- [ ] P2-2-T4: 로그인/로그아웃 API route 구현
-- [ ] P2-2-T5: 인증 상태 관리 (SessionProvider, useSession)
+- [x] P2-2-T1: apps/travel에 NextAuth 설정 (기존 `packages/db`의 User 모델 공유)
+- [x] P2-2-T2: Google OAuth provider 설정
+- [x] P2-2-T3: Kakao OAuth provider 설정
+- [x] P2-2-T4: 로그인/로그아웃 API route 구현
+- [x] P2-2-T5: 인증 상태 관리 (SessionProvider, useSession)
 
 ### P2-3: 로그인 유도 모달
 
-- [ ] P2-3-T1: 로그인 유도 모달 UI 컴포넌트 (부드러운 UX, 강제 차단 아님)
-- [ ] P2-3-T2: 트리거 포인트 정의 및 구현:
-  - 대화 저장 버튼 클릭 시
-  - 히스토리 사이드바 접근 시
-  - 장소 북마크 시도 시 (추후)
-- [ ] P2-3-T3: "나중에" 버튼으로 모달 닫기 (계속 게스트로 사용 가능)
-- [ ] P2-3-T4: 모달 내 소셜 로그인 버튼 (Google, Kakao)
+- [x] P2-3-T1: 로그인 유도 모달 UI 컴포넌트 (부드러운 UX, 강제 차단 아님)
+- [x] P2-3-T2: 트리거 포인트 정의 및 구현
+- [x] P2-3-T3: "나중에" 버튼으로 모달 닫기 (계속 게스트로 사용 가능)
+- [x] P2-3-T4: 모달 내 소셜 로그인 버튼 (Google, Kakao)
 
 ### P2-4: 세션 병합
 
-- [ ] P2-4-T1: 로그인 성공 시 게스트 sessionId → userId 매핑 로직
-  - `TravelConversation` 중 해당 sessionId의 레코드를 userId로 업데이트
+- [x] P2-4-T1: 로그인 성공 시 게스트 sessionId → userId 매핑 로직
 - [ ] P2-4-T2: 여러 기기에서 같은 사용자가 게스트로 사용한 경우 병합 처리
 - [ ] P2-4-T3: 병합 후 sessionId 쿠키 갱신
 
-**수정할 서비스**: `apps/travel/src/services/conversation.service.ts`
-
 ### P2-5: 대화 히스토리 UI
 
-- [ ] P2-5-T1: 사이드바 대화 목록 UI (제목, 날짜, 미리보기)
-- [ ] P2-5-T2: 대화 이어가기 기능 (기존 대화 로드 → 채팅 패널에 표시)
-- [ ] P2-5-T3: 대화 제목 자동 생성 (첫 메시지 기반, 또는 LLM 요약)
-- [ ] P2-5-T4: 대화 검색 기능 (제목/내용 풀텍스트 검색)
-- [ ] P2-5-T5: 대화 삭제 기능
-- [ ] P2-5-T6: 새 대화 시작 버튼
-- [ ] P2-5-T7: 대화 목록 API endpoints 구현
-  - `GET /api/conversations` - 목록 조회
-  - `GET /api/conversations/:id` - 상세 조회
-  - `DELETE /api/conversations/:id` - 삭제
-  - `PATCH /api/conversations/:id` - 제목 수정
-
-**기존 서비스 활용**: `getConversationsBySession()`, `getConversation()` 함수가 이미 구현됨
+- [x] P2-5-T1: 사이드바 대화 목록 UI (제목, 날짜, 미리보기)
+- [x] P2-5-T2: 대화 이어가기 기능 (기존 대화 로드 → 채팅 패널에 표시)
+- [x] P2-5-T3: 대화 제목 자동 생성 (첫 메시지 기반, 또는 LLM 요약)
+- [ ] P2-5-T4: 대화 검색 기능 (제목/내용 풀텍스트 검색)  
+  부분 구현: 제목 기준 클라이언트 필터만 구현
+- [x] P2-5-T5: 대화 삭제 기능
+- [x] P2-5-T6: 새 대화 시작 버튼
+- [ ] P2-5-T7: 대화 목록 API endpoints 구현  
+  부분 구현: `GET /api/conversations`, `GET /api/conversations/:id`, `DELETE /api/conversations?id=...` 완료  
+  미구현: `PATCH /api/conversations/:id`
 
 ### P2-6: Sliding Window 컨텍스트 관리
 
-- [ ] P2-6-T1: 최근 N턴만 LLM 컨텍스트에 포함하는 로직 구현 (기본값: 10턴)
-- [ ] P2-6-T2: `apps/travel/src/app/api/chat/route.ts` 수정 - 메시지 슬라이싱
+- [x] P2-6-T1: 최근 N턴만 LLM 컨텍스트에 포함하는 로직 구현 (기본값: 10턴)
+- [x] P2-6-T2: `apps/travel/src/app/api/chat/route.ts` 수정 - 메시지 슬라이싱
 - [ ] P2-6-T3: 시스템 프롬프트에 "이전 대화 요약" 슬롯 추가 (Phase 5에서 활용)
-- [ ] P2-6-T4: 컨텍스트 윈도우 크기 환경 변수로 설정 가능하게
+- [x] P2-6-T4: 컨텍스트 윈도우 크기 환경 변수로 설정 가능하게
 
 ### P2-7: 사용 제한 (Rate Limiting)
 
-- [ ] P2-7-T1: 게스트 사용 제한 정책 정의
-  - 게스트: 하루 5대화, 대화당 20턴
-  - 로그인 사용자: 하루 20대화, 대화당 50턴
-- [ ] P2-7-T2: Rate limiter 구현 (Redis 기반 또는 in-memory)
-- [ ] P2-7-T3: 제한 초과 시 안내 메시지 UI
-- [ ] P2-7-T4: 제한 카운터 리셋 로직 (일일 리셋)
+- [x] P2-7-T1: 게스트 사용 제한 정책 정의  
+  게스트: 하루 1대화, 대화당 5턴 / 로그인: 하루 20대화, 대화당 50턴
+- [x] P2-7-T2: Rate limiter 구현 (in-memory)
+- [x] P2-7-T3: 제한 초과 시 안내 메시지 UI
+- [x] P2-7-T4: 제한 카운터 리셋 로직 (일일 리셋)
 
 ## DB Schema Changes
 
-기존 스키마로 대부분 커버 가능. 추가 필요한 필드:
+완료:
 
 ```prisma
 model TravelConversation {
-  // 기존 필드 유지
-  messageCount  Int      @default(0)  // 턴 수 추적 (rate limiting)
+  messageCount Int @default(0) // 턴 수 추적
 }
 ```
 
 ## Acceptance Criteria
 
-- [ ] 비로그인 사용자가 즉시 AI 채팅 가능
-- [ ] 로그인 후 게스트 때 나눈 대화가 계정에 보존
-- [ ] 사이드바에서 이전 대화 목록 확인 및 이어가기 가능
-- [ ] 대화 검색, 삭제, 제목 수정 동작
-- [ ] 10턴 이상 대화해도 LLM 비용이 선형 증가하지 않음 (sliding window, 기본 10턴)
-- [ ] 게스트 사용 제한이 정상 동작
-- [ ] 7일 이상 된 게스트 데이터 자동 삭제 확인
+- [x] 비로그인 사용자가 즉시 AI 채팅 가능
+- [x] 로그인 후 게스트 때 나눈 대화가 계정에 보존
+- [x] 사이드바에서 이전 대화 목록 확인 및 이어가기 가능
+- [ ] 대화 검색, 삭제, 제목 수정 동작  
+  삭제는 완료, 제목 수정 API와 내용 기반 검색은 미완료
+- [x] 10턴 이상 대화해도 LLM 비용이 선형 증가하지 않음 (sliding window, 기본 10턴)
+- [x] 게스트 사용 제한이 정상 동작 (in-memory 기준, 게스트 1대화/5턴)
+- [ ] 7일 이상 된 게스트 데이터 자동 삭제 확인  
+  cleanup API 구현 완료, 운영 cron 스케줄/실운영 검증 필요
 
-## Technical Notes
+## Known Gaps
 
-- NextAuth: 기존 `apps/web` 설정 참고, 동일한 `packages/db` User 모델 공유
-- Cookie: `httpOnly`, `secure`, `sameSite: lax`, `maxAge: 7 days`
-- Rate limiting: 초기에는 in-memory (Map), 스케일링 시 Redis
-- 대화 자동 제목: 첫 사용자 메시지에서 slice(0, 100) (이미 구현됨)
+- 로그인 사용자의 신규 대화가 생성 시점에 `userId`로 직접 저장되지 않음 (현재 session merge 의존)
+- 대화 제목 수정(PATCH) 및 서버 측 검색(내용 포함) API 미구현
+
+## Implemented Files (핵심)
+
+- `apps/travel/src/hooks/useGuestSession.ts`
+- `apps/travel/src/hooks/useSessionMerge.ts`
+- `apps/travel/src/lib/auth.ts`
+- `apps/travel/src/lib/session.ts`
+- `apps/travel/src/lib/sessionServer.ts`
+- `apps/travel/src/services/auth.service.ts`
+- `apps/travel/src/services/conversation.service.ts`
+- `apps/travel/src/services/rate-limit.service.ts`
+- `apps/travel/src/app/api/auth/[...nextauth]/route.ts`
+- `apps/travel/src/app/api/auth/merge-session/route.ts`
+- `apps/travel/src/app/api/chat/route.ts`
+- `apps/travel/src/app/api/session/route.ts`
+- `apps/travel/src/app/api/conversations/route.ts`
+- `apps/travel/src/app/api/conversations/[id]/route.ts`
+- `apps/travel/src/app/api/cron/cleanup-guests/route.ts`
+- `apps/travel/src/components/history/HistorySidebar.tsx`
+- `apps/travel/src/components/modals/LoginPromptModal.tsx`
+- `apps/travel/src/components/chat/ChatPanel.tsx`
+- `packages/db/prisma/schema.prisma`

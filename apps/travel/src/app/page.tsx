@@ -1,11 +1,13 @@
 'use client';
 
 import { Compass, Map as MapIcon, MessageSquare } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { MapPanel } from '@/components/map/MapPanel';
+import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
 import { OnlineStatus } from '@/components/OnlineStatus';
 import type { MapEntity, PlaceEntity } from '@/lib/types';
 
@@ -14,6 +16,8 @@ export default function HomePage() {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | undefined>();
   const [showMap, setShowMap] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { status: authStatus } = useSession();
 
   const handleEntitiesUpdate = useCallback((newEntities: MapEntity[]) => {
     setEntities(newEntities);
@@ -27,9 +31,17 @@ export default function HomePage() {
     setSelectedPlaceId(entityId);
   }, []);
 
-  const handleMapAlertClick = useCallback((_entityId: string) => {
-    toast.info('빈방 알림 기능은 준비 중이에요.');
-  }, []);
+  const handleMapAlertClick = useCallback(
+    (_entityId: string) => {
+      if (authStatus === 'authenticated') {
+        toast.info('빈방 알림 기능은 준비 중이에요.');
+        return;
+      }
+
+      setShowLoginModal(true);
+    },
+    [authStatus],
+  );
 
   const handleCloseMapInfo = useCallback(() => {
     setSelectedPlaceId(undefined);
@@ -119,6 +131,7 @@ export default function HomePage() {
           </button>
         </nav>
       </div>
+      <LoginPromptModal open={showLoginModal} onClose={() => setShowLoginModal(false)} trigger='bookmark' />
     </div>
   );
 }

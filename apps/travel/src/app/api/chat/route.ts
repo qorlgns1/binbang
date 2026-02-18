@@ -8,6 +8,7 @@ import { geminiFlashLite } from '@/lib/ai/model';
 import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { travelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
+import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { saveConversationMessages } from '@/services/conversation.service';
 import { GUEST_LIMITS, USER_LIMITS, checkRateLimit, incrementCount } from '@/services/rate-limit.service';
 
@@ -63,7 +64,14 @@ export async function POST(req: Request) {
 
   // Rate limiting 확인
   const session = await getServerSession(authOptions);
-  const rateLimitKey = session?.user?.id ?? clientSessionId ?? `anon_${Date.now()}`;
+  const sessionId =
+    (await extractSessionIdFromRequest({
+      bodySessionId: clientSessionId,
+      headerSessionId: req.headers.get('x-travel-session-id'),
+      generateIfMissing: true,
+    })) ?? crypto.randomUUID();
+
+  const rateLimitKey = session?.user?.id ?? sessionId;
   const limits = session?.user ? USER_LIMITS : GUEST_LIMITS;
 
   const rateCheck = await checkRateLimit(rateLimitKey, limits, clientConversationId);
@@ -77,8 +85,6 @@ export async function POST(req: Request) {
   const rawModelMessages = await convertToModelMessages(messages);
   const windowSize = Number.parseInt(process.env.CONTEXT_WINDOW_SIZE ?? '10', 10);
   const modelMessages = applyContextWindow(rawModelMessages, windowSize);
-
-  const sessionId = clientSessionId?.trim() ?? `server_${Date.now()}`;
 
   const result = streamText({
     model: geminiFlashLite,

@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-const SESSION_KEY = 'travel_session_id';
+import { parseSessionId, TRAVEL_SESSION_STORAGE_KEY } from '@/lib/session';
 
 /**
  * 로그인 시 게스트 세션을 자동으로 병합하는 훅
@@ -17,12 +17,12 @@ export function useSessionMerge() {
     if (status !== 'authenticated' || hasMergedRef.current) return;
 
     const mergeSession = async () => {
-      const storedData = localStorage.getItem(SESSION_KEY);
+      const storedData = localStorage.getItem(TRAVEL_SESSION_STORAGE_KEY);
       if (!storedData) return;
 
       try {
-        const parsed = JSON.parse(storedData) as { sessionId: string; expiresAt: number };
-        const { sessionId } = parsed;
+        const parsed = JSON.parse(storedData) as { sessionId?: string };
+        const sessionId = parseSessionId(parsed.sessionId);
 
         if (!sessionId) return;
 

@@ -2,10 +2,11 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { mergeGuestSessionToUser } from '@/services/conversation.service';
 
 const requestSchema = z.object({
-  sessionId: z.string().min(1),
+  sessionId: z.string().optional(),
 });
 
 /**
@@ -22,14 +23,11 @@ export async function POST(req: Request) {
     });
   }
 
-  let body: unknown;
+  let body: unknown = {};
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // body 없이 호출된 경우(cookie 기반 병합)도 허용
   }
 
   const parsed = requestSchema.safeParse(body);
@@ -40,7 +38,17 @@ export async function POST(req: Request) {
     });
   }
 
-  const { sessionId } = parsed.data;
+  const sessionId = await extractSessionIdFromRequest({
+    bodySessionId: parsed.data.sessionId,
+    headerSessionId: req.headers.get('x-travel-session-id'),
+  });
+
+  if (!sessionId) {
+    return new Response(JSON.stringify({ error: 'sessionId is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const result = await mergeGuestSessionToUser(sessionId, session.user.id);

@@ -119,9 +119,18 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     sendMessage({ text: query });
   };
 
-  const handleAlertClick = useCallback((_place: PlaceEntity) => {
-    toast.info('빈방 알림 기능은 준비 중이에요.');
-  }, []);
+  const handleAlertClick = useCallback(
+    (_place: PlaceEntity) => {
+      if (authStatus === 'authenticated') {
+        toast.info('빈방 알림 기능은 준비 중이에요.');
+        return;
+      }
+
+      setLoginModalTrigger('bookmark');
+      setShowLoginModal(true);
+    },
+    [authStatus],
+  );
 
   const handleSaveClick = useCallback(() => {
     if (authStatus === 'authenticated') {
