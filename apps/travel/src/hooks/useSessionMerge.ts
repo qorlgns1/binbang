@@ -54,11 +54,11 @@ export function useSessionMerge(): { mergeStatus: MergeStatus } {
         if (!response.ok) {
           const responseText = await response.text();
           if (response.status === 400 && responseText.includes('sessionId or sessionIds is required')) {
-            // 병합할 게스트 세션 없음 — 정상 no-op
             hasMergedRef.current = true;
             return;
           }
           console.error('Failed to merge session:', responseText);
+          hasMergedRef.current = true;
           return;
         }
 
@@ -86,6 +86,7 @@ export function useSessionMerge(): { mergeStatus: MergeStatus } {
         hasMergedRef.current = true;
       } catch (error) {
         console.error('Session merge error:', error);
+        hasMergedRef.current = true;
       } finally {
         setMergeStatus('done');
       }

@@ -17,7 +17,7 @@ function resolveRetentionDays(value: number | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     return DEFAULT_TRAVEL_GUEST_RETENTION_DAYS;
   }
-  return Math.floor(value);
+  return Math.max(1, Math.floor(value));
 }
 
 /**

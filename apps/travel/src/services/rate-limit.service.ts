@@ -206,17 +206,21 @@ export async function checkRateLimit(
 
 /**
  * In-memory 카운터 증가 (게스트 in-memory fallback 경로 전용)
+ * conversationId는 trim하여 checkRateLimit과 동일한 정규화 규칙 적용
  */
 export function incrementCount(key: string, conversationId: string, isNewConversation: boolean): void {
   const data = rateLimitStore.get(key);
   if (!data) return;
 
+  const normalizedId = conversationId?.trim() ?? '';
+  if (!normalizedId) return;
+
   if (isNewConversation) {
     data.dailyCount += 1;
   }
 
-  const currentCount = data.conversationCounts.get(conversationId) ?? 0;
-  data.conversationCounts.set(conversationId, currentCount + 1);
+  const currentCount = data.conversationCounts.get(normalizedId) ?? 0;
+  data.conversationCounts.set(normalizedId, currentCount + 1);
 }
 
 /**

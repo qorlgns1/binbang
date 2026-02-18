@@ -273,16 +273,18 @@ export async function deleteConversation(conversationId: string, userId: string)
 
 /**
  * 대화 제목 수정 (소유권 확인 포함)
+ * 제목은 trim 후 최대 100자로 저장 (saveConversationMessages와 동일)
  * @returns 수정 성공 여부. 대화가 없거나 소유자가 아니면 false 반환.
  */
 export async function updateConversationTitle(conversationId: string, userId: string, title: string): Promise<boolean> {
+  const safeTitle = title.trim().slice(0, 100);
   const result = await prisma.travelConversation.updateMany({
     where: {
       id: conversationId,
       userId,
     },
     data: {
-      title,
+      title: safeTitle,
     },
   });
 

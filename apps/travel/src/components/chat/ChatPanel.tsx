@@ -209,17 +209,28 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     (e?: FormEvent) => {
       e?.preventDefault?.();
       if (!input.trim() || isLoading) return;
+      if (authStatus !== 'authenticated' && sessionId == null) {
+        toast.info('세션 준비 중입니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
       const text = input.trim();
       setInput('');
       sendMessage({ text }, { body: getChatRequestBody() });
     },
-    [getChatRequestBody, input, isLoading, sendMessage],
+    [authStatus, getChatRequestBody, input, isLoading, sendMessage, sessionId],
   );
 
-  const handleExampleClick = (query: string) => {
-    setInput('');
-    sendMessage({ text: query }, { body: getChatRequestBody() });
-  };
+  const handleExampleClick = useCallback(
+    (query: string) => {
+      if (authStatus !== 'authenticated' && sessionId == null) {
+        toast.info('세션 준비 중입니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      setInput('');
+      sendMessage({ text: query }, { body: getChatRequestBody() });
+    },
+    [authStatus, getChatRequestBody, sendMessage, sessionId],
+  );
 
   const handleAlertClick = useCallback(
     (_place: PlaceEntity) => {

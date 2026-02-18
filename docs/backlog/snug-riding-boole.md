@@ -193,7 +193,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 //   - Google 로그인 (signIn('google'))
 //   - Kakao 로그인 (signIn('kakao'))
 //   - "나중에" (onClose)
-// - 스타일: shadcn Dialog 사용
+// - 스타일: 커스텀 오버레이 (role=dialog, aria-modal, ESC 닫기)
 ```
 
 ### 3.2 트리거 포인트 추가
