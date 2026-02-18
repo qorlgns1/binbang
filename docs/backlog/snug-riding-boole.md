@@ -72,17 +72,16 @@ const { messages, sendMessage, ... } = useChat({
 });
 ```
 
-### 1.3 게스트 데이터 정리 cron (선택사항)
+### 1.3 게스트 데이터 정리 worker job (선택사항)
 
-**파일**: `apps/travel/src/app/api/cron/cleanup-guests/route.ts` (신규)
+**파일**: `apps/worker/src/travelGuestCleanup.ts`, `packages/worker-shared/src/runtime/scheduler.ts`
 
 ```typescript
-// 7일 이상 된 TravelConversation (userId=null) 삭제
-// Vercel Cron 또는 수동 호출
+// BullMQ repeatable job으로 7일 이상 된 TravelConversation(userId=null) 삭제
 // DELETE cascade로 메시지/엔티티도 자동 삭제
 ```
 
-**Note**: Vercel Pro 플랜 필요. 초기에는 수동 실행 가능.
+**Note**: 게스트 정리는 BullMQ worker 스케줄 단일 경로로 운영.
 
 ---
 

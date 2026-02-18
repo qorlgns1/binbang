@@ -282,22 +282,3 @@ export async function updateConversationTitle(conversationId: string, userId: st
 
   return result.count > 0;
 }
-
-/**
- * 7일 이상 된 게스트 대화(userId=null) 정리
- * @returns 삭제된 대화 수
- */
-export async function cleanupGuestConversations(): Promise<number> {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-  const result = await prisma.travelConversation.deleteMany({
-    where: {
-      userId: null,
-      createdAt: {
-        lt: sevenDaysAgo,
-      },
-    },
-  });
-
-  return result.count;
-}
