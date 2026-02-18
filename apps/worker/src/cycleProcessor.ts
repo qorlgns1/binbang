@@ -1,6 +1,7 @@
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
   anonymizeExpiredLandingEventPii,
+  cleanupTravelGuestConversations,
   createCheckCycle,
   expireOverdueCases,
   findActiveCaseLinks,
@@ -15,8 +16,6 @@ import {
   type Job,
   type Queue,
 } from '@workspace/worker-shared/runtime';
-
-import { cleanupTravelGuestConversations } from './travelGuestCleanup';
 
 export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<void> {
   return async (job: Job): Promise<void> => {

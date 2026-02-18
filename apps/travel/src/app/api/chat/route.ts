@@ -127,8 +127,10 @@ export async function POST(req: Request) {
           toolResults: toolResults as unknown[],
         });
 
-        // Rate limit 카운터 증가
-        incrementCount(rateLimitKey, result.conversationId, result.isNewConversation);
+        // 게스트일 때만 in-memory 카운터 증가 (유저는 DB 기반 한도만 사용)
+        if (!session?.user?.id) {
+          incrementCount(rateLimitKey, result.conversationId, result.isNewConversation);
+        }
       } catch (error) {
         console.error('Failed to save conversation:', error);
       }

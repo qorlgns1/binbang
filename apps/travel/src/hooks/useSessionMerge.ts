@@ -46,6 +46,7 @@ export function useSessionMerge(): { mergeStatus: MergeStatus } {
 
         const response = await fetch('/api/auth/merge-session', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sessionId ? { sessionId } : {}),
         });
