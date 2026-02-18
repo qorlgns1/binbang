@@ -1,7 +1,7 @@
 'use client';
 
-import { Compass, Map as MapIcon, MessageSquare } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { Compass, LogIn, LogOut, Map as MapIcon, MessageSquare } from 'lucide-react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -65,6 +65,27 @@ export default function HomePage() {
         </div>
         <div className='flex shrink-0 items-center gap-2'>
           <OnlineStatus />
+          {authStatus === 'authenticated' ? (
+            <button
+              type='button'
+              onClick={() => void signOut({ callbackUrl: '/' })}
+              className='inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors'
+              aria-label='로그아웃'
+            >
+              <LogOut className='h-3.5 w-3.5' aria-hidden />
+              <span className='hidden sm:inline'>로그아웃</span>
+            </button>
+          ) : (
+            <button
+              type='button'
+              onClick={() => void signIn(undefined, { callbackUrl: '/' })}
+              className='inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors'
+              aria-label='로그인'
+            >
+              <LogIn className='h-3.5 w-3.5' aria-hidden />
+              <span className='hidden sm:inline'>로그인</span>
+            </button>
+          )}
           {entities.length > 0 && (
             <span className='text-xs text-muted-foreground bg-muted hidden rounded-full px-2 py-1 sm:inline-flex'>
               {entities.length}곳

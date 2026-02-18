@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 interface LoginPromptModalProps {
   open: boolean;
   onClose: () => void;
-  trigger: 'save' | 'history' | 'bookmark';
+  trigger: 'save' | 'history' | 'bookmark' | 'limit';
 }
 
 const TRIGGER_MESSAGES = {
@@ -21,6 +21,10 @@ const TRIGGER_MESSAGES = {
   bookmark: {
     title: '북마크를 저장하려면 로그인하세요',
     description: '북마크 기능을 사용하려면 로그인이 필요해요.',
+  },
+  limit: {
+    title: '계속 사용하려면 로그인하세요',
+    description: '게스트 한도에 도달했어요. 로그인하면 더 많은 대화를 이어갈 수 있어요.',
   },
 };
 
