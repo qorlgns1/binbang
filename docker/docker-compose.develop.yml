@@ -22,8 +22,6 @@ services:
     env_file:
       - ../.env.common
       - ../.env.development
-      - path: ../.env.development.local
-        required: false
       - ../apps/web/.env.common
       - path: ../apps/web/.env.development
         required: false
@@ -38,8 +36,6 @@ services:
     env_file:
       - ../.env.common
       - ../.env.development
-      - path: ../.env.development.local
-        required: false
       - ../apps/worker/.env.common
       - path: ../apps/worker/.env.development
         required: false
@@ -60,8 +56,6 @@ services:
     env_file:
       - ../.env.common
       - ../.env.development
-      - path: ../.env.development.local
-        required: false
       - ../apps/travel/.env.common
       - path: ../apps/travel/.env.development
         required: false
