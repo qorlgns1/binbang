@@ -42,7 +42,7 @@ services:
   travel:
     image: kihoonbae/binbang:travel-develop
     ports:
-      - '3301:3300'
+      - '3301:3000'
     networks:
       - shared-network
     env_file:
