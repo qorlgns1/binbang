@@ -1,5 +1,5 @@
 services:
-  redis:
+  redis-prod:
     image: redis:7-alpine
     command: redis-server --maxmemory-policy noeviction
     networks:
@@ -20,7 +20,11 @@ services:
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.production
+      - ../apps/web/.env.common
+      - path: ../apps/web/.env.production
+        required: false
     restart: unless-stopped
 
   worker:
@@ -30,22 +34,30 @@ services:
     expose:
       - '3500'
     env_file:
+      - ../.env.common
       - ../.env.production
+      - ../apps/worker/.env.common
+      - path: ../apps/worker/.env.production
+        required: false
     environment:
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://redis-prod:6379
     depends_on:
-      redis:
+      redis-prod:
         condition: service_healthy
     restart: unless-stopped
 
   travel:
     image: kihoonbae/binbang:travel-${IMAGE_TAG}@${IMAGE_TRAVEL_DIGEST}
     ports:
-      - '3300:3300'
+      - '3300:3000'
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.production
+      - ../apps/travel/.env.common
+      - path: ../apps/travel/.env.production
+        required: false
     restart: unless-stopped
 
 networks:

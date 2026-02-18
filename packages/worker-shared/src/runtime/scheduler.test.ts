@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { removeRepeatableJobs, setupRepeatableJobs } from './scheduler';
 
 describe('runtime/scheduler', (): void => {
-  it('registers cycle/notification/retention/public snapshot/case-expiration schedulers', async (): Promise<void> => {
+  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup schedulers', async (): Promise<void> => {
     const upsertJobScheduler = vi.fn().mockResolvedValue(undefined);
     const queue = {
       upsertJobScheduler,
@@ -11,7 +11,7 @@ describe('runtime/scheduler', (): void => {
 
     await setupRepeatableJobs(queue as never, '*/30 * * * *');
 
-    expect(upsertJobScheduler).toHaveBeenCalledTimes(5);
+    expect(upsertJobScheduler).toHaveBeenCalledTimes(6);
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       1,
       'cycle-scheduler',
@@ -57,6 +57,18 @@ describe('runtime/scheduler', (): void => {
         data: { triggeredAt: expect.any(String) },
       },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      6,
+      'travel-guest-cleanup-scheduler',
+      { pattern: '15 0 * * *' },
+      {
+        name: 'travel-guest-cleanup',
+        data: {
+          triggeredAt: expect.any(String),
+          retentionDays: 7,
+        },
+      },
+    );
   });
 
   it('uses admin-configured public snapshot schedule and window days when provided', async (): Promise<void> => {
@@ -92,6 +104,18 @@ describe('runtime/scheduler', (): void => {
         data: { triggeredAt: expect.any(String) },
       },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      6,
+      'travel-guest-cleanup-scheduler',
+      { pattern: '15 0 * * *' },
+      {
+        name: 'travel-guest-cleanup',
+        data: {
+          triggeredAt: expect.any(String),
+          retentionDays: 7,
+        },
+      },
+    );
   });
 
   it('removes all repeatable schedulers', async (): Promise<void> => {
@@ -102,11 +126,12 @@ describe('runtime/scheduler', (): void => {
 
     await removeRepeatableJobs(queue as never);
 
-    expect(removeJobScheduler).toHaveBeenCalledTimes(5);
+    expect(removeJobScheduler).toHaveBeenCalledTimes(6);
     expect(removeJobScheduler).toHaveBeenNthCalledWith(1, 'cycle-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(2, 'notification-retry-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(3, 'landing-event-pii-retention-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(4, 'public-availability-snapshot-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(5, 'case-expiration-scheduler');
+    expect(removeJobScheduler).toHaveBeenNthCalledWith(6, 'travel-guest-cleanup-scheduler');
   });
 });

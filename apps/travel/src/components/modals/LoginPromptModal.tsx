@@ -2,11 +2,12 @@
 
 import { signIn } from 'next-auth/react';
 import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface LoginPromptModalProps {
   open: boolean;
   onClose: () => void;
-  trigger: 'save' | 'history' | 'bookmark';
+  trigger: 'save' | 'history' | 'bookmark' | 'limit';
 }
 
 const TRIGGER_MESSAGES = {
@@ -22,9 +23,33 @@ const TRIGGER_MESSAGES = {
     title: '북마크를 저장하려면 로그인하세요',
     description: '북마크 기능을 사용하려면 로그인이 필요해요.',
   },
+  limit: {
+    title: '계속 사용하려면 로그인하세요',
+    description: '게스트 한도에 도달했어요. 로그인하면 더 많은 대화를 이어갈 수 있어요.',
+  },
 };
 
 export function LoginPromptModal({ open, onClose, trigger }: LoginPromptModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    },
+    [onClose],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
+      'button[aria-label="모달 닫기"], button[aria-label="닫기"]',
+    );
+    firstFocusable?.focus();
+  }, [open]);
+
   if (!open) return null;
 
   const message = TRIGGER_MESSAGES[trigger];
@@ -38,7 +63,7 @@ export function LoginPromptModal({ open, onClose, trigger }: LoginPromptModalPro
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center' role='presentation'>
       {/* Overlay */}
       <button
         type='button'
@@ -48,7 +73,14 @@ export function LoginPromptModal({ open, onClose, trigger }: LoginPromptModalPro
       />
 
       {/* Modal */}
-      <div className='relative z-10 w-full max-w-md mx-4 bg-background rounded-2xl p-6 shadow-2xl border border-border'>
+      <div
+        ref={dialogRef}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby='login-prompt-title'
+        className='relative z-10 w-full max-w-md mx-4 bg-background rounded-2xl p-6 shadow-2xl border border-border'
+        onKeyDown={handleKeyDown}
+      >
         {/* Close button */}
         <button
           type='button'
@@ -61,7 +93,9 @@ export function LoginPromptModal({ open, onClose, trigger }: LoginPromptModalPro
 
         {/* Header */}
         <div className='mb-6'>
-          <h2 className='text-2xl font-bold mb-2'>{message.title}</h2>
+          <h2 id='login-prompt-title' className='text-2xl font-bold mb-2'>
+            {message.title}
+          </h2>
           <p className='text-muted-foreground text-sm'>{message.description}</p>
         </div>
 

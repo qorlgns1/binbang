@@ -40,7 +40,7 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
           </div>
         ) : (
           <div className='relative aspect-4/3 w-full bg-muted flex items-center justify-center'>
-            <span className='text-muted-foreground text-xs'>No image</span>
+            <span className='text-muted-foreground text-xs'>이미지 없음</span>
           </div>
         )}
         <div className='p-3 h-[110px] flex flex-col justify-between'>

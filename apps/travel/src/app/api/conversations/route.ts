@@ -1,13 +1,13 @@
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
-import { getConversationsByUser } from '@/services/conversation.service';
+import { deleteConversation, getConversationsByUser } from '@/services/conversation.service';
 
 /**
  * 사용자의 대화 목록 조회
  * GET /api/conversations
  */
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -18,7 +18,9 @@ export async function GET() {
   }
 
   try {
-    const conversations = await getConversationsByUser(session.user.id);
+    const url = new URL(req.url);
+    const searchQuery = url.searchParams.get('q')?.trim();
+    const conversations = await getConversationsByUser(session.user.id, searchQuery);
 
     return new Response(
       JSON.stringify({
@@ -68,24 +70,14 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    const { prisma } = await import('@workspace/db');
+    const deleted = await deleteConversation(conversationId, session.user.id);
 
-    // 소유권 확인
-    const conversation = await prisma.travelConversation.findUnique({
-      where: { id: conversationId },
-      select: { userId: true },
-    });
-
-    if (!conversation || conversation.userId !== session.user.id) {
+    if (!deleted) {
       return new Response(JSON.stringify({ error: 'Not found or unauthorized' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    await prisma.travelConversation.delete({
-      where: { id: conversationId },
-    });
 
     return new Response(
       JSON.stringify({

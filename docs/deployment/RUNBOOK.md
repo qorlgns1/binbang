@@ -1,6 +1,6 @@
 # Operations Runbook
 
-Last verified: 2026-02-15
+Last verified: 2026-02-18
 Owner: binbang
 
 ## 1) Incident Levels
@@ -21,26 +21,36 @@ Owner: binbang
 ```bash
 curl -fsS https://binbang.moodybeard.com/api/health
 
-docker compose -f docker/docker-compose.production.yml --env-file .env.production ps
-docker compose -f docker/docker-compose.production.yml --env-file .env.production logs --tail 200 web worker redis
+docker compose -f docker/docker-compose.production.yml \
+  --env-file .env.production --env-file .env.deploy.production \
+  ps
+
+docker compose -f docker/docker-compose.production.yml \
+  --env-file .env.production --env-file .env.deploy.production \
+  logs --tail 200 web worker redis
 ```
 
 ### Development
 ```bash
 curl -fsS https://dev-binbang.moodybeard.com/api/health
 
-docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development ps
-docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development logs --tail 200 web worker redis
+docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
+  --env-file .env.development --env-file .env.deploy.development \
+  ps
+
+docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
+  --env-file .env.development --env-file .env.deploy.development \
+  logs --tail 200 web worker redis
 ```
 
 ## 4) Common Failure Scenarios
 ### A) App does not boot
-- Check `.env.*` completeness (`DATABASE_URL`, auth vars, image digest vars)
-- Confirm pulled image digests are valid
+- Check `.env.<APP_ENV>` completeness (`DATABASE_URL`, auth vars 등)
+- Check `.env.deploy.<APP_ENV>` — IMAGE_TAG, DIGEST 값이 유효한지 확인
 - Check Next.js/web logs for env validation errors
 
 ### B) Elevated 5xx
-- Confirm latest deploy SHA and diff scope
+- Confirm latest deploy SHA (`DEPLOY_SHA` in `.env.deploy.<APP_ENV>`) and diff scope
 - Check DB connectivity and migration state
 - Roll back to previous known-good digests if regression suspected
 
@@ -56,27 +66,43 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .e
 
 ## 5) Recovery Playbooks
 ### Rollback (production)
-1. Set previous `IMAGE_TAG`/digest values in `.env.production`
+1. `.env.deploy.production`에서 `IMAGE_TAG` / `IMAGE_*_DIGEST`를 이전 값으로 수정
 2. Pull and redeploy compose stack
 3. Verify `/api/health` and key user flow
 
 ```bash
-docker compose -f docker/docker-compose.production.yml --env-file .env.production pull
-docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d
+# .env.deploy.production 수정 후:
+docker compose -f docker/docker-compose.production.yml \
+  --env-file .env.production \
+  --env-file .env.deploy.production \
+  pull
+
+docker compose -f docker/docker-compose.production.yml \
+  --env-file .env.production \
+  --env-file .env.deploy.production \
+  up -d
 ```
 
 ### Restart only
 ```bash
-docker compose -f docker/docker-compose.production.yml --env-file .env.production restart web worker
-# or for dev:
-docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development restart web worker
+# production
+docker compose -f docker/docker-compose.production.yml \
+  --env-file .env.production --env-file .env.deploy.production \
+  restart web worker
+
+# development
+docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
+  --env-file .env.development --env-file .env.deploy.development \
+  restart web worker
 ```
 
 ### DB migration rerun (host env)
 ```bash
-pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy
-# dev:
-pnpm with-env:development:host pnpm --filter @workspace/db exec prisma migrate deploy
+# production
+APP_ENV=production pnpm db:migrate:deploy
+
+# development
+APP_ENV=development pnpm db:migrate:deploy
 ```
 
 ## 6) Observability Links

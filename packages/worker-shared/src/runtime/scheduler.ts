@@ -3,6 +3,8 @@ import type { Queue } from 'bullmq';
 const DEFAULT_NOTIFICATION_RETRY_SCHEDULE = '*/2 * * * *';
 const DEFAULT_LANDING_EVENT_PII_RETENTION_SCHEDULE = '17 0 * * *';
 const DEFAULT_LANDING_EVENT_PII_RETENTION_DAYS = 30;
+const DEFAULT_TRAVEL_GUEST_CLEANUP_SCHEDULE = '15 0 * * *';
+const DEFAULT_TRAVEL_GUEST_RETENTION_DAYS = 7;
 const DEFAULT_PUBLIC_AVAILABILITY_SNAPSHOT_SCHEDULE = '7 1 * * *';
 const DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS = 7;
 const DEFAULT_CASE_EXPIRATION_SCHEDULE = '37 0 * * *';
@@ -81,6 +83,18 @@ export async function setupRepeatableJobs(
       data: { triggeredAt: new Date().toISOString() },
     },
   );
+
+  await queue.upsertJobScheduler(
+    'travel-guest-cleanup-scheduler',
+    { pattern: DEFAULT_TRAVEL_GUEST_CLEANUP_SCHEDULE },
+    {
+      name: 'travel-guest-cleanup',
+      data: {
+        triggeredAt: new Date().toISOString(),
+        retentionDays: DEFAULT_TRAVEL_GUEST_RETENTION_DAYS,
+      },
+    },
+  );
 }
 
 export async function removeRepeatableJobs(queue: Queue): Promise<void> {
@@ -89,4 +103,5 @@ export async function removeRepeatableJobs(queue: Queue): Promise<void> {
   await queue.removeJobScheduler('landing-event-pii-retention-scheduler');
   await queue.removeJobScheduler('public-availability-snapshot-scheduler');
   await queue.removeJobScheduler('case-expiration-scheduler');
+  await queue.removeJobScheduler('travel-guest-cleanup-scheduler');
 }

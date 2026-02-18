@@ -7,7 +7,7 @@
  * - Form Question Mappings
  * - Platform Selectors & Patterns
  *
- * 실행: pnpm db:seed:deploy (root) 또는 pnpm --filter @workspace/db db:seed:base
+ * 실행: pnpm db:seed:base (root) 또는 pnpm --filter @workspace/db db:seed:base
  */
 import { PrismaPg } from '@prisma/adapter-pg';
 import 'dotenv/config';

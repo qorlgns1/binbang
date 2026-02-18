@@ -2,7 +2,7 @@ import type { NextAuthOptions, Session } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
 
-import { createNextAuthAdapter, findAccountUserId, saveKakaoTokens } from '@/services/auth.service';
+import { createNextAuthAdapter, saveKakaoTokens } from '@/services/auth.service';
 
 export const authOptions: NextAuthOptions = {
   adapter: createNextAuthAdapter(),
@@ -21,21 +21,19 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  callbacks: {
-    async signIn({ account }): Promise<boolean> {
+  events: {
+    // signIn은 User/Account 생성 전에 실행되므로 첫 로그인 시 토큰 저장이 누락됨. linkAccount는 DB 레코드 생성 후 호출됨.
+    async linkAccount({ user, account }) {
       if (account?.provider === 'kakao' && account.access_token) {
-        const userId = await findAccountUserId(account.provider, account.providerAccountId);
-
-        if (userId) {
-          await saveKakaoTokens(userId, {
-            accessToken: account.access_token,
-            refreshToken: account.refresh_token,
-            expiresAt: account.expires_at,
-          });
-        }
+        await saveKakaoTokens(user.id, {
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token ?? null,
+          expiresAt: account.expires_at ?? null,
+        });
       }
-      return true;
     },
+  },
+  callbacks: {
     async session({ session, user }): Promise<Session> {
       if (session.user && user) {
         session.user.id = user.id;

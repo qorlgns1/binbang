@@ -1,6 +1,7 @@
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
   anonymizeExpiredLandingEventPii,
+  cleanupTravelGuestConversations,
   createCheckCycle,
   expireOverdueCases,
   findActiveCaseLinks,
@@ -59,6 +60,20 @@ export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<v
       const result = await expireOverdueCases();
       console.log(
         `[case-expiration] scanned=${result.scannedCount} expired=${result.expiredCount} skippedNoWindow=${result.skippedNoWindow} elapsedMs=${result.elapsedMs}`,
+      );
+      return;
+    }
+
+    if (job.name === 'travel-guest-cleanup') {
+      const retentionDaysRaw = (job.data as { retentionDays?: unknown } | undefined)?.retentionDays;
+      const retentionDays =
+        typeof retentionDaysRaw === 'number' && Number.isFinite(retentionDaysRaw) && retentionDaysRaw > 0
+          ? Math.floor(retentionDaysRaw)
+          : undefined;
+
+      const result = await cleanupTravelGuestConversations({ retentionDays });
+      console.log(
+        `[travel-guest-cleanup] retentionDays=${result.retentionDays} cutoffAt=${result.cutoffAt} deleted=${result.deletedCount}`,
       );
       return;
     }

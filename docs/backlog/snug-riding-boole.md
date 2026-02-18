@@ -72,17 +72,16 @@ const { messages, sendMessage, ... } = useChat({
 });
 ```
 
-### 1.3 게스트 데이터 정리 cron (선택사항)
+### 1.3 게스트 데이터 정리 worker job (선택사항)
 
-**파일**: `apps/travel/src/app/api/cron/cleanup-guests/route.ts` (신규)
+**파일**: `apps/worker/src/travelGuestCleanup.ts`, `packages/worker-shared/src/runtime/scheduler.ts`
 
 ```typescript
-// 7일 이상 된 TravelConversation (userId=null) 삭제
-// Vercel Cron 또는 수동 호출
+// BullMQ repeatable job으로 7일 이상 된 TravelConversation(userId=null) 삭제
 // DELETE cascade로 메시지/엔티티도 자동 삭제
 ```
 
-**Note**: Vercel Pro 플랜 필요. 초기에는 수동 실행 가능.
+**Note**: 게스트 정리는 BullMQ worker 스케줄 단일 경로로 운영.
 
 ---
 
@@ -194,7 +193,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 //   - Google 로그인 (signIn('google'))
 //   - Kakao 로그인 (signIn('kakao'))
 //   - "나중에" (onClose)
-// - 스타일: shadcn Dialog 사용
+// - 스타일: 커스텀 오버레이 (role=dialog, aria-modal, ESC 닫기)
 ```
 
 ### 3.2 트리거 포인트 추가
@@ -440,7 +439,7 @@ CONTEXT_WINDOW_SIZE=10
 //   - 자정에 호출 (cron 또는 체크 로직)
 
 // 제한 정책:
-const GUEST_LIMITS = { daily: 5, perConversation: 20 };
+const GUEST_LIMITS = { daily: 1, perConversation: 5 };
 const USER_LIMITS = { daily: 20, perConversation: 50 };
 ```
 

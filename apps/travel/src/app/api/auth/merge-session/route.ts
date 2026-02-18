@@ -1,11 +1,15 @@
 import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
-import { mergeGuestSessionToUser } from '@/services/conversation.service';
+import { createSessionId, parseSessionId, TRAVEL_SESSION_COOKIE_NAME, TRAVEL_SESSION_TTL_SECONDS } from '@/lib/session';
+import { extractSessionIdFromRequest } from '@/lib/sessionServer';
+import { mergeGuestSessionsToUser } from '@/services/conversation.service';
 
 const requestSchema = z.object({
-  sessionId: z.string().min(1),
+  sessionId: z.string().optional(),
+  sessionIds: z.array(z.string()).optional(),
 });
 
 /**
@@ -22,14 +26,11 @@ export async function POST(req: Request) {
     });
   }
 
-  let body: unknown;
+  let body: unknown = {};
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    // body 없이 호출된 경우(cookie 기반 병합)도 허용
   }
 
   const parsed = requestSchema.safeParse(body);
@@ -40,21 +41,54 @@ export async function POST(req: Request) {
     });
   }
 
-  const { sessionId } = parsed.data;
+  const extractedSessionId = await extractSessionIdFromRequest({
+    bodySessionId: parsed.data.sessionId,
+    headerSessionId: req.headers.get('x-travel-session-id'),
+  });
+
+  const sessionIds = new Set<string>();
+  if (extractedSessionId) {
+    sessionIds.add(extractedSessionId);
+  }
+  for (const candidate of parsed.data.sessionIds ?? []) {
+    const parsedSessionId = parseSessionId(candidate);
+    if (parsedSessionId) {
+      sessionIds.add(parsedSessionId);
+    }
+  }
+
+  if (sessionIds.size === 0) {
+    return new Response(JSON.stringify({ error: 'sessionId or sessionIds is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
-    const result = await mergeGuestSessionToUser(sessionId, session.user.id);
+    const result = await mergeGuestSessionsToUser([...sessionIds], session.user.id);
+    const refreshedSessionId = createSessionId();
 
-    return new Response(
-      JSON.stringify({
+    const response = NextResponse.json(
+      {
         success: true,
         mergedCount: result.mergedCount,
-      }),
+        refreshedSessionId,
+      },
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
       },
     );
+    response.cookies.set({
+      name: TRAVEL_SESSION_COOKIE_NAME,
+      value: refreshedSessionId,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: TRAVEL_SESSION_TTL_SECONDS,
+    });
+
+    return response;
   } catch (error) {
     console.error('Failed to merge session:', error);
     return new Response(
