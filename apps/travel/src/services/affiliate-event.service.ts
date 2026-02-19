@@ -53,6 +53,19 @@ export interface AggregateAffiliateFunnelResult {
   byCategory: AffiliateCategoryFunnelItem[];
 }
 
+interface FunnelMetrics {
+  impression: number;
+  ctaAttempt: number;
+  outboundClick: number;
+  clickThroughRate: number;
+}
+
+interface GroupedMetricRow<TKey extends string> {
+  key: TKey;
+  eventType: string;
+  count: number;
+}
+
 function isValidIanaTimezone(value: string | null | undefined): value is string {
   const timezone = value?.trim();
   if (!timezone) return false;
@@ -167,6 +180,57 @@ function safeRatio(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 1000) / 1000;
 }
 
+function createEmptyMetrics(): FunnelMetrics {
+  return {
+    impression: 0,
+    ctaAttempt: 0,
+    outboundClick: 0,
+    clickThroughRate: 0,
+  };
+}
+
+function applyEventCount(metrics: FunnelMetrics, eventType: string, count: number): void {
+  if (eventType === 'impression') metrics.impression = count;
+  if (eventType === 'cta_attempt') metrics.ctaAttempt = count;
+  if (eventType === 'outbound_click') metrics.outboundClick = count;
+}
+
+function addClickThroughRate<T extends FunnelMetrics>(item: T): T {
+  return {
+    ...item,
+    clickThroughRate: safeRatio(item.outboundClick, item.impression),
+  };
+}
+
+function buildGroupedFunnel<TKey extends string, TResult extends FunnelMetrics>(
+  rows: GroupedMetricRow<TKey>[],
+  createResult: (key: TKey) => TResult,
+): TResult[] {
+  const map = new Map<TKey, TResult>();
+
+  for (const row of rows) {
+    const current = map.get(row.key) ?? createResult(row.key);
+    applyEventCount(current, row.eventType, row.count);
+    map.set(row.key, current);
+  }
+
+  return [...map.values()].map((item) => addClickThroughRate(item));
+}
+
+function calculateTotals(rows: FunnelMetrics[]): AggregateAffiliateFunnelResult['total'] {
+  const totals = rows.reduce((acc, item) => {
+    acc.impression += item.impression;
+    acc.ctaAttempt += item.ctaAttempt;
+    acc.outboundClick += item.outboundClick;
+    return acc;
+  }, createEmptyMetrics());
+
+  return {
+    ...totals,
+    clickThroughRate: safeRatio(totals.outboundClick, totals.impression),
+  };
+}
+
 export async function aggregateAffiliateFunnel(
   input: AggregateAffiliateFunnelInput,
 ): Promise<AggregateAffiliateFunnelResult> {
@@ -186,44 +250,15 @@ export async function aggregateAffiliateFunnel(
     },
   });
 
-  const categoryMap = new Map<AffiliateAdvertiserCategory, AffiliateCategoryFunnelItem>();
+  const byCategory = buildGroupedFunnel(
+    rows.map((row) => ({ key: row.category, eventType: row.eventType, count: row._count._all })),
+    (category) => ({
+      category,
+      ...createEmptyMetrics(),
+    }),
+  ).sort((a, b) => a.category.localeCompare(b.category));
 
-  for (const row of rows) {
-    const base =
-      categoryMap.get(row.category) ??
-      ({
-        category: row.category,
-        impression: 0,
-        ctaAttempt: 0,
-        outboundClick: 0,
-        clickThroughRate: 0,
-      } as AffiliateCategoryFunnelItem);
-
-    if (row.eventType === 'impression') base.impression = row._count._all;
-    if (row.eventType === 'cta_attempt') base.ctaAttempt = row._count._all;
-    if (row.eventType === 'outbound_click') base.outboundClick = row._count._all;
-
-    categoryMap.set(row.category, base);
-  }
-
-  const byCategory = [...categoryMap.values()]
-    .map((item) => ({
-      ...item,
-      clickThroughRate: safeRatio(item.outboundClick, item.impression),
-    }))
-    .sort((a, b) => a.category.localeCompare(b.category));
-
-  const total = byCategory.reduce(
-    (acc, item) => {
-      acc.impression += item.impression;
-      acc.ctaAttempt += item.ctaAttempt;
-      acc.outboundClick += item.outboundClick;
-      return acc;
-    },
-    { impression: 0, ctaAttempt: 0, outboundClick: 0, clickThroughRate: 0 },
-  );
-
-  total.clickThroughRate = safeRatio(total.outboundClick, total.impression);
+  const total = calculateTotals(byCategory);
 
   return {
     from: input.from.toISOString(),

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { jsonError, jsonResponse } from '@/lib/httpResponse';
 import {
   getConversationAffiliatePreference,
   upsertConversationAffiliatePreference,
@@ -16,54 +17,36 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(401, 'Unauthorized');
   }
 
   const { id: conversationId } = await params;
   const preference = await getConversationAffiliatePreference(conversationId, session.user.id);
 
   if (!preference) {
-    return new Response(JSON.stringify({ error: 'Not found or unauthorized' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(404, 'Not found or unauthorized');
   }
 
-  return new Response(JSON.stringify(preference), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return jsonResponse(preference);
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(401, 'Unauthorized');
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(400, 'Invalid JSON body');
   }
 
   const parsed = patchBodySchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(400, 'Validation failed', { details: parsed.error.flatten() });
   }
 
   const { id: conversationId } = await params;
@@ -75,14 +58,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   });
 
   if (!updated) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(403, 'Forbidden');
   }
 
-  return new Response(JSON.stringify(updated), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return jsonResponse(updated);
 }

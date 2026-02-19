@@ -5,6 +5,20 @@ interface ResolveAffiliateLinksEnabledInput {
   userId?: string | null;
 }
 
+function normalizeOptionalId(value?: string | null): string {
+  return value?.trim() ?? '';
+}
+
+function toAccountDefault(enabled: boolean | null | undefined): boolean {
+  return enabled ?? true;
+}
+
+function resolveEffectiveAffiliateEnabled(override: ConversationAffiliateOverride, accountDefault: boolean): boolean {
+  if (override === ConversationAffiliateOverride.enabled) return true;
+  if (override === ConversationAffiliateOverride.disabled) return false;
+  return accountDefault;
+}
+
 export interface ConversationAffiliatePreferenceResult {
   conversationId: string;
   override: ConversationAffiliateOverride;
@@ -14,8 +28,8 @@ export interface ConversationAffiliatePreferenceResult {
 export async function resolveAffiliateLinksEnabled(
   input: ResolveAffiliateLinksEnabledInput,
 ): Promise<{ enabled: boolean; source: 'default' | 'account' | 'conversation_override' }> {
-  const userId = input.userId?.trim() ?? '';
-  const conversationId = input.conversationId?.trim() ?? '';
+  const userId = normalizeOptionalId(input.userId);
+  const conversationId = normalizeOptionalId(input.conversationId);
 
   if (!userId) {
     return { enabled: true, source: 'default' };
@@ -26,7 +40,7 @@ export async function resolveAffiliateLinksEnabled(
     select: { affiliateLinksEnabled: true },
   });
 
-  const accountDefault = user?.affiliateLinksEnabled ?? true;
+  const accountDefault = toAccountDefault(user?.affiliateLinksEnabled);
 
   if (!conversationId) {
     return { enabled: accountDefault, source: 'account' };
@@ -75,13 +89,8 @@ export async function getConversationAffiliatePreference(
   });
 
   const override = conversation.preference?.affiliateOverride ?? ConversationAffiliateOverride.inherit;
-  const accountDefault = account?.affiliateLinksEnabled ?? true;
-  const effectiveEnabled =
-    override === ConversationAffiliateOverride.enabled
-      ? true
-      : override === ConversationAffiliateOverride.disabled
-        ? false
-        : accountDefault;
+  const accountDefault = toAccountDefault(account?.affiliateLinksEnabled);
+  const effectiveEnabled = resolveEffectiveAffiliateEnabled(override, accountDefault);
 
   return {
     conversationId,
@@ -141,13 +150,8 @@ export async function upsertConversationAffiliatePreference(input: {
       });
     }
 
-    const accountDefault = account?.affiliateLinksEnabled ?? true;
-    const effectiveEnabled =
-      input.nextOverride === ConversationAffiliateOverride.enabled
-        ? true
-        : input.nextOverride === ConversationAffiliateOverride.disabled
-          ? false
-          : accountDefault;
+    const accountDefault = toAccountDefault(account?.affiliateLinksEnabled);
+    const effectiveEnabled = resolveEffectiveAffiliateEnabled(input.nextOverride, accountDefault);
 
     return {
       conversationId: input.conversationId,
