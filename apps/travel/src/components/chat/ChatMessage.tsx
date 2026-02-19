@@ -24,6 +24,7 @@ interface ChatMessageProps {
   onPlaceHover?: (placeId: string | undefined) => void;
   onAlertClick?: (place: PlaceEntity) => void;
   selectedPlaceId?: string;
+  mapHoveredEntityId?: string;
   isStreaming?: boolean;
   conversationId?: string;
   sessionId?: string;
@@ -35,6 +36,7 @@ export function ChatMessage({
   onPlaceHover,
   onAlertClick,
   selectedPlaceId,
+  mapHoveredEntityId,
   isStreaming,
   conversationId,
   sessionId,
@@ -44,16 +46,16 @@ export function ChatMessage({
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-border/50 ${
-          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-border/40 ${
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted/80 text-muted-foreground'
         }`}
         aria-hidden
       >
         {isUser ? <User className='h-4 w-4' /> : <Bot className='h-4 w-4' />}
       </div>
-      <div className={`flex-1 min-w-0 space-y-1.5 ${isUser ? 'text-right' : ''}`}>
+      <div className={`flex-1 min-w-0 space-y-2 ${isUser ? 'text-right' : ''}`}>
         {isUser ? (
-          <div className='inline-block rounded-2xl rounded-tr-sm bg-primary/[0.08] dark:bg-primary/15 border border-primary/20 text-foreground px-4 py-2.5 text-sm shadow-sm max-w-[85%]'>
+          <div className='inline-block rounded-3xl bg-primary px-4 py-2.5 text-sm text-primary-foreground max-w-[85%]'>
             {message.parts.map((part, idx) =>
               part.type === 'text' ? <span key={`text-${message.id ?? 'msg'}-${idx}`}>{part.text}</span> : null,
             )}
@@ -65,13 +67,13 @@ export function ChatMessage({
                 return (
                   <div
                     key={`md-${message.id ?? 'msg'}-${idx}`}
-                    className='rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 px-4 py-3 border border-border/50 prose prose-sm max-w-none dark:prose-invert prose-p:leading-loose prose-p:my-3 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-3 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-pre:my-3 prose-pre:rounded-lg prose-pre:bg-muted/80 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/50 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none text-[0.9375rem] sm:text-base'
-                    style={{ letterSpacing: '0.015em' }}
+                    className='rounded-2xl bg-muted/30 dark:bg-muted/20 px-4 py-3.5 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-p:my-2.5 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-2.5 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2.5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-0.5 prose-pre:my-2.5 prose-pre:rounded-xl prose-pre:bg-muted/60 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/40 prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:before:content-none prose-code:after:content-none text-[0.9375rem] sm:text-base'
+                    style={{ letterSpacing: '0.01em' }}
                   >
                     <Markdown>{part.text}</Markdown>
                     {isStreaming && (
                       <span
-                        className='ml-0.5 inline-block h-4 w-1 animate-pulse rounded-sm bg-primary align-middle'
+                        className='ml-0.5 inline-block h-4 w-1 animate-pulse rounded-sm bg-primary/70 align-middle'
                         aria-hidden
                       />
                     )}
@@ -80,19 +82,22 @@ export function ChatMessage({
               }
 
               const toolPart = part as unknown as { type: string; toolCallId?: string };
-              const key = toolPart.toolCallId ?? `part-${part.type}`;
-              return renderToolPart(
-                part,
-                key,
-                onPlaceSelect,
-                onPlaceHover,
-                onAlertClick,
-                selectedPlaceId,
-                conversationId,
-                sessionId,
+              const key = toolPart.toolCallId ?? `part-${part.type}-${idx}`;
+              return (
+                <ToolPart
+                  key={key}
+                  part={part}
+                  onPlaceSelect={onPlaceSelect}
+                  onPlaceHover={onPlaceHover}
+                  onAlertClick={onAlertClick}
+                  selectedPlaceId={selectedPlaceId}
+                  mapHoveredEntityId={mapHoveredEntityId}
+                  conversationId={conversationId}
+                  sessionId={sessionId}
+                />
               );
             })}
-            <p className='text-[10px] text-muted-foreground mt-1' aria-hidden>
+            <p className='text-[10px] text-muted-foreground/80 mt-1.5 -ml-1 flex items-center gap-0.5' aria-hidden>
               방금
             </p>
           </div>
@@ -102,16 +107,27 @@ export function ChatMessage({
   );
 }
 
-function renderToolPart(
-  part: UIMessage['parts'][number],
-  key: string,
-  onPlaceSelect?: (place: PlaceEntity) => void,
-  onPlaceHover?: (placeId: string | undefined) => void,
-  onAlertClick?: (place: PlaceEntity) => void,
-  selectedPlaceId?: string,
-  conversationId?: string,
-  sessionId?: string,
-) {
+interface ToolPartProps {
+  part: UIMessage['parts'][number];
+  onPlaceSelect?: (place: PlaceEntity) => void;
+  onPlaceHover?: (placeId: string | undefined) => void;
+  onAlertClick?: (place: PlaceEntity) => void;
+  selectedPlaceId?: string;
+  mapHoveredEntityId?: string;
+  conversationId?: string;
+  sessionId?: string;
+}
+
+function ToolPart({
+  part,
+  onPlaceSelect,
+  onPlaceHover,
+  onAlertClick,
+  selectedPlaceId,
+  mapHoveredEntityId,
+  conversationId,
+  sessionId,
+}: ToolPartProps) {
   if (
     part.type === 'text' ||
     part.type === 'reasoning' ||
@@ -123,227 +139,141 @@ function renderToolPart(
     return null;
   }
 
-  const toolPart = part as { type: string; state: string; toolCallId: string; output?: unknown; errorMessage?: string };
-  if (toolPart.state === 'output-error') {
+  // tool- 과 dynamic-tool 모두 toolName / state / output 으로 정규화
+  let toolName: string;
+  let state: string;
+  let output: unknown;
+
+  if (part.type === 'dynamic-tool') {
+    const p = part as { toolName: string; state: string; output?: unknown };
+    toolName = p.toolName;
+    state = p.state;
+    output = p.output;
+  } else if (part.type.startsWith('tool-')) {
+    const p = part as { state: string; output?: unknown };
+    toolName = part.type.slice(5);
+    state = p.state;
+    output = p.output;
+  } else {
+    return null;
+  }
+
+  if (state === 'output-error') {
     return (
-      <div
-        key={key}
-        className='my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive'
-      >
+      <div className='my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive'>
         일부 정보를 불러오지 못했어요. 다른 결과는 위에 표시됩니다.
       </div>
     );
   }
-  if (toolPart.state !== 'output-available') {
-    return <CardSkeleton key={key} label='장소 검색 중…' />;
+  if (state !== 'output-available') {
+    return <CardSkeleton label='장소 검색 중…' />;
   }
 
-  if (part.type.startsWith('tool-')) {
-    const toolName = part.type.slice(5);
-
-    if (toolName === 'searchPlaces' && toolPart.output) {
-      const data = toolPart.output as { places: PlaceEntity[] };
-      if (data.places && data.places.length > 0) {
-        return (
-          <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
-            {data.places.map((place) => (
-              // Hover wrapper for map marker highlight; focus/blur for keyboard a11y (tab order via PlaceCard).
-              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
-              <div
-                key={place.placeId}
-                role='group'
-                data-place-id={place.placeId}
-                onMouseEnter={() => onPlaceHover?.(place.placeId)}
-                onMouseLeave={() => onPlaceHover?.(undefined)}
-                onFocus={() => onPlaceHover?.(place.placeId)}
-                onBlur={() => onPlaceHover?.(undefined)}
-              >
-                <PlaceCard
-                  place={place}
-                  isSelected={selectedPlaceId === place.placeId}
-                  onSelect={onPlaceSelect}
-                  onAlertClick={onAlertClick}
-                />
-              </div>
-            ))}
-          </div>
-        );
-      }
-    }
-
-    if (toolName === 'getWeatherHistory' && toolPart.output) {
-      const data = toolPart.output as WeatherData;
-      if (data.monthly && data.monthly.length > 0) {
-        return <WeatherCard key={key} data={data} />;
-      }
-    }
-
-    if (toolName === 'getExchangeRate' && toolPart.output) {
-      const data = toolPart.output as ExchangeRateData;
-      if (Object.keys(data.rates).length > 0) {
-        return <CurrencyCard key={key} data={data} />;
-      }
-    }
-
-    if (toolName === 'searchAccommodation' && toolPart.output) {
-      const data = toolPart.output as SearchAccommodationResult;
+  if (toolName === 'searchPlaces' && output) {
+    const data = output as { places: PlaceEntity[] };
+    if (data.places && data.places.length > 0) {
       return (
-        <div key={key} className='my-2 space-y-3'>
-          {data.affiliate && (
-            <AccommodationCard
-              accommodation={data.affiliate}
-              ctaEnabled={data.ctaEnabled}
-              trackingContext={{
-                conversationId,
-                sessionId,
-                provider: data.provider,
-              }}
-            />
-          )}
-          {data.alternatives.length > 0 && (
-            <div>
-              <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
-              <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
-                {data.alternatives.map((acc) => (
-                  <AccommodationCard key={acc.placeId} accommodation={acc} ctaEnabled={false} />
-                ))}
-              </div>
+        <div className='grid grid-cols-1 gap-3 my-3 sm:grid-cols-2'>
+          {data.places.map((place) => (
+            // Hover wrapper for map marker highlight; focus/blur for keyboard a11y (tab order via PlaceCard).
+            // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
+            <div
+              key={place.placeId}
+              role='group'
+              data-place-id={place.placeId}
+              className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === place.placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
+              onMouseEnter={() => onPlaceHover?.(place.placeId)}
+              onMouseLeave={() => onPlaceHover?.(undefined)}
+              onFocus={() => onPlaceHover?.(place.placeId)}
+              onBlur={() => onPlaceHover?.(undefined)}
+            >
+              <PlaceCard
+                place={place}
+                isSelected={selectedPlaceId === place.placeId}
+                onSelect={onPlaceSelect}
+                onAlertClick={onAlertClick}
+              />
             </div>
-          )}
-          {data.alternatives.length < 2 && <p className='text-xs text-muted-foreground'>대안 데이터가 부족합니다</p>}
-        </div>
-      );
-    }
-
-    if (toolName === 'searchEsim' && toolPart.output) {
-      const data = toolPart.output as SearchEsimResult;
-      if (!data.primary) return null;
-      return (
-        <div key={key} className='my-2'>
-          <EsimCard
-            esim={data.primary}
-            ctaEnabled={data.ctaEnabled}
-            trackingContext={{
-              conversationId,
-              sessionId,
-              provider: data.provider,
-            }}
-          />
+          ))}
         </div>
       );
     }
   }
 
-  if (part.type === 'dynamic-tool') {
-    const dynPart = part as {
-      type: 'dynamic-tool';
-      toolName: string;
-      state: string;
-      toolCallId: string;
-      output?: unknown;
-    };
-    if (dynPart.state === 'output-error') {
-      return (
-        <div
-          key={key}
-          className='my-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive'
-        >
-          일부 정보를 불러오지 못했어요. 다른 결과는 위에 표시됩니다.
-        </div>
-      );
+  if (toolName === 'getWeatherHistory' && output) {
+    const data = output as WeatherData;
+    if (data.monthly && data.monthly.length > 0) {
+      return <WeatherCard data={data} />;
     }
-    if (dynPart.state !== 'output-available') return <CardSkeleton key={key} label='장소 검색 중…' />;
+  }
 
-    if (dynPart.toolName === 'searchPlaces' && dynPart.output) {
-      const data = dynPart.output as { places: PlaceEntity[] };
-      if (data.places && data.places.length > 0) {
-        return (
-          <div key={key} className='grid grid-cols-1 gap-2 my-2 sm:grid-cols-2'>
-            {data.places.map((place) => (
-              // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
-              <div
-                key={place.placeId}
-                role='group'
-                data-place-id={place.placeId}
-                onMouseEnter={() => onPlaceHover?.(place.placeId)}
-                onMouseLeave={() => onPlaceHover?.(undefined)}
-                onFocus={() => onPlaceHover?.(place.placeId)}
-                onBlur={() => onPlaceHover?.(undefined)}
-              >
-                <PlaceCard
-                  place={place}
-                  isSelected={selectedPlaceId === place.placeId}
-                  onSelect={onPlaceSelect}
-                  onAlertClick={onAlertClick}
-                />
-              </div>
-            ))}
-          </div>
-        );
-      }
+  if (toolName === 'getExchangeRate' && output) {
+    const data = output as ExchangeRateData;
+    if (Object.keys(data.rates).length > 0) {
+      return <CurrencyCard data={data} />;
     }
+  }
 
-    if (dynPart.toolName === 'getWeatherHistory' && dynPart.output) {
-      const data = dynPart.output as WeatherData;
-      if (data.monthly && data.monthly.length > 0) {
-        return <WeatherCard key={key} data={data} />;
-      }
-    }
-
-    if (dynPart.toolName === 'getExchangeRate' && dynPart.output) {
-      const data = dynPart.output as ExchangeRateData;
-      if (Object.keys(data.rates).length > 0) {
-        return <CurrencyCard key={key} data={data} />;
-      }
-    }
-
-    if (dynPart.toolName === 'searchAccommodation' && dynPart.output) {
-      const data = dynPart.output as SearchAccommodationResult;
-      return (
-        <div key={key} className='my-2 space-y-3'>
-          {data.affiliate && (
+  if (toolName === 'searchAccommodation' && output) {
+    const data = output as SearchAccommodationResult;
+    const affiliate = data.affiliate;
+    return (
+      <div className='my-2 space-y-3'>
+        {affiliate && (
+          // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
+          <div
+            role='group'
+            className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === affiliate.placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
+            onMouseEnter={() => onPlaceHover?.(affiliate.placeId)}
+            onMouseLeave={() => onPlaceHover?.(undefined)}
+            onFocus={() => onPlaceHover?.(affiliate.placeId)}
+            onBlur={() => onPlaceHover?.(undefined)}
+          >
             <AccommodationCard
-              accommodation={data.affiliate}
+              accommodation={affiliate}
               ctaEnabled={data.ctaEnabled}
-              trackingContext={{
-                conversationId,
-                sessionId,
-                provider: data.provider,
-              }}
+              trackingContext={{ conversationId, sessionId, provider: data.provider }}
             />
-          )}
-          {data.alternatives.length > 0 && (
-            <div>
-              <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
-              <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
-                {data.alternatives.map((acc) => (
-                  <AccommodationCard key={acc.placeId} accommodation={acc} ctaEnabled={false} />
-                ))}
-              </div>
+          </div>
+        )}
+        {data.alternatives.length > 0 && (
+          <div>
+            <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
+            <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+              {data.alternatives.map((acc) => (
+                // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
+                <div
+                  key={acc.placeId}
+                  role='group'
+                  className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === acc.placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
+                  onMouseEnter={() => onPlaceHover?.(acc.placeId)}
+                  onMouseLeave={() => onPlaceHover?.(undefined)}
+                  onFocus={() => onPlaceHover?.(acc.placeId)}
+                  onBlur={() => onPlaceHover?.(undefined)}
+                >
+                  <AccommodationCard accommodation={acc} ctaEnabled={false} />
+                </div>
+              ))}
             </div>
-          )}
-          {data.alternatives.length < 2 && <p className='text-xs text-muted-foreground'>대안 데이터가 부족합니다</p>}
-        </div>
-      );
-    }
+          </div>
+        )}
+        {data.alternatives.length < 2 && <p className='text-xs text-muted-foreground'>대안 데이터가 부족합니다</p>}
+      </div>
+    );
+  }
 
-    if (dynPart.toolName === 'searchEsim' && dynPart.output) {
-      const data = dynPart.output as SearchEsimResult;
-      if (!data.primary) return null;
-      return (
-        <div key={key} className='my-2'>
-          <EsimCard
-            esim={data.primary}
-            ctaEnabled={data.ctaEnabled}
-            trackingContext={{
-              conversationId,
-              sessionId,
-              provider: data.provider,
-            }}
-          />
-        </div>
-      );
-    }
+  if (toolName === 'searchEsim' && output) {
+    const data = output as SearchEsimResult;
+    if (!data.primary) return null;
+    return (
+      <div className='my-2'>
+        <EsimCard
+          esim={data.primary}
+          ctaEnabled={data.ctaEnabled}
+          trackingContext={{ conversationId, sessionId, provider: data.provider }}
+        />
+      </div>
+    );
   }
 
   return null;

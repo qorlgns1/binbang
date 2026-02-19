@@ -14,13 +14,14 @@ import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
 import { isRestoreAutoEnabled } from '@/lib/featureFlags';
-import type { MapEntity, PlaceEntity } from '@/lib/types';
+import type { MapEntity, PlaceEntity, SearchAccommodationResult } from '@/lib/types';
 
 interface ChatPanelProps {
   onEntitiesUpdate: (entities: MapEntity[]) => void;
   onPlaceSelect: (place: PlaceEntity) => void;
   onPlaceHover?: (placeId: string | undefined) => void;
   selectedPlaceId?: string;
+  mapHoveredEntityId?: string;
 }
 
 const EXAMPLE_QUERIES = [
@@ -50,7 +51,9 @@ function createConversationId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
     const bytes = new Uint8Array(8);
     crypto.getRandomValues(bytes);
-    const suffix = Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 10);
+    const suffix = Array.from(bytes, (b) => b.toString(36).padStart(2, '0'))
+      .join('')
+      .slice(0, 10);
     return `conv_${Date.now()}_${suffix}`;
   }
   return `conv_${Date.now()}_${Date.now().toString(36).slice(-6)}`;
@@ -100,7 +103,7 @@ function getUserMessagePreview(messages: UIMessage[]): string {
   return '';
 }
 
-export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId }: ChatPanelProps) {
+export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId, mapHoveredEntityId }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rateLimitModalShownForErrorRef = useRef<string | null>(null);
@@ -114,6 +117,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   const restoreAutoEnabled = isRestoreAutoEnabled();
   const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark' | 'limit'>('save');
   const [currentConversationId, setCurrentConversationId] = useState<string>(() => createConversationId());
+
+  console.log({ input });
 
   const { sessionId } = useGuestSession();
   const { mergeStatus } = useSessionMerge();
@@ -191,14 +196,44 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
               }
             }
           }
+
+          if (toolName === 'searchAccommodation' && partAny.output) {
+            const data = partAny.output as SearchAccommodationResult;
+            if (data.affiliate?.latitude != null && data.affiliate?.longitude != null) {
+              entities.push({
+                id: data.affiliate.placeId,
+                name: data.affiliate.name,
+                latitude: data.affiliate.latitude,
+                longitude: data.affiliate.longitude,
+                type: 'accommodation',
+                photoUrl: data.affiliate.photoUrl,
+              });
+            }
+            for (const alt of data.alternatives) {
+              if (alt.latitude != null && alt.longitude != null) {
+                entities.push({
+                  id: alt.placeId,
+                  name: alt.name,
+                  latitude: alt.latitude,
+                  longitude: alt.longitude,
+                  type: 'accommodation',
+                  photoUrl: alt.photoUrl,
+                });
+              }
+            }
+          }
         }
       }
+
+      console.log({ entities });
       onEntitiesUpdate(entities);
     },
     [onEntitiesUpdate],
   );
 
   useEffect(() => {
+    console.log({ messages });
+
     extractEntities(messages);
   }, [messages, extractEntities]);
 
@@ -511,23 +546,21 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
 
   return (
     <div className='flex h-full flex-col'>
-      {/* Header with actions */}
-      <div className='border-b border-border bg-background/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between'>
-        <div className='flex items-center gap-2'>
-          <button
-            type='button'
-            onClick={handleNewConversation}
-            className='text-sm text-muted-foreground hover:text-foreground transition-colors'
-            aria-label='새 대화 시작'
-          >
-            새 대화
-          </button>
-        </div>
-        <div className='flex items-center gap-2'>
+      {/* Header: mindtrip-style minimal actions */}
+      <div className='flex items-center justify-between border-b border-border/60 bg-transparent px-4 py-3'>
+        <button
+          type='button'
+          onClick={handleNewConversation}
+          className='text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground rounded-full px-3 py-2 -ml-2'
+          aria-label='새 대화 시작'
+        >
+          새 대화
+        </button>
+        <div className='flex items-center gap-0.5'>
           <button
             type='button'
             onClick={handleSaveClick}
-            className='p-2 rounded-lg hover:bg-muted transition-colors'
+            className='p-2 rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground'
             aria-label='대화 저장'
             title='대화 저장'
           >
@@ -536,7 +569,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           <button
             type='button'
             onClick={handleHistoryClick}
-            className='p-2 rounded-lg hover:bg-muted transition-colors'
+            className='p-2 rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground'
             aria-label='대화 히스토리'
             title='대화 히스토리'
           >
@@ -546,20 +579,20 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       </div>
 
       {restoreStatus === 'restoring' && (
-        <div className='border-b border-border bg-primary/10 px-4 py-2.5 flex items-center gap-2 text-sm text-foreground'>
+        <div className='border-b border-border/60 bg-primary/5 px-4 py-3 flex items-center gap-2 text-sm text-foreground'>
           <RefreshCw className='h-4 w-4 animate-spin text-primary' aria-hidden />
           <span>이전 대화를 복원하는 중...</span>
         </div>
       )}
 
       {restoreStatus === 'failed' && (
-        <div className='border-b border-border bg-destructive/10 px-4 py-2.5 flex items-center justify-between gap-3'>
+        <div className='border-b border-border/60 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3'>
           <p className='text-sm text-destructive font-medium'>대화를 자동 복원하지 못했어요.</p>
           <div className='flex items-center gap-2 shrink-0'>
             <button
               type='button'
               onClick={() => void handleRetryRestore()}
-              className='inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors'
+              className='inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/5'
               aria-label='대화 복원 다시 시도'
             >
               다시 시도
@@ -567,7 +600,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
             <button
               type='button'
               onClick={() => setShowHistory(true)}
-              className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors'
+              className='inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90'
               aria-label='대화 히스토리 열기'
             >
               히스토리 열기
@@ -576,24 +609,24 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
         </div>
       )}
 
-      <div ref={scrollAreaRef} className='flex-1 overflow-y-auto scrollbar-hide px-4 py-4 space-y-6'>
+      <div ref={scrollAreaRef} className='flex-1 overflow-y-auto scrollbar-hide px-4 md:px-5 py-5'>
         {messages.length === 0 ? (
-          <div className='flex flex-col items-center justify-center min-h-[60vh] text-center px-4'>
-            <div className='flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-amber-light dark:bg-brand-amber-dark/30 mb-6 ring-2 ring-brand-amber/20 dark:ring-brand-amber/50'>
-              <Landmark className='h-10 w-10 text-brand-amber dark:text-brand-amber' aria-hidden />
+          <div className='flex flex-col items-center justify-center min-h-[55vh] text-center px-4'>
+            <div className='flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-amber-light to-brand-amber/20 dark:from-brand-amber-dark/30 dark:to-brand-amber/10 mb-8 ring-1 ring-brand-amber/20'>
+              <Landmark className='h-12 w-12 text-brand-amber dark:text-brand-amber' aria-hidden />
             </div>
-            <h2 className='text-2xl font-bold mb-2 text-foreground'>빈방</h2>
-            <p className='text-muted-foreground mb-8 max-w-md leading-loose text-[0.9375rem] sm:text-base'>
+            <h2 className='text-2xl font-semibold tracking-tight mb-2 text-foreground'>빈방</h2>
+            <p className='text-muted-foreground mb-8 max-w-sm leading-relaxed text-[0.9375rem] sm:text-base'>
               반가워요. 당신의 휴식이 길을 잃지 않도록, 빈방이 밤새 불을 밝혀둘게요.
             </p>
-            <p className='text-xs text-muted-foreground mb-3'>추천 질문</p>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg'>
+            <p className='text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3'>추천 질문</p>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl'>
               {EXAMPLE_QUERIES.map((query) => (
                 <button
                   key={query}
                   type='button'
                   onClick={() => handleExampleClick(query)}
-                  className='rounded-xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent hover:border-brand-amber/50 active:scale-[0.98] transition-all duration-150 shadow-sm hover:shadow-md'
+                  className='rounded-full border border-border/60 bg-background/60 px-5 py-3 text-left text-sm text-foreground transition-all duration-200 hover:bg-muted/60 hover:border-border hover:shadow-sm active:scale-[0.99]'
                   aria-label={`추천 질문: ${query}`}
                 >
                   {query}
@@ -602,18 +635,22 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
             </div>
           </div>
         ) : (
-          <div className='space-y-0'>
+          <div className='flex flex-col gap-0'>
             {messages.map((message, idx) => {
               const isLast = idx === messages.length - 1;
               const isStreamingAssistant = status === 'streaming' && isLast && message.role === 'assistant';
               return (
-                <div key={message.id} className='py-4 border-b border-border/40 last:border-0 last:pb-2'>
+                <div
+                  key={message.id}
+                  className='message-block first:pt-0 first:mt-0 last:pb-4 last:mb-0 last:border-b-0'
+                >
                   <ChatMessage
                     message={message}
                     onPlaceSelect={onPlaceSelect}
                     onPlaceHover={onPlaceHover}
                     onAlertClick={handleAlertClick}
                     selectedPlaceId={selectedPlaceId}
+                    mapHoveredEntityId={mapHoveredEntityId}
                     isStreaming={isStreamingAssistant}
                     conversationId={currentConversationId}
                     sessionId={sessionId ?? undefined}
@@ -622,14 +659,14 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
               );
             })}
             {status === 'streaming' && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
-              <div className='flex gap-3 py-4' aria-live='polite' aria-busy='true'>
-                <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border/50'>
+              <div className='message-block flex gap-3 first:pt-0 first:mt-0' aria-live='polite' aria-busy='true'>
+                <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground ring-1 ring-border/40'>
                   <Bot className='h-4 w-4' aria-hidden />
                 </div>
-                <div className='flex flex-1 items-center gap-1 rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 border border-border/50 px-4 py-3 w-fit'>
-                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]' />
-                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]' />
-                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]' />
+                <div className='flex flex-1 items-center gap-1.5 rounded-2xl bg-muted/30 px-4 py-3 w-fit'>
+                  <span className='h-2 w-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]' />
+                  <span className='h-2 w-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]' />
+                  <span className='h-2 w-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]' />
                 </div>
               </div>
             )}
@@ -638,7 +675,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
         <div ref={messagesEndRef} />
       </div>
       {error && (
-        <div className='border-t border-border bg-destructive/10 px-4 py-3 flex items-center justify-between gap-3'>
+        <div className='border-t border-border/60 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3'>
           <p className='text-sm text-destructive font-medium flex-1'>
             {isRateLimitError
               ? '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
@@ -652,7 +689,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
                   setLoginModalTrigger('limit');
                   setShowLoginModal(true);
                 }}
-                className='inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors'
+                className='inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-foreground/5'
                 aria-label='로그인해서 계속 사용하기'
               >
                 로그인
@@ -661,7 +698,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
             <button
               type='button'
               onClick={() => regenerate({ body: getChatRequestBody() })}
-              className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
+              className='inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]'
               aria-label='마지막 메시지 다시 생성'
             >
               <RefreshCw className='h-4 w-4' aria-hidden />
@@ -670,7 +707,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
             <button
               type='button'
               onClick={() => clearError()}
-              className='text-sm text-muted-foreground hover:text-foreground transition-colors'
+              className='text-sm text-muted-foreground hover:text-foreground transition-colors rounded-full px-2 py-1 hover:bg-foreground/5'
               aria-label='에러 메시지 닫기'
             >
               닫기
@@ -678,7 +715,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           </div>
         </div>
       )}
-      <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]'>
+      <div className='border-t border-border/60 bg-background/95 backdrop-blur-md p-4 md:p-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]'>
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
 

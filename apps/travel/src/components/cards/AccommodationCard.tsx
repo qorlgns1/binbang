@@ -119,7 +119,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
 
   return (
     <>
-      <div className='flex flex-col w-full rounded-xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300'>
+      <div className='flex flex-col w-full rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300'>
         {/* 이미지 */}
         <div className='relative aspect-4/3 w-full overflow-hidden bg-muted'>
           {showAffiliateBadge && (
@@ -215,7 +215,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
                     isCtaEnabled: true,
                   });
                 }}
-                className='flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
+                className='flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
               >
                 <ExternalLink className='h-4 w-4' aria-hidden />
                 예약하기
