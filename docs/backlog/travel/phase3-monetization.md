@@ -13,7 +13,7 @@ Agoda 직접 API는 Stage B 이후 숙소 데이터 고도화(실시간 가격/�
 
 ## 핵심 아키텍처
 
-```
+```text
 Admin: Awin 프로그램 동기화
   └─ AffiliateAdvertiser 테이블 (advertiserId, name, category, notes, source)
 
@@ -153,7 +153,7 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 
 ## Revenue Model
 
-```
+```text
 사용자 질문 (숙소/eSIM/항공/렌터카 등)
   ↓
 AI Tool (카테고리 감지 → searchAccommodation / searchEsim / ...)
