@@ -4,99 +4,33 @@
  * Run this periodically (e.g., via cron) to pre-load frequently accessed data
  */
 
-import { fetchExchangeRate } from '../lib/api/exchangeRate';
-import { searchGooglePlaces } from '../lib/api/places';
-import { fetchWeatherHistory } from '../lib/api/weather';
-import { POPULAR_TRAVEL_DESTINATIONS } from '../lib/cache/popularDestinations';
-
-// Common currency pairs to pre-load
-const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }];
-
-// Common place types to search
-const PLACE_TYPES = ['tourist_attraction', 'restaurant', 'hotel'];
-
-async function warmPlacesCache() {
-  if (!process.env.GOOGLE_MAPS_API_KEY) {
-    console.warn('GOOGLE_MAPS_API_KEY missing; skipping Places cache warm.');
-    return;
-  }
-  console.log('🔥 Warming Places API cache...');
-  let count = 0;
-
-  for (const destination of POPULAR_TRAVEL_DESTINATIONS) {
-    for (const placeType of PLACE_TYPES) {
-      try {
-        await searchGooglePlaces({
-          query: placeType.replace('_', ' '),
-          location: destination,
-          type: placeType,
-        });
-        count++;
-      } catch (error) {
-        console.error(`Failed to cache places for ${destination} (${placeType}):`, error);
-      }
-    }
-  }
-
-  console.log(`✅ Cached ${count} place queries`);
-}
-
-async function warmWeatherCache() {
-  if (!process.env.OPENWEATHERMAP_API_KEY) {
-    console.warn('OPENWEATHERMAP_API_KEY missing; skipping Weather cache warm.');
-    return;
-  }
-  console.log('🔥 Warming Weather API cache...');
-  let count = 0;
-
-  for (const city of POPULAR_TRAVEL_DESTINATIONS) {
-    try {
-      // Cache full year weather data (no month filter)
-      await fetchWeatherHistory({ city });
-      count++;
-    } catch (error) {
-      console.error(`Failed to cache weather for ${city}:`, error);
-    }
-  }
-
-  console.log(`✅ Cached ${count} weather queries`);
-}
-
-async function warmExchangeRateCache() {
-  if (!process.env.EXCHANGERATE_API_KEY) {
-    console.warn('EXCHANGERATE_API_KEY missing; skipping Exchange Rate cache warm.');
-    return;
-  }
-  console.log('🔥 Warming Exchange Rate API cache...');
-  let count = 0;
-
-  for (const pair of POPULAR_CURRENCY_PAIRS) {
-    try {
-      await fetchExchangeRate({
-        baseCurrency: pair.base,
-        targetCurrencies: pair.targets,
-      });
-      count++;
-    } catch (error) {
-      console.error(`Failed to cache exchange rate for ${pair.base}:`, error);
-    }
-  }
-
-  console.log(`✅ Cached ${count} exchange rate queries`);
-}
+import { closeRedisConnection } from '../lib/redis';
+import { runTravelCachePrewarm } from '../services/cache-prewarm.service';
 
 async function main() {
   console.log('🚀 Starting cache warming process...\n');
 
   const startTime = Date.now();
 
-  await Promise.all([warmPlacesCache(), warmWeatherCache(), warmExchangeRateCache()]);
+  const result = await runTravelCachePrewarm();
+
+  console.log(
+    [
+      `✅ Places: warmed=${result.places.warmed}, skipped=${result.places.skipped}, failed=${result.places.failed}`,
+      `✅ Weather: warmed=${result.weather.warmed}, skipped=${result.weather.skipped}, failed=${result.weather.failed}`,
+      `✅ Exchange: warmed=${result.exchangeRate.warmed}, skipped=${result.exchangeRate.skipped}, failed=${result.exchangeRate.failed}`,
+    ].join('\n'),
+  );
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(`\n✨ Cache warming completed in ${duration}s`);
 }
 
-main().catch((error) => {
-  console.error('❌ Cache warming failed:', error);
-  process.exit(1);
-});
+main()
+  .catch((error) => {
+    console.error('❌ Cache warming failed:', error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await closeRedisConnection();
+  });
