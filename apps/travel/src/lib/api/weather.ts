@@ -1,4 +1,4 @@
-import { generateCacheKey, getCachedData, setCachedData } from '@/services/cache.service';
+import { generateCacheKey, getCachedOrFetch } from '@/services/cache.service';
 
 export interface WeatherParams {
   city: string;
@@ -39,21 +39,35 @@ const MONTH_NAMES = [
 ];
 
 const FETCH_TIMEOUT_MS = 10000;
-const WEATHER_CACHE_TTL = 604800; // 7 days (historical weather data doesn't change)
+const WEATHER_CACHE_FRESH_TTL = 604800; // 7 days (historical weather data doesn't change)
+const WEATHER_CACHE_STALE_TTL = 604800; // stale-if-error window
 
 export async function fetchWeatherHistory(params: WeatherParams): Promise<WeatherResult> {
-  // Try cache first
-  const cacheKey = generateCacheKey('weather', params);
-  const cached = await getCachedData<WeatherResult>(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
   const apiKey = process.env.OPENWEATHERMAP_API_KEY;
   if (!apiKey) {
     return createFallbackWeather(params.city, params.month);
   }
 
+  const cacheKey = generateCacheKey('weather', params);
+  try {
+    return await getCachedOrFetch({
+      key: cacheKey,
+      logLabel: 'weather',
+      freshTtlSeconds: WEATHER_CACHE_FRESH_TTL,
+      staleTtlSeconds: WEATHER_CACHE_STALE_TTL,
+      fetcher: async () => fetchWeatherFromApi(params, apiKey),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Weather API request timed out');
+    } else {
+      console.error('Weather API fetch failed:', error);
+    }
+    return createFallbackWeather(params.city, params.month);
+  }
+}
+
+async function fetchWeatherFromApi(params: WeatherParams, apiKey: string): Promise<WeatherResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -63,7 +77,8 @@ export async function fetchWeatherHistory(params: WeatherParams): Promise<Weathe
     const geoResponse = await fetch(geoUrl, { signal: controller.signal });
 
     if (!geoResponse.ok) {
-      return createFallbackWeather(params.city, params.month);
+      const responseText = await geoResponse.text();
+      throw new Error(`OpenWeather geocode error (${geoResponse.status}): ${responseText}`);
     }
 
     const geoData = (await geoResponse.json()) as Array<{
@@ -83,7 +98,8 @@ export async function fetchWeatherHistory(params: WeatherParams): Promise<Weathe
     const weatherResponse = await fetch(weatherUrl, { signal: controller.signal });
 
     if (!weatherResponse.ok) {
-      return createFallbackWeather(params.city, params.month);
+      const responseText = await weatherResponse.text();
+      throw new Error(`OpenWeather current weather error (${weatherResponse.status}): ${responseText}`);
     }
 
     const weatherData = (await weatherResponse.json()) as {
@@ -115,16 +131,7 @@ export async function fetchWeatherHistory(params: WeatherParams): Promise<Weathe
       country,
       monthly: filteredMonthly,
     };
-
-    // Cache the successful result
-    await setCachedData(cacheKey, result, { ttl: WEATHER_CACHE_TTL });
-
     return result;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Weather API request timed out');
-    }
-    return createFallbackWeather(params.city, params.month);
   } finally {
     clearTimeout(timeoutId);
   }

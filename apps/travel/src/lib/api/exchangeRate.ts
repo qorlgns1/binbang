@@ -1,4 +1,4 @@
-import { generateCacheKey, getCachedData, setCachedData } from '@/services/cache.service';
+import { generateCacheKey, getCachedOrFetch } from '@/services/cache.service';
 
 export interface ExchangeRateParams {
   baseCurrency: string;
@@ -12,18 +12,36 @@ export interface ExchangeRateResult {
 }
 
 const FETCH_TIMEOUT_MS = 10000;
-const EXCHANGE_RATE_CACHE_TTL = 3600; // 1 hour (exchange rates change frequently)
+const EXCHANGE_RATE_CACHE_FRESH_TTL = 3600; // 1 hour (exchange rates change frequently)
+const EXCHANGE_RATE_CACHE_STALE_TTL = 3600; // stale-if-error window
 
 export async function fetchExchangeRate(params: ExchangeRateParams): Promise<ExchangeRateResult> {
-  // Try cache first
-  const cacheKey = generateCacheKey('exchange_rate', params);
-  const cached = await getCachedData<ExchangeRateResult>(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const apiKey = process.env.EXCHANGERATE_API_KEY;
   const base = params.baseCurrency.toUpperCase();
+  const cacheKey = generateCacheKey('exchange_rate', {
+    baseCurrency: base,
+    targetCurrencies: params.targetCurrencies.map((c) => c.toUpperCase()),
+  });
+
+  try {
+    return await getCachedOrFetch({
+      key: cacheKey,
+      logLabel: 'exchange_rate',
+      freshTtlSeconds: EXCHANGE_RATE_CACHE_FRESH_TTL,
+      staleTtlSeconds: EXCHANGE_RATE_CACHE_STALE_TTL,
+      fetcher: async () => fetchExchangeRateFromApi(base, params.targetCurrencies),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Exchange rate API request timed out');
+    } else {
+      console.error('Exchange rate API fetch failed:', error);
+    }
+    return createFallbackRates(base, params.targetCurrencies);
+  }
+}
+
+async function fetchExchangeRateFromApi(base: string, targetCurrencies: string[]): Promise<ExchangeRateResult> {
+  const apiKey = process.env.EXCHANGERATE_API_KEY;
 
   // Use the free ExchangeRate-API (with or without key)
   const url = apiKey
@@ -37,7 +55,8 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
     const response = await fetch(url, { signal: controller.signal });
 
     if (!response.ok) {
-      return createFallbackRates(base, params.targetCurrencies);
+      const responseText = await response.text();
+      throw new Error(`ExchangeRate API error (${response.status}): ${responseText}`);
     }
 
     const data = (await response.json()) as {
@@ -48,13 +67,13 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
     };
 
     if (data.result !== 'success') {
-      return createFallbackRates(base, params.targetCurrencies);
+      throw new Error(`ExchangeRate API response not successful: ${data.result ?? 'unknown'}`);
     }
 
     const allRates = data.conversion_rates ?? data.rates ?? {};
 
     const rates: Record<string, number> = {};
-    for (const currency of params.targetCurrencies) {
+    for (const currency of targetCurrencies) {
       const code = currency.toUpperCase();
       if (allRates[code] !== undefined) {
         rates[code] = allRates[code];
@@ -66,16 +85,7 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
       rates,
       lastUpdated: data.time_last_update_utc ?? new Date().toISOString(),
     };
-
-    // Cache the successful result
-    await setCachedData(cacheKey, result, { ttl: EXCHANGE_RATE_CACHE_TTL });
-
     return result;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Exchange rate API request timed out');
-    }
-    return createFallbackRates(base, params.targetCurrencies);
   } finally {
     clearTimeout(timeoutId);
   }

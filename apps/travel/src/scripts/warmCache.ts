@@ -43,11 +43,7 @@ const POPULAR_DESTINATIONS = [
 ];
 
 // Common currency pairs to pre-load
-const POPULAR_CURRENCY_PAIRS = [
-  { base: 'USD', targets: ['KRW', 'JPY', 'EUR', 'GBP', 'CNY', 'THB', 'SGD', 'AUD'] },
-  { base: 'EUR', targets: ['USD', 'KRW', 'JPY', 'GBP', 'CHF'] },
-  { base: 'KRW', targets: ['USD', 'JPY', 'EUR', 'CNY', 'THB'] },
-];
+const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }];
 
 // Common place types to search
 const PLACE_TYPES = ['tourist_attraction', 'restaurant', 'hotel'];

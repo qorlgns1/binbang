@@ -137,8 +137,8 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 - [ ] `impression` dedupe (`conversationId + productId + local_day`, 하루 1회)
 
 **캐싱**
-- [ ] Places/Weather/Exchange 캐시 핵심 구축 (Redis + SWR + stale-if-error)
-- [ ] 환율 인기 통화쌍 워밍업 (USD/KRW, USD/JPY, USD/EUR)
+- [x] Places/Weather/Exchange 캐시 핵심 구축 (Redis + SWR + stale-if-error)
+- [x] 환율 인기 통화쌍 워밍업 (USD/KRW, USD/JPY, USD/EUR)
 
 ### Stage B (Agoda 직접 API 수령 후 진행)
 
@@ -304,23 +304,23 @@ model AffiliateEvent {
 
 **현재 파일**: `apps/travel/src/lib/api/places.ts`
 
-- [ ] P3-4-T1: Places API 응답 캐시 레이어 구현 (Cache-Aside + SWR)
+- [x] P3-4-T1: Places API 응답 캐시 레이어 구현 (Cache-Aside + SWR)
   - 캐시 키: `places:{normalized_query_hash}`
   - TTL: 24시간 + TTL jitter(±10%)
-- [ ] P3-4-T2: 캐시 저장소 Redis 단일 운영으로 고정 (docker-compose redis 재사용)
-- [ ] P3-4-T3: 캐시 히트/미스/스테일 반환 로깅
-- [ ] P3-4-T4: Stampede 방지 lock (동일 key 재계산 단일화)
-- [ ] P3-4-T5: stale-if-error 정책 (외부 API 실패 시 최근 stale 데이터 반환)
+- [x] P3-4-T2: 캐시 저장소 Redis 단일 운영으로 고정 (docker-compose redis 재사용)
+- [x] P3-4-T3: 캐시 히트/미스/스테일 반환 로깅
+- [x] P3-4-T4: Stampede 방지 lock (동일 key 재계산 단일화)
+- [x] P3-4-T5: stale-if-error 정책 (외부 API 실패 시 최근 stale 데이터 반환)
 - [ ] P3-4-T6: 캐시 무효화 전략 (수동 + TTL 기반)
 
 ### P3-5: 날씨/환율 데이터 캐싱
 
 **현재 파일**: `apps/travel/src/lib/api/weather.ts`, `exchangeRate.ts`
 
-- [ ] P3-5-T1: 환율 데이터 캐싱 (TTL: 1시간)
-- [ ] P3-5-T2: 날씨 히스토리 데이터 캐싱 (TTL: 7일)
-- [ ] P3-5-T3: SWR + stale-if-error 공통 정책 적용 (백엔드 캐시 레이어 공용)
-- [ ] P3-5-T4: 캐시 워밍업 - 인기 통화쌍 사전 로딩 (USD/KRW, USD/JPY, USD/EUR)
+- [x] P3-5-T1: 환율 데이터 캐싱 (TTL: 1시간)
+- [x] P3-5-T2: 날씨 히스토리 데이터 캐싱 (TTL: 7일)
+- [x] P3-5-T3: SWR + stale-if-error 공통 정책 적용 (백엔드 캐시 레이어 공용)
+- [x] P3-5-T4: 캐시 워밍업 - 인기 통화쌍 사전 로딩 (USD/KRW, USD/JPY, USD/EUR)
 
 ### P3-6: 인기 여행지 사전 캐싱 (Stage B 이후)
 
