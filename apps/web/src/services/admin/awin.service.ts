@@ -187,7 +187,7 @@ export async function listAwinOffers(input: ListOffersInput): Promise<AwinApiRes
     pagination: { page: input.page, pageSize: input.pageSize },
   };
 
-  const url = new URL(`${AWIN_API_BASE}/publisher/${publisherId}/promotions`);
+  const url = new URL(`${AWIN_API_BASE}/publishers/${publisherId}/promotions`);
   url.searchParams.set('accessToken', token);
 
   const result = await callAwinApi(url, { method: 'POST', body: apiBody });

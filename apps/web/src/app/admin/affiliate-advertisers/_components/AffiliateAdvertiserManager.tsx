@@ -40,9 +40,16 @@ export function AffiliateAdvertiserManager() {
     try {
       const params = filterCategory ? `?category=${encodeURIComponent(filterCategory)}` : '';
       const res = await fetch(`/api/admin/awin/advertisers${params}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `목록 조회 실패 (HTTP ${res.status})`);
+      }
       const data = await res.json();
       if (Array.isArray(data)) setList(data);
       else setList([]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err));
+      setList([]);
     } finally {
       setLoading(false);
     }

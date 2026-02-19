@@ -351,7 +351,8 @@ export function AwinTestPanel() {
 
   const runProgrammeDetails = async () => {
     const aid = pdAdvertiserId.trim();
-    if (!aid || !Number.isInteger(Number.parseInt(aid, 10))) {
+    const parsedAid = Number.parseInt(aid, 10);
+    if (!aid || !Number.isInteger(parsedAid) || parsedAid <= 0) {
       setPdResult({ ok: false, error: 'advertiserId를 입력하세요.' });
       return;
     }
