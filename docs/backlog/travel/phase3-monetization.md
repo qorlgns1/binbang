@@ -145,10 +145,10 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 - [ ] Agoda API 클라이언트 연결 (`apps/travel/src/lib/api/agoda.ts`)
 - [ ] `searchAccommodation`에서 Agoda provider로 전환 (실시간 가격/가용성)
 - [ ] 가격/통화 실데이터 노출
-- [ ] 제휴 링크 설정 반영 (계정 기본 토글 + 대화별 오버라이드)
-- [ ] `ConversationPreference` 테이블에 대화별 설정 영구 저장
-- [ ] 대화 소유자만 오버라이드 변경 가능하도록 권한 체크
-- [ ] 오버라이드 변경 감사 로그 저장
+- [x] 제휴 링크 설정 반영 (계정 기본 토글 + 대화별 오버라이드)
+- [x] `ConversationPreference` 테이블에 대화별 설정 영구 저장
+- [x] 대화 소유자만 오버라이드 변경 가능하도록 권한 체크
+- [x] 오버라이드 변경 감사 로그 저장
 - [x] 관리자 대시보드에 전환율/수익 리포트 연결
 
 ## Revenue Model
@@ -283,22 +283,22 @@ model AffiliateEvent {
 - [x] P3-3-T10: `ConversationPreference` 조회/업서트 경로 검증 (읽기/쓰기/초기값 `inherit`)
 - [x] P3-3-T11: 오버라이드 변경 권한 검증 (대화 owner 허용, 비소유자 403)
 - [x] P3-3-T12: 오버라이드 변경 감사 로그 저장 검증 (`actorUserId`, `changedAt`, `fromValue`, `toValue`, `conversationId`)
-- [ ] P3-3-T13: 감사 로그 보관 정책 적용 (365일 초과 데이터 대상 DB cron 일 1회 hard delete)
-- [ ] P3-3-T14: 정리 배치 검증 (cron 실행 성공/삭제 건수 로깅)
-- [ ] P3-3-T15: 정리 배치 실패 재시도 구현 (최대 3회, exponential backoff)
-- [ ] P3-3-T16: 3회 재시도 실패 시 운영 알림 연동 (Telegram Bot API, `critical/warning` 라우팅)
-- [ ] P3-3-T17: 알림 dedupe 구현 (동일 failure cause 24시간 1회)
-- [ ] P3-3-T18: 복구 알림 구현 (실패 상태 해소 시 1회 발송, 필드: `jobName/failedAt/recoveredAt/retryCount/lastErrorCode`)
-- [ ] P3-3-T19: 복구 알림 payload 스키마 검증 (필수 필드 누락 시 전송 차단 + 로그)
-- [ ] P3-3-T20: Telegram 알림 Markdown 템플릿 구현 (실패/복구 공통 스타일)
-- [ ] P3-3-T21: Markdown 특수문자 이스케이프 처리 검증 (알림 렌더링 깨짐 방지)
-- [ ] P3-3-T22: Telegram 발송 범위 제한 구현 (critical/warning 라우팅)
-- [ ] P3-3-T23: cron 미실행 감지 구현 (마지막 `run_started` 기준으로 `AFFILIATE_AUDIT_PURGE_CRON_MISS_THRESHOLD_MINUTES` 초과 시 알림)
-- [ ] P3-3-T24: `run_started` 타임스탬프 Redis + DB 동시 기록(dual write)
-- [ ] P3-3-T25: `cron_missed` 판단 조회 우선순위 구현 (Redis 우선, 미스 시 DB fallback)
-- [ ] P3-3-T26: `run_started` 저장 성공 조건 구현 (DB 성공 기준, Redis 실패 시 `warning` + Telegram 운영 알림)
-- [ ] P3-3-T27: 알림 심각도 매핑 검증 (`redis_write_failed=warning`)
-- [ ] P3-3-T28: Telegram 채널/스레드 라우팅 검증 (`critical` vs `warning`)
+- [x] P3-3-T13: 감사 로그 보관 정책 적용 (365일 초과 데이터 대상 DB cron 일 1회 hard delete)
+- [x] P3-3-T14: 정리 배치 검증 (cron 실행 성공/삭제 건수 로깅)
+- [x] P3-3-T15: 정리 배치 실패 재시도 구현 (최대 3회, exponential backoff)
+- [x] P3-3-T16: 3회 재시도 실패 시 운영 알림 연동 (Telegram Bot API, `critical/warning` 라우팅)
+- [x] P3-3-T17: 알림 dedupe 구현 (동일 failure cause 24시간 1회)
+- [x] P3-3-T18: 복구 알림 구현 (실패 상태 해소 시 1회 발송, 필드: `jobName/failedAt/recoveredAt/retryCount/lastErrorCode`)
+- [x] P3-3-T19: 복구 알림 payload 스키마 검증 (필수 필드 누락 시 전송 차단 + 로그)
+- [x] P3-3-T20: Telegram 알림 Markdown 템플릿 구현 (실패/복구 공통 스타일)
+- [x] P3-3-T21: Markdown 특수문자 이스케이프 처리 검증 (알림 렌더링 깨짐 방지)
+- [x] P3-3-T22: Telegram 발송 범위 제한 구현 (critical/warning 라우팅)
+- [x] P3-3-T23: cron 미실행 감지 구현 (마지막 `run_started` 기준으로 `AFFILIATE_AUDIT_PURGE_CRON_MISS_THRESHOLD_MINUTES` 초과 시 알림)
+- [x] P3-3-T24: `run_started` 타임스탬프 Redis + DB 동시 기록(dual write)
+- [x] P3-3-T25: `cron_missed` 판단 조회 우선순위 구현 (Redis 우선, 미스 시 DB fallback)
+- [x] P3-3-T26: `run_started` 저장 성공 조건 구현 (DB 성공 기준, Redis 실패 시 `warning` + Telegram 운영 알림)
+- [x] P3-3-T27: 알림 심각도 매핑 검증 (`redis_write_failed=warning`)
+- [x] P3-3-T28: Telegram 채널/스레드 라우팅 검증 (`critical` vs `warning`)
 
 ### P3-4: Google Places API 캐싱
 
@@ -371,14 +371,14 @@ model AffiliateEvent {
 - [ ] 숙소 관련 질문 시 Agoda 제휴 링크가 포함된 카드 표시
 - [ ] 숙소 카드에 Agoda 가격/통화 정보가 정확히 표시
 - [ ] 제휴 고지 문구가 링크 인접 위치에 표시되고 비제휴 대안 2개 함께 제공
-- [ ] 계정 기본 토글 + 대화별 오버라이드 설정이 동작하고 대화별 설정이 우선 적용됨
-- [ ] 대화별 오버라이드 값이 대화 단위로 영구 유지되고 명시 변경 시에만 갱신됨
-- [ ] 대화 소유자만 오버라이드를 변경할 수 있고, 비소유자 요청은 403으로 차단됨
-- [ ] 오버라이드 변경 시 기본 감사 로그가 누락 없이 저장됨
-- [ ] 감사 로그가 1년 보관 정책을 따르고 365일 초과 데이터가 DB cron으로 hard delete됨
-- [ ] 정리 배치 실패 시 즉시 3회 재시도되고 최종 실패 시 Telegram 알림 발송됨
-- [ ] 동일 원인 실패 알림은 24시간 내 1회로 제한되고 복구 시 1회 알림 발송됨
-- [ ] Telegram 알림이 Markdown 템플릿으로 가독성 있게 렌더링됨
+- [x] 계정 기본 토글 + 대화별 오버라이드 설정이 동작하고 대화별 설정이 우선 적용됨
+- [x] 대화별 오버라이드 값이 대화 단위로 영구 유지되고 명시 변경 시에만 갱신됨
+- [x] 대화 소유자만 오버라이드를 변경할 수 있고, 비소유자 요청은 403으로 차단됨
+- [x] 오버라이드 변경 시 기본 감사 로그가 누락 없이 저장됨
+- [x] 감사 로그가 1년 보관 정책을 따르고 365일 초과 데이터가 DB cron으로 hard delete됨
+- [x] 정리 배치 실패 시 즉시 3회 재시도되고 최종 실패 시 Telegram 알림 발송됨
+- [x] 동일 원인 실패 알림은 24시간 내 1회로 제한되고 복구 시 1회 알림 발송됨
+- [x] Telegram 알림이 Markdown 템플릿으로 가독성 있게 렌더링됨
 - [ ] Agoda provider 기준 전환 리포트가 대시보드에서 조회 가능
 
 ## Environment Variables (New)
@@ -404,6 +404,7 @@ AFFILIATE_LINK_DEFAULT_ENABLED=true
 # Audit Log (Stage B)
 AFFILIATE_AUDIT_RETENTION_DAYS=365
 AFFILIATE_AUDIT_PURGE_CRON="10 3 * * *"
+AFFILIATE_AUDIT_PURGE_CRON_WATCHDOG="*/15 * * * *"
 AFFILIATE_AUDIT_PURGE_RETRY_MAX=3
 AFFILIATE_AUDIT_PURGE_RETRY_BACKOFF_SECONDS=10
 AFFILIATE_AUDIT_ALERT_TELEGRAM_BOT_TOKEN=your-bot-token
