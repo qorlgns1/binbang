@@ -8,6 +8,7 @@ import { CurrencyCard } from '@/components/cards/CurrencyCard';
 import { EsimCard } from '@/components/cards/EsimCard';
 import { PlaceCard } from '@/components/cards/PlaceCard';
 import { WeatherCard } from '@/components/cards/WeatherCard';
+import { normalizeToolPart } from '@/components/chat/toolPartUtils';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
 import type {
   ExchangeRateData,
@@ -33,32 +34,6 @@ interface EntityHoverGroupProps {
   mapHoveredEntityId?: string;
   onPlaceHover?: (placeId: string | undefined) => void;
   children: ReactNode;
-}
-
-interface NormalizedToolPart {
-  toolName: string;
-  state: string;
-  output: unknown;
-}
-
-const NON_RENDERABLE_PART_TYPES = new Set(['text', 'reasoning', 'file', 'step-start', 'source-url', 'source-document']);
-
-function normalizeToolPart(part: UIMessage['parts'][number]): NormalizedToolPart | null {
-  if (NON_RENDERABLE_PART_TYPES.has(part.type)) {
-    return null;
-  }
-
-  if (part.type === 'dynamic-tool') {
-    const dynamicPart = part as { toolName: string; state: string; output?: unknown };
-    return { toolName: dynamicPart.toolName, state: dynamicPart.state, output: dynamicPart.output };
-  }
-
-  if (!part.type.startsWith('tool-')) {
-    return null;
-  }
-
-  const toolPart = part as { state: string; output?: unknown };
-  return { toolName: part.type.slice(5), state: toolPart.state, output: toolPart.output };
 }
 
 function EntityHoverGroup({ placeId, mapHoveredEntityId, onPlaceHover, children }: EntityHoverGroupProps) {

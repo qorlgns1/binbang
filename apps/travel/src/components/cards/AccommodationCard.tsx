@@ -1,20 +1,21 @@
 'use client';
 
-import { ExternalLink, MapPin, Star, Tag } from 'lucide-react';
+import { ExternalLink, MapPin, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { AffiliateNoticeModal } from '@/components/cards/AffiliateNoticeModal';
-import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
+import {
+  AFFILIATE_DISCLOSURE_TEXT,
+  type AffiliateTrackingContext,
+  trackAffiliateCardCtaAttempt,
+  trackAffiliateCardImpression,
+  trackAffiliateCardOutboundClick,
+} from '@/components/cards/affiliateCardUtils';
+import { StarRating } from '@/components/ui/StarRating';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { AccommodationEntity } from '@/lib/types';
-
-interface AffiliateTrackingContext {
-  conversationId?: string;
-  sessionId?: string;
-  provider: string;
-}
 
 interface AccommodationCardProps {
   accommodation: AccommodationEntity;
@@ -65,11 +66,8 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
 
   useEffect(() => {
     if (!accommodation.isAffiliate) return;
-    if (!trackingContext) return;
-
-    trackImpressionOnce({
-      conversationId: trackingContext.conversationId,
-      sessionId: trackingContext.sessionId,
+    trackAffiliateCardImpression({
+      trackingContext,
       provider,
       productId: accommodation.placeId,
       productName: accommodation.name,
@@ -97,23 +95,18 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
       });
     }
 
-    if (trackingContext) {
-      void trackAffiliateEvent({
-        conversationId: trackingContext.conversationId,
-        sessionId: trackingContext.sessionId,
-        provider,
-        eventType: 'cta_attempt',
-        reasonCode: isPendingProvider
-          ? 'no_advertiser_for_category'
-          : isDisabledBySetting
-            ? 'affiliate_links_disabled'
-            : undefined,
-        productId: accommodation.placeId,
-        productName: accommodation.name,
-        category: 'accommodation',
-        isCtaEnabled: false,
-      });
-    }
+    trackAffiliateCardCtaAttempt({
+      trackingContext,
+      provider,
+      reasonCode: isPendingProvider
+        ? 'no_advertiser_for_category'
+        : isDisabledBySetting
+          ? 'affiliate_links_disabled'
+          : undefined,
+      productId: accommodation.placeId,
+      productName: accommodation.name,
+      category: 'accommodation',
+    });
 
     setModalOpen(true);
   }
@@ -151,16 +144,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
 
           {accommodation.rating != null && (
             <div className='flex items-center gap-1'>
-              <div className='flex gap-0.5' aria-hidden>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star
-                    key={i}
-                    className={`h-3.5 w-3.5 shrink-0 ${
-                      i <= Math.round(accommodation.rating ?? 0) ? 'fill-brand-amber text-brand-amber' : 'text-muted/60'
-                    }`}
-                  />
-                ))}
-              </div>
+              <StarRating rating={accommodation.rating ?? 0} />
               <span className='text-xs font-medium text-card-foreground'>{accommodation.rating}</span>
               {accommodation.userRatingsTotal != null && (
                 <span className='text-[10px] text-muted-foreground'>
@@ -204,16 +188,12 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
                 target='_blank'
                 rel='noopener noreferrer sponsored'
                 onClick={() => {
-                  if (!trackingContext) return;
-                  void trackAffiliateEvent({
-                    conversationId: trackingContext.conversationId,
-                    sessionId: trackingContext.sessionId,
+                  trackAffiliateCardOutboundClick({
+                    trackingContext,
                     provider,
-                    eventType: 'outbound_click',
                     productId: accommodation.placeId,
                     productName: accommodation.name,
                     category: 'accommodation',
-                    isCtaEnabled: true,
                   });
                 }}
                 className='flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
@@ -231,9 +211,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
                 {disabledButtonLabel}
               </button>
             )}
-            <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>
-              예약/구매 시 제휴 수수료를 받을 수 있습니다
-            </p>
+            <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>{AFFILIATE_DISCLOSURE_TEXT}</p>
           </div>
         )}
       </div>

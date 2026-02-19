@@ -1,7 +1,9 @@
 'use client';
 
-import { Bell, DollarSign, MapPin, Star } from 'lucide-react';
+import { Bell, DollarSign, MapPin } from 'lucide-react';
 import Image from 'next/image';
+
+import { StarRating } from '@/components/ui/StarRating';
 
 import type { PlaceEntity } from '@/lib/types';
 
@@ -55,19 +57,7 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
             <h4 className='font-semibold text-sm text-card-foreground line-clamp-1'>{place.name}</h4>
             {place.rating != null && (
               <div className='flex items-center gap-1'>
-                <div className='flex gap-0.5' aria-hidden>
-                  {[1, 2, 3, 4, 5].map((i) => {
-                    const r = place.rating ?? 0;
-                    return (
-                      <Star
-                        key={i}
-                        className={`h-3.5 w-3.5 shrink-0 ${
-                          i <= Math.round(r) ? 'fill-brand-amber text-brand-amber' : 'text-muted/60'
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
+                <StarRating rating={place.rating ?? 0} />
                 <span className='text-xs font-medium text-card-foreground'>{place.rating}</span>
                 {place.userRatingsTotal != null && (
                   <span className='text-[10px] text-muted-foreground'>({place.userRatingsTotal.toLocaleString()})</span>

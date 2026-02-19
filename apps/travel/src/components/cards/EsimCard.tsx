@@ -5,15 +5,15 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { AffiliateNoticeModal } from '@/components/cards/AffiliateNoticeModal';
-import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
+import {
+  AFFILIATE_DISCLOSURE_TEXT,
+  type AffiliateTrackingContext,
+  trackAffiliateCardCtaAttempt,
+  trackAffiliateCardImpression,
+  trackAffiliateCardOutboundClick,
+} from '@/components/cards/affiliateCardUtils';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { EsimEntity } from '@/lib/types';
-
-interface AffiliateTrackingContext {
-  conversationId?: string;
-  sessionId?: string;
-  provider: string;
-}
 
 interface EsimCardProps {
   esim: EsimEntity;
@@ -30,11 +30,8 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
 
   useEffect(() => {
     if (!esim.isAffiliate) return;
-    if (!trackingContext) return;
-
-    trackImpressionOnce({
-      conversationId: trackingContext.conversationId,
-      sessionId: trackingContext.sessionId,
+    trackAffiliateCardImpression({
+      trackingContext,
       provider,
       productId: esim.productId,
       productName: esim.name,
@@ -60,23 +57,18 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
       });
     }
 
-    if (trackingContext) {
-      void trackAffiliateEvent({
-        conversationId: trackingContext.conversationId,
-        sessionId: trackingContext.sessionId,
-        provider,
-        eventType: 'cta_attempt',
-        reasonCode: isPendingAdvertiser
-          ? 'no_advertiser_for_category'
-          : isDisabledBySetting
-            ? 'affiliate_links_disabled'
-            : undefined,
-        productId: esim.productId,
-        productName: esim.name,
-        category: 'esim',
-        isCtaEnabled: false,
-      });
-    }
+    trackAffiliateCardCtaAttempt({
+      trackingContext,
+      provider,
+      reasonCode: isPendingAdvertiser
+        ? 'no_advertiser_for_category'
+        : isDisabledBySetting
+          ? 'affiliate_links_disabled'
+          : undefined,
+      productId: esim.productId,
+      productName: esim.name,
+      category: 'esim',
+    });
 
     setModalOpen(true);
   }
@@ -121,16 +113,12 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
                 target='_blank'
                 rel='noopener noreferrer sponsored'
                 onClick={() => {
-                  if (!trackingContext) return;
-                  void trackAffiliateEvent({
-                    conversationId: trackingContext.conversationId,
-                    sessionId: trackingContext.sessionId,
+                  trackAffiliateCardOutboundClick({
+                    trackingContext,
                     provider,
-                    eventType: 'outbound_click',
                     productId: esim.productId,
                     productName: esim.name,
                     category: 'esim',
-                    isCtaEnabled: true,
                   });
                 }}
                 className='flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
@@ -148,9 +136,7 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
                 제휴 링크 준비중
               </button>
             )}
-            <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>
-              예약/구매 시 제휴 수수료를 받을 수 있습니다
-            </p>
+            <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>{AFFILIATE_DISCLOSURE_TEXT}</p>
           </div>
         )}
       </div>

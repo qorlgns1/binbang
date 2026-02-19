@@ -1,5 +1,6 @@
 import type { UIMessage } from 'ai';
 
+import { normalizeToolPart } from '@/components/chat/toolPartUtils';
 import type { MapEntity, PlaceEntity, SearchAccommodationResult } from '@/lib/types';
 
 export const LAST_CONVERSATION_ID_STORAGE_KEY = 'travel_last_conversation_id';
@@ -57,32 +58,6 @@ function toMapEntity(input: {
     longitude: input.longitude,
     type: input.type,
     photoUrl: input.photoUrl,
-  };
-}
-
-function normalizeToolPart(part: UIMessage['parts'][number]): {
-  toolName: string;
-  state: string;
-  output: unknown;
-} | null {
-  if (part.type === 'dynamic-tool') {
-    const dynamicPart = part as { toolName?: string; state?: string; output?: unknown };
-    return {
-      toolName: dynamicPart.toolName ?? '',
-      state: dynamicPart.state ?? '',
-      output: dynamicPart.output,
-    };
-  }
-
-  if (!part.type.startsWith('tool-')) {
-    return null;
-  }
-
-  const toolPart = part as { state?: string; output?: unknown };
-  return {
-    toolName: part.type.slice(5),
-    state: toolPart.state ?? '',
-    output: toolPart.output,
   };
 }
 
