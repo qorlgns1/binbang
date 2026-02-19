@@ -541,7 +541,7 @@ export function AwinTestPanel() {
             Offers (프로모션/바우처)
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>POST /publisher/.../promotions</code>— 가입 광고주의 오퍼
+            <code className='rounded bg-muted px-1.5 py-0.5'>POST /publishers/.../promotions</code>— 가입 광고주의 오퍼
             목록 조회
           </CardDescription>
         </CardHeader>
