@@ -678,7 +678,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           </div>
         </div>
       )}
-      <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4 pb-keyboard'>
+      <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]'>
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
 

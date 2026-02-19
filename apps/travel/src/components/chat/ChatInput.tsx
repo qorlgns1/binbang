@@ -34,7 +34,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
 
   return (
     <form onSubmit={onSubmit} className='relative'>
-      <div className='relative flex items-end rounded-2xl border border-border bg-card shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40'>
+      <div className='relative flex items-center rounded-2xl border border-border bg-card shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40'>
         <textarea
           ref={textareaRef}
           value={input}
@@ -42,7 +42,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
           onKeyDown={handleKeyDown}
           placeholder='Where would you like to travel? Ask me anything...'
           rows={1}
-          className='flex-1 resize-none bg-transparent px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none max-h-[200px]'
+          className='flex-1 min-h-10 resize-none bg-transparent px-4 py-2.5 text-sm leading-normal placeholder:text-muted-foreground focus:outline-none max-h-[200px]'
           disabled={isLoading}
         />
         <div className='p-2'>
