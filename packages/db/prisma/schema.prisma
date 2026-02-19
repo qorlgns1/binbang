@@ -811,3 +811,27 @@ model CaseMessage {
   @@index([sentById])
   @@index([createdAt])
 }
+
+// 제휴 수익화: 가입 광고주 메타 (travel 추천 시 카테고리별 조회용)
+enum AffiliateAdvertiserCategory {
+  accommodation
+  flight
+  esim
+  car_rental
+  travel_package
+  other
+}
+
+model AffiliateAdvertiser {
+  id           String   @id @default(cuid())
+  advertiserId Int      @unique // Awin advertiser ID
+  name         String   // 광고주/프로그램 이름
+  category     AffiliateAdvertiserCategory @default(other)
+  notes        String?  @db.Text // 메모 (추천 시 참고용)
+  source       String   @default("awin") // awin | agoda | ...
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@map("affiliate_advertisers")
+}
