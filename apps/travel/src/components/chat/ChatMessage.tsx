@@ -167,9 +167,7 @@ function renderToolPart(
       const data = toolPart.output as SearchAccommodationResult;
       return (
         <div key={key} className='my-2 space-y-3'>
-          {data.affiliate && (
-            <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />
-          )}
+          {data.affiliate && <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />}
           {data.alternatives.length > 0 && (
             <div>
               <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
@@ -252,9 +250,7 @@ function renderToolPart(
       const data = dynPart.output as SearchAccommodationResult;
       return (
         <div key={key} className='my-2 space-y-3'>
-          {data.affiliate && (
-            <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />
-          )}
+          {data.affiliate && <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />}
           {data.alternatives.length > 0 && (
             <div>
               <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
