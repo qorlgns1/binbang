@@ -7,6 +7,25 @@ import { generateCacheKey, getCacheEntryState } from '@/services/cache.service';
 const PLACE_TYPES = ['tourist_attraction', 'restaurant', 'hotel'] as const;
 const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }] as const;
 
+interface PlacePrewarmTarget {
+  destination: string;
+  placeType: (typeof PLACE_TYPES)[number];
+}
+
+interface ExchangeRatePrewarmTarget {
+  base: string;
+  targets: readonly string[];
+}
+
+const PLACE_PREWARM_TARGETS: PlacePrewarmTarget[] = POPULAR_TRAVEL_DESTINATIONS.flatMap((destination) =>
+  PLACE_TYPES.map((placeType) => ({ destination, placeType })),
+);
+const WEATHER_PREWARM_TARGETS = [...POPULAR_TRAVEL_DESTINATIONS];
+const EXCHANGE_RATE_PREWARM_TARGETS: ExchangeRatePrewarmTarget[] = POPULAR_CURRENCY_PAIRS.map((pair) => ({
+  base: pair.base,
+  targets: [...pair.targets],
+}));
+
 interface CachePrewarmMetrics {
   targets: number;
   warmed: number;
@@ -51,77 +70,88 @@ function exchangeRateCacheKey(baseCurrency: string, targetCurrencies: readonly s
   });
 }
 
-async function runPlacesPrewarm(metrics: CachePrewarmMetrics): Promise<void> {
-  for (const destination of POPULAR_TRAVEL_DESTINATIONS) {
-    for (const placeType of PLACE_TYPES) {
-      const cacheKey = placesCacheKey(destination, placeType);
-      const state = await getCacheEntryState(cacheKey, 'places-prewarm');
-      if (state !== 'miss') {
-        metrics.skipped += 1;
-        continue;
-      }
+interface RunPrewarmTargetsOptions<T> {
+  items: readonly T[];
+  metrics: CachePrewarmMetrics;
+  logLabel: string;
+  keyOf: (item: T) => string;
+  fetch: (item: T) => Promise<unknown>;
+  failMessage: (item: T) => string;
+}
 
-      try {
-        await searchGooglePlaces({
-          query: placeType.replace('_', ' '),
-          location: destination,
-          type: placeType,
-        });
-        metrics.warmed += 1;
-      } catch (error) {
-        metrics.failed += 1;
-        console.error(`[cache-prewarm] places failed destination=${destination} type=${placeType}`, error);
-      }
+async function runPrewarmTargets<T>({
+  items,
+  metrics,
+  logLabel,
+  keyOf,
+  fetch,
+  failMessage,
+}: RunPrewarmTargetsOptions<T>): Promise<void> {
+  for (const item of items) {
+    const cacheKey = keyOf(item);
+    const state = await getCacheEntryState(cacheKey, logLabel);
+    if (state !== 'miss') {
+      metrics.skipped += 1;
+      continue;
+    }
+
+    try {
+      await fetch(item);
+      metrics.warmed += 1;
+    } catch (error) {
+      metrics.failed += 1;
+      console.error(failMessage(item), error);
     }
   }
+}
+
+async function runPlacesPrewarm(metrics: CachePrewarmMetrics): Promise<void> {
+  await runPrewarmTargets({
+    items: PLACE_PREWARM_TARGETS,
+    metrics,
+    logLabel: 'places-prewarm',
+    keyOf: (target) => placesCacheKey(target.destination, target.placeType),
+    fetch: async (target) =>
+      searchGooglePlaces({
+        query: target.placeType.replace('_', ' '),
+        location: target.destination,
+        type: target.placeType,
+      }),
+    failMessage: (target) => `[cache-prewarm] places failed destination=${target.destination} type=${target.placeType}`,
+  });
 }
 
 async function runWeatherPrewarm(metrics: CachePrewarmMetrics): Promise<void> {
-  for (const city of POPULAR_TRAVEL_DESTINATIONS) {
-    const cacheKey = weatherCacheKey(city);
-    const state = await getCacheEntryState(cacheKey, 'weather-prewarm');
-    if (state !== 'miss') {
-      metrics.skipped += 1;
-      continue;
-    }
-
-    try {
-      await fetchWeatherHistory({ city });
-      metrics.warmed += 1;
-    } catch (error) {
-      metrics.failed += 1;
-      console.error(`[cache-prewarm] weather failed city=${city}`, error);
-    }
-  }
+  await runPrewarmTargets({
+    items: WEATHER_PREWARM_TARGETS,
+    metrics,
+    logLabel: 'weather-prewarm',
+    keyOf: weatherCacheKey,
+    fetch: async (city) => fetchWeatherHistory({ city }),
+    failMessage: (city) => `[cache-prewarm] weather failed city=${city}`,
+  });
 }
 
 async function runExchangeRatePrewarm(metrics: CachePrewarmMetrics): Promise<void> {
-  for (const pair of POPULAR_CURRENCY_PAIRS) {
-    const cacheKey = exchangeRateCacheKey(pair.base, pair.targets);
-    const state = await getCacheEntryState(cacheKey, 'exchange-rate-prewarm');
-    if (state !== 'miss') {
-      metrics.skipped += 1;
-      continue;
-    }
-
-    try {
-      await fetchExchangeRate({
-        baseCurrency: pair.base,
-        targetCurrencies: [...pair.targets],
-      });
-      metrics.warmed += 1;
-    } catch (error) {
-      metrics.failed += 1;
-      console.error(`[cache-prewarm] exchange-rate failed base=${pair.base}`, error);
-    }
-  }
+  await runPrewarmTargets({
+    items: EXCHANGE_RATE_PREWARM_TARGETS,
+    metrics,
+    logLabel: 'exchange-rate-prewarm',
+    keyOf: (target) => exchangeRateCacheKey(target.base, target.targets),
+    fetch: async (target) =>
+      fetchExchangeRate({
+        baseCurrency: target.base,
+        targetCurrencies: [...target.targets],
+      }),
+    failMessage: (target) => `[cache-prewarm] exchange-rate failed base=${target.base}`,
+  });
 }
 
 export async function runTravelCachePrewarm(): Promise<TravelCachePrewarmResult> {
   const startedAt = new Date();
-  const places = createMetrics(POPULAR_TRAVEL_DESTINATIONS.length * PLACE_TYPES.length);
-  const weather = createMetrics(POPULAR_TRAVEL_DESTINATIONS.length);
-  const exchangeRate = createMetrics(POPULAR_CURRENCY_PAIRS.length);
+  const places = createMetrics(PLACE_PREWARM_TARGETS.length);
+  const weather = createMetrics(WEATHER_PREWARM_TARGETS.length);
+  const exchangeRate = createMetrics(EXCHANGE_RATE_PREWARM_TARGETS.length);
 
   await runPlacesPrewarm(places);
   await runWeatherPrewarm(weather);
