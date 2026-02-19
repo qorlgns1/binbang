@@ -12,6 +12,7 @@ import { ChatPanelErrorBanner, ChatPanelRestoreBanner } from '@/components/chat/
 import { extractMapEntitiesFromMessages, isRateLimitErrorMessage } from '@/components/chat/chatPanelUtils';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
+import { useChatLoginGate } from '@/hooks/useChatLoginGate';
 import { useConversationRestore } from '@/hooks/useConversationRestore';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
@@ -45,8 +46,6 @@ export function ChatPanel({
 
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark' | 'limit'>('save');
 
   const { sessionId } = useGuestSession();
   const { mergeStatus } = useSessionMerge();
@@ -63,6 +62,20 @@ export function ChatPanel({
       restoreAutoEnabled,
       setMessages,
     });
+
+  const {
+    showLoginModal,
+    loginModalTrigger,
+    closeLoginModal,
+    openLoginModalForRateLimit,
+    handleAlertClick,
+    handleHistoryClick,
+    handleSaveClick,
+  } = useChatLoginGate({
+    authStatus,
+    messagesCount: messages.length,
+    onOpenHistory: () => setShowHistory(true),
+  });
 
   const getChatRequestBody = useCallback(
     () => ({
@@ -99,10 +112,9 @@ export function ChatPanel({
       return;
     }
 
-    setLoginModalTrigger('limit');
-    setShowLoginModal(true);
+    openLoginModalForRateLimit();
     rateLimitModalShownForErrorRef.current = errorMessage;
-  }, [authStatus, errorMessage]);
+  }, [authStatus, errorMessage, openLoginModalForRateLimit]);
 
   useEffect(() => {
     onEntitiesUpdate(extractMapEntitiesFromMessages(messages));
@@ -151,45 +163,6 @@ export function ChatPanel({
     },
     [ensureSessionReady, getChatRequestBody, sendMessage],
   );
-
-  const handleAlertClick = useCallback(
-    (_place: PlaceEntity) => {
-      if (authStatus === 'authenticated') {
-        toast.info('빈방 알림 기능은 준비 중이에요.');
-        return;
-      }
-
-      setLoginModalTrigger('bookmark');
-      setShowLoginModal(true);
-    },
-    [authStatus],
-  );
-
-  const handleSaveClick = useCallback(() => {
-    if (messages.length === 0) {
-      toast.info('저장할 대화가 아직 없어요.');
-      return;
-    }
-
-    if (authStatus === 'authenticated') {
-      // 대화는 매 턴마다 자동 저장됨 — 히스토리 사이드바에서 확인 가능
-      setShowHistory(true);
-      return;
-    }
-
-    setLoginModalTrigger('save');
-    setShowLoginModal(true);
-  }, [authStatus, messages.length]);
-
-  const handleHistoryClick = useCallback(() => {
-    if (authStatus === 'authenticated') {
-      setShowHistory(true);
-      return;
-    }
-
-    setLoginModalTrigger('history');
-    setShowLoginModal(true);
-  }, [authStatus]);
 
   return (
     <div className='flex h-full flex-col'>
@@ -250,10 +223,7 @@ export function ChatPanel({
         <ChatPanelErrorBanner
           isRateLimitError={isRateLimitError}
           showLoginAction={authStatus !== 'authenticated' && isRateLimitError}
-          onLogin={() => {
-            setLoginModalTrigger('limit');
-            setShowLoginModal(true);
-          }}
+          onLogin={openLoginModalForRateLimit}
           onRetry={() => regenerate({ body: getChatRequestBody() })}
           onDismiss={clearError}
         />
@@ -263,7 +233,7 @@ export function ChatPanel({
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
 
-      <LoginPromptModal open={showLoginModal} onClose={() => setShowLoginModal(false)} trigger={loginModalTrigger} />
+      <LoginPromptModal open={showLoginModal} onClose={closeLoginModal} trigger={loginModalTrigger} />
       <HistorySidebar
         open={showHistory}
         onClose={() => setShowHistory(false)}
