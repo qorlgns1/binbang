@@ -18,6 +18,7 @@ import {
   getAffiliateAuditPurgeConfig,
   getPlatformSelectors,
   getSettings,
+  getTravelCachePrewarmConfig,
   invalidateSelectorCache,
   loadPlatformSelectors,
   recordHeartbeatHistory,
@@ -62,11 +63,13 @@ async function main(): Promise<void> {
 
   // 5. Repeatable job 설정
   const affiliateAuditPurgeConfig = getAffiliateAuditPurgeConfig();
+  const travelCachePrewarmConfig = getTravelCachePrewarmConfig();
   await setupRepeatableJobs(cycleQueue, config.schedule, {
     publicAvailabilitySnapshotSchedule: settings.worker.publicAvailabilitySnapshotSchedule,
     publicAvailabilityWindowDays: settings.worker.publicAvailabilitySnapshotWindowDays,
     affiliateAuditPurgeSchedule: affiliateAuditPurgeConfig.cronSchedule,
     affiliateAuditCronWatchdogSchedule: affiliateAuditPurgeConfig.cronWatchdogSchedule,
+    travelCachePrewarmSchedule: travelCachePrewarmConfig.cronSchedule,
   });
 
   // 6. 시작 로그

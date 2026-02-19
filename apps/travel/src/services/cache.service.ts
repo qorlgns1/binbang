@@ -30,6 +30,7 @@ interface CacheEnvelope<T> {
 }
 
 type CacheReadResult<T> = { status: 'miss' } | { status: 'fresh'; value: T } | { status: 'stale'; value: T };
+export type CacheEntryState = CacheReadResult<unknown>['status'];
 
 interface InternalReadOptions {
   label: string;
@@ -357,6 +358,15 @@ export async function getCachedData<T>(key: string): Promise<T | null> {
   const result = await readCacheEnvelope<T>(key, { label: 'generic' });
   if (result.status === 'miss') return null;
   return result.value;
+}
+
+/**
+ * Read cache envelope state without triggering upstream fetch.
+ * Useful for prewarm/skip decisions.
+ */
+export async function getCacheEntryState(key: string, label = 'generic'): Promise<CacheEntryState> {
+  const result = await readCacheEnvelope<unknown>(key, { label, log: false });
+  return result.status;
 }
 
 /**

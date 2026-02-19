@@ -325,11 +325,11 @@ model AffiliateEvent {
 ### P3-6: 인기 여행지 사전 캐싱 (Stage B 이후)
 
 - [x] P3-6-T1: 인기 여행지 목록 정의 (Tokyo, Seoul, Bangkok, Paris 등 Top 30)
-- [ ] P3-6-T2: Cron job으로 인기 여행지 데이터 주기적 사전 로딩
+- [x] P3-6-T2: Cron job으로 인기 여행지 데이터 주기적 사전 로딩
   - Places: 주요 관광지, 호텔, 식당
   - 날씨: 월별 히스토리
   - 환율: 해당 국가 통화
-- [ ] P3-6-T3: 사전 캐시된 데이터가 있으면 API 호출 스킵 로직
+- [x] P3-6-T3: 사전 캐시된 데이터가 있으면 API 호출 스킵 로직
 
 ## Cost Impact Analysis
 
@@ -416,6 +416,10 @@ AFFILIATE_AUDIT_ALERT_DEDUPE_WINDOW_SECONDS=86400
 AFFILIATE_AUDIT_ALERT_RECOVERY_ENABLED=true
 AFFILIATE_AUDIT_PURGE_CRON_MISS_THRESHOLD_MINUTES=90
 AFFILIATE_RUN_STARTED_REDIS_KEY_PREFIX=affiliate:audit:run_started
+TRAVEL_INTERNAL_URL=http://localhost:3300
+TRAVEL_INTERNAL_CRON_TOKEN=replace-with-random-secret
+TRAVEL_CACHE_PREWARM_CRON="20 */6 * * *"
+TRAVEL_CACHE_PREWARM_TIMEOUT_MS=120000
 ```
 
 ## Technical Notes

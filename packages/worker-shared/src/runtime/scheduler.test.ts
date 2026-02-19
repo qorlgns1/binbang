@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { removeRepeatableJobs, setupRepeatableJobs } from './scheduler';
 
 describe('runtime/scheduler', (): void => {
-  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup/affiliate schedulers', async (): Promise<void> => {
+  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup/affiliate/cache-prewarm schedulers', async (): Promise<void> => {
     const upsertJobScheduler = vi.fn().mockResolvedValue(undefined);
     const queue = {
       upsertJobScheduler,
@@ -11,7 +11,7 @@ describe('runtime/scheduler', (): void => {
 
     await setupRepeatableJobs(queue as never, '*/30 * * * *');
 
-    expect(upsertJobScheduler).toHaveBeenCalledTimes(8);
+    expect(upsertJobScheduler).toHaveBeenCalledTimes(9);
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       1,
       'cycle-scheduler',
@@ -91,6 +91,17 @@ describe('runtime/scheduler', (): void => {
         },
       },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      9,
+      'travel-cache-prewarm-scheduler',
+      { pattern: '20 */6 * * *' },
+      {
+        name: 'travel-cache-prewarm',
+        data: {
+          triggeredAt: expect.any(String),
+        },
+      },
+    );
   });
 
   it('uses admin-configured public snapshot schedule and window days when provided', async (): Promise<void> => {
@@ -104,6 +115,7 @@ describe('runtime/scheduler', (): void => {
       publicAvailabilityWindowDays: 14,
       affiliateAuditPurgeSchedule: '9 4 * * *',
       affiliateAuditCronWatchdogSchedule: '*/10 * * * *',
+      travelCachePrewarmSchedule: '35 */4 * * *',
     });
 
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
@@ -162,6 +174,17 @@ describe('runtime/scheduler', (): void => {
         },
       },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      9,
+      'travel-cache-prewarm-scheduler',
+      { pattern: '35 */4 * * *' },
+      {
+        name: 'travel-cache-prewarm',
+        data: {
+          triggeredAt: expect.any(String),
+        },
+      },
+    );
   });
 
   it('removes all repeatable schedulers', async (): Promise<void> => {
@@ -172,7 +195,7 @@ describe('runtime/scheduler', (): void => {
 
     await removeRepeatableJobs(queue as never);
 
-    expect(removeJobScheduler).toHaveBeenCalledTimes(8);
+    expect(removeJobScheduler).toHaveBeenCalledTimes(9);
     expect(removeJobScheduler).toHaveBeenNthCalledWith(1, 'cycle-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(2, 'notification-retry-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(3, 'landing-event-pii-retention-scheduler');
@@ -181,5 +204,6 @@ describe('runtime/scheduler', (): void => {
     expect(removeJobScheduler).toHaveBeenNthCalledWith(6, 'travel-guest-cleanup-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(7, 'affiliate-audit-purge-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(8, 'affiliate-audit-cron-watchdog-scheduler');
+    expect(removeJobScheduler).toHaveBeenNthCalledWith(9, 'travel-cache-prewarm-scheduler');
   });
 });

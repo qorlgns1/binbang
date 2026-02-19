@@ -1,8 +1,19 @@
 // Settings
 export { getSettings, loadSettings } from './settings';
-export { validateWorkerEnv, validateWebEnv, getEnv, getEnvNumber, getAffiliateAuditPurgeConfig } from './settings/env';
+export {
+  validateWorkerEnv,
+  validateWebEnv,
+  getEnv,
+  getEnvNumber,
+  getAffiliateAuditPurgeConfig,
+  getTravelCachePrewarmConfig,
+} from './settings/env';
 export type { SystemSettingsCache } from './settings';
-export type { AffiliateAuditPurgeConfig, AffiliateAuditTelegramConfig } from './settings/env';
+export type {
+  AffiliateAuditPurgeConfig,
+  AffiliateAuditTelegramConfig,
+  TravelCachePrewarmConfig,
+} from './settings/env';
 
 // Redis & Queue
 export { createRedisConnection } from './connection';
@@ -38,6 +49,8 @@ export type {
   CheckAffiliateAuditPurgeCronMissOptions,
   CheckAffiliateAuditPurgeCronMissResult,
 } from './affiliateAuditPurge';
+export { triggerTravelCachePrewarm } from './travelCachePrewarm';
+export type { TriggerTravelCachePrewarmResult, TravelCachePrewarmMetrics } from './travelCachePrewarm';
 
 // Heartbeat
 export {
