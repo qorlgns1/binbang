@@ -50,6 +50,7 @@ export interface CachedFetchOptions<T> {
 }
 
 const activeRevalidations = new Set<string>();
+type RedisClient = NonNullable<ReturnType<typeof getRedisClient>>;
 
 function getNowMs(): number {
   return Date.now();
@@ -85,6 +86,20 @@ async function ensureRedisConnected(redis: NonNullable<ReturnType<typeof getRedi
   }
 }
 
+async function resolveConnectedRedis(): Promise<RedisClient | null> {
+  const redis = getRedisClient();
+  if (!redis) {
+    return null;
+  }
+
+  const connected = await ensureRedisConnected(redis);
+  if (!connected) {
+    return null;
+  }
+
+  return redis;
+}
+
 function parseEnvelope<T>(raw: string): CacheEnvelope<T> | null {
   try {
     const parsed = JSON.parse(raw) as Partial<CacheEnvelope<T>>;
@@ -101,16 +116,13 @@ function parseEnvelope<T>(raw: string): CacheEnvelope<T> | null {
 
 async function readCacheEnvelope<T>(key: string, options: InternalReadOptions): Promise<CacheReadResult<T>> {
   const { label, log = true } = options;
-  const redis = getRedisClient();
+  const redis = await resolveConnectedRedis();
   if (!redis) {
-    if (log) console.log(`[Cache:${label}] BYPASS(no-redis): ${key}`);
+    if (log) console.log(`[Cache:${label}] BYPASS(redis-unavailable): ${key}`);
     return { status: 'miss' };
   }
 
   try {
-    const connected = await ensureRedisConnected(redis);
-    if (!connected) return { status: 'miss' };
-
     const cached = await redis.get(key);
     if (!cached) {
       if (log) console.log(`[Cache:${label}] MISS: ${key}`);
@@ -151,13 +163,10 @@ async function writeCacheEnvelope<T>(
   staleTtlSeconds: number,
   label: string,
 ): Promise<void> {
-  const redis = getRedisClient();
+  const redis = await resolveConnectedRedis();
   if (!redis) return;
 
   try {
-    const connected = await ensureRedisConnected(redis);
-    if (!connected) return;
-
     const now = getNowMs();
     const envelope: CacheEnvelope<T> = {
       value,
@@ -174,11 +183,7 @@ async function writeCacheEnvelope<T>(
   }
 }
 
-async function releaseLock(
-  redis: NonNullable<ReturnType<typeof getRedisClient>>,
-  lockKey: string,
-  lockValue: string,
-): Promise<void> {
+async function releaseLock(redis: RedisClient, lockKey: string, lockValue: string): Promise<void> {
   try {
     await redis.eval(
       "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
@@ -191,10 +196,7 @@ async function releaseLock(
   }
 }
 
-async function scanKeysByPattern(
-  redis: NonNullable<ReturnType<typeof getRedisClient>>,
-  pattern: string,
-): Promise<string[]> {
+async function scanKeysByPattern(redis: RedisClient, pattern: string): Promise<string[]> {
   const keys: string[] = [];
   let cursor = '0';
   const scanCount = Number.isFinite(DEFAULT_INVALIDATE_SCAN_COUNT) ? Math.max(10, DEFAULT_INVALIDATE_SCAN_COUNT) : 200;
@@ -262,13 +264,8 @@ async function refreshWithLock<T>(
   const { key, fetcher } = options;
   const { label, freshTtlSeconds, staleTtlSeconds, staleFallback } = params;
 
-  const redis = getRedisClient();
+  const redis = await resolveConnectedRedis();
   if (!redis) {
-    return runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
-  }
-
-  const connected = await ensureRedisConnected(redis);
-  if (!connected) {
     return runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
   }
 
@@ -404,14 +401,12 @@ export async function getCachedOrFetch<T>(options: CachedFetchOptions<T>): Promi
  * Delete cached data
  */
 export async function deleteCachedData(key: string): Promise<void> {
-  const redis = getRedisClient();
+  const redis = await resolveConnectedRedis();
   if (!redis) {
     return;
   }
 
   try {
-    const connected = await ensureRedisConnected(redis);
-    if (!connected) return;
     await redis.del(key);
     console.log(`[Cache] DELETE: ${key}`);
   } catch (error) {
@@ -423,14 +418,12 @@ export async function deleteCachedData(key: string): Promise<void> {
  * Delete all keys matching a pattern
  */
 export async function invalidateCachePattern(pattern: string): Promise<number> {
-  const redis = getRedisClient();
+  const redis = await resolveConnectedRedis();
   if (!redis) {
     return 0;
   }
 
   try {
-    const connected = await ensureRedisConnected(redis);
-    if (!connected) return 0;
     const keys = await scanKeysByPattern(redis, pattern);
     if (keys.length === 0) {
       return 0;

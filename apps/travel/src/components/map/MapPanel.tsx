@@ -275,8 +275,14 @@ function MapContent({
             position={{ lat: entity.latitude, lng: entity.longitude }}
             title={entity.name}
             onClick={() => onEntitySelect?.(entity.id)}
-            onMouseEnter={() => { setHoveredId(entity.id); onEntityHover?.(entity.id); }}
-            onMouseLeave={() => { setHoveredId(null); onEntityHover?.(undefined); }}
+            onMouseEnter={() => {
+              setHoveredId(entity.id);
+              onEntityHover?.(entity.id);
+            }}
+            onMouseLeave={() => {
+              setHoveredId(null);
+              onEntityHover?.(undefined);
+            }}
           >
             <Pin background={colors.background} glyphColor={colors.glyph} scale={scale} />
           </AdvancedMarker>

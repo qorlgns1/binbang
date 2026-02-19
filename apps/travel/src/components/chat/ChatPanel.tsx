@@ -1,6 +1,5 @@
 'use client';
 
-import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { Bot, History, Landmark, RefreshCw, Save } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -9,12 +8,26 @@ import { toast } from 'sonner';
 
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+import {
+  createConversationId,
+  extractMapEntitiesFromMessages,
+  getUserMessagePreview,
+  isRateLimitErrorMessage,
+  LAST_CONVERSATION_ID_STORAGE_KEY,
+  mapConversationEntitiesToMapEntities,
+  mapConversationMessagesToUiMessages,
+  parsePendingRestoreSnapshot,
+  PENDING_RESTORE_STALE_MS,
+  PENDING_RESTORE_STORAGE_KEY,
+  type ConversationSummary,
+  type PendingRestoreSnapshot,
+} from '@/components/chat/chatPanelUtils';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
 import { isRestoreAutoEnabled } from '@/lib/featureFlags';
-import type { MapEntity, PlaceEntity, SearchAccommodationResult } from '@/lib/types';
+import type { MapEntity, PlaceEntity } from '@/lib/types';
 
 interface ChatPanelProps {
   onEntitiesUpdate: (entities: MapEntity[]) => void;
@@ -29,81 +42,14 @@ const EXAMPLE_QUERIES = [
   '런던에서 지금 당장 예약 가능한 4성급 호텔 리스트 보여줘.',
   '특정 숙소의 빈 방 알림을 설정하고 싶어.',
 ];
-const LAST_CONVERSATION_ID_STORAGE_KEY = 'travel_last_conversation_id';
-const PENDING_RESTORE_STORAGE_KEY = 'travel_pending_restore';
-/** CC-03: 24시간 초과 스냅샷은 폐기 (명세 5.2) */
-const PENDING_RESTORE_STALE_MS = 24 * 60 * 60 * 1000;
 
-interface PendingRestoreSnapshot {
-  conversationId: string;
-  updatedAt: number;
-  preview: string;
-}
-
-interface ConversationSummary {
-  id: string;
-}
-
-function createConversationId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-    const bytes = new Uint8Array(8);
-    crypto.getRandomValues(bytes);
-    const suffix = Array.from(bytes, (b) => b.toString(36).padStart(2, '0'))
-      .join('')
-      .slice(0, 10);
-    return `conv_${Date.now()}_${suffix}`;
-  }
-  return `conv_${Date.now()}_${Date.now().toString(36).slice(-6)}`;
-}
-
-function parsePendingRestoreSnapshot(value: string | null): PendingRestoreSnapshot | null {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(value) as Partial<PendingRestoreSnapshot>;
-    const conversationId = typeof parsed.conversationId === 'string' ? parsed.conversationId.trim() : '';
-
-    if (!conversationId) {
-      return null;
-    }
-
-    return {
-      conversationId,
-      updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
-      preview: typeof parsed.preview === 'string' ? parsed.preview : '',
-    };
-  } catch {
-    return null;
-  }
-}
-
-function getUserMessagePreview(messages: UIMessage[]): string {
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    const message = messages[i];
-    if (message.role !== 'user') {
-      continue;
-    }
-
-    const preview = message.parts
-      .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
-      .map((part) => part.text)
-      .join('')
-      .trim();
-
-    if (preview) {
-      return preview.slice(0, 80);
-    }
-  }
-
-  return '';
-}
-
-export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId, mapHoveredEntityId }: ChatPanelProps) {
+export function ChatPanel({
+  onEntitiesUpdate,
+  onPlaceSelect,
+  onPlaceHover,
+  selectedPlaceId,
+  mapHoveredEntityId,
+}: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rateLimitModalShownForErrorRef = useRef<string | null>(null);
@@ -132,21 +78,31 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     [sessionId, currentConversationId],
   );
 
+  const clearRestoreState = useCallback(() => {
+    setRestoreStatus('idle');
+    setRestoreTargetConversationId(null);
+    setRestorePreview('');
+  }, []);
+
+  const ensureSessionReady = useCallback(() => {
+    if (authStatus !== 'authenticated' && sessionId == null) {
+      toast.info('세션 준비 중입니다. 잠시 후 다시 시도해 주세요.');
+      return false;
+    }
+    return true;
+  }, [authStatus, sessionId]);
+
   const isLoading = status !== 'ready';
-  const isRateLimitError =
-    typeof error?.message === 'string' &&
-    (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message));
+  const errorMessage = typeof error?.message === 'string' ? error.message : null;
+  const isRateLimitError = errorMessage != null && isRateLimitErrorMessage(errorMessage);
 
   useEffect(() => {
-    const errorMessage = typeof error?.message === 'string' ? error.message : null;
-
     if (!errorMessage) {
       rateLimitModalShownForErrorRef.current = null;
       return;
     }
 
-    const shouldPromptLogin =
-      authStatus !== 'authenticated' && (errorMessage.includes('429') || /rate\s*limit|too\s*many/i.test(errorMessage));
+    const shouldPromptLogin = authStatus !== 'authenticated' && isRateLimitErrorMessage(errorMessage);
 
     if (!shouldPromptLogin) {
       return;
@@ -159,78 +115,11 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     setLoginModalTrigger('limit');
     setShowLoginModal(true);
     rateLimitModalShownForErrorRef.current = errorMessage;
-  }, [authStatus, error]);
-
-  const extractEntities = useCallback(
-    (msgs: UIMessage[]) => {
-      const entities: MapEntity[] = [];
-      for (const msg of msgs) {
-        for (const part of msg.parts) {
-          const partAny = part as unknown as { type: string; state?: string; output?: unknown; toolName?: string };
-          if (!partAny.type.startsWith('tool-') && partAny.type !== 'dynamic-tool') continue;
-          if (partAny.state !== 'output-available') continue;
-
-          let toolName: string;
-          if (partAny.type === 'dynamic-tool') {
-            toolName = partAny.toolName ?? '';
-          } else {
-            toolName = partAny.type.slice(5);
-          }
-
-          if (toolName === 'searchPlaces' && partAny.output) {
-            const data = partAny.output as { places: PlaceEntity[] };
-            if (data.places) {
-              for (const place of data.places) {
-                if (place.latitude != null && place.longitude != null) {
-                  entities.push({
-                    id: place.placeId,
-                    name: place.name,
-                    latitude: place.latitude,
-                    longitude: place.longitude,
-                    type: inferType(place.types),
-                    photoUrl: place.photoUrl,
-                  });
-                }
-              }
-            }
-          }
-
-          if (toolName === 'searchAccommodation' && partAny.output) {
-            const data = partAny.output as SearchAccommodationResult;
-            if (data.affiliate?.latitude != null && data.affiliate?.longitude != null) {
-              entities.push({
-                id: data.affiliate.placeId,
-                name: data.affiliate.name,
-                latitude: data.affiliate.latitude,
-                longitude: data.affiliate.longitude,
-                type: 'accommodation',
-                photoUrl: data.affiliate.photoUrl,
-              });
-            }
-            for (const alt of data.alternatives) {
-              if (alt.latitude != null && alt.longitude != null) {
-                entities.push({
-                  id: alt.placeId,
-                  name: alt.name,
-                  latitude: alt.latitude,
-                  longitude: alt.longitude,
-                  type: 'accommodation',
-                  photoUrl: alt.photoUrl,
-                });
-              }
-            }
-          }
-        }
-      }
-
-      onEntitiesUpdate(entities);
-    },
-    [onEntitiesUpdate],
-  );
+  }, [authStatus, errorMessage]);
 
   useEffect(() => {
-    extractEntities(messages);
-  }, [messages, extractEntities]);
+    onEntitiesUpdate(extractMapEntitiesFromMessages(messages));
+  }, [messages, onEntitiesUpdate]);
 
   const messagesLength = messages.length;
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally scroll on message count change
@@ -248,27 +137,25 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     (e?: FormEvent) => {
       e?.preventDefault?.();
       if (!input.trim() || isLoading) return;
-      if (authStatus !== 'authenticated' && sessionId == null) {
-        toast.info('세션 준비 중입니다. 잠시 후 다시 시도해 주세요.');
+      if (!ensureSessionReady()) {
         return;
       }
       const text = input.trim();
       setInput('');
       sendMessage({ text }, { body: getChatRequestBody() });
     },
-    [authStatus, getChatRequestBody, input, isLoading, sendMessage, sessionId],
+    [ensureSessionReady, getChatRequestBody, input, isLoading, sendMessage],
   );
 
   const handleExampleClick = useCallback(
     (query: string) => {
-      if (authStatus !== 'authenticated' && sessionId == null) {
-        toast.info('세션 준비 중입니다. 잠시 후 다시 시도해 주세요.');
+      if (!ensureSessionReady()) {
         return;
       }
       setInput('');
       sendMessage({ text: query }, { body: getChatRequestBody() });
     },
-    [authStatus, getChatRequestBody, sendMessage, sessionId],
+    [ensureSessionReady, getChatRequestBody, sendMessage],
   );
 
   const handleAlertClick = useCallback(
@@ -350,30 +237,11 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
           };
         };
 
-        // Convert messages to UIMessage format
-        const uiMessages: UIMessage[] = data.conversation.messages.map((msg) => ({
-          id: createConversationId(),
-          role: msg.role as 'user' | 'assistant',
-          parts: [{ type: 'text' as const, text: msg.content }],
-        }));
-
-        setMessages(uiMessages);
+        setMessages(mapConversationMessagesToUiMessages(data.conversation.messages));
         setCurrentConversationId(conversationId);
         localStorage.setItem(LAST_CONVERSATION_ID_STORAGE_KEY, conversationId);
 
-        // Extract and update entities
-        const mapEntities: MapEntity[] = data.conversation.entities
-          .filter((e) => e.latitude != null && e.longitude != null)
-          .map((e) => ({
-            id: e.id,
-            name: e.name,
-            latitude: e.latitude,
-            longitude: e.longitude,
-            type: e.type as MapEntity['type'],
-            photoUrl: (e.metadata as { photoUrl?: string })?.photoUrl,
-          }));
-
-        onEntitiesUpdate(mapEntities);
+        onEntitiesUpdate(mapConversationEntitiesToMapEntities(data.conversation.entities));
 
         if (!options?.silent) {
           toast.success('대화를 불러왔습니다');
@@ -394,12 +262,10 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     async (conversationId: string) => {
       const restored = await loadConversation(conversationId);
       if (restored) {
-        setRestoreStatus('idle');
-        setRestoreTargetConversationId(null);
-        setRestorePreview('');
+        clearRestoreState();
       }
     },
-    [loadConversation],
+    [clearRestoreState, loadConversation],
   );
 
   const findFallbackConversationId = useCallback(async (preview: string, excludeId: string): Promise<string | null> => {
@@ -436,9 +302,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       // merge 완료 후 트리거되므로 retry 1회로 충분하다 (네트워크 일시 오류 대비)
       const restoredPrimary = await loadConversation(targetConversationId, { silent: true, retryCount: 1 });
       if (restoredPrimary) {
-        setRestoreStatus('idle');
-        setRestoreTargetConversationId(null);
-        setRestorePreview('');
+        clearRestoreState();
         toast.success('이전 대화를 복원했어요.');
         return true;
       }
@@ -447,9 +311,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       if (fallbackConversationId) {
         const restoredFallback = await loadConversation(fallbackConversationId, { silent: true, retryCount: 1 });
         if (restoredFallback) {
-          setRestoreStatus('idle');
-          setRestoreTargetConversationId(null);
-          setRestorePreview('');
+          clearRestoreState();
           toast.success('최근 대화로 복원했어요.');
           return true;
         }
@@ -461,7 +323,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       toast.error('대화를 자동 복원하지 못했어요.');
       return false;
     },
-    [findFallbackConversationId, loadConversation],
+    [clearRestoreState, findFallbackConversationId, loadConversation],
   );
 
   useEffect(() => {
@@ -531,13 +393,11 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   const handleNewConversation = useCallback(() => {
     setMessages([]);
     setCurrentConversationId(createConversationId());
-    setRestoreStatus('idle');
-    setRestoreTargetConversationId(null);
-    setRestorePreview('');
+    clearRestoreState();
     localStorage.removeItem(PENDING_RESTORE_STORAGE_KEY);
     localStorage.removeItem(LAST_CONVERSATION_ID_STORAGE_KEY);
     onEntitiesUpdate([]);
-  }, [setMessages, onEntitiesUpdate]);
+  }, [clearRestoreState, setMessages, onEntitiesUpdate]);
 
   return (
     <div className='flex h-full flex-col'>
@@ -724,11 +584,4 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       />
     </div>
   );
-}
-
-function inferType(types: string[]): MapEntity['type'] {
-  if (types.includes('lodging') || types.includes('hotel')) return 'accommodation';
-  if (types.includes('restaurant') || types.includes('food')) return 'restaurant';
-  if (types.includes('tourist_attraction') || types.includes('museum')) return 'attraction';
-  return 'place';
 }

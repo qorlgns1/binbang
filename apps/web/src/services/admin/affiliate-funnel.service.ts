@@ -8,6 +8,7 @@ import type { FunnelRangePreset } from '@/services/admin/funnel.service';
 const DEFAULT_RANGE: FunnelRangePreset = '30d';
 const DEFAULT_CACHE_TTL_SECONDS = Number.parseInt(process.env.AFFILIATE_DASHBOARD_CACHE_TTL_SECONDS ?? '300', 10);
 const CACHE_PREFIX = 'admin:funnel:affiliate';
+type RedisClient = NonNullable<ReturnType<typeof getRedisClient>>;
 
 export interface AdminAffiliateCategoryFunnel {
   category: AffiliateAdvertiserCategory;
@@ -67,6 +68,19 @@ export interface GetAdminAffiliateFunnelInput {
   to?: string;
   category?: AffiliateAdvertiserCategory;
   now?: Date;
+}
+
+interface FunnelMetrics {
+  impression: number;
+  ctaAttempt: number;
+  outboundClick: number;
+  clickThroughRate: number;
+}
+
+interface GroupedMetricRow<TKey extends string> {
+  key: TKey;
+  eventType: string;
+  count: number;
 }
 
 function parseIsoDate(value: string, label: 'from' | 'to'): Date {
@@ -140,6 +154,58 @@ async function resolveRange(
 function safeRatio(numerator: number, denominator: number): number {
   if (denominator <= 0) return 0;
   return Math.round((numerator / denominator) * 1000) / 1000;
+}
+
+function createEmptyMetrics(): FunnelMetrics {
+  return {
+    impression: 0,
+    ctaAttempt: 0,
+    outboundClick: 0,
+    clickThroughRate: 0,
+  };
+}
+
+function applyEventCount(metrics: FunnelMetrics, eventType: string, count: number): void {
+  if (eventType === 'impression') metrics.impression = count;
+  if (eventType === 'cta_attempt') metrics.ctaAttempt = count;
+  if (eventType === 'outbound_click') metrics.outboundClick = count;
+}
+
+function addClickThroughRate<T extends FunnelMetrics>(item: T): T {
+  return {
+    ...item,
+    clickThroughRate: safeRatio(item.outboundClick, item.impression),
+  };
+}
+
+function buildGroupedFunnel<TKey extends string, TResult extends FunnelMetrics>(
+  rows: GroupedMetricRow<TKey>[],
+  createResult: (key: TKey) => TResult,
+  compare: (a: TResult, b: TResult) => number,
+): TResult[] {
+  const map = new Map<TKey, TResult>();
+
+  for (const row of rows) {
+    const current = map.get(row.key) ?? createResult(row.key);
+    applyEventCount(current, row.eventType, row.count);
+    map.set(row.key, current);
+  }
+
+  return [...map.values()].map((item) => addClickThroughRate(item)).sort(compare);
+}
+
+function calculateTotals(rows: FunnelMetrics[]): AdminAffiliateFunnelData['totals'] {
+  const totals = rows.reduce((acc, item) => {
+    acc.impression += item.impression;
+    acc.ctaAttempt += item.ctaAttempt;
+    acc.outboundClick += item.outboundClick;
+    return acc;
+  }, createEmptyMetrics());
+
+  return {
+    ...totals,
+    clickThroughRate: safeRatio(totals.outboundClick, totals.impression),
+  };
 }
 
 function cacheKeyFromInput(input: { from: Date; to: Date; category?: AffiliateAdvertiserCategory }): string {
@@ -254,12 +320,19 @@ async function fetchAwinRevenueSummary(from: Date, to: Date): Promise<AdminAffil
   }
 }
 
-async function readCached<T>(key: string): Promise<T | null> {
+async function resolveConnectedRedis(): Promise<RedisClient | null> {
   const redis = getRedisClient();
   if (!redis) return null;
 
   const connected = await ensureRedisConnected(redis);
   if (!connected) return null;
+
+  return redis;
+}
+
+async function readCached<T>(key: string): Promise<T | null> {
+  const redis = await resolveConnectedRedis();
+  if (!redis) return null;
 
   try {
     const raw = await redis.get(key);
@@ -272,11 +345,8 @@ async function readCached<T>(key: string): Promise<T | null> {
 }
 
 async function writeCached<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
-  const redis = getRedisClient();
+  const redis = await resolveConnectedRedis();
   if (!redis) return;
-
-  const connected = await ensureRedisConnected(redis);
-  if (!connected) return;
 
   try {
     await redis.setex(key, Math.max(1, ttlSeconds), JSON.stringify(value));
@@ -322,70 +392,25 @@ export async function getAdminAffiliateFunnel(
     },
   });
 
-  const categoryMap = new Map<AffiliateAdvertiserCategory, AdminAffiliateCategoryFunnel>();
-  const providerMap = new Map<string, AdminAffiliateProviderFunnel>();
-
-  for (const row of rows) {
-    const current =
-      categoryMap.get(row.category) ??
-      ({
-        category: row.category,
-        impression: 0,
-        ctaAttempt: 0,
-        outboundClick: 0,
-        clickThroughRate: 0,
-      } as AdminAffiliateCategoryFunnel);
-
-    if (row.eventType === 'impression') current.impression = row._count._all;
-    if (row.eventType === 'cta_attempt') current.ctaAttempt = row._count._all;
-    if (row.eventType === 'outbound_click') current.outboundClick = row._count._all;
-
-    categoryMap.set(row.category, current);
-  }
-
-  const byCategory = [...categoryMap.values()]
-    .map((item) => ({
-      ...item,
-      clickThroughRate: safeRatio(item.outboundClick, item.impression),
-    }))
-    .sort((a, b) => a.category.localeCompare(b.category));
-
-  for (const row of providerRows) {
-    const current =
-      providerMap.get(row.provider) ??
-      ({
-        provider: row.provider,
-        impression: 0,
-        ctaAttempt: 0,
-        outboundClick: 0,
-        clickThroughRate: 0,
-      } as AdminAffiliateProviderFunnel);
-
-    if (row.eventType === 'impression') current.impression = row._count._all;
-    if (row.eventType === 'cta_attempt') current.ctaAttempt = row._count._all;
-    if (row.eventType === 'outbound_click') current.outboundClick = row._count._all;
-
-    providerMap.set(row.provider, current);
-  }
-
-  const byProvider = [...providerMap.values()]
-    .map((item) => ({
-      ...item,
-      clickThroughRate: safeRatio(item.outboundClick, item.impression),
-    }))
-    .sort((a, b) => a.provider.localeCompare(b.provider));
-
-  const totals = byCategory.reduce(
-    (acc, item) => {
-      acc.impression += item.impression;
-      acc.ctaAttempt += item.ctaAttempt;
-      acc.outboundClick += item.outboundClick;
-      return acc;
-    },
-    { impression: 0, ctaAttempt: 0, outboundClick: 0, clickThroughRate: 0 },
+  const byCategory = buildGroupedFunnel(
+    rows.map((row) => ({ key: row.category, eventType: row.eventType, count: row._count._all })),
+    (category) => ({
+      category,
+      ...createEmptyMetrics(),
+    }),
+    (a, b) => a.category.localeCompare(b.category),
   );
 
-  totals.clickThroughRate = safeRatio(totals.outboundClick, totals.impression);
+  const byProvider = buildGroupedFunnel(
+    providerRows.map((row) => ({ key: row.provider, eventType: row.eventType, count: row._count._all })),
+    (provider) => ({
+      provider,
+      ...createEmptyMetrics(),
+    }),
+    (a, b) => a.provider.localeCompare(b.provider),
+  );
+
+  const totals = calculateTotals(byCategory);
 
   const revenue = await fetchAwinRevenueSummary(from, to);
 
