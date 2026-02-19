@@ -80,7 +80,7 @@ export function EsimCard({ esim, ctaEnabled }: EsimCardProps) {
               </button>
             )}
             <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>
-              구매 시 제휴 수수료를 받을 수 있습니다
+              예약/구매 시 제휴 수수료를 받을 수 있습니다
             </p>
           </div>
         )}

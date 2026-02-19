@@ -266,7 +266,7 @@ model AffiliateEvent {
 ### P3-3: 자연스러운 제휴 링크 삽입
 
 - [x] P3-3-T1: AI 응답에서 카테고리별 추천 시 Awin 추적 링크가 자연스럽게 표시되도록 프롬프트 조정
-- [ ] P3-3-T2: 제휴 고지 문구 표시 (카드/CTA 인접, "예약/구매 시 제휴 수수료를 받을 수 있음")
+- [x] P3-3-T2: 제휴 고지 문구 표시 (카드/CTA 인접, "예약/구매 시 제휴 수수료를 받을 수 있음")
 - [ ] P3-3-T3: 제휴 링크 설정 옵션 구현 (Stage B)
   - 계정 기본 토글 (`affiliate_links_enabled`)
   - 대화별 오버라이드 (`conversation_affiliate_override`)
@@ -274,10 +274,10 @@ model AffiliateEvent {
   - `conversationId` (unique)
   - `affiliateOverride` (`inherit` | `enabled` | `disabled`)
   - `updatedAt`
-- [ ] P3-3-T4: 제휴 링크 없는 일반 검색 결과도 함께 표시 (기본 2개 병기)
-- [ ] P3-3-T5: 비제휴 대안 정렬 기준 고정 (rating DESC, reviewCount DESC)
-- [ ] P3-3-T6: 비제휴 대안 fallback 규칙 적용 (rating/reviewCount 누락 시 원본 순서 보충)
-- [ ] P3-3-T7: Stage A `cta_attempt` UX 표준화 (토스트 + 짧은 안내 모달)
+- [x] P3-3-T4: 제휴 링크 없는 일반 검색 결과도 함께 표시 (기본 2개 병기)
+- [x] P3-3-T5: 비제휴 대안 정렬 기준 고정 (rating DESC, reviewCount DESC)
+- [x] P3-3-T6: 비제휴 대안 fallback 규칙 적용 (rating/reviewCount 누락 시 원본 순서 보충)
+- [x] P3-3-T7: Stage A `cta_attempt` UX 표준화 (토스트 + 짧은 안내 모달)
 - [ ] P3-3-T8: 설정 우선순위 규칙 고정 (대화별 오버라이드 > 계정 기본값)
 - [ ] P3-3-T9: 대화별 오버라이드 영속성 검증 (명시 변경 전까지 유지)
 - [ ] P3-3-T10: `ConversationPreference` 조회/업서트 경로 검증 (읽기/쓰기/초기값 `inherit`)
