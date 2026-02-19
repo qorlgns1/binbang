@@ -30,6 +30,8 @@ const EXAMPLE_QUERIES = [
 ];
 const LAST_CONVERSATION_ID_STORAGE_KEY = 'travel_last_conversation_id';
 const PENDING_RESTORE_STORAGE_KEY = 'travel_pending_restore';
+/** CC-03: 24시간 초과 스냅샷은 폐기 (명세 5.2) */
+const PENDING_RESTORE_STALE_MS = 24 * 60 * 60 * 1000;
 
 interface PendingRestoreSnapshot {
   conversationId: string;
@@ -458,7 +460,17 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       return;
     }
 
-    const pendingSnapshot = parsePendingRestoreSnapshot(localStorage.getItem(PENDING_RESTORE_STORAGE_KEY));
+    let pendingSnapshot = parsePendingRestoreSnapshot(localStorage.getItem(PENDING_RESTORE_STORAGE_KEY));
+    const now = Date.now();
+    if (
+      pendingSnapshot &&
+      typeof pendingSnapshot.updatedAt === 'number' &&
+      now - pendingSnapshot.updatedAt > PENDING_RESTORE_STALE_MS
+    ) {
+      localStorage.removeItem(PENDING_RESTORE_STORAGE_KEY);
+      pendingSnapshot = null;
+    }
+
     const storedConversationId = localStorage.getItem(LAST_CONVERSATION_ID_STORAGE_KEY);
     const targetConversationId = pendingSnapshot?.conversationId ?? storedConversationId;
 

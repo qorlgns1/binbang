@@ -109,6 +109,10 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
       if (!historyEditEnabled) {
         return;
       }
+      // CC-05: delete pending 상태에서는 edit 저장 차단 (명세 5.2)
+      if (pendingDeleteId != null) {
+        return;
+      }
 
       const title = editingTitle.trim();
       if (!title) {
@@ -133,7 +137,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
         toast.error('제목 수정에 실패했습니다.');
       }
     },
-    [editingTitle, historyEditEnabled, mutate],
+    [editingTitle, historyEditEnabled, mutate, pendingDeleteId],
   );
 
   if (!open) return null;
@@ -270,7 +274,8 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                             e.stopPropagation();
                             void handleSaveTitle(conv.id);
                           }}
-                          className='p-1.5 rounded-md hover:bg-emerald-100 text-muted-foreground hover:text-emerald-600 transition-colors'
+                          disabled={pendingDeleteId != null}
+                          className='p-1.5 rounded-md hover:bg-emerald-100 text-muted-foreground hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:pointer-events-none'
                           aria-label='제목 저장'
                         >
                           <Check className='h-4 w-4' />
