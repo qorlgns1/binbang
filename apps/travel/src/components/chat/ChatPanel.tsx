@@ -2,8 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useSession } from 'next-auth/react';
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
 import { ChatPanelHeader } from '@/components/chat/ChatPanelHeader';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -12,6 +11,7 @@ import { ChatPanelErrorBanner, ChatPanelRestoreBanner } from '@/components/chat/
 import { extractMapEntitiesFromMessages, isRateLimitErrorMessage } from '@/components/chat/chatPanelUtils';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
+import { useChatComposer } from '@/hooks/useChatComposer';
 import { useChatViewport } from '@/hooks/useChatViewport';
 import { useChatLoginGate } from '@/hooks/useChatLoginGate';
 import { useConversationRestore } from '@/hooks/useConversationRestore';
@@ -75,25 +75,19 @@ export function ChatPanel({
     onOpenHistory: () => setShowHistory(true),
   });
 
-  const getChatRequestBody = useCallback(
-    () => ({
-      sessionId: sessionId ?? undefined,
-      conversationId: currentConversationId,
-    }),
-    [currentConversationId, sessionId],
-  );
-
-  const ensureSessionReady = useCallback(() => {
-    if (authStatus !== 'authenticated' && sessionId == null) {
-      toast.info('세션 준비 중입니다. 잠시 후 다시 시도해 주세요.');
-      return false;
-    }
-    return true;
-  }, [authStatus, sessionId]);
-
   const isLoading = status !== 'ready';
   const errorMessage = typeof error?.message === 'string' ? error.message : null;
   const isRateLimitError = errorMessage != null && isRateLimitErrorMessage(errorMessage);
+
+  const { getChatRequestBody, handleSubmit, handleExampleClick } = useChatComposer({
+    authStatus,
+    currentConversationId,
+    input,
+    isLoading,
+    sendMessage,
+    sessionId: sessionId ?? undefined,
+    setInput,
+  });
 
   useRateLimitLoginPrompt({
     authStatus,
@@ -110,35 +104,6 @@ export function ChatPanel({
   useEffect(() => {
     onEntitiesUpdate(extractMapEntitiesFromMessages(messages));
   }, [messages, onEntitiesUpdate]);
-
-  const handleSubmit = useCallback(
-    (e?: FormEvent) => {
-      e?.preventDefault?.();
-      if (!input.trim() || isLoading) {
-        return;
-      }
-      if (!ensureSessionReady()) {
-        return;
-      }
-
-      const text = input.trim();
-      setInput('');
-      sendMessage({ text }, { body: getChatRequestBody() });
-    },
-    [ensureSessionReady, getChatRequestBody, input, isLoading, sendMessage],
-  );
-
-  const handleExampleClick = useCallback(
-    (query: string) => {
-      if (!ensureSessionReady()) {
-        return;
-      }
-
-      setInput('');
-      sendMessage({ text: query }, { body: getChatRequestBody() });
-    },
-    [ensureSessionReady, getChatRequestBody, sendMessage],
-  );
 
   return (
     <div className='flex h-full flex-col'>
