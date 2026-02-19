@@ -72,3 +72,25 @@ export interface SearchAccommodationResult {
   /** "awin:{advertiserId}" | "awin_pending:accommodation" */
   provider: string;
 }
+
+export interface EsimEntity {
+  productId: string;
+  name: string;
+  description: string;
+  coverage: string;
+  /** Awin 추적 링크. 광고주 미등록 또는 링크 생성 실패 시 undefined */
+  affiliateLink?: string;
+  /** true = 광고/제휴 배지 표시 대상 */
+  isAffiliate: boolean;
+  /** Awin 광고주 이름 (isAffiliate=true 일 때만 존재) */
+  advertiserName?: string;
+}
+
+export interface SearchEsimResult {
+  /** eSIM 제휴 카드 1개 */
+  primary: EsimEntity | null;
+  /** true = affiliateLink가 정상 생성됨 */
+  ctaEnabled: boolean;
+  /** "awin:{advertiserId}" | "awin_pending:esim" */
+  provider: string;
+}

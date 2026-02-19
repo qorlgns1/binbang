@@ -6,10 +6,17 @@ import Markdown from 'react-markdown';
 
 import { AccommodationCard } from '@/components/cards/AccommodationCard';
 import { CurrencyCard } from '@/components/cards/CurrencyCard';
+import { EsimCard } from '@/components/cards/EsimCard';
 import { PlaceCard } from '@/components/cards/PlaceCard';
 import { WeatherCard } from '@/components/cards/WeatherCard';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
-import type { ExchangeRateData, PlaceEntity, SearchAccommodationResult, WeatherData } from '@/lib/types';
+import type {
+  ExchangeRateData,
+  PlaceEntity,
+  SearchAccommodationResult,
+  SearchEsimResult,
+  WeatherData,
+} from '@/lib/types';
 
 interface ChatMessageProps {
   message: UIMessage;
@@ -181,6 +188,16 @@ function renderToolPart(
         </div>
       );
     }
+
+    if (toolName === 'searchEsim' && toolPart.output) {
+      const data = toolPart.output as SearchEsimResult;
+      if (!data.primary) return null;
+      return (
+        <div key={key} className='my-2'>
+          <EsimCard esim={data.primary} ctaEnabled={data.ctaEnabled} />
+        </div>
+      );
+    }
   }
 
   if (part.type === 'dynamic-tool') {
@@ -261,6 +278,16 @@ function renderToolPart(
               </div>
             </div>
           )}
+        </div>
+      );
+    }
+
+    if (dynPart.toolName === 'searchEsim' && dynPart.output) {
+      const data = dynPart.output as SearchEsimResult;
+      if (!data.primary) return null;
+      return (
+        <div key={key} className='my-2'>
+          <EsimCard esim={data.primary} ctaEnabled={data.ctaEnabled} />
         </div>
       );
     }

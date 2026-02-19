@@ -115,7 +115,7 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 - [x] `searchAccommodation` 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
   - Stage A: `searchPlaces` 호텔 타입 shim + Awin Link Builder 연동
   - 광고주 없으면 `awin_pending:accommodation` provider로 기록
-- [ ] `searchEsim` 도구 추가 (esim 카테고리 광고주 연동)
+- [x] `searchEsim` 도구 추가 (esim 카테고리 광고주 연동)
 - [x] 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가 (숙소→`searchAccommodation`, eSIM→`searchEsim`)
 
 **UI 컴포넌트**
@@ -210,7 +210,7 @@ Awin 트랜잭션 API로 전환 확인 → 레퍼럴 수수료 수익
 - [x] P3-1-T2: `searchAccommodation` AI 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
   - Stage A: `searchPlaces` 호텔 타입 shim → Awin Link Builder 연동
   - 광고주 없으면 `{ provider: 'awin_pending:accommodation', ctaEnabled: false }` 반환
-- [ ] P3-1-T3: `searchEsim` AI 도구 추가 (esim 카테고리 광고주 연동)
+- [x] P3-1-T3: `searchEsim` AI 도구 추가 (esim 카테고리 광고주 연동)
 - [x] P3-1-T4: 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가
 - [x] P3-1-T5: `AccommodationCard` 컴포넌트 생성
   - props: `{ accommodation, ctaEnabled }`

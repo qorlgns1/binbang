@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { applyContextWindow } from '@/lib/ai/contextWindow';
 import { geminiFlashLite } from '@/lib/ai/model';
 import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
-import { travelTools } from '@/lib/ai/tools';
+import { createTravelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { getConversation, saveConversationMessages } from '@/services/conversation.service';
@@ -124,12 +124,13 @@ export async function POST(req: Request) {
   const rawModelMessages = await convertToModelMessages(messages);
   const windowSize = Number.parseInt(process.env.CONTEXT_WINDOW_SIZE ?? '10', 10);
   const modelMessages = applyContextWindow(rawModelMessages, windowSize);
+  const tools = createTravelTools({ conversationId: normalizedConversationId });
 
   const result = streamText({
     model: geminiFlashLite,
     system: TRAVEL_SYSTEM_PROMPT,
     messages: modelMessages,
-    tools: travelTools,
+    tools,
     stopWhen: stepCountIs(5),
     onFinish: async ({ text, toolCalls, toolResults }) => {
       try {
