@@ -23,7 +23,11 @@ interface UseChatLoginGateResult {
   handleSaveClick: () => void;
 }
 
-export function useChatLoginGate({ authStatus, messagesCount, onOpenHistory }: UseChatLoginGateOptions): UseChatLoginGateResult {
+export function useChatLoginGate({
+  authStatus,
+  messagesCount,
+  onOpenHistory,
+}: UseChatLoginGateOptions): UseChatLoginGateResult {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalTrigger, setLoginModalTrigger] = useState<LoginModalTrigger>('save');
 

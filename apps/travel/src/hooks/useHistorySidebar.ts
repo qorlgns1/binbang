@@ -39,7 +39,10 @@ export function useHistorySidebar({
         ? '/api/conversations'
         : null;
 
-  const { data, error, mutate } = useSWR<HistoryConversationListResponse>(conversationsApiUrl, fetchHistoryConversations);
+  const { data, error, mutate } = useSWR<HistoryConversationListResponse>(
+    conversationsApiUrl,
+    fetchHistoryConversations,
+  );
 
   const conversations = useMemo(() => data?.conversations ?? [], [data?.conversations]);
   const isLoading = !data && !error;

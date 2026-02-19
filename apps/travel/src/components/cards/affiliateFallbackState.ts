@@ -42,7 +42,11 @@ export function resolveEsimAffiliateFallbackState(provider: string): EsimAffilia
   const isDisabledBySetting = provider.startsWith('awin_disabled:');
 
   return {
-    reasonCode: isPendingProvider ? 'no_advertiser_for_category' : isDisabledBySetting ? 'affiliate_links_disabled' : undefined,
+    reasonCode: isPendingProvider
+      ? 'no_advertiser_for_category'
+      : isDisabledBySetting
+        ? 'affiliate_links_disabled'
+        : undefined,
     toastTitle: isDisabledBySetting ? '제휴 링크 비활성화' : 'eSIM 제휴 링크 준비 중',
     toastDescription: isDisabledBySetting
       ? '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.'
