@@ -282,10 +282,12 @@ export async function syncAwinAdvertisers(): Promise<SyncAdvertisersResult> {
   }>;
 
   const list = Array.isArray(programmes)
-    ? programmes.map((p) => ({
-        advertiserId: p.advertiserId ?? p.id ?? 0,
-        name: p.name ?? String(p.advertiserId ?? p.id ?? ''),
-      }))
+    ? programmes
+        .map((p) => ({
+          advertiserId: p.advertiserId ?? p.id ?? 0,
+          name: p.name ?? String(p.advertiserId ?? p.id ?? ''),
+        }))
+        .filter((p) => Number.isInteger(p.advertiserId) && p.advertiserId > 0)
     : [];
 
   if (list.length === 0) {

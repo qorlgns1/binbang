@@ -57,11 +57,11 @@ export function AffiliateAdvertiserManager() {
     try {
       const res = await fetch('/api/admin/awin/advertisers/sync', { method: 'POST' });
       const data = await res.json();
-      if (data.error) {
-        alert(data.error);
-      } else {
-        await fetchList();
-      }
+      if (!res.ok) throw new Error(data?.error ?? `동기화 실패 (HTTP ${res.status})`);
+      if (data.error) throw new Error(data.error);
+      await fetchList();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err));
     } finally {
       setSyncLoading(false);
     }
@@ -88,14 +88,18 @@ export function AffiliateAdvertiserManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category: edit.category, notes: edit.notes || null }),
       });
-      if (res.ok) {
-        setEditing((prev) => {
-          const next = { ...prev };
-          delete next[item.id];
-          return next;
-        });
-        await fetchList();
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `저장 실패 (HTTP ${res.status})`);
       }
+      setEditing((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+      await fetchList();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err));
     } finally {
       setSavingId(null);
     }

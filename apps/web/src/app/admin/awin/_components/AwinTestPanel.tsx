@@ -292,6 +292,17 @@ export function AwinTestPanel() {
   };
 
   const runTransactions = async () => {
+    const start = new Date(txStartDate);
+    const end = new Date(txEndDate);
+    if (Number.isNaN(start.valueOf()) || Number.isNaN(end.valueOf()) || start > end) {
+      setTxResult({ ok: false, error: '기간을 다시 확인하세요.' });
+      return;
+    }
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1;
+    if (diffDays > 31) {
+      setTxResult({ ok: false, error: '기간은 최대 31일입니다.' });
+      return;
+    }
     setTxLoading(true);
     setTxResult(null);
     try {

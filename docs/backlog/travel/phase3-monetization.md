@@ -295,7 +295,7 @@ model AffiliateEvent {
 
 ## Environment Variables (New)
 
-```
+```dotenv
 AGODA_AFFILIATE_API_KEY=your-key
 AGODA_AFFILIATE_SITE_ID=your-site-id
 CACHE_PROVIDER=redis

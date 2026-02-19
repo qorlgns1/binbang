@@ -30,6 +30,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!parsed.success) {
     return NextResponse.json({ error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
   }
+  if (parsed.data.category === undefined && parsed.data.notes === undefined) {
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+  }
 
   const item = await updateAffiliateAdvertiser(id, {
     ...(parsed.data.category !== undefined && { category: parsed.data.category }),
