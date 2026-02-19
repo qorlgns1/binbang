@@ -13,6 +13,7 @@ import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
+import { isRestoreAutoEnabled } from '@/lib/featureFlags';
 import type { MapEntity, PlaceEntity } from '@/lib/types';
 
 interface ChatPanelProps {
@@ -103,6 +104,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'failed'>('idle');
   const [restoreTargetConversationId, setRestoreTargetConversationId] = useState<string | null>(null);
   const [restorePreview, setRestorePreview] = useState('');
+  const restoreAutoEnabled = isRestoreAutoEnabled();
   const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark' | 'limit'>('save');
   const [currentConversationId, setCurrentConversationId] = useState<string>(() => createConversationId());
 
@@ -443,6 +445,10 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   // authStatus 기반이 아니라 mergeStatus 기반으로 순서를 보장하여,
   // merge DB write 이전에 GET /api/conversations/:id 가 실행되는 race condition을 제거한다.
   useEffect(() => {
+    if (!restoreAutoEnabled) {
+      return;
+    }
+
     if (mergeStatus !== 'done' || hasAutoRestoredConversationRef.current) {
       return;
     }
@@ -465,7 +471,7 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
     localStorage.removeItem(LAST_CONVERSATION_ID_STORAGE_KEY);
     setRestoreTargetConversationId(targetConversationId);
     void restoreConversationWithFallback(targetConversationId, pendingSnapshot?.preview ?? '');
-  }, [mergeStatus, messages.length, restoreConversationWithFallback]);
+  }, [mergeStatus, messages.length, restoreAutoEnabled, restoreConversationWithFallback]);
 
   const handleRetryRestore = useCallback(async () => {
     if (!restoreTargetConversationId) {

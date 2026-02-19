@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { createAffiliateEvent } from '@/services/affiliate-event.service';
 import { getConversationOwnership } from '@/services/conversation.service';
@@ -22,11 +23,12 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const requestId = resolveRequestId(req);
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body', requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }), {
+    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten(), requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
   if (parsed.data.conversationId) {
     const conversation = await getConversationOwnership(parsed.data.conversationId);
     if (!conversation) {
-      return new Response(JSON.stringify({ error: 'Conversation not found' }), {
+      return new Response(JSON.stringify({ error: 'Conversation not found', requestId }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
       : sessionId != null && conversation.sessionId === sessionId;
 
     if (!isOwner) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -89,6 +91,7 @@ export async function POST(req: Request) {
         created: result.created,
         deduped: result.deduped,
         eventId: result.id,
+        requestId,
       }),
       {
         status: 200,
@@ -96,8 +99,15 @@ export async function POST(req: Request) {
       },
     );
   } catch (error) {
-    console.error('Failed to create affiliate event:', error);
-    return new Response(JSON.stringify({ error: 'Failed to create affiliate event' }), {
+    console.error('Failed to create affiliate event', {
+      requestId,
+      conversationId: parsed.data.conversationId,
+      userId: session?.user?.id,
+      eventType: parsed.data.eventType,
+      provider: parsed.data.provider,
+      error,
+    });
+    return new Response(JSON.stringify({ error: 'Failed to create affiliate event', requestId }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

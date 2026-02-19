@@ -210,6 +210,7 @@ function renderToolPart(
               </div>
             </div>
           )}
+          {data.alternatives.length < 2 && <p className='text-xs text-muted-foreground'>대안 데이터가 부족합니다</p>}
         </div>
       );
     }
@@ -321,6 +322,7 @@ function renderToolPart(
               </div>
             </div>
           )}
+          {data.alternatives.length < 2 && <p className='text-xs text-muted-foreground'>대안 데이터가 부족합니다</p>}
         </div>
       );
     }

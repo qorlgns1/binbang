@@ -8,6 +8,7 @@ import { geminiFlashLite } from '@/lib/ai/model';
 import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { createTravelTools } from '@/lib/ai/tools';
 import { authOptions } from '@/lib/auth';
+import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { getConversation, saveConversationMessages } from '@/services/conversation.service';
 import {
@@ -29,11 +30,12 @@ const postBodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const requestId = resolveRequestId(req);
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body', requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
 
   const parsed = postBodySchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }), {
+    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten(), requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -75,7 +77,7 @@ export async function POST(req: Request) {
       const isOwner =
         conversation.userId != null ? session?.user?.id === conversation.userId : conversation.sessionId === sessionId;
       if (!isOwner) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), {
           status: 403,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -91,7 +93,7 @@ export async function POST(req: Request) {
       .join('') ?? '';
 
   if (!lastUserText.trim()) {
-    return new Response(JSON.stringify({ error: 'No user message found' }), {
+    return new Response(JSON.stringify({ error: 'No user message found', requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -109,13 +111,18 @@ export async function POST(req: Request) {
     try {
       rateCheck = await checkGuestRateLimitPersistent(sessionId, limits, normalizedConversationId);
     } catch (error) {
-      console.error('Guest persistent rate-limit check failed; falling back to in-memory check:', error);
+      console.error('Guest persistent rate-limit check failed; falling back to in-memory check', {
+        requestId,
+        sessionId,
+        conversationId: normalizedConversationId,
+        error,
+      });
       rateCheck = await checkRateLimit(rateLimitKey, limits, normalizedConversationId);
     }
   }
 
   if (!rateCheck.allowed) {
-    return new Response(JSON.stringify({ error: 'Rate limit exceeded', reason: rateCheck.reason }), {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded', reason: rateCheck.reason, requestId }), {
       status: 429,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -149,7 +156,13 @@ export async function POST(req: Request) {
           incrementCount(rateLimitKey, result.conversationId, result.isNewConversation);
         }
       } catch (error) {
-        console.error('Failed to save conversation:', error);
+        console.error('Failed to save conversation', {
+          requestId,
+          sessionId,
+          conversationId: normalizedConversationId,
+          userId: session?.user?.id,
+          error,
+        });
       }
     },
   });

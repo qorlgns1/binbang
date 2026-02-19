@@ -1,7 +1,10 @@
+import { isAffiliateTrackingEnabled } from '@/lib/featureFlags';
+
 type AffiliateAdvertiserCategory = 'accommodation' | 'flight' | 'esim' | 'car_rental' | 'travel_package' | 'other';
 type AffiliateEventType = 'impression' | 'cta_attempt' | 'outbound_click';
 
 const impressionEventMemoryCache = new Set<string>();
+const TRACKING_TIMEOUT_MS = 2000;
 
 interface TrackAffiliateEventInput {
   conversationId?: string;
@@ -23,20 +26,47 @@ function getBrowserTimezone(): string | undefined {
   }
 }
 
+function getLocalDayKey(timeZone?: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = parts.find((part) => part.type === 'year')?.value ?? '1970';
+    const month = parts.find((part) => part.type === 'month')?.value ?? '01';
+    const day = parts.find((part) => part.type === 'day')?.value ?? '01';
+    return `${year}-${month}-${day}`;
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
 function buildImpressionMemoryKey(input: TrackAffiliateEventInput): string {
-  const dateKey = new Date().toISOString().slice(0, 10);
-  return [input.conversationId ?? 'guest', input.productId, dateKey].join(':');
+  const contextId = input.conversationId?.trim() || input.sessionId?.trim() || 'null';
+  const dateKey = getLocalDayKey(getBrowserTimezone());
+  return [contextId, input.productId, dateKey].join(':');
 }
 
 export async function trackAffiliateEvent(input: TrackAffiliateEventInput): Promise<void> {
+  if (!isAffiliateTrackingEnabled()) {
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TRACKING_TIMEOUT_MS);
+
   try {
-    await fetch('/api/affiliate/event', {
+    const response = await fetch('/api/affiliate/event', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       cache: 'no-store',
       keepalive: true,
+      signal: controller.signal,
       body: JSON.stringify({
         conversationId: input.conversationId,
         sessionId: input.sessionId,
@@ -50,12 +80,27 @@ export async function trackAffiliateEvent(input: TrackAffiliateEventInput): Prom
         userTimezone: getBrowserTimezone(),
       }),
     });
+
+    if (!response.ok) {
+      console.warn('Affiliate tracking event returned non-OK response', {
+        status: response.status,
+        eventType: input.eventType,
+        provider: input.provider,
+        productId: input.productId,
+      });
+    }
   } catch (error) {
     console.warn('Failed to send affiliate tracking event:', error);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
 export function trackImpressionOnce(input: Omit<TrackAffiliateEventInput, 'eventType'>): void {
+  if (!isAffiliateTrackingEnabled()) {
+    return;
+  }
+
   const memoryKey = buildImpressionMemoryKey({ ...input, eventType: 'impression' });
   if (impressionEventMemoryCache.has(memoryKey)) {
     return;

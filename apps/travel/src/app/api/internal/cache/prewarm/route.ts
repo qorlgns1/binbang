@@ -1,3 +1,4 @@
+import { resolveRequestId } from '@/lib/requestId';
 import { runTravelCachePrewarm } from '@/services/cache-prewarm.service';
 
 function getProvidedToken(req: Request): string | null {
@@ -12,6 +13,7 @@ function getProvidedToken(req: Request): string | null {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const requestId = resolveRequestId(req);
   const expectedToken = process.env.TRAVEL_INTERNAL_CRON_TOKEN?.trim();
   if (!expectedToken) {
     return Response.json(
@@ -42,7 +44,7 @@ export async function POST(req: Request): Promise<Response> {
       data: result,
     });
   } catch (error) {
-    console.error('[travel/cache-prewarm] failed', error);
+    console.error('[travel/cache-prewarm] failed', { requestId, error });
     return Response.json(
       {
         ok: false,

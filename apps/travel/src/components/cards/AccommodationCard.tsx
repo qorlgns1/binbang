@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
+import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { AccommodationEntity } from '@/lib/types';
 
 interface AffiliateTrackingContext {
@@ -38,8 +39,9 @@ function formatAffiliatePrice(amount: number, currency?: string): string {
 
 export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }: AccommodationCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const ctaFeatureEnabled = isAffiliateCtaEnabled();
   const showAffiliateBadge = accommodation.isAffiliate;
-  const hasLink = Boolean(accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink);
+  const hasLink = Boolean(ctaFeatureEnabled && accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink);
   const provider = trackingContext?.provider ?? 'agoda_pending:accommodation';
   const isPendingProvider = provider.startsWith('awin_pending:') || provider.startsWith('agoda_pending:');
   const isDisabledBySetting = provider.includes('_disabled:');

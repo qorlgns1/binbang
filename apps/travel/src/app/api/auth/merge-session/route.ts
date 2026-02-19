@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { resolveRequestId } from '@/lib/requestId';
 import { createSessionId, parseSessionId, TRAVEL_SESSION_COOKIE_NAME, TRAVEL_SESSION_TTL_SECONDS } from '@/lib/session';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { mergeGuestSessionsToUser } from '@/services/conversation.service';
@@ -17,10 +18,11 @@ const requestSchema = z.object({
  * POST /api/auth/merge-session
  */
 export async function POST(req: Request) {
+  const requestId = resolveRequestId(req);
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -35,7 +37,7 @@ export async function POST(req: Request) {
 
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }), {
+    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten(), requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
   }
 
   if (sessionIds.size === 0) {
-    return new Response(JSON.stringify({ error: 'sessionId or sessionIds is required' }), {
+    return new Response(JSON.stringify({ error: 'sessionId or sessionIds is required', requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -73,6 +75,7 @@ export async function POST(req: Request) {
         success: true,
         mergedCount: result.mergedCount,
         refreshedSessionId,
+        requestId,
       },
       {
         status: 200,
@@ -90,11 +93,17 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error) {
-    console.error('Failed to merge session:', error);
+    console.error('Failed to merge session', {
+      requestId,
+      userId: session.user.id,
+      sessionIdCandidates: [...sessionIds],
+      error,
+    });
     return new Response(
       JSON.stringify({
         success: false,
         error: 'Failed to merge session',
+        requestId,
       }),
       {
         status: 500,

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
+import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { EsimEntity } from '@/lib/types';
 
 interface AffiliateTrackingContext {
@@ -22,7 +23,8 @@ interface EsimCardProps {
 
 export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const hasLink = Boolean(esim.isAffiliate && ctaEnabled && esim.affiliateLink);
+  const ctaFeatureEnabled = isAffiliateCtaEnabled();
+  const hasLink = Boolean(ctaFeatureEnabled && esim.isAffiliate && ctaEnabled && esim.affiliateLink);
   const provider = trackingContext?.provider ?? 'awin_pending:esim';
 
   useEffect(() => {

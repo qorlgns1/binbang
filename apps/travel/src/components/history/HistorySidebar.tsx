@@ -7,6 +7,8 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 
+import { isHistoryEditEnabled } from '@/lib/featureFlags';
+
 interface Conversation {
   id: string;
   title: string | null;
@@ -31,6 +33,7 @@ const fetcher = async (url: string) => {
 };
 
 export function HistorySidebar({ open, onClose, onSelectConversation, onNewConversation }: HistorySidebarProps) {
+  const historyEditEnabled = isHistoryEditEnabled();
   const [searchQuery, setSearchQuery] = useState('');
   const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -85,11 +88,15 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
     [onSelectConversation, onClose],
   );
 
-  const handleStartEdit = useCallback((conversationId: string, currentTitle: string | null, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingConversationId(conversationId);
-    setEditingTitle(currentTitle ?? '');
-  }, []);
+  const handleStartEdit = useCallback(
+    (conversationId: string, currentTitle: string | null, e: React.MouseEvent) => {
+      if (!historyEditEnabled) return;
+      e.stopPropagation();
+      setEditingConversationId(conversationId);
+      setEditingTitle(currentTitle ?? '');
+    },
+    [historyEditEnabled],
+  );
 
   const handleCancelEdit = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -99,6 +106,10 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
 
   const handleSaveTitle = useCallback(
     async (conversationId: string) => {
+      if (!historyEditEnabled) {
+        return;
+      }
+
       const title = editingTitle.trim();
       if (!title) {
         toast.info('제목은 비어 있을 수 없습니다.');
@@ -122,7 +133,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
         toast.error('제목 수정에 실패했습니다.');
       }
     },
-    [editingTitle, mutate],
+    [editingTitle, historyEditEnabled, mutate],
   );
 
   if (!open) return null;
@@ -222,7 +233,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
               >
                 <div className='flex items-start justify-between gap-2'>
                   <div className='flex-1 min-w-0'>
-                    {editingConversationId === conv.id ? (
+                    {historyEditEnabled && editingConversationId === conv.id ? (
                       <input
                         type='text'
                         value={editingTitle}
@@ -251,7 +262,7 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                     </div>
                   </div>
                   <div className='flex items-center gap-1'>
-                    {editingConversationId === conv.id ? (
+                    {historyEditEnabled && editingConversationId === conv.id ? (
                       <>
                         <button
                           type='button'
@@ -299,14 +310,16 @@ export function HistorySidebar({ open, onClose, onSelectConversation, onNewConve
                       </div>
                     ) : (
                       <>
-                        <button
-                          type='button'
-                          onClick={(e) => handleStartEdit(conv.id, conv.title, e)}
-                          className='p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100'
-                          aria-label='제목 수정'
-                        >
-                          <Pencil className='h-4 w-4' />
-                        </button>
+                        {historyEditEnabled && (
+                          <button
+                            type='button'
+                            onClick={(e) => handleStartEdit(conv.id, conv.title, e)}
+                            className='p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100'
+                            aria-label='제목 수정'
+                          >
+                            <Pencil className='h-4 w-4' />
+                          </button>
+                        )}
                         <button
                           type='button'
                           onClick={(e) => handleDeleteRequest(conv.id, e)}

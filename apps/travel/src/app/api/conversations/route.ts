@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
+import { resolveRequestId } from '@/lib/requestId';
 import { deleteConversation, getConversationsByUser } from '@/services/conversation.service';
 
 /**
@@ -8,10 +9,11 @@ import { deleteConversation, getConversationsByUser } from '@/services/conversat
  * GET /api/conversations
  */
 export async function GET(req: Request) {
+  const requestId = resolveRequestId(req);
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -32,10 +34,15 @@ export async function GET(req: Request) {
       },
     );
   } catch (error) {
-    console.error('Failed to fetch conversations:', error);
+    console.error('Failed to fetch conversations', {
+      requestId,
+      userId: session.user.id,
+      error,
+    });
     return new Response(
       JSON.stringify({
         error: 'Failed to fetch conversations',
+        requestId,
       }),
       {
         status: 500,
@@ -50,10 +57,11 @@ export async function GET(req: Request) {
  * DELETE /api/conversations?id=xxx
  */
 export async function DELETE(req: Request) {
+  const requestId = resolveRequestId(req);
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -63,7 +71,7 @@ export async function DELETE(req: Request) {
   const conversationId = url.searchParams.get('id');
 
   if (!conversationId) {
-    return new Response(JSON.stringify({ error: 'Conversation ID is required' }), {
+    return new Response(JSON.stringify({ error: 'Conversation ID is required', requestId }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -73,7 +81,7 @@ export async function DELETE(req: Request) {
     const deleted = await deleteConversation(conversationId, session.user.id);
 
     if (!deleted) {
-      return new Response(JSON.stringify({ error: 'Not found or unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Not found or unauthorized', requestId }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -82,6 +90,7 @@ export async function DELETE(req: Request) {
     return new Response(
       JSON.stringify({
         success: true,
+        requestId,
       }),
       {
         status: 200,
@@ -89,10 +98,16 @@ export async function DELETE(req: Request) {
       },
     );
   } catch (error) {
-    console.error('Failed to delete conversation:', error);
+    console.error('Failed to delete conversation', {
+      requestId,
+      userId: session.user.id,
+      conversationId,
+      error,
+    });
     return new Response(
       JSON.stringify({
         error: 'Failed to delete conversation',
+        requestId,
       }),
       {
         status: 500,

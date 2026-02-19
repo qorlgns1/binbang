@@ -7,6 +7,7 @@ import { fetchWeatherHistory } from '@/lib/api/weather';
 import { searchGooglePlaces } from '@/lib/api/places';
 import { searchAgodaAccommodations } from '@/lib/api/agoda';
 import { generateAffiliateLink } from '@/lib/api/awinLinkBuilder';
+import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { AccommodationEntity, EsimEntity, SearchAccommodationResult, SearchEsimResult } from '@/lib/types';
 import { getFirstAdvertiserByCategory } from '@/services/affiliate-advertiser.service';
 import { resolveAffiliateLinksEnabled } from '@/services/conversation-preference.service';
@@ -88,8 +89,9 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         location: z.string().optional().describe('Optional location bias (e.g., "Tokyo, Japan")'),
       }),
       execute: async ({ query, location }): Promise<SearchAccommodationResult> => {
+        const ctaFeatureEnabled = isAffiliateCtaEnabled();
         const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
-        const isAffiliateEnabled = affiliateLinkPolicy.enabled;
+        const isAffiliateEnabled = ctaFeatureEnabled && affiliateLinkPolicy.enabled;
         const [agodaResult, placesResult] = await Promise.all([
           searchAgodaAccommodations({ query, location, limit: 5 }),
           searchGooglePlaces({ query, location, type: 'hotel' }),
@@ -102,14 +104,17 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
 
         const firstAgoda = agodaResult.accommodations[0];
         const firstPlace = places[0];
+        const isDisabledByPreference = ctaFeatureEnabled && !affiliateLinkPolicy.enabled;
 
         const provider = firstAgoda
           ? isAffiliateEnabled
             ? 'agoda_direct'
-            : 'agoda_disabled:accommodation'
-          : isAffiliateEnabled
-            ? 'agoda_pending:accommodation'
-            : 'agoda_disabled:accommodation';
+            : isDisabledByPreference
+              ? 'agoda_disabled:accommodation'
+              : 'agoda_pending:accommodation'
+          : isDisabledByPreference
+            ? 'agoda_disabled:accommodation'
+            : 'agoda_pending:accommodation';
 
         const affiliateLink =
           firstAgoda && isAffiliateEnabled && firstAgoda.available ? firstAgoda.affiliateLink : undefined;
@@ -151,17 +156,19 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
             : null;
 
         // 비제휴 대안: Places 결과를 rating DESC → reviewCount DESC → 원본 순서로 정렬, 최대 2개
-        const remaining = firstAgoda ? places : places.slice(1);
-        const withRating = remaining.filter((p) => p.rating != null);
-        const withoutRating = remaining.filter((p) => p.rating == null);
+        const remaining = (firstAgoda ? places : places.slice(1)).map((place, index) => ({ place, index }));
+        const withRating = remaining.filter(({ place }) => place.rating != null);
+        const withoutRating = remaining.filter(({ place }) => place.rating == null);
         withRating.sort((a, b) => {
-          const rDiff = (b.rating ?? 0) - (a.rating ?? 0);
+          const rDiff = (b.place.rating ?? 0) - (a.place.rating ?? 0);
           if (rDiff !== 0) return rDiff;
-          return (b.userRatingsTotal ?? 0) - (a.userRatingsTotal ?? 0);
+          const reviewDiff = (b.place.userRatingsTotal ?? 0) - (a.place.userRatingsTotal ?? 0);
+          if (reviewDiff !== 0) return reviewDiff;
+          return a.index - b.index;
         });
         const sortedRemaining = [...withRating, ...withoutRating];
 
-        const alternatives: AccommodationEntity[] = sortedRemaining.slice(0, 2).map((p) => ({
+        const alternatives: AccommodationEntity[] = sortedRemaining.slice(0, 2).map(({ place: p }) => ({
           placeId: p.placeId,
           name: p.name,
           address: p.address,
@@ -188,8 +195,9 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         dataNeedGB: z.number().min(1).max(100).optional().describe('Estimated data need in GB'),
       }),
       execute: async ({ query, location, tripDays, dataNeedGB }): Promise<SearchEsimResult> => {
+        const ctaFeatureEnabled = isAffiliateCtaEnabled();
         const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
-        const isAffiliateEnabled = affiliateLinkPolicy.enabled;
+        const isAffiliateEnabled = ctaFeatureEnabled && affiliateLinkPolicy.enabled;
         const advertiser = isAffiliateEnabled ? await getFirstAdvertiserByCategory('esim') : null;
         const productId = buildStableProductId('esim', [
           query,
@@ -208,11 +216,12 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         }
 
         const ctaEnabled = !!affiliateLink;
+        const isDisabledByPreference = ctaFeatureEnabled && !affiliateLinkPolicy.enabled;
         const provider = advertiser
           ? `awin:${advertiser.advertiserId}`
-          : isAffiliateEnabled
-            ? 'awin_pending:esim'
-            : 'awin_disabled:esim';
+          : isDisabledByPreference
+            ? 'awin_disabled:esim'
+            : 'awin_pending:esim';
         const primary: EsimEntity = {
           productId,
           name: advertiser ? `${advertiser.name} eSIM` : '여행용 eSIM',
