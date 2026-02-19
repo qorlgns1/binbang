@@ -300,15 +300,17 @@ function MapContent({
               <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
                 {TYPE_LABELS[selectedEntity.type] ?? selectedEntity.type}
               </p>
-              <button
-                type='button'
-                onClick={() => onAlertClick?.(selectedEntity.id)}
-                className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2 px-3 transition-all duration-150'
-                aria-label={`${selectedEntity.name}의 ${selectedEntity.type === 'accommodation' ? '빈방 알림 설정하기' : '알림 설정하기'}`}
-              >
-                <Bell className='h-4 w-4 shrink-0' aria-hidden />
-                {selectedEntity.type === 'accommodation' ? '빈방 알림 설정하기' : '알림 설정하기'}
-              </button>
+              {selectedEntity.type === 'accommodation' && (
+                <button
+                  type='button'
+                  onClick={() => onAlertClick?.(selectedEntity.id)}
+                  className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2 px-3 transition-all duration-150'
+                  aria-label={`${selectedEntity.name}의 빈방 알림 설정하기`}
+                >
+                  <Bell className='h-4 w-4 shrink-0' aria-hidden />
+                  빈방 알림 설정하기
+                </button>
+              )}
             </div>
           </div>
         </InfoWindow>

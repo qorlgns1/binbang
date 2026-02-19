@@ -18,7 +18,7 @@ function isAccommodationPlace(place: PlaceEntity): boolean {
 }
 
 export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCardProps) {
-  const alertLabel = isAccommodationPlace(place) ? '빈방 알림 설정하기' : '알림 설정하기';
+  const showAlertButton = isAccommodationPlace(place);
   return (
     <div
       className={`flex flex-col w-full rounded-xl border transition-all duration-300 ease-out overflow-hidden ${
@@ -94,20 +94,22 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
           </div>
         </div>
       </button>
-      <div className='px-3 pb-3 pt-0'>
-        <button
-          type='button'
-          onClick={(e) => {
-            e.stopPropagation();
-            onAlertClick?.(place);
-          }}
-          className='w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2.5 transition-all duration-150 shadow-sm hover:shadow-md'
-          aria-label={`${place.name}의 ${alertLabel}`}
-        >
-          <Bell className='h-4 w-4' aria-hidden />
-          {alertLabel}
-        </button>
-      </div>
+      {showAlertButton && (
+        <div className='px-3 pb-3 pt-0'>
+          <button
+            type='button'
+            onClick={(e) => {
+              e.stopPropagation();
+              onAlertClick?.(place);
+            }}
+            className='w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2.5 transition-all duration-150 shadow-sm hover:shadow-md'
+            aria-label={`${place.name}의 빈방 알림 설정하기`}
+          >
+            <Bell className='h-4 w-4' aria-hidden />
+            빈방 알림 설정하기
+          </button>
+        </div>
+      )}
     </div>
   );
 }
