@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "clean": "rm -rf .next node_modules",
     "warm-cache": "tsx src/scripts/warmCache.ts",
     "invalidate-cache": "tsx src/scripts/invalidateCache.ts"
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19.0.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "catalog:"
   }
 }

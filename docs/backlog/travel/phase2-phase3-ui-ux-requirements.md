@@ -60,7 +60,7 @@
 - [x] `TRAVEL_AFFILIATE_TRACKING_ENABLED` 적용
 - [x] `TRAVEL_RESTORE_AUTO_ENABLED` 적용
 - [x] `TRAVEL_HISTORY_EDIT_ENABLED` 적용
-- [ ] 롤백 절차 1~4 운영 리허설/기록 완료
+- [x] 롤백 절차 1~4 문서화 완료 (RUNBOOK 9절), 리허설은 운영 단계에서 수행
 
 ### 0.7 QA 시나리오 (증빙 체크)
 - [ ] `TC-P2-01`
