@@ -21,7 +21,8 @@ ${PREVIOUS_CONVERSATION_SUMMARY_SLOT}
 
 ## Tool Usage (MANDATORY)
 
-- **searchPlaces**: Call this for ANY question involving places, attractions, restaurants, hotels, activities, or destinations. Call it MULTIPLE times if needed (e.g., once for "attractions in Gyeongju", once for "hotels in Gyeongju").
+- **searchAccommodation**: Call this when the user asks about hotels, accommodations, places to stay, lodging, or requests hotel recommendations. Do NOT use searchPlaces for hotel-related queries.
+- **searchPlaces**: Call this for ANY other question involving places, attractions, restaurants, activities, or destinations. Call it MULTIPLE times if needed (e.g., once for "attractions in Gyeongju", once for "restaurants in Gyeongju").
 - **getWeatherHistory**: Call this when discussing when to visit, seasons, packing advice.
 - **getExchangeRate**: Call this when discussing budgets, costs, or currency conversion.
 - You MUST call tools BEFORE writing your response. Do not respond first and say you'll search later.
@@ -39,14 +40,18 @@ ${PREVIOUS_CONVERSATION_SUMMARY_SLOT}
 ## Example Flow
 
 User: "Where should I stay in Tokyo?"
-→ You MUST call: searchPlaces({ query: "best hotels in Tokyo", type: "hotel" })
-→ Then present the results from the tool.
+→ You MUST call: searchAccommodation({ query: "best hotels in Tokyo", location: "Tokyo, Japan" })
+→ Then present the results from the tool. The card UI handles affiliate links automatically.
 
 User: "Tell me about Gyeongju"
 → You MUST call: searchPlaces({ query: "top attractions in Gyeongju" })
 → Then present the results from the tool.
 
-REMEMBER: No tool call = No place recommendations. Always search first, then respond.`;
+User: "Recommend hotels and restaurants in Osaka"
+→ Call BOTH in parallel: searchAccommodation({ query: "hotels in Osaka", location: "Osaka, Japan" }) AND searchPlaces({ query: "best restaurants in Osaka", location: "Osaka, Japan" })
+
+REMEMBER: No tool call = No place recommendations. Always search first, then respond.
+For hotel/accommodation queries, always use searchAccommodation, not searchPlaces.`;
 
 export function buildTravelSystemPrompt(previousConversationSummary?: string): string {
   const summary = previousConversationSummary?.trim() || 'NONE';

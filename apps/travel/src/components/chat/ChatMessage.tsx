@@ -4,11 +4,12 @@ import type { UIMessage } from 'ai';
 import { Bot, User } from 'lucide-react';
 import Markdown from 'react-markdown';
 
+import { AccommodationCard } from '@/components/cards/AccommodationCard';
 import { CurrencyCard } from '@/components/cards/CurrencyCard';
 import { PlaceCard } from '@/components/cards/PlaceCard';
 import { WeatherCard } from '@/components/cards/WeatherCard';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
-import type { ExchangeRateData, PlaceEntity, WeatherData } from '@/lib/types';
+import type { ExchangeRateData, PlaceEntity, SearchAccommodationResult, WeatherData } from '@/lib/types';
 
 interface ChatMessageProps {
   message: UIMessage;
@@ -161,6 +162,27 @@ function renderToolPart(
         return <CurrencyCard key={key} data={data} />;
       }
     }
+
+    if (toolName === 'searchAccommodation' && toolPart.output) {
+      const data = toolPart.output as SearchAccommodationResult;
+      return (
+        <div key={key} className='my-2 space-y-3'>
+          {data.affiliate && (
+            <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />
+          )}
+          {data.alternatives.length > 0 && (
+            <div>
+              <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
+              <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+                {data.alternatives.map((acc) => (
+                  <AccommodationCard key={acc.placeId} accommodation={acc} ctaEnabled={false} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
   }
 
   if (part.type === 'dynamic-tool') {
@@ -224,6 +246,27 @@ function renderToolPart(
       if (Object.keys(data.rates).length > 0) {
         return <CurrencyCard key={key} data={data} />;
       }
+    }
+
+    if (dynPart.toolName === 'searchAccommodation' && dynPart.output) {
+      const data = dynPart.output as SearchAccommodationResult;
+      return (
+        <div key={key} className='my-2 space-y-3'>
+          {data.affiliate && (
+            <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />
+          )}
+          {data.alternatives.length > 0 && (
+            <div>
+              <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
+              <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+                {data.alternatives.map((acc) => (
+                  <AccommodationCard key={acc.placeId} accommodation={acc} ctaEnabled={false} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
     }
   }
 

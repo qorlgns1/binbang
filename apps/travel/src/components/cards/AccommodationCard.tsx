@@ -1,0 +1,160 @@
+'use client';
+
+import { ExternalLink, MapPin, Star, Tag } from 'lucide-react';
+import Image from 'next/image';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import type { AccommodationEntity } from '@/lib/types';
+
+interface AccommodationCardProps {
+  accommodation: AccommodationEntity;
+  /** true = 광고주 링크가 생성됨 → CTA 활성 */
+  ctaEnabled: boolean;
+}
+
+export function AccommodationCard({ accommodation, ctaEnabled }: AccommodationCardProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const showAffiliateBadge = accommodation.isAffiliate;
+  const hasLink = accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink;
+
+  function handleCtaClick() {
+    if (hasLink) return; // <a> 태그가 직접 처리
+    toast('제휴 링크 준비 중', {
+      description: '현재 해당 카테고리의 제휴 광고주를 등록하는 중입니다. 조금만 기다려주세요.',
+      duration: 3000,
+    });
+    setModalOpen(true);
+  }
+
+  return (
+    <>
+      <div className='flex flex-col w-full rounded-xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300'>
+        {/* 이미지 */}
+        <div className='relative aspect-4/3 w-full overflow-hidden bg-muted'>
+          {showAffiliateBadge && (
+            <span className='absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm'>
+              <Tag className='h-2.5 w-2.5' />
+              광고/제휴
+            </span>
+          )}
+          {accommodation.photoUrl ? (
+            <Image
+              src={accommodation.photoUrl}
+              alt={accommodation.name}
+              fill
+              sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px'
+              className='object-cover transition-transform duration-300 hover:scale-105'
+              unoptimized
+            />
+          ) : (
+            <div className='flex h-full items-center justify-center'>
+              <span className='text-xs text-muted-foreground'>이미지 없음</span>
+            </div>
+          )}
+        </div>
+
+        {/* 정보 */}
+        <div className='p-3 flex flex-col gap-1.5 flex-1'>
+          <h4 className='font-semibold text-sm text-card-foreground line-clamp-1'>{accommodation.name}</h4>
+
+          {accommodation.rating != null && (
+            <div className='flex items-center gap-1'>
+              <div className='flex gap-0.5' aria-hidden>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className={`h-3.5 w-3.5 shrink-0 ${
+                      i <= Math.round(accommodation.rating ?? 0) ? 'fill-brand-amber text-brand-amber' : 'text-muted/60'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className='text-xs font-medium text-card-foreground'>{accommodation.rating}</span>
+              {accommodation.userRatingsTotal != null && (
+                <span className='text-[10px] text-muted-foreground'>
+                  ({accommodation.userRatingsTotal.toLocaleString()})
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className='flex items-start gap-1 text-xs text-muted-foreground'>
+            <MapPin className='h-3 w-3 shrink-0 mt-0.5' />
+            <span className='line-clamp-1'>{accommodation.address}</span>
+          </div>
+
+          {/* Stage A: 가격 필드 비노출 */}
+          {accommodation.isAffiliate && (
+            <p className='text-[10px] text-muted-foreground italic'>가격은 제휴 연동 후 제공됩니다</p>
+          )}
+        </div>
+
+        {/* CTA 버튼 */}
+        {accommodation.isAffiliate && (
+          <div className='px-3 pb-3'>
+            {hasLink ? (
+              <a
+                href={accommodation.affiliateLink}
+                target='_blank'
+                rel='noopener noreferrer sponsored'
+                className='flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
+              >
+                <ExternalLink className='h-4 w-4' aria-hidden />
+                예약하기
+              </a>
+            ) : (
+              <button
+                type='button'
+                onClick={handleCtaClick}
+                className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed'
+                aria-disabled
+              >
+                제휴 링크 준비중
+              </button>
+            )}
+            <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>
+              예약 시 제휴 수수료를 받을 수 있습니다
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 비활성 CTA 클릭 시 안내 모달 */}
+      {modalOpen && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center'
+          role='dialog'
+          aria-modal
+          aria-labelledby='aff-modal-title'
+        >
+          {/* 배경 버튼: 클릭 시 모달 닫기 */}
+          <button
+            type='button'
+            className='absolute inset-0 bg-black/40 backdrop-blur-sm'
+            onClick={() => setModalOpen(false)}
+            aria-label='모달 닫기'
+          />
+          {/* 모달 콘텐츠 */}
+          <div className='relative z-10 mx-4 max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl'>
+            <h3 id='aff-modal-title' className='mb-2 font-semibold text-base'>
+              제휴 링크 준비 중
+            </h3>
+            <p className='text-sm text-muted-foreground leading-relaxed'>
+              현재 해당 카테고리의 제휴 광고주를 등록하는 중입니다.
+              <br />
+              연동이 완료되면 바로 예약 링크가 활성화됩니다.
+            </p>
+            <button
+              type='button'
+              onClick={() => setModalOpen(false)}
+              className='mt-4 w-full rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/80 transition-colors'
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -105,29 +105,29 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 ### Stage A (지금 바로 진행)
 
 **Awin 기반 제휴 링크 생성**
-- [ ] 카테고리별 광고주 조회 서비스 구현 (`listActiveAdvertisersByCategory(category)`)
-- [ ] Awin Link Builder 클라이언트 구현 (travel 앱용 → `apps/travel/src/lib/api/awin-link-builder.ts`)
+- [x] 카테고리별 광고주 조회 서비스 구현 (`getFirstAdvertiserByCategory(category)`)
+- [x] Awin Link Builder 클라이언트 구현 (travel 앱용 → `apps/travel/src/lib/api/awinLinkBuilder.ts`)
   - `clickref` = `{conversationId}:{productId}` 형식
   - `shorten` 옵션 선택적 지원
-- [ ] 광고주 없는 카테고리에 대한 "준비중" fallback 처리
+- [x] 광고주 없는 카테고리에 대한 "준비중" fallback 처리
 
 **AI Tools (travel)**
-- [ ] `searchAccommodation` 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
+- [x] `searchAccommodation` 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
   - Stage A: `searchPlaces` 호텔 타입 shim + Awin Link Builder 연동
   - 광고주 없으면 `awin_pending:accommodation` provider로 기록
 - [ ] `searchEsim` 도구 추가 (esim 카테고리 광고주 연동)
-- [ ] 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가 (숙소→`searchAccommodation`, eSIM→`searchEsim`)
+- [x] 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가 (숙소→`searchAccommodation`, eSIM→`searchEsim`)
 
 **UI 컴포넌트**
-- [ ] `AccommodationCard` 컴포넌트 생성 (평점, 이미지, "예약하기" CTA)
+- [x] `AccommodationCard` 컴포넌트 생성 (평점, 이미지, "예약하기" CTA)
   - CTA 활성/비활성 이분 처리 (광고주 유무 기준)
   - 가격 필드: Stage A 비노출 + "가격은 제휴 연동 후 제공" 문구
   - "광고/제휴" 라벨 기본 표시
-- [ ] CTA 비활성 시 토스트 + 안내 모달 노출
-- [ ] 제휴 고지 문구 + 비제휴 대안 카드 2개 동시 노출
-- [ ] 비제휴 대안 랭킹 규칙 구현 (rating DESC, reviewCount DESC)
-- [ ] 비제휴 대안 fallback 규칙 구현 (데이터 없는 항목 후순위, 부족분 원본 순서)
-- [ ] `searchPlaces` 호텔 타입 결과를 `AccommodationCard` 데이터로 매핑
+- [x] CTA 비활성 시 토스트 + 안내 모달 노출
+- [x] 제휴 고지 문구 + 비제휴 대안 카드 2개 동시 노출
+- [x] 비제휴 대안 랭킹 규칙 구현 (rating DESC, reviewCount DESC)
+- [x] 비제휴 대안 fallback 규칙 구현 (데이터 없는 항목 후순위, 부족분 원본 순서)
+- [x] `searchPlaces` 호텔 타입 결과를 `AccommodationCard` 데이터로 매핑
 
 **트래킹**
 - [ ] 트래킹 DB/API 구축 (`impression`, `outbound_click`, `cta_attempt` 이벤트)
@@ -198,30 +198,30 @@ Awin 트랜잭션 API로 전환 확인 → 레퍼럴 수수료 수익
 
 ### P3-1: Awin 기반 제휴 링크 연동
 
-- [ ] P3-1-T0: 카테고리별 광고주 조회 서비스 구현
+- [x] P3-1-T0: 카테고리별 광고주 조회 서비스 구현
   - `apps/travel/src/services/affiliate-advertiser.service.ts`
-  - `listActiveAdvertisersByCategory(category: AffiliateAdvertiserCategory)`
-  - web API 경유 또는 shared DB 직접 조회
-- [ ] P3-1-T1: Awin Link Builder travel 클라이언트 구현
-  - `apps/travel/src/lib/api/awin-link-builder.ts`
+  - `getFirstAdvertiserByCategory(category: AffiliateAdvertiserCategory)`
+  - shared DB 직접 조회 (prisma)
+- [x] P3-1-T1: Awin Link Builder travel 클라이언트 구현
+  - `apps/travel/src/lib/api/awinLinkBuilder.ts`
   - `generateAffiliateLink({ advertiserId, destinationUrl, clickref, shorten? })`
   - `clickref` = `{conversationId}:{productId}`
   - 실패 시 `null` 반환 (fallback → "준비중" 상태)
-- [ ] P3-1-T2: `searchAccommodation` AI 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
+- [x] P3-1-T2: `searchAccommodation` AI 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
   - Stage A: `searchPlaces` 호텔 타입 shim → Awin Link Builder 연동
   - 광고주 없으면 `{ provider: 'awin_pending:accommodation', ctaEnabled: false }` 반환
 - [ ] P3-1-T3: `searchEsim` AI 도구 추가 (esim 카테고리 광고주 연동)
-- [ ] P3-1-T4: 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가
-- [ ] P3-1-T5: `AccommodationCard` 컴포넌트 생성
-  - props: `{ hotel, affiliateLink, ctaEnabled, advertiserName }`
+- [x] P3-1-T4: 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가
+- [x] P3-1-T5: `AccommodationCard` 컴포넌트 생성
+  - props: `{ accommodation, ctaEnabled }`
   - CTA 활성 시: 실링크 연결 + "예약하기" 버튼
   - CTA 비활성 시: 비활성 버튼 + 클릭 시 토스트 + 안내 모달
   - 가격 필드: Stage A 비노출 + "가격은 제휴 연동 후 제공" 문구
   - "광고/제휴" 라벨 기본 표시
-- [ ] P3-1-T5-A: Stage A UI 정책 반영 (가격 비노출 + 준비중 문구 + 토스트/안내 모달)
+- [x] P3-1-T5-A: Stage A UI 정책 반영 (가격 비노출 + 준비중 문구 + 토스트/안내 모달)
 - [ ] P3-1-T5-B: Stage B UI 정책 반영 (Agoda 가격/통화 실데이터 노출)
-- [ ] P3-1-T6: Stage A 임시 숙소 소스 구현 (`searchPlaces` 호텔 타입 결과 재사용)
-- [ ] P3-1-T7: 비제휴 대안 2개 병기 구현 (rating DESC, reviewCount DESC, fallback: 원본 순서)
+- [x] P3-1-T6: Stage A 임시 숙소 소스 구현 (`searchPlaces` 호텔 타입 결과 재사용)
+- [x] P3-1-T7: 비제휴 대안 2개 병기 구현 (rating DESC, reviewCount DESC, fallback: 원본 순서)
 
 ### P3-2: 레퍼럴 트래킹
 
