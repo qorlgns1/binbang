@@ -1,5 +1,5 @@
 services:
-  redis:
+  redis-dev:
     image: redis:7-alpine
     command: redis-server --maxmemory-policy noeviction
     networks:
@@ -20,7 +20,11 @@ services:
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.development
+      - ../apps/web/.env.common
+      - path: ../apps/web/.env.development
+        required: false
     environment:
       NODE_ENV: development
     restart: unless-stopped
@@ -30,12 +34,16 @@ services:
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.development
+      - ../apps/worker/.env.common
+      - path: ../apps/worker/.env.development
+        required: false
     environment:
       NODE_ENV: development
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://redis-dev:6379
     depends_on:
-      redis:
+      redis-dev:
         condition: service_healthy
     restart: unless-stopped
 
@@ -46,7 +54,11 @@ services:
     networks:
       - shared-network
     env_file:
+      - ../.env.common
       - ../.env.development
+      - ../apps/travel/.env.common
+      - path: ../apps/travel/.env.development
+        required: false
     environment:
       NODE_ENV: development
     restart: unless-stopped

@@ -1,4 +1,6 @@
-export const TRAVEL_SYSTEM_PROMPT = `You are an expert AI travel planner with access to real-time data tools.
+export const PREVIOUS_CONVERSATION_SUMMARY_SLOT = '{{PREVIOUS_CONVERSATION_SUMMARY}}';
+
+const BASE_TRAVEL_SYSTEM_PROMPT = `You are an expert AI travel planner with access to real-time data tools.
 
 ## CRITICAL RULES (MUST FOLLOW)
 
@@ -7,6 +9,15 @@ export const TRAVEL_SYSTEM_PROMPT = `You are an expert AI travel planner with ac
 3. Do NOT fabricate addresses, ratings, coordinates, or descriptions. Only use data returned by your tools.
 4. If the user asks about weather or best travel seasons, call getWeatherHistory BEFORE responding.
 5. If the user asks about costs, budgets, or currency, call getExchangeRate BEFORE responding.
+
+## Conversation Context
+
+- Previous conversation summary (for continuity, optional):
+<previous_conversation_summary>
+${PREVIOUS_CONVERSATION_SUMMARY_SLOT}
+</previous_conversation_summary>
+- If summary is "NONE", ignore it.
+- Use the summary only as supporting context. Always prioritize the latest user message and tool results.
 
 ## Tool Usage (MANDATORY)
 
@@ -36,3 +47,11 @@ User: "Tell me about Gyeongju"
 → Then present the results from the tool.
 
 REMEMBER: No tool call = No place recommendations. Always search first, then respond.`;
+
+export function buildTravelSystemPrompt(previousConversationSummary?: string): string {
+  const summary = previousConversationSummary?.trim() || 'NONE';
+  return BASE_TRAVEL_SYSTEM_PROMPT.replace(PREVIOUS_CONVERSATION_SUMMARY_SLOT, summary);
+}
+
+// Phase 2에서는 summary를 아직 생성하지 않으므로 기본값으로 유지
+export const TRAVEL_SYSTEM_PROMPT = buildTravelSystemPrompt();

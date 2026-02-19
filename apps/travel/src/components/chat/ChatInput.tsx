@@ -50,17 +50,19 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
             <button
               type='button'
               onClick={onStop}
-              className='touch-target flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors md:h-8 md:w-8'
+              className='touch-target flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95 transition-all duration-150 md:h-8 md:w-8'
+              aria-label='응답 생성 중지'
             >
-              <Loader2 className='h-4 w-4 animate-spin' />
+              <Loader2 className='h-4 w-4 animate-spin' aria-hidden />
             </button>
           ) : (
             <button
               type='submit'
               disabled={!input.trim()}
-              className='touch-target flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors md:h-8 md:w-8'
+              className='touch-target flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 md:h-8 md:w-8'
+              aria-label='메시지 전송'
             >
-              <ArrowUp className='h-4 w-4' />
+              <ArrowUp className='h-4 w-4' aria-hidden />
             </button>
           )}
         </div>

@@ -32,7 +32,7 @@ export function WeatherCard({ data }: WeatherCardProps) {
         {data.monthly.map((m) => (
           <div
             key={m.month}
-            className='flex-1 rounded-t bg-amber-500/80 transition-all'
+            className='flex-1 rounded-t-lg bg-brand-amber/80 transition-all'
             style={{ height: `${((m.avgTempC - min) / range) * 100}%` }}
             title={`${m.monthName}: ${m.avgTempC}°C`}
           />

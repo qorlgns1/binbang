@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Providers } from '@/components/Providers';
 
 import './globals.css';
 
@@ -14,8 +15,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang='en' suppressHydrationWarning>
       <body className='min-h-screen overflow-hidden'>
-        <ErrorBoundary>{children}</ErrorBoundary>
-        <Toaster position='top-center' richColors closeButton />
+        <Providers>
+          <ErrorBoundary>{children}</ErrorBoundary>
+          <Toaster position='top-center' richColors closeButton />
+        </Providers>
       </body>
     </html>
   );

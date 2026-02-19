@@ -1,5 +1,5 @@
-version: "1.1"
-last_verified: "2026-02-15"
+version: "1.2"
+last_verified: "2026-02-18"
 service:
   name: "binbang"
   purpose: "Airbnb/Agoda accommodation availability monitoring and notification service"
@@ -15,10 +15,12 @@ environments:
     url: "https://dev-binbang.moodybeard.com"
     deploy_trigger: "GitHub Actions deploy.yml on push to develop"
     branch_or_tag: "develop"
+    app_env: "development"
   dev-travel:
     url: "https://dev-travel.moodybeard.com"
     deploy_trigger: "GitHub Actions deploy.yml on push to develop"
     branch_or_tag: "develop"
+    app_env: "development"
   staging:
     url: "N/A"
     deploy_trigger: "N/A"
@@ -27,10 +29,12 @@ environments:
     url: "https://binbang.moodybeard.com"
     deploy_trigger: "GitHub Actions deploy.yml on push to main"
     branch_or_tag: "main"
+    app_env: "production"
   production-travel:
     url: "https://travel.moodybeard.com"
     deploy_trigger: "GitHub Actions deploy.yml on push to main"
     branch_or_tag: "main"
+    app_env: "production"
 
 infrastructure:
   compute: "OCI VM + Docker Compose"
@@ -41,28 +45,44 @@ infrastructure:
   storage: "사용 안 함"
   ingress: "Nginx reverse proxy + Let's Encrypt"
 
+env_files:
+  structure:
+    - ".env.<APP_ENV>           # 런타임 설정 (수동 관리)"
+    - ".env.<APP_ENV>.local     # 서버 로컬 오버라이드 (수동 관리, 선택)"
+    - ".env.deploy.<APP_ENV>    # 배포 메타데이터 — IMAGE_TAG, DIGEST, DEPLOY_SHA (CI/CD 자동 기록)"
+  notes:
+    - "Docker Compose --env-file: 나중 파일이 이김 → deploy 파일을 마지막에 로드"
+    - "pnpm with-env (dotenv-cli): 먼저 로드한 파일이 이김 → .env.<APP_ENV>.local을 먼저 로드"
+    - "rollback 시 .env.deploy.<APP_ENV>의 IMAGE_TAG / DIGEST를 수정 후 pull + up -d"
+
 deployment:
   pipeline_steps:
     - "validate (lint/format/test/build)"
     - "build and push Docker images"
     - "SSH deploy on target host"
+    - "write image digests to .env.deploy.<APP_ENV>"
     - "prisma migrate deploy + generate"
     - "compose up -d"
   deploy_commands:
-    - "docker compose -f docker/docker-compose.production.yml --env-file .env.production pull"
-    - "pnpm with-env:production:host pnpm --filter @workspace/db exec prisma migrate deploy"
-    - "docker compose -f docker/docker-compose.production.yml --env-file .env.production up -d"
+    production:
+      - "docker compose -f docker/docker-compose.production.yml --env-file .env.production --env-file .env.deploy.production pull"
+      - "APP_ENV=production pnpm db:migrate:deploy"
+      - "docker compose -f docker/docker-compose.production.yml --env-file .env.production --env-file .env.deploy.production up -d"
+    development:
+      - "docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development --env-file .env.deploy.development pull"
+      - "APP_ENV=development pnpm db:migrate:deploy"
+      - "docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development --env-file .env.deploy.development up -d"
   smoke_checks:
     - "curl -fsS https://binbang.moodybeard.com/api/health"
-    - "docker compose -f docker/docker-compose.production.yml --env-file .env.production ps"
+    - "docker compose -f docker/docker-compose.production.yml --env-file .env.production --env-file .env.deploy.production ps"
 
 migration:
   tool: "Prisma Migrate"
   strategy: "deploy migration before final service up"
-  command: "pnpm --filter @workspace/db exec prisma migrate deploy"
+  command: "APP_ENV=<env> pnpm db:migrate:deploy"
 
 rollback:
-  app_command: "Reset IMAGE_TAG/IMAGE_*_DIGEST in .env.production to previous known-good values and run compose pull/up"
+  app_command: "Edit IMAGE_TAG/IMAGE_*_DIGEST in .env.deploy.production to previous known-good values, then run compose pull/up"
   db_command: "Use migration-specific rollback SQL or fix-forward (no generic automatic down migration)"
   verification:
     - "GET /api/health returns 200"
@@ -70,19 +90,24 @@ rollback:
 
 config:
   required_env_vars:
-    - "APP_ENV"
-    - "DATABASE_URL"
-    - "REDIS_URL"
-    - "NEXTAUTH_URL"
-    - "NEXTAUTH_SECRET"
-    - "GOOGLE_CLIENT_ID"
-    - "GOOGLE_CLIENT_SECRET"
-    - "KAKAO_CLIENT_ID"
-    - "KAKAO_CLIENT_SECRET"
-    - "WORKER_INTERNAL_URL"
-    - "IMAGE_TAG"
-    - "IMAGE_WEB_DIGEST"
-    - "IMAGE_WORKER_DIGEST"
+    runtime:
+      - "APP_ENV"
+      - "DATABASE_URL"
+      - "REDIS_URL"
+      - "NEXTAUTH_URL"
+      - "NEXTAUTH_SECRET"
+      - "GOOGLE_CLIENT_ID"
+      - "GOOGLE_CLIENT_SECRET"
+      - "KAKAO_CLIENT_ID"
+      - "KAKAO_CLIENT_SECRET"
+      - "WORKER_INTERNAL_URL"
+    deploy_metadata:
+      - "IMAGE_TAG"
+      - "IMAGE_WEB_DIGEST"
+      - "IMAGE_WORKER_DIGEST"
+      - "IMAGE_TRAVEL_DIGEST"
+      - "DEPLOY_SHA"
+      - "DEPLOYED_AT"
   secret_manager:
     provider: "GitHub Actions Secrets + server .env files"
     path_prefix: "N/A"
@@ -99,3 +124,5 @@ llm_operating_rules:
   - "For production changes, always present a preflight checklist first."
   - "Always include rollback steps with deploy guidance."
   - "Use DEPLOYMENT.md, ENVIRONMENTS.md, and RUNBOOK.md as source of truth before suggesting commands."
+  - "Rollback은 .env.deploy.<APP_ENV> 파일의 IMAGE_TAG / DIGEST 수정으로 수행한다. .env.<APP_ENV>는 수정하지 않는다."
+  - "DB 마이그레이션 실행: APP_ENV=<env> pnpm db:migrate:deploy"
