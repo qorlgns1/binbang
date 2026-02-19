@@ -47,8 +47,13 @@ function createConversationId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-
-  return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    const suffix = Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 10);
+    return `conv_${Date.now()}_${suffix}`;
+  }
+  return `conv_${Date.now()}_${Date.now().toString(36).slice(-6)}`;
 }
 
 function parsePendingRestoreSnapshot(value: string | null): PendingRestoreSnapshot | null {
