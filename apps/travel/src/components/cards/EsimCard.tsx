@@ -12,6 +12,7 @@ import {
   trackAffiliateCardImpression,
   trackAffiliateCardOutboundClick,
 } from '@/components/cards/affiliateCardUtils';
+import { resolveEsimAffiliateFallbackState } from '@/components/cards/affiliateFallbackState';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { EsimEntity } from '@/lib/types';
 
@@ -27,6 +28,7 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
   const ctaFeatureEnabled = isAffiliateCtaEnabled();
   const hasLink = Boolean(ctaFeatureEnabled && esim.isAffiliate && ctaEnabled && esim.affiliateLink);
   const provider = trackingContext?.provider ?? 'awin_pending:esim';
+  const fallbackState = resolveEsimAffiliateFallbackState(provider);
 
   useEffect(() => {
     if (!esim.isAffiliate) return;
@@ -42,29 +44,15 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
 
   function handleCtaClick() {
     if (hasLink) return; // <a> 태그가 직접 처리
-    const isPendingAdvertiser = provider.startsWith('awin_pending:');
-    const isDisabledBySetting = provider.startsWith('awin_disabled:');
-
-    if (isDisabledBySetting) {
-      toast('제휴 링크 비활성화', {
-        description: '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.',
-        duration: 3000,
-      });
-    } else {
-      toast('eSIM 제휴 링크 준비 중', {
-        description: '현재 eSIM 제휴 광고주를 연동하는 중입니다. 잠시 후 다시 확인해 주세요.',
-        duration: 3000,
-      });
-    }
+    toast(fallbackState.toastTitle, {
+      description: fallbackState.toastDescription,
+      duration: 3000,
+    });
 
     trackAffiliateCardCtaAttempt({
       trackingContext,
       provider,
-      reasonCode: isPendingAdvertiser
-        ? 'no_advertiser_for_category'
-        : isDisabledBySetting
-          ? 'affiliate_links_disabled'
-          : undefined,
+      reasonCode: fallbackState.reasonCode,
       productId: esim.productId,
       productName: esim.name,
       category: 'esim',

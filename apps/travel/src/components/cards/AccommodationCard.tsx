@@ -13,6 +13,7 @@ import {
   trackAffiliateCardImpression,
   trackAffiliateCardOutboundClick,
 } from '@/components/cards/affiliateCardUtils';
+import { resolveAccommodationAffiliateFallbackState } from '@/components/cards/affiliateFallbackState';
 import { StarRating } from '@/components/ui/StarRating';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { AccommodationEntity } from '@/lib/types';
@@ -45,24 +46,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
   const showAffiliateBadge = accommodation.isAffiliate;
   const hasLink = Boolean(ctaFeatureEnabled && accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink);
   const provider = trackingContext?.provider ?? 'agoda_pending:accommodation';
-  const isPendingProvider = provider.startsWith('awin_pending:') || provider.startsWith('agoda_pending:');
-  const isDisabledBySetting = provider.includes('_disabled:');
-  const isUnavailable = accommodation.isAvailable === false;
-  const disabledButtonLabel = isUnavailable
-    ? '현재 예약 불가'
-    : isDisabledBySetting
-      ? '제휴 링크 비활성화'
-      : '제휴 링크 준비중';
-  const modalTitle = isUnavailable
-    ? '현재 예약 불가'
-    : isDisabledBySetting
-      ? '제휴 링크 비활성화'
-      : '제휴 링크 준비 중';
-  const modalDescription = isUnavailable
-    ? '해당 숙소는 현재 Agoda 실시간 가용성 기준으로 예약이 어렵습니다. 다른 대안을 확인해 주세요.'
-    : isDisabledBySetting
-      ? '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.'
-      : '현재 해당 카테고리의 제휴 링크를 준비 중입니다. 잠시 후 다시 시도해 주세요.';
+  const fallbackState = resolveAccommodationAffiliateFallbackState(provider, accommodation.isAvailable);
 
   useEffect(() => {
     if (!accommodation.isAffiliate) return;
@@ -78,12 +62,12 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
 
   function handleCtaClick() {
     if (hasLink) return; // <a> 태그가 직접 처리
-    if (isUnavailable) {
+    if (fallbackState.isUnavailable) {
       toast('현재 예약 불가', {
         description: 'Agoda 실시간 가용성 기준으로 현재 예약 가능한 객실이 없습니다.',
         duration: 3000,
       });
-    } else if (isDisabledBySetting) {
+    } else if (fallbackState.reasonCode === 'affiliate_links_disabled') {
       toast('제휴 링크 비활성화', {
         description: '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.',
         duration: 3000,
@@ -98,11 +82,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
     trackAffiliateCardCtaAttempt({
       trackingContext,
       provider,
-      reasonCode: isPendingProvider
-        ? 'no_advertiser_for_category'
-        : isDisabledBySetting
-          ? 'affiliate_links_disabled'
-          : undefined,
+      reasonCode: fallbackState.reasonCode,
       productId: accommodation.placeId,
       productName: accommodation.name,
       category: 'accommodation',
@@ -208,7 +188,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
                 className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed'
                 aria-haspopup='dialog'
               >
-                {disabledButtonLabel}
+                {fallbackState.buttonLabel}
               </button>
             )}
             <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>{AFFILIATE_DISCLOSURE_TEXT}</p>
@@ -218,9 +198,9 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
 
       <AffiliateNoticeModal
         open={modalOpen}
-        title={modalTitle}
+        title={fallbackState.modalTitle}
         titleId='aff-modal-title'
-        description={modalDescription}
+        description={fallbackState.modalDescription}
         onClose={() => setModalOpen(false)}
       />
     </>
