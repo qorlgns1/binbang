@@ -1,4 +1,5 @@
 import { isAffiliateTrackingEnabled } from '@/lib/featureFlags';
+import { withAbortTimeout } from '@/lib/withTimeout';
 
 type AffiliateAdvertiserCategory = 'accommodation' | 'flight' | 'esim' | 'car_rental' | 'travel_package' | 'other';
 type AffiliateEventType = 'impression' | 'cta_attempt' | 'outbound_click';
@@ -55,31 +56,30 @@ export async function trackAffiliateEvent(input: TrackAffiliateEventInput): Prom
     return;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TRACKING_TIMEOUT_MS);
-
   try {
-    const response = await fetch('/api/affiliate/event', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-      keepalive: true,
-      signal: controller.signal,
-      body: JSON.stringify({
-        conversationId: input.conversationId,
-        sessionId: input.sessionId,
-        provider: input.provider,
-        eventType: input.eventType,
-        reasonCode: input.reasonCode,
-        productId: input.productId,
-        productName: input.productName,
-        category: input.category,
-        isCtaEnabled: input.isCtaEnabled,
-        userTimezone: getBrowserTimezone(),
+    const response = await withAbortTimeout(TRACKING_TIMEOUT_MS, (signal) =>
+      fetch('/api/affiliate/event', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+        keepalive: true,
+        signal,
+        body: JSON.stringify({
+          conversationId: input.conversationId,
+          sessionId: input.sessionId,
+          provider: input.provider,
+          eventType: input.eventType,
+          reasonCode: input.reasonCode,
+          productId: input.productId,
+          productName: input.productName,
+          category: input.category,
+          isCtaEnabled: input.isCtaEnabled,
+          userTimezone: getBrowserTimezone(),
+        }),
       }),
-    });
+    );
 
     if (!response.ok) {
       console.warn('Affiliate tracking event returned non-OK response', {
@@ -91,8 +91,6 @@ export async function trackAffiliateEvent(input: TrackAffiliateEventInput): Prom
     }
   } catch (error) {
     console.warn('Failed to send affiliate tracking event:', error);
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 

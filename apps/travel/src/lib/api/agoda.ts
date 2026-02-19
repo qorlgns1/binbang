@@ -1,3 +1,5 @@
+import { withAbortTimeout } from '@/lib/withTimeout';
+
 interface RecordValue {
   [key: string]: unknown;
 }
@@ -182,20 +184,19 @@ export async function searchAgodaAccommodations(
     };
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), AGODA_TIMEOUT_MS);
-
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        'X-API-Key': apiKey,
-      },
-      body: JSON.stringify(buildRequestBody(params, siteId)),
-      signal: controller.signal,
-    });
+    const response = await withAbortTimeout(AGODA_TIMEOUT_MS, (signal) =>
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          'X-API-Key': apiKey,
+        },
+        body: JSON.stringify(buildRequestBody(params, siteId)),
+        signal,
+      }),
+    );
 
     if (!response.ok) {
       const body = await response.text();
@@ -225,7 +226,5 @@ export async function searchAgodaAccommodations(
       source: 'error',
       message,
     };
-  } finally {
-    clearTimeout(timeoutId);
   }
 }

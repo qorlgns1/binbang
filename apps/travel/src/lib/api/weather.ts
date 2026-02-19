@@ -1,4 +1,5 @@
 import { generateCacheKey, getCachedOrFetch } from '@/services/cache.service';
+import { isAbortError, withAbortTimeout } from '@/lib/withTimeout';
 
 export interface WeatherParams {
   city: string;
@@ -58,7 +59,7 @@ export async function fetchWeatherHistory(params: WeatherParams): Promise<Weathe
       fetcher: async () => fetchWeatherFromApi(params, apiKey),
     });
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (isAbortError(error)) {
       console.error('Weather API request timed out');
     } else {
       console.error('Weather API fetch failed:', error);
@@ -68,13 +69,10 @@ export async function fetchWeatherHistory(params: WeatherParams): Promise<Weathe
 }
 
 async function fetchWeatherFromApi(params: WeatherParams, apiKey: string): Promise<WeatherResult> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-  try {
+  return withAbortTimeout(FETCH_TIMEOUT_MS, async (signal) => {
     // First geocode the city
     const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(params.city)}&limit=1&appid=${apiKey}`;
-    const geoResponse = await fetch(geoUrl, { signal: controller.signal });
+    const geoResponse = await fetch(geoUrl, { signal });
 
     if (!geoResponse.ok) {
       const responseText = (await geoResponse.text()).slice(0, 500);
@@ -95,7 +93,7 @@ async function fetchWeatherFromApi(params: WeatherParams, apiKey: string): Promi
 
     // Use current weather as a baseline reference
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
-    const weatherResponse = await fetch(weatherUrl, { signal: controller.signal });
+    const weatherResponse = await fetch(weatherUrl, { signal });
 
     if (!weatherResponse.ok) {
       const responseText = (await weatherResponse.text()).slice(0, 500);
@@ -132,9 +130,7 @@ async function fetchWeatherFromApi(params: WeatherParams, apiKey: string): Promi
       monthly: filteredMonthly,
     };
     return result;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  });
 }
 
 function generateMonthlyEstimates(

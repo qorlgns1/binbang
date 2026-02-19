@@ -1,4 +1,5 @@
 import { generateCacheKey, getCachedOrFetch } from '@/services/cache.service';
+import { isAbortError, withAbortTimeout } from '@/lib/withTimeout';
 
 export interface ExchangeRateParams {
   baseCurrency: string;
@@ -31,7 +32,7 @@ export async function fetchExchangeRate(params: ExchangeRateParams): Promise<Exc
       fetcher: async () => fetchExchangeRateFromApi(base, params.targetCurrencies),
     });
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (isAbortError(error)) {
       console.error('Exchange rate API request timed out');
     } else {
       console.error('Exchange rate API fetch failed:', error);
@@ -48,47 +49,40 @@ async function fetchExchangeRateFromApi(base: string, targetCurrencies: string[]
     ? `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${base}`
     : `https://open.er-api.com/v6/latest/${base}`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const response = await withAbortTimeout(FETCH_TIMEOUT_MS, (signal) => fetch(url, { signal }));
 
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-
-    if (!response.ok) {
-      const responseText = await response.text();
-      throw new Error(`ExchangeRate API error (${response.status}): ${responseText}`);
-    }
-
-    const data = (await response.json()) as {
-      result: string;
-      conversion_rates?: Record<string, number>;
-      rates?: Record<string, number>;
-      time_last_update_utc?: string;
-    };
-
-    if (data.result !== 'success') {
-      throw new Error(`ExchangeRate API response not successful: ${data.result ?? 'unknown'}`);
-    }
-
-    const allRates = data.conversion_rates ?? data.rates ?? {};
-
-    const rates: Record<string, number> = {};
-    for (const currency of targetCurrencies) {
-      const code = currency.toUpperCase();
-      if (allRates[code] !== undefined) {
-        rates[code] = allRates[code];
-      }
-    }
-
-    const result = {
-      baseCurrency: base,
-      rates,
-      lastUpdated: data.time_last_update_utc ?? new Date().toISOString(),
-    };
-    return result;
-  } finally {
-    clearTimeout(timeoutId);
+  if (!response.ok) {
+    const responseText = await response.text();
+    throw new Error(`ExchangeRate API error (${response.status}): ${responseText}`);
   }
+
+  const data = (await response.json()) as {
+    result: string;
+    conversion_rates?: Record<string, number>;
+    rates?: Record<string, number>;
+    time_last_update_utc?: string;
+  };
+
+  if (data.result !== 'success') {
+    throw new Error(`ExchangeRate API response not successful: ${data.result ?? 'unknown'}`);
+  }
+
+  const allRates = data.conversion_rates ?? data.rates ?? {};
+
+  const rates: Record<string, number> = {};
+  for (const currency of targetCurrencies) {
+    const code = currency.toUpperCase();
+    if (allRates[code] !== undefined) {
+      rates[code] = allRates[code];
+    }
+  }
+
+  const result = {
+    baseCurrency: base,
+    rates,
+    lastUpdated: data.time_last_update_utc ?? new Date().toISOString(),
+  };
+  return result;
 }
 
 function createFallbackRates(base: string, targets: string[]): ExchangeRateResult {
