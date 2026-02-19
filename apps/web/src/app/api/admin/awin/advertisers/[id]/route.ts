@@ -1,44 +1,41 @@
 import { NextResponse } from 'next/server';
 
-import { requireAdmin } from '@/lib/admin';
-import {
-  type AffiliateAdvertiserCategory,
-  updateAffiliateAdvertiser,
-} from '@/services/admin/affiliate-advertiser.service';
+import { z } from 'zod';
 
-const CATEGORIES: AffiliateAdvertiserCategory[] = [
-  'accommodation',
-  'flight',
-  'esim',
-  'car_rental',
-  'travel_package',
-  'other',
-];
+import { requireAdmin } from '@/lib/admin';
+import { updateAffiliateAdvertiser } from '@/services/admin/affiliate-advertiser.service';
+
+const patchSchema = z.object({
+  category: z.enum(['accommodation', 'flight', 'esim', 'car_rental', 'travel_package', 'other']).optional(),
+  notes: z.string().nullable().optional(),
+});
 
 /** PATCH: 카테고리/메모 수정 */
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-): Promise<Response> {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
   const { id } = await params;
-  let body: { category?: string; notes?: string | null } = {};
+
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
-  const category =
-    body.category && CATEGORIES.includes(body.category as AffiliateAdvertiserCategory)
-      ? (body.category as AffiliateAdvertiserCategory)
-      : undefined;
+
+  const parsed = patchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+  }
+
   const item = await updateAffiliateAdvertiser(id, {
-    ...(category !== undefined && { category }),
-    ...(body.notes !== undefined && { notes: body.notes ?? null }),
+    ...(parsed.data.category !== undefined && { category: parsed.data.category }),
+    ...(parsed.data.notes !== undefined && { notes: parsed.data.notes ?? null }),
   });
+
   if (!item) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

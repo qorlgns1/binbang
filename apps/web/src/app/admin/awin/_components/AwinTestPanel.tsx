@@ -8,13 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart3, Building2, ExternalLink, Loader2, Link2, Receipt, Tag } from 'lucide-react';
 
 type TestResult = {
@@ -42,9 +36,7 @@ function ConnectionResultAlert({ result }: { result: TestResult }) {
           {result.error && <p>{result.error}</p>}
           {result.hint && <p className='text-muted-foreground text-sm'>{result.hint}</p>}
           {result.detail && <p className='text-muted-foreground text-sm'>{result.detail}</p>}
-          {result.status != null && (
-            <p className='text-muted-foreground text-sm'>HTTP {result.status}</p>
-          )}
+          {result.status != null && <p className='text-muted-foreground text-sm'>HTTP {result.status}</p>}
           {hasIds && (
             <div className='rounded border bg-muted/30 p-3 text-sm'>
               <p className='mb-1.5 font-medium'>내 정보</p>
@@ -54,8 +46,8 @@ function ConnectionResultAlert({ result }: { result: TestResult }) {
               <ul className='mt-2 list-inside list-disc space-y-0.5 text-muted-foreground'>
                 {(body.accounts ?? []).map((a) => (
                   <li key={a.accountId}>
-                    <span className='font-mono text-foreground'>{a.accountId}</span> · {a.accountName} ·{' '}
-                    {a.accountType} · {a.userRole}
+                    <span className='font-mono text-foreground'>{a.accountId}</span> · {a.accountName} · {a.accountType}{' '}
+                    · {a.userRole}
                   </li>
                 ))}
               </ul>
@@ -92,9 +84,7 @@ function ResultAlert({ result }: { result: TestResult }) {
           {result.error && <p>{result.error}</p>}
           {result.hint && <p className='text-muted-foreground text-sm'>{result.hint}</p>}
           {result.detail && <p className='text-muted-foreground text-sm'>{result.detail}</p>}
-          {result.status != null && (
-            <p className='text-muted-foreground text-sm'>HTTP {result.status}</p>
-          )}
+          {result.status != null && <p className='text-muted-foreground text-sm'>HTTP {result.status}</p>}
           {body?.url != null && (
             <div className='space-y-1'>
               <p className='text-muted-foreground text-sm font-medium'>URL</p>
@@ -259,9 +249,7 @@ export function AwinTestPanel() {
     setProgLoading(true);
     setProgResult(null);
     try {
-      const res = await fetch(
-        `/api/admin/awin/programmes?relationship=${encodeURIComponent(progRelationship)}`,
-      );
+      const res = await fetch(`/api/admin/awin/programmes?relationship=${encodeURIComponent(progRelationship)}`);
       const data = (await res.json()) as TestResult;
       setProgResult(data);
     } catch (err) {
@@ -359,9 +347,7 @@ export function AwinTestPanel() {
     setPdLoading(true);
     setPdResult(null);
     try {
-      const res = await fetch(
-        `/api/admin/awin/programmedetails?advertiserId=${encodeURIComponent(aid)}`,
-      );
+      const res = await fetch(`/api/admin/awin/programmedetails?advertiserId=${encodeURIComponent(aid)}`);
       const data = (await res.json()) as TestResult;
       setPdResult(data);
     } catch (err) {
@@ -382,8 +368,7 @@ export function AwinTestPanel() {
         <CardHeader>
           <CardTitle>Awin API 토큰 검증</CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>GET /accounts</code>로 토큰 및 계정
-            목록 확인
+            <code className='rounded bg-muted px-1.5 py-0.5'>GET /accounts</code>로 토큰 및 계정 목록 확인
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -421,8 +406,8 @@ export function AwinTestPanel() {
             가입 광고주 (Programmes)
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../programmes</code>
-            — 관계별 프로그램(광고주) 목록 조회
+            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../programmes</code>— 관계별
+            프로그램(광고주) 목록 조회
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -463,8 +448,8 @@ export function AwinTestPanel() {
             Link Builder
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>POST /publishers/.../linkbuilder/generate</code>
-            — 광고주 URL로 추적 링크 생성
+            <code className='rounded bg-muted px-1.5 py-0.5'>POST /publishers/.../linkbuilder/generate</code>— 광고주
+            URL로 추적 링크 생성
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -519,11 +504,7 @@ export function AwinTestPanel() {
             />
           </div>
           <div className='flex items-center gap-2'>
-            <Checkbox
-              id='lb-shorten'
-              checked={lbShorten}
-              onCheckedChange={(c) => setLbShorten(c === true)}
-            />
+            <Checkbox id='lb-shorten' checked={lbShorten} onCheckedChange={(c) => setLbShorten(c === true)} />
             <Label htmlFor='lb-shorten'>shorten (단축 URL 포함)</Label>
           </div>
           <Button onClick={runLinkBuilder} disabled={lbLoading}>
@@ -548,8 +529,8 @@ export function AwinTestPanel() {
             Offers (프로모션/바우처)
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>POST /publisher/.../promotions</code>
-            — 가입 광고주의 오퍼 목록 조회
+            <code className='rounded bg-muted px-1.5 py-0.5'>POST /publisher/.../promotions</code>— 가입 광고주의 오퍼
+            목록 조회
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -635,19 +616,15 @@ export function AwinTestPanel() {
             Transactions (트랜잭션)
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../transactions/</code>
-            — 전환(매출) 목록, 최대 31일 구간
+            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../transactions/</code>— 전환(매출) 목록,
+            최대 31일 구간
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
             <div className='grid gap-2'>
               <Label>startDate</Label>
-              <Input
-                type='date'
-                value={txStartDate}
-                onChange={(e) => setTxStartDate(e.target.value)}
-              />
+              <Input type='date' value={txStartDate} onChange={(e) => setTxStartDate(e.target.value)} />
             </div>
             <div className='grid gap-2'>
               <Label>endDate</Label>
@@ -700,19 +677,15 @@ export function AwinTestPanel() {
             광고주별 리포트
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../reports/advertiser</code>
-            — 클릭/전환/노출 집계
+            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../reports/advertiser</code>—
+            클릭/전환/노출 집계
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid grid-cols-2 gap-4 sm:grid-cols-3'>
             <div className='grid gap-2'>
               <Label>startDate</Label>
-              <Input
-                type='date'
-                value={rptStartDate}
-                onChange={(e) => setRptStartDate(e.target.value)}
-              />
+              <Input type='date' value={rptStartDate} onChange={(e) => setRptStartDate(e.target.value)} />
             </div>
             <div className='grid gap-2'>
               <Label>endDate</Label>
@@ -770,8 +743,8 @@ export function AwinTestPanel() {
             프로그램 상세 (Programme details)
           </CardTitle>
           <CardDescription>
-            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../programmedetails</code>
-            — 특정 광고주 수수료/KPI 등
+            <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../programmedetails</code>— 특정 광고주
+            수수료/KPI 등
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>

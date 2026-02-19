@@ -1,4 +1,4 @@
-const AWIN_API_BASE = 'https://api.awin.com';
+export const AWIN_API_BASE = 'https://api.awin.com';
 
 export function getAwinToken(): string | null {
   const token = process.env.AWIN_API_TOKEN?.trim();

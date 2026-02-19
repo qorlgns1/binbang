@@ -1,7 +1,4 @@
-import {
-  type AffiliateAdvertiserCategory,
-  prisma,
-} from '@workspace/db';
+import { type AffiliateAdvertiserCategory, prisma } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -97,9 +94,7 @@ export async function updateAffiliateAdvertiser(
   return one as AffiliateAdvertiserItem;
 }
 
-export async function getAffiliateAdvertiserById(
-  id: string,
-): Promise<AffiliateAdvertiserItem | null> {
+export async function getAffiliateAdvertiserById(id: string): Promise<AffiliateAdvertiserItem | null> {
   const one = await prisma.affiliateAdvertiser.findUnique({
     where: { id },
     select: SELECT,

@@ -4,13 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, RefreshCw } from 'lucide-react';
 
@@ -113,9 +107,9 @@ export function AffiliateAdvertiserManager() {
         <CardHeader>
           <CardTitle>가입 광고주 관리</CardTitle>
           <CardDescription>
-            Awin에서 가입한 광고주(프로그램) 목록을 DB에 동기화하고, 카테고리와 메모를 지정하세요.
-            travel 앱에서 &quot;숙소 추천&quot;, &quot;eSIM 알려줘&quot; 등 요청 시 이 카테고리로 매칭해 추천·수익화에
-            사용할 수 있습니다.
+            Awin에서 가입한 광고주(프로그램) 목록을 DB에 동기화하고, 카테고리와 메모를 지정하세요. travel 앱에서
+            &quot;숙소 추천&quot;, &quot;eSIM 알려줘&quot; 등 요청 시 이 카테고리로 매칭해 추천·수익화에 사용할 수
+            있습니다.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -133,10 +127,7 @@ export function AffiliateAdvertiserManager() {
                 </>
               )}
             </Button>
-            <Select
-              value={filterCategory || '_'}
-              onValueChange={(v) => setFilterCategory(v === '_' ? '' : v)}
-            >
+            <Select value={filterCategory || '_'} onValueChange={(v) => setFilterCategory(v === '_' ? '' : v)}>
               <SelectTrigger className='w-[180px]'>
                 <SelectValue placeholder='카테고리 필터' />
               </SelectTrigger>
@@ -174,17 +165,13 @@ export function AffiliateAdvertiserManager() {
                   const category = edit?.category ?? item.category;
                   const notes = edit?.notes ?? item.notes ?? '';
                   const isDirty =
-                    edit !== undefined &&
-                    (edit.category !== item.category || edit.notes !== (item.notes ?? ''));
+                    edit !== undefined && (edit.category !== item.category || edit.notes !== (item.notes ?? ''));
                   return (
                     <TableRow key={item.id}>
                       <TableCell className='font-mono text-sm'>{item.advertiserId}</TableCell>
                       <TableCell>{item.name}</TableCell>
                       <TableCell>
-                        <Select
-                          value={category}
-                          onValueChange={(v) => setEdit(item.id, item, 'category', v)}
-                        >
+                        <Select value={category} onValueChange={(v) => setEdit(item.id, item, 'category', v)}>
                           <SelectTrigger className='h-8'>
                             <SelectValue />
                           </SelectTrigger>
@@ -214,11 +201,7 @@ export function AffiliateAdvertiserManager() {
                             disabled={savingId === item.id}
                             onClick={() => saveRow(item)}
                           >
-                            {savingId === item.id ? (
-                              <Loader2 className='size-4 animate-spin' />
-                            ) : (
-                              '저장'
-                            )}
+                            {savingId === item.id ? <Loader2 className='size-4 animate-spin' /> : '저장'}
                           </Button>
                         )}
                       </TableCell>
