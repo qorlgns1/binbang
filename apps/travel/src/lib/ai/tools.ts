@@ -8,9 +8,11 @@ import { searchGooglePlaces } from '@/lib/api/places';
 import { generateAffiliateLink } from '@/lib/api/awinLinkBuilder';
 import type { AccommodationEntity, EsimEntity, SearchAccommodationResult, SearchEsimResult } from '@/lib/types';
 import { getFirstAdvertiserByCategory } from '@/services/affiliate-advertiser.service';
+import { resolveAffiliateLinksEnabled } from '@/services/conversation-preference.service';
 
 interface TravelToolsOptions {
   conversationId?: string;
+  userId?: string;
 }
 
 function buildStableProductId(prefix: string, parts: string[]): string {
@@ -35,7 +37,7 @@ function buildEsimDescription(location?: string, tripDays?: number, dataNeedGB?:
 }
 
 export function createTravelTools(options: TravelToolsOptions = {}) {
-  const { conversationId } = options;
+  const { conversationId, userId } = options;
 
   return {
     searchPlaces: tool({
@@ -87,9 +89,11 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
       execute: async ({ query, location }): Promise<SearchAccommodationResult> => {
         // Stage A: Google Places 호텔 타입으로 검색 (Agoda API 수령 전 shim)
         const { places } = await searchGooglePlaces({ query, location, type: 'hotel' });
+        const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
+        const isAffiliateEnabled = affiliateLinkPolicy.enabled;
 
         // DB에서 accommodation 카테고리 광고주 조회
-        const advertiser = await getFirstAdvertiserByCategory('accommodation');
+        const advertiser = isAffiliateEnabled ? await getFirstAdvertiserByCategory('accommodation') : null;
 
         // Awin 추적 링크 생성 (광고주 있을 때만, 실패해도 null로 진행)
         const firstPlace = places[0];
@@ -103,7 +107,11 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         }
 
         const ctaEnabled = !!affiliateLink;
-        const provider = advertiser ? `awin:${advertiser.advertiserId}` : 'awin_pending:accommodation';
+        const provider = advertiser
+          ? `awin:${advertiser.advertiserId}`
+          : isAffiliateEnabled
+            ? 'awin_pending:accommodation'
+            : 'awin_disabled:accommodation';
 
         // 제휴 카드: 첫 번째 결과
         const affiliate: AccommodationEntity | null = firstPlace
@@ -161,7 +169,9 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         dataNeedGB: z.number().min(1).max(100).optional().describe('Estimated data need in GB'),
       }),
       execute: async ({ query, location, tripDays, dataNeedGB }): Promise<SearchEsimResult> => {
-        const advertiser = await getFirstAdvertiserByCategory('esim');
+        const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
+        const isAffiliateEnabled = affiliateLinkPolicy.enabled;
+        const advertiser = isAffiliateEnabled ? await getFirstAdvertiserByCategory('esim') : null;
         const productId = buildStableProductId('esim', [
           query,
           location ?? 'global',
@@ -179,7 +189,11 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         }
 
         const ctaEnabled = !!affiliateLink;
-        const provider = advertiser ? `awin:${advertiser.advertiserId}` : 'awin_pending:esim';
+        const provider = advertiser
+          ? `awin:${advertiser.advertiserId}`
+          : isAffiliateEnabled
+            ? 'awin_pending:esim'
+            : 'awin_disabled:esim';
         const primary: EsimEntity = {
           productId,
           name: advertiser ? `${advertiser.name} eSIM` : '여행용 eSIM',

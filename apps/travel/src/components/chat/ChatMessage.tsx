@@ -25,6 +25,8 @@ interface ChatMessageProps {
   onAlertClick?: (place: PlaceEntity) => void;
   selectedPlaceId?: string;
   isStreaming?: boolean;
+  conversationId?: string;
+  sessionId?: string;
 }
 
 export function ChatMessage({
@@ -34,6 +36,8 @@ export function ChatMessage({
   onAlertClick,
   selectedPlaceId,
   isStreaming,
+  conversationId,
+  sessionId,
 }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
@@ -77,7 +81,16 @@ export function ChatMessage({
 
               const toolPart = part as unknown as { type: string; toolCallId?: string };
               const key = toolPart.toolCallId ?? `part-${part.type}`;
-              return renderToolPart(part, key, onPlaceSelect, onPlaceHover, onAlertClick, selectedPlaceId);
+              return renderToolPart(
+                part,
+                key,
+                onPlaceSelect,
+                onPlaceHover,
+                onAlertClick,
+                selectedPlaceId,
+                conversationId,
+                sessionId,
+              );
             })}
             <p className='text-[10px] text-muted-foreground mt-1' aria-hidden>
               방금
@@ -96,6 +109,8 @@ function renderToolPart(
   onPlaceHover?: (placeId: string | undefined) => void,
   onAlertClick?: (place: PlaceEntity) => void,
   selectedPlaceId?: string,
+  conversationId?: string,
+  sessionId?: string,
 ) {
   if (
     part.type === 'text' ||
@@ -174,7 +189,17 @@ function renderToolPart(
       const data = toolPart.output as SearchAccommodationResult;
       return (
         <div key={key} className='my-2 space-y-3'>
-          {data.affiliate && <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />}
+          {data.affiliate && (
+            <AccommodationCard
+              accommodation={data.affiliate}
+              ctaEnabled={data.ctaEnabled}
+              trackingContext={{
+                conversationId,
+                sessionId,
+                provider: data.provider,
+              }}
+            />
+          )}
           {data.alternatives.length > 0 && (
             <div>
               <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
@@ -194,7 +219,15 @@ function renderToolPart(
       if (!data.primary) return null;
       return (
         <div key={key} className='my-2'>
-          <EsimCard esim={data.primary} ctaEnabled={data.ctaEnabled} />
+          <EsimCard
+            esim={data.primary}
+            ctaEnabled={data.ctaEnabled}
+            trackingContext={{
+              conversationId,
+              sessionId,
+              provider: data.provider,
+            }}
+          />
         </div>
       );
     }
@@ -267,7 +300,17 @@ function renderToolPart(
       const data = dynPart.output as SearchAccommodationResult;
       return (
         <div key={key} className='my-2 space-y-3'>
-          {data.affiliate && <AccommodationCard accommodation={data.affiliate} ctaEnabled={data.ctaEnabled} />}
+          {data.affiliate && (
+            <AccommodationCard
+              accommodation={data.affiliate}
+              ctaEnabled={data.ctaEnabled}
+              trackingContext={{
+                conversationId,
+                sessionId,
+                provider: data.provider,
+              }}
+            />
+          )}
           {data.alternatives.length > 0 && (
             <div>
               <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
@@ -287,7 +330,15 @@ function renderToolPart(
       if (!data.primary) return null;
       return (
         <div key={key} className='my-2'>
-          <EsimCard esim={data.primary} ctaEnabled={data.ctaEnabled} />
+          <EsimCard
+            esim={data.primary}
+            ctaEnabled={data.ctaEnabled}
+            trackingContext={{
+              conversationId,
+              sessionId,
+              provider: data.provider,
+            }}
+          />
         </div>
       );
     }

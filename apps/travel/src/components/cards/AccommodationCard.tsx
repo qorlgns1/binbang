@@ -2,28 +2,80 @@
 
 import { ExternalLink, MapPin, Star, Tag } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
 import type { AccommodationEntity } from '@/lib/types';
+
+interface AffiliateTrackingContext {
+  conversationId?: string;
+  sessionId?: string;
+  provider: string;
+}
 
 interface AccommodationCardProps {
   accommodation: AccommodationEntity;
   /** true = 광고주 링크가 생성됨 → CTA 활성 */
   ctaEnabled: boolean;
+  trackingContext?: AffiliateTrackingContext;
 }
 
-export function AccommodationCard({ accommodation, ctaEnabled }: AccommodationCardProps) {
+export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }: AccommodationCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const showAffiliateBadge = accommodation.isAffiliate;
-  const hasLink = accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink;
+  const hasLink = Boolean(accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink);
+  const provider = trackingContext?.provider ?? 'awin_pending:accommodation';
+
+  useEffect(() => {
+    if (!accommodation.isAffiliate) return;
+    if (!trackingContext) return;
+
+    trackImpressionOnce({
+      conversationId: trackingContext.conversationId,
+      sessionId: trackingContext.sessionId,
+      provider,
+      productId: accommodation.placeId,
+      productName: accommodation.name,
+      category: 'accommodation',
+      isCtaEnabled: hasLink,
+    });
+  }, [accommodation.isAffiliate, accommodation.name, accommodation.placeId, hasLink, provider, trackingContext]);
 
   function handleCtaClick() {
     if (hasLink) return; // <a> 태그가 직접 처리
-    toast('제휴 링크 준비 중', {
-      description: '현재 해당 카테고리의 제휴 광고주를 등록하는 중입니다. 조금만 기다려주세요.',
-      duration: 3000,
-    });
+    const isPendingAdvertiser = provider.startsWith('awin_pending:');
+    const isDisabledBySetting = provider.startsWith('awin_disabled:');
+    if (isDisabledBySetting) {
+      toast('제휴 링크 비활성화', {
+        description: '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.',
+        duration: 3000,
+      });
+    } else {
+      toast('제휴 링크 준비 중', {
+        description: '현재 해당 카테고리의 제휴 광고주를 등록하는 중입니다. 조금만 기다려주세요.',
+        duration: 3000,
+      });
+    }
+
+    if (trackingContext) {
+      void trackAffiliateEvent({
+        conversationId: trackingContext.conversationId,
+        sessionId: trackingContext.sessionId,
+        provider,
+        eventType: 'cta_attempt',
+        reasonCode: isPendingAdvertiser
+          ? 'no_advertiser_for_category'
+          : isDisabledBySetting
+            ? 'affiliate_links_disabled'
+            : undefined,
+        productId: accommodation.placeId,
+        productName: accommodation.name,
+        category: 'accommodation',
+        isCtaEnabled: false,
+      });
+    }
+
     setModalOpen(true);
   }
 
@@ -98,6 +150,19 @@ export function AccommodationCard({ accommodation, ctaEnabled }: AccommodationCa
                 href={accommodation.affiliateLink}
                 target='_blank'
                 rel='noopener noreferrer sponsored'
+                onClick={() => {
+                  if (!trackingContext) return;
+                  void trackAffiliateEvent({
+                    conversationId: trackingContext.conversationId,
+                    sessionId: trackingContext.sessionId,
+                    provider,
+                    eventType: 'outbound_click',
+                    productId: accommodation.placeId,
+                    productName: accommodation.name,
+                    category: 'accommodation',
+                    isCtaEnabled: true,
+                  });
+                }}
                 className='flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
               >
                 <ExternalLink className='h-4 w-4' aria-hidden />

@@ -72,6 +72,10 @@ model User {
 
   // Travel AI
   travelConversations TravelConversation[]
+  affiliateEvents     AffiliateEvent[]
+  timezone            String?
+  affiliateLinksEnabled Boolean @default(true)
+  affiliatePreferenceAuditLogs AffiliatePreferenceAuditLog[] @relation("AffiliatePreferenceAuditLogActor")
 
   // 튜토리얼
   tutorialCompletedAt DateTime?
@@ -760,6 +764,9 @@ model TravelConversation {
   user     User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   messages TravelMessage[]
   entities TravelEntity[]
+  preference ConversationPreference?
+  affiliateEvents AffiliateEvent[]
+  affiliatePreferenceAuditLogs AffiliatePreferenceAuditLog[]
 
   @@index([sessionId])
   @@index([userId])
@@ -822,6 +829,18 @@ enum AffiliateAdvertiserCategory {
   other
 }
 
+enum AffiliateEventType {
+  impression
+  cta_attempt
+  outbound_click
+}
+
+enum ConversationAffiliateOverride {
+  inherit
+  enabled
+  disabled
+}
+
 model AffiliateAdvertiser {
   id           String   @id @default(cuid())
   advertiserId Int      @unique // Awin advertiser ID
@@ -834,4 +853,94 @@ model AffiliateAdvertiser {
 
   @@index([category])
   @@map("affiliate_advertisers")
+}
+
+model AffiliateEvent {
+  id             String                    @id @default(cuid())
+  conversationId String?
+  userId         String?
+  userTimezone   String?
+  provider       String
+  eventType      AffiliateEventType
+  reasonCode     String?
+  idempotencyKey String?                   @unique
+  productId      String
+  productName    String
+  category       AffiliateAdvertiserCategory
+  isCtaEnabled   Boolean                   @default(false)
+  occurredAt     DateTime                  @default(now())
+  createdAt      DateTime                  @default(now())
+
+  conversation TravelConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  user         User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([provider, eventType])
+  @@index([eventType, reasonCode])
+  @@index([category, eventType])
+  @@index([occurredAt])
+  @@index([conversationId, productId])
+  @@map("affiliate_events")
+}
+
+model ConversationPreference {
+  id                String                      @id @default(cuid())
+  conversationId    String                      @unique
+  affiliateOverride ConversationAffiliateOverride @default(inherit)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  conversation TravelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateOverride])
+  @@map("conversation_preferences")
+}
+
+model AffiliatePreferenceAuditLog {
+  id             String                      @id @default(cuid())
+  conversationId String
+  actorUserId    String
+  fromValue      ConversationAffiliateOverride
+  toValue        ConversationAffiliateOverride
+  changedAt      DateTime                    @default(now())
+
+  conversation TravelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  actorUser    User               @relation("AffiliatePreferenceAuditLogActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, changedAt])
+  @@index([changedAt])
+  @@map("affiliate_preference_audit_logs")
+}
+
+model AffiliateAuditJobState {
+  jobName            String   @id
+  isFailing          Boolean  @default(false)
+  failedAt           DateTime?
+  recoveredAt        DateTime?
+  retryCount         Int      @default(0)
+  lastErrorCode      String?
+  lastErrorMessage   String?
+  lastAlertCause     String?
+  lastAlertSeverity  String?
+  lastAlertSentAt    DateTime?
+  lastRunStartedAt   DateTime?
+  updatedAt          DateTime @updatedAt
+
+  @@map("affiliate_audit_job_states")
+}
+
+model AffiliateAuditPurgeRun {
+  id            String   @id @default(cuid())
+  jobName       String
+  runStartedAt  DateTime
+  runFinishedAt DateTime?
+  status        String
+  deletedCount  Int      @default(0)
+  retryCount    Int      @default(0)
+  errorCode     String?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  @@index([jobName, runStartedAt])
+  @@index([status, createdAt])
+  @@map("affiliate_audit_purge_runs")
 }

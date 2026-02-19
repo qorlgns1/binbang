@@ -130,11 +130,11 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 - [x] `searchPlaces` 호텔 타입 결과를 `AccommodationCard` 데이터로 매핑
 
 **트래킹**
-- [ ] 트래킹 DB/API 구축 (`impression`, `outbound_click`, `cta_attempt` 이벤트)
+- [x] 트래킹 DB/API 구축 (`impression`, `outbound_click`, `cta_attempt` 이벤트)
   - provider 필드: `awin:{advertiserId}` 또는 `awin_pending:{category}`
   - reasonCode: 비활성 시 `no_advertiser_for_category`
-- [ ] 이벤트에 `userTimezone` 저장 (프로필 IANA 우선, 미설정 시 브라우저)
-- [ ] `impression` dedupe (`conversationId + productId + local_day`, 하루 1회)
+- [x] 이벤트에 `userTimezone` 저장 (프로필 IANA 우선, 미설정 시 브라우저)
+- [x] `impression` dedupe (`conversationId + productId + local_day`, 하루 1회)
 
 **캐싱**
 - [x] Places/Weather/Exchange 캐시 핵심 구축 (Redis + SWR + stale-if-error)
@@ -225,7 +225,7 @@ Awin 트랜잭션 API로 전환 확인 → 레퍼럴 수수료 수익
 
 ### P3-2: 레퍼럴 트래킹
 
-- [ ] P3-2-T1: 제휴 이벤트 트래킹 DB 모델 추가
+- [x] P3-2-T1: 제휴 이벤트 트래킹 DB 모델 추가
 
 ```prisma
 model AffiliateEvent {
@@ -250,16 +250,16 @@ model AffiliateEvent {
 }
 ```
 
-- [ ] P3-2-T2: 이벤트 트래킹 API endpoint (`POST /api/affiliate/event`)
+- [x] P3-2-T2: 이벤트 트래킹 API endpoint (`POST /api/affiliate/event`)
 - [ ] P3-2-T3: Stage A 퍼널 지표 정의 (impression → outbound_click 비율, 카테고리별)
 - [ ] P3-2-T4: 관리자 대시보드 - 노출/시도/클릭 기본 통계 (5분 집계 캐시, 카테고리별 필터)
 - [ ] P3-2-T5: Awin Transactions API 연동으로 전환/수익 확인
-- [ ] P3-2-T6: `cta_attempt` 발생 시 `reasonCode=no_advertiser_for_category` 저장 검증
-- [ ] P3-2-T7: `impression` dedupe 구현 (사용자 로컬 day 기준 `conversationId + productId + local_day`)
-- [ ] P3-2-T8: `userTimezone` 파이프라인 검증 (프로필 → 브라우저 fallback → API → DB 저장)
-- [ ] P3-2-T9: `userTimezone` 미수집 fallback 검증 (UTC day 기준 dedupe/집계)
+- [x] P3-2-T6: `cta_attempt` 발생 시 `reasonCode=no_advertiser_for_category` 저장 검증
+- [x] P3-2-T7: `impression` dedupe 구현 (사용자 로컬 day 기준 `conversationId + productId + local_day`)
+- [x] P3-2-T8: `userTimezone` 파이프라인 검증 (프로필 → 브라우저 fallback → API → DB 저장)
+- [x] P3-2-T9: `userTimezone` 미수집 fallback 검증 (UTC day 기준 dedupe/집계)
 - [ ] P3-2-T10: 대시보드 시간 표시 로직 검증 (저장 UTC, 렌더링 브라우저 로컬)
-- [ ] P3-2-T11: 타임존 source 우선순위 검증 (프로필 값이 있으면 브라우저 값보다 우선)
+- [x] P3-2-T11: 타임존 source 우선순위 검증 (프로필 값이 있으면 브라우저 값보다 우선)
 - [ ] P3-2-T12: 대시보드 집계 캐시 TTL 검증 (300초, 만료 후 재집계)
 - [ ] P3-2-T13: Stage A 캐시 무효화 정책 검증 (TTL 만료 기반만, 이벤트 즉시 무효화 없음)
 
@@ -267,10 +267,10 @@ model AffiliateEvent {
 
 - [x] P3-3-T1: AI 응답에서 카테고리별 추천 시 Awin 추적 링크가 자연스럽게 표시되도록 프롬프트 조정
 - [x] P3-3-T2: 제휴 고지 문구 표시 (카드/CTA 인접, "예약/구매 시 제휴 수수료를 받을 수 있음")
-- [ ] P3-3-T3: 제휴 링크 설정 옵션 구현 (Stage B)
+- [x] P3-3-T3: 제휴 링크 설정 옵션 구현 (Stage B)
   - 계정 기본 토글 (`affiliate_links_enabled`)
   - 대화별 오버라이드 (`conversation_affiliate_override`)
-- [ ] P3-3-T3-A: 대화 설정 저장소 분리 (`ConversationPreference` 테이블)
+- [x] P3-3-T3-A: 대화 설정 저장소 분리 (`ConversationPreference` 테이블)
   - `conversationId` (unique)
   - `affiliateOverride` (`inherit` | `enabled` | `disabled`)
   - `updatedAt`
@@ -278,11 +278,11 @@ model AffiliateEvent {
 - [x] P3-3-T5: 비제휴 대안 정렬 기준 고정 (rating DESC, reviewCount DESC)
 - [x] P3-3-T6: 비제휴 대안 fallback 규칙 적용 (rating/reviewCount 누락 시 원본 순서 보충)
 - [x] P3-3-T7: Stage A `cta_attempt` UX 표준화 (토스트 + 짧은 안내 모달)
-- [ ] P3-3-T8: 설정 우선순위 규칙 고정 (대화별 오버라이드 > 계정 기본값)
-- [ ] P3-3-T9: 대화별 오버라이드 영속성 검증 (명시 변경 전까지 유지)
-- [ ] P3-3-T10: `ConversationPreference` 조회/업서트 경로 검증 (읽기/쓰기/초기값 `inherit`)
-- [ ] P3-3-T11: 오버라이드 변경 권한 검증 (대화 owner 허용, 비소유자 403)
-- [ ] P3-3-T12: 오버라이드 변경 감사 로그 저장 검증 (`actorUserId`, `changedAt`, `fromValue`, `toValue`, `conversationId`)
+- [x] P3-3-T8: 설정 우선순위 규칙 고정 (대화별 오버라이드 > 계정 기본값)
+- [x] P3-3-T9: 대화별 오버라이드 영속성 검증 (명시 변경 전까지 유지)
+- [x] P3-3-T10: `ConversationPreference` 조회/업서트 경로 검증 (읽기/쓰기/초기값 `inherit`)
+- [x] P3-3-T11: 오버라이드 변경 권한 검증 (대화 owner 허용, 비소유자 403)
+- [x] P3-3-T12: 오버라이드 변경 감사 로그 저장 검증 (`actorUserId`, `changedAt`, `fromValue`, `toValue`, `conversationId`)
 - [ ] P3-3-T13: 감사 로그 보관 정책 적용 (365일 초과 데이터 대상 DB cron 일 1회 hard delete)
 - [ ] P3-3-T14: 정리 배치 검증 (cron 실행 성공/삭제 건수 로깅)
 - [ ] P3-3-T15: 정리 배치 실패 재시도 구현 (최대 3회, exponential backoff)
@@ -345,26 +345,26 @@ model AffiliateEvent {
 
 ### Stage A
 
-- [ ] 숙소 관련 질문 시 `AccommodationCard` 표시
+- [x] 숙소 관련 질문 시 `AccommodationCard` 표시
   - DB에 accommodation 광고주 존재 시: CTA 활성 + Awin 추적 링크 연결
   - DB에 광고주 없을 시: CTA 비활성 + "제휴 링크 준비중" 안내 + "광고/제휴" 라벨
-- [ ] eSIM 관련 질문 시 DB에서 esim 카테고리 광고주 조회 후 Awin 링크 생성
-- [ ] 카드 데이터가 `searchPlaces` 호텔 타입 결과에서 안정적으로 매핑되어 표시
-- [ ] 가격 필드는 숨김 처리 + "가격은 제휴 연동 후 제공" 문구 노출
-- [ ] 제휴 고지 문구와 비제휴 대안 카드/링크 2개가 함께 노출
-- [ ] 비제휴 대안 2개가 평점/리뷰 수 기준 상위 결과로 선택되어 노출
-- [ ] 평점/리뷰 데이터 부족 시 fallback 규칙으로 비제휴 대안 2개가 유지됨
-- [ ] 비활성 CTA 클릭 시 토스트 + 안내 모달 노출 + `cta_attempt` 이벤트 기록
-- [ ] `impression`, `cta_attempt`, `outbound_click` 이벤트가 DB에 정상 기록
+- [x] eSIM 관련 질문 시 DB에서 esim 카테고리 광고주 조회 후 Awin 링크 생성
+- [x] 카드 데이터가 `searchPlaces` 호텔 타입 결과에서 안정적으로 매핑되어 표시
+- [x] 가격 필드는 숨김 처리 + "가격은 제휴 연동 후 제공" 문구 노출
+- [x] 제휴 고지 문구와 비제휴 대안 카드/링크 2개가 함께 노출
+- [x] 비제휴 대안 2개가 평점/리뷰 수 기준 상위 결과로 선택되어 노출
+- [x] 평점/리뷰 데이터 부족 시 fallback 규칙으로 비제휴 대안 2개가 유지됨
+- [x] 비활성 CTA 클릭 시 토스트 + 안내 모달 노출 + `cta_attempt` 이벤트 기록
+- [x] `impression`, `cta_attempt`, `outbound_click` 이벤트가 DB에 정상 기록
   - 활성 CTA: `provider=awin:{advertiserId}`
   - 비활성 CTA: `provider=awin_pending:{category}`
-- [ ] 동일 `conversationId + productId`의 `impression`이 로컬 날짜 기준 하루 1회만 기록
-- [ ] `cta_attempt` 이벤트에 `reasonCode=no_advertiser_for_category`가 저장됨
-- [ ] 이벤트별 `userTimezone`가 DB에 저장됨 (프로필 우선, 미설정 시 브라우저 fallback)
-- [ ] `userTimezone` 미수집 이벤트는 UTC day 기준으로 dedupe/집계됨
+- [x] 동일 `conversationId + productId`의 `impression`이 로컬 날짜 기준 하루 1회만 기록
+- [x] `cta_attempt` 이벤트에 `reasonCode=no_advertiser_for_category`가 저장됨
+- [x] 이벤트별 `userTimezone`가 DB에 저장됨 (프로필 우선, 미설정 시 브라우저 fallback)
+- [x] `userTimezone` 미수집 이벤트는 UTC day 기준으로 dedupe/집계됨
 - [ ] 대시보드 통계가 5분 캐시 기준으로 제공되고 만료 시 재집계됨
-- [ ] 동일 Places 검색 시 두 번째부터 캐시 응답
-- [ ] 환율/날씨 캐시 정상 동작 및 TTL 만료 후 갱신
+- [x] 동일 Places 검색 시 두 번째부터 캐시 응답
+- [x] 환율/날씨 캐시 정상 동작 및 TTL 만료 후 갱신
 
 ### Stage B
 

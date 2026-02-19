@@ -124,7 +124,7 @@ export async function POST(req: Request) {
   const rawModelMessages = await convertToModelMessages(messages);
   const windowSize = Number.parseInt(process.env.CONTEXT_WINDOW_SIZE ?? '10', 10);
   const modelMessages = applyContextWindow(rawModelMessages, windowSize);
-  const tools = createTravelTools({ conversationId: normalizedConversationId });
+  const tools = createTravelTools({ conversationId: normalizedConversationId, userId: session?.user?.id });
 
   const result = streamText({
     model: geminiFlashLite,

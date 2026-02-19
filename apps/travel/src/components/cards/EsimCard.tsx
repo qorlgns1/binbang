@@ -1,27 +1,80 @@
 'use client';
 
 import { ExternalLink, Globe2, Smartphone, Tag } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
 import type { EsimEntity } from '@/lib/types';
+
+interface AffiliateTrackingContext {
+  conversationId?: string;
+  sessionId?: string;
+  provider: string;
+}
 
 interface EsimCardProps {
   esim: EsimEntity;
   /** true = 광고주 링크가 생성됨 → CTA 활성 */
   ctaEnabled: boolean;
+  trackingContext?: AffiliateTrackingContext;
 }
 
-export function EsimCard({ esim, ctaEnabled }: EsimCardProps) {
+export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const hasLink = esim.isAffiliate && ctaEnabled && esim.affiliateLink;
+  const hasLink = Boolean(esim.isAffiliate && ctaEnabled && esim.affiliateLink);
+  const provider = trackingContext?.provider ?? 'awin_pending:esim';
+
+  useEffect(() => {
+    if (!esim.isAffiliate) return;
+    if (!trackingContext) return;
+
+    trackImpressionOnce({
+      conversationId: trackingContext.conversationId,
+      sessionId: trackingContext.sessionId,
+      provider,
+      productId: esim.productId,
+      productName: esim.name,
+      category: 'esim',
+      isCtaEnabled: hasLink,
+    });
+  }, [esim.isAffiliate, esim.name, esim.productId, hasLink, provider, trackingContext]);
 
   function handleCtaClick() {
     if (hasLink) return; // <a> 태그가 직접 처리
-    toast('eSIM 제휴 링크 준비 중', {
-      description: '현재 eSIM 제휴 광고주를 연동하는 중입니다. 잠시 후 다시 확인해 주세요.',
-      duration: 3000,
-    });
+    const isPendingAdvertiser = provider.startsWith('awin_pending:');
+    const isDisabledBySetting = provider.startsWith('awin_disabled:');
+
+    if (isDisabledBySetting) {
+      toast('제휴 링크 비활성화', {
+        description: '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.',
+        duration: 3000,
+      });
+    } else {
+      toast('eSIM 제휴 링크 준비 중', {
+        description: '현재 eSIM 제휴 광고주를 연동하는 중입니다. 잠시 후 다시 확인해 주세요.',
+        duration: 3000,
+      });
+    }
+
+    if (trackingContext) {
+      void trackAffiliateEvent({
+        conversationId: trackingContext.conversationId,
+        sessionId: trackingContext.sessionId,
+        provider,
+        eventType: 'cta_attempt',
+        reasonCode: isPendingAdvertiser
+          ? 'no_advertiser_for_category'
+          : isDisabledBySetting
+            ? 'affiliate_links_disabled'
+            : undefined,
+        productId: esim.productId,
+        productName: esim.name,
+        category: 'esim',
+        isCtaEnabled: false,
+      });
+    }
+
     setModalOpen(true);
   }
 
@@ -64,6 +117,19 @@ export function EsimCard({ esim, ctaEnabled }: EsimCardProps) {
                 href={esim.affiliateLink}
                 target='_blank'
                 rel='noopener noreferrer sponsored'
+                onClick={() => {
+                  if (!trackingContext) return;
+                  void trackAffiliateEvent({
+                    conversationId: trackingContext.conversationId,
+                    sessionId: trackingContext.sessionId,
+                    provider,
+                    eventType: 'outbound_click',
+                    productId: esim.productId,
+                    productName: esim.name,
+                    category: 'esim',
+                    isCtaEnabled: true,
+                  });
+                }}
                 className='flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
               >
                 <ExternalLink className='h-4 w-4' aria-hidden />

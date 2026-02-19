@@ -592,6 +592,8 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
                     onAlertClick={handleAlertClick}
                     selectedPlaceId={selectedPlaceId}
                     isStreaming={isStreamingAssistant}
+                    conversationId={currentConversationId}
+                    sessionId={sessionId ?? undefined}
                   />
                 </div>
               );
