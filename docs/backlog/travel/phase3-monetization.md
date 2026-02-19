@@ -311,7 +311,7 @@ model AffiliateEvent {
 - [x] P3-4-T3: 캐시 히트/미스/스테일 반환 로깅
 - [x] P3-4-T4: Stampede 방지 lock (동일 key 재계산 단일화)
 - [x] P3-4-T5: stale-if-error 정책 (외부 API 실패 시 최근 stale 데이터 반환)
-- [ ] P3-4-T6: 캐시 무효화 전략 (수동 + TTL 기반)
+- [x] P3-4-T6: 캐시 무효화 전략 (수동 + TTL 기반)
 
 ### P3-5: 날씨/환율 데이터 캐싱
 

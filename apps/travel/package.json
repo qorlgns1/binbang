@@ -10,7 +10,8 @@
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .next node_modules",
-    "warm-cache": "tsx src/scripts/warmCache.ts"
+    "warm-cache": "tsx src/scripts/warmCache.ts",
+    "invalidate-cache": "tsx src/scripts/invalidateCache.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",

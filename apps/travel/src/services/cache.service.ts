@@ -11,6 +11,16 @@ const DEFAULT_STALE_TTL = Number.parseInt(process.env.CACHE_STALE_TTL_SECONDS ??
 const DEFAULT_LOCK_TTL_SECONDS = Number.parseInt(process.env.CACHE_LOCK_TTL_SECONDS ?? '15', 10);
 const DEFAULT_LOCK_WAIT_TIMEOUT_MS = Number.parseInt(process.env.CACHE_LOCK_WAIT_TIMEOUT_MS ?? '1500', 10);
 const DEFAULT_LOCK_WAIT_INTERVAL_MS = Number.parseInt(process.env.CACHE_LOCK_WAIT_INTERVAL_MS ?? '100', 10);
+const DEFAULT_INVALIDATE_SCAN_COUNT = Number.parseInt(process.env.CACHE_INVALIDATE_SCAN_COUNT ?? '200', 10);
+const INVALIDATE_DELETE_BATCH_SIZE = 500;
+
+export const CACHE_INVALIDATION_PREFIX_BY_TARGET = {
+  places: 'places',
+  weather: 'weather',
+  exchange: 'exchange_rate',
+} as const;
+
+export type CacheInvalidationTarget = keyof typeof CACHE_INVALIDATION_PREFIX_BY_TARGET;
 
 interface CacheEnvelope<T> {
   value: T;
@@ -178,6 +188,25 @@ async function releaseLock(
   } catch (error) {
     console.error(`[Cache] Failed to release lock ${lockKey}:`, error);
   }
+}
+
+async function scanKeysByPattern(
+  redis: NonNullable<ReturnType<typeof getRedisClient>>,
+  pattern: string,
+): Promise<string[]> {
+  const keys: string[] = [];
+  let cursor = '0';
+  const scanCount = Number.isFinite(DEFAULT_INVALIDATE_SCAN_COUNT) ? Math.max(10, DEFAULT_INVALIDATE_SCAN_COUNT) : 200;
+
+  do {
+    const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', String(scanCount));
+    cursor = nextCursor;
+    if (batch.length > 0) {
+      keys.push(...batch);
+    }
+  } while (cursor !== '0');
+
+  return keys;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -388,16 +417,31 @@ export async function invalidateCachePattern(pattern: string): Promise<number> {
   try {
     const connected = await ensureRedisConnected(redis);
     if (!connected) return 0;
-    const keys = await redis.keys(pattern);
+    const keys = await scanKeysByPattern(redis, pattern);
     if (keys.length === 0) {
       return 0;
     }
 
-    await redis.del(...keys);
+    let deletedCount = 0;
+    for (let i = 0; i < keys.length; i += INVALIDATE_DELETE_BATCH_SIZE) {
+      const batch = keys.slice(i, i + INVALIDATE_DELETE_BATCH_SIZE);
+      await redis.del(...batch);
+      deletedCount += batch.length;
+    }
+
     console.log(`[Cache] INVALIDATE PATTERN: ${pattern} (${keys.length} keys)`);
-    return keys.length;
+    return deletedCount;
   } catch (error) {
     console.error(`[Cache] Error invalidating pattern ${pattern}:`, error);
     return 0;
   }
+}
+
+export function getCacheInvalidationPattern(target: CacheInvalidationTarget): string {
+  return `${CACHE_INVALIDATION_PREFIX_BY_TARGET[target]}:*`;
+}
+
+export async function invalidateCacheTarget(target: CacheInvalidationTarget): Promise<number> {
+  const pattern = getCacheInvalidationPattern(target);
+  return invalidateCachePattern(pattern);
 }
