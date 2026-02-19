@@ -66,9 +66,10 @@ async function main() {
 
   const key = readArg(args, '--key');
   const pattern = readArg(args, '--pattern');
-  const targetInput = (readArg(args, '--target') ?? 'all').toLowerCase();
+  const targetArg = readArg(args, '--target');
+  const targetInput = (targetArg ?? 'all').toLowerCase();
 
-  const modeCount = Number(Boolean(key)) + Number(Boolean(pattern));
+  const modeCount = Number(Boolean(key)) + Number(Boolean(pattern)) + Number(targetArg != null);
   if (modeCount > 1) {
     throw new Error('Use only one mode: --target OR --pattern OR --key');
   }

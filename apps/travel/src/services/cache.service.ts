@@ -275,10 +275,12 @@ async function refreshWithLock<T>(
   const lockKey = `${key}:lock`;
   const lockValue = crypto.randomUUID();
   const lockTtlSeconds = normalizeTtlSeconds(options.lockTtlSeconds ?? DEFAULT_LOCK_TTL_SECONDS);
+  let lockAcquired = false;
 
   try {
-    const lockAcquired = await redis.set(lockKey, lockValue, 'EX', lockTtlSeconds, 'NX');
-    if (lockAcquired === 'OK') {
+    const lockResult = await redis.set(lockKey, lockValue, 'EX', lockTtlSeconds, 'NX');
+    if (lockResult === 'OK') {
+      lockAcquired = true;
       return await runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
     }
 
@@ -301,7 +303,9 @@ async function refreshWithLock<T>(
     console.warn(`[Cache:${label}] LOCK_TIMEOUT_FETCH: ${key}`);
     return runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
   } finally {
-    await releaseLock(redis, lockKey, lockValue);
+    if (lockAcquired) {
+      await releaseLock(redis, lockKey, lockValue);
+    }
   }
 }
 

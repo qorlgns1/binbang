@@ -16,6 +16,10 @@ const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }]
 const PLACE_TYPES = ['tourist_attraction', 'restaurant', 'hotel'];
 
 async function warmPlacesCache() {
+  if (!process.env.GOOGLE_MAPS_API_KEY) {
+    console.warn('GOOGLE_MAPS_API_KEY missing; skipping Places cache warm.');
+    return;
+  }
   console.log('🔥 Warming Places API cache...');
   let count = 0;
 
@@ -38,6 +42,10 @@ async function warmPlacesCache() {
 }
 
 async function warmWeatherCache() {
+  if (!process.env.OPENWEATHERMAP_API_KEY) {
+    console.warn('OPENWEATHERMAP_API_KEY missing; skipping Weather cache warm.');
+    return;
+  }
   console.log('🔥 Warming Weather API cache...');
   let count = 0;
 
@@ -55,6 +63,10 @@ async function warmWeatherCache() {
 }
 
 async function warmExchangeRateCache() {
+  if (!process.env.EXCHANGERATE_API_KEY) {
+    console.warn('EXCHANGERATE_API_KEY missing; skipping Exchange Rate cache warm.');
+    return;
+  }
   console.log('🔥 Warming Exchange Rate API cache...');
   let count = 0;
 
