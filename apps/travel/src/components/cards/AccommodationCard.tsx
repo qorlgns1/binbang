@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AffiliateNoticeModal } from '@/components/cards/AffiliateNoticeModal';
 import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { AccommodationEntity } from '@/lib/types';
@@ -237,37 +238,13 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
         )}
       </div>
 
-      {/* 비활성 CTA 클릭 시 안내 모달 */}
-      {modalOpen && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center'
-          role='dialog'
-          aria-modal='true'
-          aria-labelledby='aff-modal-title'
-        >
-          {/* 배경 버튼: 클릭 시 모달 닫기 */}
-          <button
-            type='button'
-            className='absolute inset-0 bg-black/40 backdrop-blur-sm'
-            onClick={() => setModalOpen(false)}
-            aria-label='모달 닫기'
-          />
-          {/* 모달 콘텐츠 */}
-          <div className='relative z-10 mx-4 max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl'>
-            <h3 id='aff-modal-title' className='mb-2 font-semibold text-base'>
-              {modalTitle}
-            </h3>
-            <p className='text-sm text-muted-foreground leading-relaxed'>{modalDescription}</p>
-            <button
-              type='button'
-              onClick={() => setModalOpen(false)}
-              className='mt-4 w-full rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/80 transition-colors'
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
+      <AffiliateNoticeModal
+        open={modalOpen}
+        title={modalTitle}
+        titleId='aff-modal-title'
+        description={modalDescription}
+        onClose={() => setModalOpen(false)}
+      />
     </>
   );
 }

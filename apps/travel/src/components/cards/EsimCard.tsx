@@ -4,6 +4,7 @@ import { ExternalLink, Globe2, Smartphone, Tag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AffiliateNoticeModal } from '@/components/cards/AffiliateNoticeModal';
 import { trackAffiliateEvent, trackImpressionOnce } from '@/lib/affiliateTracking';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
 import type { EsimEntity } from '@/lib/types';
@@ -154,38 +155,19 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
         )}
       </div>
 
-      {modalOpen && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center'
-          role='dialog'
-          aria-modal='true'
-          aria-labelledby='esim-aff-modal-title'
-        >
-          <button
-            type='button'
-            className='absolute inset-0 bg-black/40 backdrop-blur-sm'
-            onClick={() => setModalOpen(false)}
-            aria-label='모달 닫기'
-          />
-          <div className='relative z-10 mx-4 max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl'>
-            <h3 id='esim-aff-modal-title' className='mb-2 text-base font-semibold'>
-              eSIM 제휴 링크 준비 중
-            </h3>
-            <p className='text-sm leading-relaxed text-muted-foreground'>
-              현재 eSIM 제휴 광고주를 연결하는 중입니다.
-              <br />
-              연동이 완료되면 구매 링크가 바로 활성화됩니다.
-            </p>
-            <button
-              type='button'
-              onClick={() => setModalOpen(false)}
-              className='mt-4 w-full rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80'
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
+      <AffiliateNoticeModal
+        open={modalOpen}
+        title='eSIM 제휴 링크 준비 중'
+        titleId='esim-aff-modal-title'
+        description={
+          <>
+            현재 eSIM 제휴 광고주를 연결하는 중입니다.
+            <br />
+            연동이 완료되면 구매 링크가 바로 활성화됩니다.
+          </>
+        }
+        onClose={() => setModalOpen(false)}
+      />
     </>
   );
 }
