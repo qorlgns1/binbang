@@ -1,12 +1,16 @@
 import Redis from 'ioredis';
 
 let redisClient: Redis | null = null;
+let redisDisabledWarned = false;
 
 export function getRedisClient(): Redis | null {
   // Redis is optional - app should work without it
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) {
-    console.warn('REDIS_URL not configured - caching disabled');
+    if (!redisDisabledWarned) {
+      redisDisabledWarned = true;
+      console.warn('REDIS_URL not configured - caching disabled');
+    }
     return null;
   }
 

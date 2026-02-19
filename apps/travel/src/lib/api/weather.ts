@@ -77,7 +77,7 @@ async function fetchWeatherFromApi(params: WeatherParams, apiKey: string): Promi
     const geoResponse = await fetch(geoUrl, { signal: controller.signal });
 
     if (!geoResponse.ok) {
-      const responseText = await geoResponse.text();
+      const responseText = (await geoResponse.text()).slice(0, 500);
       throw new Error(`OpenWeather geocode error (${geoResponse.status}): ${responseText}`);
     }
 
@@ -98,7 +98,7 @@ async function fetchWeatherFromApi(params: WeatherParams, apiKey: string): Promi
     const weatherResponse = await fetch(weatherUrl, { signal: controller.signal });
 
     if (!weatherResponse.ok) {
-      const responseText = await weatherResponse.text();
+      const responseText = (await weatherResponse.text()).slice(0, 500);
       throw new Error(`OpenWeather current weather error (${weatherResponse.status}): ${responseText}`);
     }
 
