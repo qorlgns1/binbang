@@ -17,6 +17,14 @@ interface TravelToolsOptions {
   userId?: string;
 }
 
+interface ResolveAffiliateProviderOptions {
+  ctaFeatureEnabled: boolean;
+  preferenceEnabled: boolean;
+  directProvider?: string;
+  disabledProvider: string;
+  pendingProvider: string;
+}
+
 function buildStableProductId(prefix: string, parts: string[]): string {
   const seed = parts.join('|').trim();
   const digest = createHash('sha1').update(seed).digest('hex').slice(0, 12);
@@ -36,6 +44,17 @@ function buildEsimDescription(location?: string, tripDays?: number, dataNeedGB?:
   if (dataNeedGB != null) tokens.push(`${dataNeedGB}GB 권장`);
   if (tokens.length === 0) return '해외여행 데이터 eSIM';
   return `${tokens.join(' · ')} 데이터 eSIM`;
+}
+
+function resolveAffiliateProvider({
+  ctaFeatureEnabled,
+  preferenceEnabled,
+  directProvider,
+  disabledProvider,
+  pendingProvider,
+}: ResolveAffiliateProviderOptions): string {
+  if (!ctaFeatureEnabled || !preferenceEnabled) return disabledProvider;
+  return directProvider ?? pendingProvider;
 }
 
 export function createTravelTools(options: TravelToolsOptions = {}) {
@@ -91,7 +110,8 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
       execute: async ({ query, location }): Promise<SearchAccommodationResult> => {
         const ctaFeatureEnabled = isAffiliateCtaEnabled();
         const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
-        const isAffiliateEnabled = ctaFeatureEnabled && affiliateLinkPolicy.enabled;
+        const preferenceEnabled = affiliateLinkPolicy.enabled;
+        const canUseAffiliateLink = ctaFeatureEnabled && preferenceEnabled;
         const [agodaResult, placesResult] = await Promise.all([
           searchAgodaAccommodations({ query, location, limit: 5 }),
           searchGooglePlaces({ query, location, type: 'hotel' }),
@@ -104,23 +124,16 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
 
         const firstAgoda = agodaResult.accommodations[0];
         const firstPlace = places[0];
-        const isDisabledByPreference = ctaFeatureEnabled && !affiliateLinkPolicy.enabled;
-        const isCtaOffByFlag = !ctaFeatureEnabled;
-
-        const provider = isCtaOffByFlag
-          ? 'agoda_disabled:accommodation'
-          : firstAgoda
-            ? isAffiliateEnabled
-              ? 'agoda_direct'
-              : isDisabledByPreference
-                ? 'agoda_disabled:accommodation'
-                : 'agoda_pending:accommodation'
-            : isDisabledByPreference
-              ? 'agoda_disabled:accommodation'
-              : 'agoda_pending:accommodation';
+        const provider = resolveAffiliateProvider({
+          ctaFeatureEnabled,
+          preferenceEnabled,
+          directProvider: firstAgoda && canUseAffiliateLink ? 'agoda_direct' : undefined,
+          disabledProvider: 'agoda_disabled:accommodation',
+          pendingProvider: 'agoda_pending:accommodation',
+        });
 
         const affiliateLink =
-          firstAgoda && isAffiliateEnabled && firstAgoda.available ? firstAgoda.affiliateLink : undefined;
+          firstAgoda && canUseAffiliateLink && firstAgoda.available ? firstAgoda.affiliateLink : undefined;
         const ctaEnabled = Boolean(affiliateLink);
 
         const affiliate: AccommodationEntity | null = firstAgoda
@@ -200,8 +213,9 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
       execute: async ({ query, location, tripDays, dataNeedGB }): Promise<SearchEsimResult> => {
         const ctaFeatureEnabled = isAffiliateCtaEnabled();
         const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
-        const isAffiliateEnabled = ctaFeatureEnabled && affiliateLinkPolicy.enabled;
-        const advertiser = isAffiliateEnabled ? await getFirstAdvertiserByCategory('esim') : null;
+        const preferenceEnabled = affiliateLinkPolicy.enabled;
+        const canUseAffiliateLink = ctaFeatureEnabled && preferenceEnabled;
+        const advertiser = canUseAffiliateLink ? await getFirstAdvertiserByCategory('esim') : null;
         const productId = buildStableProductId('esim', [
           query,
           location ?? 'global',
@@ -219,15 +233,13 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         }
 
         const ctaEnabled = !!affiliateLink;
-        const isDisabledByPreference = ctaFeatureEnabled && !affiliateLinkPolicy.enabled;
-        const isCtaOffByFlag = !ctaFeatureEnabled;
-        const provider = isCtaOffByFlag
-          ? 'awin_disabled:esim'
-          : advertiser
-            ? `awin:${advertiser.advertiserId}`
-            : isDisabledByPreference
-              ? 'awin_disabled:esim'
-              : 'awin_pending:esim';
+        const provider = resolveAffiliateProvider({
+          ctaFeatureEnabled,
+          preferenceEnabled,
+          directProvider: advertiser ? `awin:${advertiser.advertiserId}` : undefined,
+          disabledProvider: 'awin_disabled:esim',
+          pendingProvider: 'awin_pending:esim',
+        });
         const primary: EsimEntity = {
           productId,
           name: advertiser ? `${advertiser.name} eSIM` : '여행용 eSIM',

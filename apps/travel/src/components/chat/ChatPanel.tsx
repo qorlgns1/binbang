@@ -118,8 +118,6 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
   const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark' | 'limit'>('save');
   const [currentConversationId, setCurrentConversationId] = useState<string>(() => createConversationId());
 
-  console.log({ input });
-
   const { sessionId } = useGuestSession();
   const { mergeStatus } = useSessionMerge();
   const { status: authStatus } = useSession();
@@ -225,15 +223,12 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
         }
       }
 
-      console.log({ entities });
       onEntitiesUpdate(entities);
     },
     [onEntitiesUpdate],
   );
 
   useEffect(() => {
-    console.log({ messages });
-
     extractEntities(messages);
   }, [messages, extractEntities]);
 

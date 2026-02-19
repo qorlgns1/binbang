@@ -4,30 +4,11 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { LoginPromptModal } from './LoginPromptModal';
+import { LoginPromptModal, TRIGGER_MESSAGES } from './LoginPromptModal';
 
 vi.mock('next-auth/react', () => ({
   signIn: vi.fn(),
 }));
-
-const TRIGGER_MESSAGES = {
-  save: {
-    title: '로그인하고 대화를 저장하세요',
-    description: '대화 내역을 저장하고 언제든 다시 보려면 로그인이 필요해요.',
-  },
-  history: {
-    title: '이전 대화를 보려면 로그인하세요',
-    description: '저장된 대화 내역을 보려면 로그인이 필요해요.',
-  },
-  bookmark: {
-    title: '북마크를 저장하려면 로그인하세요',
-    description: '북마크 기능을 사용하려면 로그인이 필요해요.',
-  },
-  limit: {
-    title: '계속 사용하려면 로그인하세요',
-    description: '게스트 한도에 도달했어요. 로그인하면 더 많은 대화를 이어갈 수 있어요.',
-  },
-} as const;
 
 describe('LoginPromptModal', () => {
   it('returns null when open is false', () => {

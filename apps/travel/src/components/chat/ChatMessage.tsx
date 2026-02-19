@@ -2,6 +2,7 @@
 
 import type { UIMessage } from 'ai';
 import { Bot, User } from 'lucide-react';
+import type { ReactNode } from 'react';
 import Markdown from 'react-markdown';
 
 import { AccommodationCard } from '@/components/cards/AccommodationCard';
@@ -118,6 +119,32 @@ interface ToolPartProps {
   sessionId?: string;
 }
 
+interface EntityHoverGroupProps {
+  placeId?: string;
+  mapHoveredEntityId?: string;
+  onPlaceHover?: (placeId: string | undefined) => void;
+  children: ReactNode;
+}
+
+function EntityHoverGroup({ placeId, mapHoveredEntityId, onPlaceHover, children }: EntityHoverGroupProps) {
+  if (!placeId) return <>{children}</>;
+
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
+    <div
+      role='group'
+      data-place-id={placeId}
+      className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
+      onMouseEnter={() => onPlaceHover?.(placeId)}
+      onMouseLeave={() => onPlaceHover?.(undefined)}
+      onFocus={() => onPlaceHover?.(placeId)}
+      onBlur={() => onPlaceHover?.(undefined)}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ToolPart({
   part,
   onPlaceSelect,
@@ -175,17 +202,11 @@ function ToolPart({
       return (
         <div className='grid grid-cols-1 gap-3 my-3 sm:grid-cols-2'>
           {data.places.map((place) => (
-            // Hover wrapper for map marker highlight; focus/blur for keyboard a11y (tab order via PlaceCard).
-            // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
-            <div
+            <EntityHoverGroup
               key={place.placeId}
-              role='group'
-              data-place-id={place.placeId}
-              className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === place.placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
-              onMouseEnter={() => onPlaceHover?.(place.placeId)}
-              onMouseLeave={() => onPlaceHover?.(undefined)}
-              onFocus={() => onPlaceHover?.(place.placeId)}
-              onBlur={() => onPlaceHover?.(undefined)}
+              placeId={place.placeId}
+              mapHoveredEntityId={mapHoveredEntityId}
+              onPlaceHover={onPlaceHover}
             >
               <PlaceCard
                 place={place}
@@ -193,7 +214,7 @@ function ToolPart({
                 onSelect={onPlaceSelect}
                 onAlertClick={onAlertClick}
               />
-            </div>
+            </EntityHoverGroup>
           ))}
         </div>
       );
@@ -220,39 +241,31 @@ function ToolPart({
     return (
       <div className='my-2 space-y-3'>
         {affiliate && (
-          // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
-          <div
-            role='group'
-            className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === affiliate.placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
-            onMouseEnter={() => onPlaceHover?.(affiliate.placeId)}
-            onMouseLeave={() => onPlaceHover?.(undefined)}
-            onFocus={() => onPlaceHover?.(affiliate.placeId)}
-            onBlur={() => onPlaceHover?.(undefined)}
+          <EntityHoverGroup
+            placeId={affiliate.placeId}
+            mapHoveredEntityId={mapHoveredEntityId}
+            onPlaceHover={onPlaceHover}
           >
             <AccommodationCard
               accommodation={affiliate}
               ctaEnabled={data.ctaEnabled}
               trackingContext={{ conversationId, sessionId, provider: data.provider }}
             />
-          </div>
+          </EntityHoverGroup>
         )}
         {data.alternatives.length > 0 && (
           <div>
             <p className='mb-1.5 text-xs text-muted-foreground'>일반 검색 결과</p>
             <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
               {data.alternatives.map((acc) => (
-                // biome-ignore lint/a11y/useSemanticElements: wrapper is not a form fieldset.
-                <div
+                <EntityHoverGroup
                   key={acc.placeId}
-                  role='group'
-                  className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === acc.placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
-                  onMouseEnter={() => onPlaceHover?.(acc.placeId)}
-                  onMouseLeave={() => onPlaceHover?.(undefined)}
-                  onFocus={() => onPlaceHover?.(acc.placeId)}
-                  onBlur={() => onPlaceHover?.(undefined)}
+                  placeId={acc.placeId}
+                  mapHoveredEntityId={mapHoveredEntityId}
+                  onPlaceHover={onPlaceHover}
                 >
                   <AccommodationCard accommodation={acc} ctaEnabled={false} />
-                </div>
+                </EntityHoverGroup>
               ))}
             </div>
           </div>
