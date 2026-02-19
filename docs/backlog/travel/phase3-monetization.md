@@ -149,7 +149,7 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 - [ ] `ConversationPreference` 테이블에 대화별 설정 영구 저장
 - [ ] 대화 소유자만 오버라이드 변경 가능하도록 권한 체크
 - [ ] 오버라이드 변경 감사 로그 저장
-- [ ] 관리자 대시보드에 전환율/수익 리포트 연결
+- [x] 관리자 대시보드에 전환율/수익 리포트 연결
 
 ## Revenue Model
 
@@ -251,16 +251,16 @@ model AffiliateEvent {
 ```
 
 - [x] P3-2-T2: 이벤트 트래킹 API endpoint (`POST /api/affiliate/event`)
-- [ ] P3-2-T3: Stage A 퍼널 지표 정의 (impression → outbound_click 비율, 카테고리별)
-- [ ] P3-2-T4: 관리자 대시보드 - 노출/시도/클릭 기본 통계 (5분 집계 캐시, 카테고리별 필터)
-- [ ] P3-2-T5: Awin Transactions API 연동으로 전환/수익 확인
+- [x] P3-2-T3: Stage A 퍼널 지표 정의 (impression → outbound_click 비율, 카테고리별)
+- [x] P3-2-T4: 관리자 대시보드 - 노출/시도/클릭 기본 통계 (5분 집계 캐시, 카테고리별 필터)
+- [x] P3-2-T5: Awin Transactions API 연동으로 전환/수익 확인
 - [x] P3-2-T6: `cta_attempt` 발생 시 `reasonCode=no_advertiser_for_category` 저장 검증
 - [x] P3-2-T7: `impression` dedupe 구현 (사용자 로컬 day 기준 `conversationId + productId + local_day`)
 - [x] P3-2-T8: `userTimezone` 파이프라인 검증 (프로필 → 브라우저 fallback → API → DB 저장)
 - [x] P3-2-T9: `userTimezone` 미수집 fallback 검증 (UTC day 기준 dedupe/집계)
 - [ ] P3-2-T10: 대시보드 시간 표시 로직 검증 (저장 UTC, 렌더링 브라우저 로컬)
 - [x] P3-2-T11: 타임존 source 우선순위 검증 (프로필 값이 있으면 브라우저 값보다 우선)
-- [ ] P3-2-T12: 대시보드 집계 캐시 TTL 검증 (300초, 만료 후 재집계)
+- [x] P3-2-T12: 대시보드 집계 캐시 TTL 검증 (300초, 만료 후 재집계)
 - [ ] P3-2-T13: Stage A 캐시 무효화 정책 검증 (TTL 만료 기반만, 이벤트 즉시 무효화 없음)
 
 ### P3-3: 자연스러운 제휴 링크 삽입
@@ -362,7 +362,7 @@ model AffiliateEvent {
 - [x] `cta_attempt` 이벤트에 `reasonCode=no_advertiser_for_category`가 저장됨
 - [x] 이벤트별 `userTimezone`가 DB에 저장됨 (프로필 우선, 미설정 시 브라우저 fallback)
 - [x] `userTimezone` 미수집 이벤트는 UTC day 기준으로 dedupe/집계됨
-- [ ] 대시보드 통계가 5분 캐시 기준으로 제공되고 만료 시 재집계됨
+- [x] 대시보드 통계가 5분 캐시 기준으로 제공되고 만료 시 재집계됨
 - [x] 동일 Places 검색 시 두 번째부터 캐시 응답
 - [x] 환율/날씨 캐시 정상 동작 및 TTL 만료 후 갱신
 

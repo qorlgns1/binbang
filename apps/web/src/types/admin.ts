@@ -270,6 +270,53 @@ export interface AdminFunnelClicksResponse {
   series: AdminFunnelClickSeriesItem[];
 }
 
+export type AffiliateCategoryFilter =
+  | 'all'
+  | 'accommodation'
+  | 'flight'
+  | 'esim'
+  | 'car_rental'
+  | 'travel_package'
+  | 'other';
+
+export interface AdminAffiliateCategoryFunnelItem {
+  category: AffiliateCategoryFilter;
+  impression: number;
+  ctaAttempt: number;
+  outboundClick: number;
+  clickThroughRate: number;
+}
+
+export interface AdminAffiliateRevenueSummary {
+  status: 'ok' | 'unavailable' | 'error';
+  conversionCount: number;
+  commissionAmount: number;
+  currency: string | null;
+  message?: string;
+}
+
+export interface AdminAffiliateFunnelResponse {
+  range: {
+    from: string;
+    to: string;
+    timezone: 'UTC';
+  };
+  filter: {
+    from: string;
+    to: string;
+  };
+  displayTimezone: 'Asia/Seoul';
+  categoryFilter: AffiliateCategoryFilter;
+  totals: {
+    impression: number;
+    ctaAttempt: number;
+    outboundClick: number;
+    clickThroughRate: number;
+  };
+  byCategory: AdminAffiliateCategoryFunnelItem[];
+  revenue: AdminAffiliateRevenueSummary;
+}
+
 // ── Funnel Growth ──
 
 export interface AdminFunnelGrowthKpis {
