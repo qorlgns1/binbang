@@ -225,7 +225,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
                 type='button'
                 onClick={handleCtaClick}
                 className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed'
-                aria-disabled
+                aria-haspopup='dialog'
               >
                 {disabledButtonLabel}
               </button>
@@ -242,7 +242,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
         <div
           className='fixed inset-0 z-50 flex items-center justify-center'
           role='dialog'
-          aria-modal
+          aria-modal='true'
           aria-labelledby='aff-modal-title'
         >
           {/* 배경 버튼: 클릭 시 모달 닫기 */}

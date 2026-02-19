@@ -142,7 +142,7 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
                 type='button'
                 onClick={handleCtaClick}
                 className='flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted'
-                aria-disabled
+                aria-disabled='true'
               >
                 제휴 링크 준비중
               </button>
@@ -158,7 +158,7 @@ export function EsimCard({ esim, ctaEnabled, trackingContext }: EsimCardProps) {
         <div
           className='fixed inset-0 z-50 flex items-center justify-center'
           role='dialog'
-          aria-modal
+          aria-modal='true'
           aria-labelledby='esim-aff-modal-title'
         >
           <button

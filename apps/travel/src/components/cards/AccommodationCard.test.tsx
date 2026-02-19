@@ -69,7 +69,7 @@ describe('AccommodationCard', () => {
     expect(html).toContain('제휴 링크 준비중');
     expect(html).toContain('예약/구매 시 제휴 수수료를 받을 수 있습니다');
     expect(html).toContain('광고/제휴');
-    expect(html).toContain('aria-disabled');
+    expect(html).toContain('aria-haspopup="dialog"');
   });
 
   it('shows "이미지 없음" when photoUrl is missing', () => {
