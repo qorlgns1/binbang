@@ -105,16 +105,19 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         const firstAgoda = agodaResult.accommodations[0];
         const firstPlace = places[0];
         const isDisabledByPreference = ctaFeatureEnabled && !affiliateLinkPolicy.enabled;
+        const isCtaOffByFlag = !ctaFeatureEnabled;
 
-        const provider = firstAgoda
-          ? isAffiliateEnabled
-            ? 'agoda_direct'
+        const provider = isCtaOffByFlag
+          ? 'agoda_disabled:accommodation'
+          : firstAgoda
+            ? isAffiliateEnabled
+              ? 'agoda_direct'
+              : isDisabledByPreference
+                ? 'agoda_disabled:accommodation'
+                : 'agoda_pending:accommodation'
             : isDisabledByPreference
               ? 'agoda_disabled:accommodation'
-              : 'agoda_pending:accommodation'
-          : isDisabledByPreference
-            ? 'agoda_disabled:accommodation'
-            : 'agoda_pending:accommodation';
+              : 'agoda_pending:accommodation';
 
         const affiliateLink =
           firstAgoda && isAffiliateEnabled && firstAgoda.available ? firstAgoda.affiliateLink : undefined;
@@ -217,11 +220,14 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
 
         const ctaEnabled = !!affiliateLink;
         const isDisabledByPreference = ctaFeatureEnabled && !affiliateLinkPolicy.enabled;
-        const provider = advertiser
-          ? `awin:${advertiser.advertiserId}`
-          : isDisabledByPreference
-            ? 'awin_disabled:esim'
-            : 'awin_pending:esim';
+        const isCtaOffByFlag = !ctaFeatureEnabled;
+        const provider = isCtaOffByFlag
+          ? 'awin_disabled:esim'
+          : advertiser
+            ? `awin:${advertiser.advertiserId}`
+            : isDisabledByPreference
+              ? 'awin_disabled:esim'
+              : 'awin_pending:esim';
         const primary: EsimEntity = {
           productId,
           name: advertiser ? `${advertiser.name} eSIM` : '여행용 eSIM',
