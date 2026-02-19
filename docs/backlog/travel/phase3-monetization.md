@@ -324,7 +324,7 @@ model AffiliateEvent {
 
 ### P3-6: 인기 여행지 사전 캐싱 (Stage B 이후)
 
-- [ ] P3-6-T1: 인기 여행지 목록 정의 (Tokyo, Seoul, Bangkok, Paris 등 Top 30)
+- [x] P3-6-T1: 인기 여행지 목록 정의 (Tokyo, Seoul, Bangkok, Paris 등 Top 30)
 - [ ] P3-6-T2: Cron job으로 인기 여행지 데이터 주기적 사전 로딩
   - Places: 주요 관광지, 호텔, 식당
   - 날씨: 월별 히스토리

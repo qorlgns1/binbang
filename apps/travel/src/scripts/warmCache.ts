@@ -7,40 +7,7 @@
 import { fetchExchangeRate } from '../lib/api/exchangeRate';
 import { searchGooglePlaces } from '../lib/api/places';
 import { fetchWeatherHistory } from '../lib/api/weather';
-
-// Top 30 popular travel destinations
-const POPULAR_DESTINATIONS = [
-  'Tokyo',
-  'Seoul',
-  'Bangkok',
-  'Paris',
-  'London',
-  'New York',
-  'Singapore',
-  'Dubai',
-  'Hong Kong',
-  'Barcelona',
-  'Rome',
-  'Istanbul',
-  'Amsterdam',
-  'Vienna',
-  'Prague',
-  'Sydney',
-  'Melbourne',
-  'Los Angeles',
-  'San Francisco',
-  'Las Vegas',
-  'Miami',
-  'Toronto',
-  'Vancouver',
-  'Berlin',
-  'Munich',
-  'Zurich',
-  'Copenhagen',
-  'Stockholm',
-  'Oslo',
-  'Reykjavik',
-];
+import { POPULAR_TRAVEL_DESTINATIONS } from '../lib/cache/popularDestinations';
 
 // Common currency pairs to pre-load
 const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }];
@@ -52,7 +19,7 @@ async function warmPlacesCache() {
   console.log('🔥 Warming Places API cache...');
   let count = 0;
 
-  for (const destination of POPULAR_DESTINATIONS) {
+  for (const destination of POPULAR_TRAVEL_DESTINATIONS) {
     for (const placeType of PLACE_TYPES) {
       try {
         await searchGooglePlaces({
@@ -74,7 +41,7 @@ async function warmWeatherCache() {
   console.log('🔥 Warming Weather API cache...');
   let count = 0;
 
-  for (const city of POPULAR_DESTINATIONS) {
+  for (const city of POPULAR_TRAVEL_DESTINATIONS) {
     try {
       // Cache full year weather data (no month filter)
       await fetchWeatherHistory({ city });
