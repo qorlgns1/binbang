@@ -3,7 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { History, Save } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -12,9 +12,11 @@ import { ChatPanelErrorBanner, ChatPanelRestoreBanner } from '@/components/chat/
 import { extractMapEntitiesFromMessages, isRateLimitErrorMessage } from '@/components/chat/chatPanelUtils';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
+import { useChatViewport } from '@/hooks/useChatViewport';
 import { useChatLoginGate } from '@/hooks/useChatLoginGate';
 import { useConversationRestore } from '@/hooks/useConversationRestore';
 import { useGuestSession } from '@/hooks/useGuestSession';
+import { useRateLimitLoginPrompt } from '@/hooks/useRateLimitLoginPrompt';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
 import { isRestoreAutoEnabled } from '@/lib/featureFlags';
 import type { MapEntity, PlaceEntity } from '@/lib/types';
@@ -40,10 +42,6 @@ export function ChatPanel({
   selectedPlaceId,
   mapHoveredEntityId,
 }: ChatPanelProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const rateLimitModalShownForErrorRef = useRef<string | null>(null);
-
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -97,43 +95,21 @@ export function ChatPanel({
   const errorMessage = typeof error?.message === 'string' ? error.message : null;
   const isRateLimitError = errorMessage != null && isRateLimitErrorMessage(errorMessage);
 
-  useEffect(() => {
-    if (!errorMessage) {
-      rateLimitModalShownForErrorRef.current = null;
-      return;
-    }
+  useRateLimitLoginPrompt({
+    authStatus,
+    errorMessage,
+    isRateLimitError,
+    onPromptLogin: openLoginModalForRateLimit,
+  });
 
-    const shouldPromptLogin = authStatus !== 'authenticated' && isRateLimitErrorMessage(errorMessage);
-    if (!shouldPromptLogin) {
-      return;
-    }
-
-    if (rateLimitModalShownForErrorRef.current === errorMessage) {
-      return;
-    }
-
-    openLoginModalForRateLimit();
-    rateLimitModalShownForErrorRef.current = errorMessage;
-  }, [authStatus, errorMessage, openLoginModalForRateLimit]);
+  const { messagesEndRef, scrollAreaRef } = useChatViewport({
+    messagesLength: messages.length,
+    selectedPlaceId,
+  });
 
   useEffect(() => {
     onEntitiesUpdate(extractMapEntitiesFromMessages(messages));
   }, [messages, onEntitiesUpdate]);
-
-  const messagesLength = messages.length;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally scroll on message count change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messagesLength]);
-
-  useEffect(() => {
-    if (!selectedPlaceId || !scrollAreaRef.current) {
-      return;
-    }
-
-    const selectedPlaceElement = scrollAreaRef.current.querySelector(`[data-place-id="${selectedPlaceId}"]`);
-    selectedPlaceElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [selectedPlaceId]);
 
   const handleSubmit = useCallback(
     (e?: FormEvent) => {
