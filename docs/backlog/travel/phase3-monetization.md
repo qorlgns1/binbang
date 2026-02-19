@@ -142,9 +142,9 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 
 ### Stage B (Agoda 직접 API 수령 후 진행)
 
-- [ ] Agoda API 클라이언트 연결 (`apps/travel/src/lib/api/agoda.ts`)
-- [ ] `searchAccommodation`에서 Agoda provider로 전환 (실시간 가격/가용성)
-- [ ] 가격/통화 실데이터 노출
+- [x] Agoda API 클라이언트 연결 (`apps/travel/src/lib/api/agoda.ts`)
+- [x] `searchAccommodation`에서 Agoda provider로 전환 (실시간 가격/가용성)
+- [x] 가격/통화 실데이터 노출
 - [x] 제휴 링크 설정 반영 (계정 기본 토글 + 대화별 오버라이드)
 - [x] `ConversationPreference` 테이블에 대화별 설정 영구 저장
 - [x] 대화 소유자만 오버라이드 변경 가능하도록 권한 체크
@@ -219,7 +219,7 @@ Awin 트랜잭션 API로 전환 확인 → 레퍼럴 수수료 수익
   - 가격 필드: Stage A 비노출 + "가격은 제휴 연동 후 제공" 문구
   - "광고/제휴" 라벨 기본 표시
 - [x] P3-1-T5-A: Stage A UI 정책 반영 (가격 비노출 + 준비중 문구 + 토스트/안내 모달)
-- [ ] P3-1-T5-B: Stage B UI 정책 반영 (Agoda 가격/통화 실데이터 노출)
+- [x] P3-1-T5-B: Stage B UI 정책 반영 (Agoda 가격/통화 실데이터 노출)
 - [x] P3-1-T6: Stage A 임시 숙소 소스 구현 (`searchPlaces` 호텔 타입 결과 재사용)
 - [x] P3-1-T7: 비제휴 대안 2개 병기 구현 (rating DESC, reviewCount DESC, fallback: 원본 순서)
 
@@ -258,10 +258,10 @@ model AffiliateEvent {
 - [x] P3-2-T7: `impression` dedupe 구현 (사용자 로컬 day 기준 `conversationId + productId + local_day`)
 - [x] P3-2-T8: `userTimezone` 파이프라인 검증 (프로필 → 브라우저 fallback → API → DB 저장)
 - [x] P3-2-T9: `userTimezone` 미수집 fallback 검증 (UTC day 기준 dedupe/집계)
-- [ ] P3-2-T10: 대시보드 시간 표시 로직 검증 (저장 UTC, 렌더링 브라우저 로컬)
+- [x] P3-2-T10: 대시보드 시간 표시 로직 검증 (저장 UTC, 렌더링 브라우저 로컬)
 - [x] P3-2-T11: 타임존 source 우선순위 검증 (프로필 값이 있으면 브라우저 값보다 우선)
 - [x] P3-2-T12: 대시보드 집계 캐시 TTL 검증 (300초, 만료 후 재집계)
-- [ ] P3-2-T13: Stage A 캐시 무효화 정책 검증 (TTL 만료 기반만, 이벤트 즉시 무효화 없음)
+- [x] P3-2-T13: Stage A 캐시 무효화 정책 검증 (TTL 만료 기반만, 이벤트 즉시 무효화 없음)
 
 ### P3-3: 자연스러운 제휴 링크 삽입
 
@@ -368,9 +368,9 @@ model AffiliateEvent {
 
 ### Stage B
 
-- [ ] 숙소 관련 질문 시 Agoda 제휴 링크가 포함된 카드 표시
-- [ ] 숙소 카드에 Agoda 가격/통화 정보가 정확히 표시
-- [ ] 제휴 고지 문구가 링크 인접 위치에 표시되고 비제휴 대안 2개 함께 제공
+- [x] 숙소 관련 질문 시 Agoda 제휴 링크가 포함된 카드 표시
+- [x] 숙소 카드에 Agoda 가격/통화 정보가 정확히 표시
+- [x] 제휴 고지 문구가 링크 인접 위치에 표시되고 비제휴 대안 2개 함께 제공
 - [x] 계정 기본 토글 + 대화별 오버라이드 설정이 동작하고 대화별 설정이 우선 적용됨
 - [x] 대화별 오버라이드 값이 대화 단위로 영구 유지되고 명시 변경 시에만 갱신됨
 - [x] 대화 소유자만 오버라이드를 변경할 수 있고, 비소유자 요청은 403으로 차단됨
@@ -379,7 +379,7 @@ model AffiliateEvent {
 - [x] 정리 배치 실패 시 즉시 3회 재시도되고 최종 실패 시 Telegram 알림 발송됨
 - [x] 동일 원인 실패 알림은 24시간 내 1회로 제한되고 복구 시 1회 알림 발송됨
 - [x] Telegram 알림이 Markdown 템플릿으로 가독성 있게 렌더링됨
-- [ ] Agoda provider 기준 전환 리포트가 대시보드에서 조회 가능
+- [x] Agoda provider 기준 전환 리포트가 대시보드에서 조회 가능
 
 ## Environment Variables (New)
 
@@ -394,6 +394,7 @@ AWIN_LINK_BUILDER_SHORTEN=false  # true면 단축 URL 포함
 # Agoda (Stage B)
 AGODA_AFFILIATE_API_KEY=your-key
 AGODA_AFFILIATE_SITE_ID=your-site-id
+AGODA_AFFILIATE_API_URL=https://affiliateapi7643.agoda.com/affiliateservice/lt_v1
 
 # Cache
 CACHE_PROVIDER=redis

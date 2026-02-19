@@ -58,7 +58,13 @@ export interface AccommodationEntity {
   affiliateLink?: string;
   /** true = 광고/제휴 배지 표시 대상 */
   isAffiliate: boolean;
-  /** Awin 광고주 이름 (isAffiliate=true 일 때만 존재) */
+  /** 실시간 가격 (Stage B: Agoda API) */
+  priceAmount?: number;
+  /** 실시간 가격 통화 코드 (예: KRW, USD) */
+  priceCurrency?: string;
+  /** 실시간 가용성 */
+  isAvailable?: boolean;
+  /** 제휴 제공자 이름 (isAffiliate=true 일 때만 존재) */
   advertiserName?: string;
 }
 
@@ -69,7 +75,7 @@ export interface SearchAccommodationResult {
   alternatives: AccommodationEntity[];
   /** true = affiliateLink가 정상 생성됨 */
   ctaEnabled: boolean;
-  /** "awin:{advertiserId}" | "awin_pending:accommodation" */
+  /** "agoda_direct" | "agoda_pending:accommodation" | "agoda_disabled:accommodation" */
   provider: string;
 }
 

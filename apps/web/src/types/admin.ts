@@ -287,6 +287,14 @@ export interface AdminAffiliateCategoryFunnelItem {
   clickThroughRate: number;
 }
 
+export interface AdminAffiliateProviderFunnelItem {
+  provider: string;
+  impression: number;
+  ctaAttempt: number;
+  outboundClick: number;
+  clickThroughRate: number;
+}
+
 export interface AdminAffiliateRevenueSummary {
   status: 'ok' | 'unavailable' | 'error';
   conversionCount: number;
@@ -305,8 +313,13 @@ export interface AdminAffiliateFunnelResponse {
     from: string;
     to: string;
   };
-  displayTimezone: 'Asia/Seoul';
+  displayTimezone: 'browser_local';
   categoryFilter: AffiliateCategoryFilter;
+  cache: {
+    ttlSeconds: number;
+    invalidation: 'ttl_only';
+    immediateInvalidationOnEvent: false;
+  };
   totals: {
     impression: number;
     ctaAttempt: number;
@@ -314,6 +327,7 @@ export interface AdminAffiliateFunnelResponse {
     clickThroughRate: number;
   };
   byCategory: AdminAffiliateCategoryFunnelItem[];
+  byProvider: AdminAffiliateProviderFunnelItem[];
   revenue: AdminAffiliateRevenueSummary;
 }
 

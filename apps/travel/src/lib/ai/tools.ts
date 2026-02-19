@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { fetchExchangeRate } from '@/lib/api/exchangeRate';
 import { fetchWeatherHistory } from '@/lib/api/weather';
 import { searchGooglePlaces } from '@/lib/api/places';
+import { searchAgodaAccommodations } from '@/lib/api/agoda';
 import { generateAffiliateLink } from '@/lib/api/awinLinkBuilder';
 import type { AccommodationEntity, EsimEntity, SearchAccommodationResult, SearchEsimResult } from '@/lib/types';
 import { getFirstAdvertiserByCategory } from '@/services/affiliate-advertiser.service';
@@ -87,52 +88,70 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
         location: z.string().optional().describe('Optional location bias (e.g., "Tokyo, Japan")'),
       }),
       execute: async ({ query, location }): Promise<SearchAccommodationResult> => {
-        // Stage A: Google Places 호텔 타입으로 검색 (Agoda API 수령 전 shim)
-        const { places } = await searchGooglePlaces({ query, location, type: 'hotel' });
         const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
         const isAffiliateEnabled = affiliateLinkPolicy.enabled;
+        const [agodaResult, placesResult] = await Promise.all([
+          searchAgodaAccommodations({ query, location, limit: 5 }),
+          searchGooglePlaces({ query, location, type: 'hotel' }),
+        ]);
+        const places = placesResult.places;
 
-        // DB에서 accommodation 카테고리 광고주 조회
-        const advertiser = isAffiliateEnabled ? await getFirstAdvertiserByCategory('accommodation') : null;
-
-        // Awin 추적 링크 생성 (광고주 있을 때만, 실패해도 null로 진행)
-        const firstPlace = places[0];
-        let affiliateLink: string | undefined;
-        if (advertiser && firstPlace) {
-          const linkResult = await generateAffiliateLink({
-            advertiserId: advertiser.advertiserId,
-            clickref: buildClickref(conversationId, firstPlace.placeId),
-          });
-          affiliateLink = linkResult?.url;
+        if (agodaResult.source === 'error') {
+          console.warn('[searchAccommodation] agoda api failed, fallback to places-only card:', agodaResult.message);
         }
 
-        const ctaEnabled = !!affiliateLink;
-        const provider = advertiser
-          ? `awin:${advertiser.advertiserId}`
-          : isAffiliateEnabled
-            ? 'awin_pending:accommodation'
-            : 'awin_disabled:accommodation';
+        const firstAgoda = agodaResult.accommodations[0];
+        const firstPlace = places[0];
 
-        // 제휴 카드: 첫 번째 결과
-        const affiliate: AccommodationEntity | null = firstPlace
+        const provider = firstAgoda
+          ? isAffiliateEnabled
+            ? 'agoda_direct'
+            : 'agoda_disabled:accommodation'
+          : isAffiliateEnabled
+            ? 'agoda_pending:accommodation'
+            : 'agoda_disabled:accommodation';
+
+        const affiliateLink =
+          firstAgoda && isAffiliateEnabled && firstAgoda.available ? firstAgoda.affiliateLink : undefined;
+        const ctaEnabled = Boolean(affiliateLink);
+
+        const affiliate: AccommodationEntity | null = firstAgoda
           ? {
-              placeId: firstPlace.placeId,
-              name: firstPlace.name,
-              address: firstPlace.address,
-              latitude: firstPlace.latitude,
-              longitude: firstPlace.longitude,
-              rating: firstPlace.rating,
-              userRatingsTotal: firstPlace.userRatingsTotal,
-              types: firstPlace.types,
-              photoUrl: firstPlace.photoUrl,
+              placeId: `agoda:${firstAgoda.hotelId}`,
+              name: firstAgoda.name,
+              address: firstAgoda.address,
+              latitude: firstAgoda.latitude,
+              longitude: firstAgoda.longitude,
+              rating: firstAgoda.rating,
+              userRatingsTotal: firstAgoda.reviewCount,
+              types: ['lodging', 'hotel'],
+              photoUrl: firstAgoda.photoUrl,
               affiliateLink,
               isAffiliate: true,
-              advertiserName: advertiser?.name,
+              advertiserName: 'Agoda',
+              priceAmount: firstAgoda.priceAmount,
+              priceCurrency: firstAgoda.priceCurrency,
+              isAvailable: firstAgoda.available,
             }
-          : null;
+          : firstPlace
+            ? {
+                placeId: firstPlace.placeId,
+                name: firstPlace.name,
+                address: firstPlace.address,
+                latitude: firstPlace.latitude,
+                longitude: firstPlace.longitude,
+                rating: firstPlace.rating,
+                userRatingsTotal: firstPlace.userRatingsTotal,
+                types: firstPlace.types,
+                photoUrl: firstPlace.photoUrl,
+                affiliateLink,
+                isAffiliate: true,
+                advertiserName: 'Agoda',
+              }
+            : null;
 
-        // 비제휴 대안: 나머지 결과를 rating DESC → reviewCount DESC → 원본 순서로 정렬, 최대 2개
-        const remaining = places.slice(1);
+        // 비제휴 대안: Places 결과를 rating DESC → reviewCount DESC → 원본 순서로 정렬, 최대 2개
+        const remaining = firstAgoda ? places : places.slice(1);
         const withRating = remaining.filter((p) => p.rating != null);
         const withoutRating = remaining.filter((p) => p.rating == null);
         withRating.sort((a, b) => {

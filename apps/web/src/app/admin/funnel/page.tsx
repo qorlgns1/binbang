@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatKstDateTime } from '@/lib/datetime/formatKst';
+import { formatBrowserLocalDateTime } from '@/lib/datetime/formatBrowserLocal';
 import type { AffiliateCategoryFilter } from '@/types/admin';
 
 import { useAffiliateFunnelQuery } from './_hooks/useAffiliateFunnelQuery';
@@ -21,6 +21,7 @@ import { useFunnelQuery } from './_hooks/useFunnelQuery';
 export default function FunnelPage() {
   const [filter, setFilter] = useState<FunnelUtcFilter>(() => buildUtcFilterFromRange('30d'));
   const [affiliateCategory, setAffiliateCategory] = useState<AffiliateCategoryFilter>('all');
+  const [browserTimezone, setBrowserTimezone] = useState('UTC');
   const query = useFunnelQuery(filter);
   const clickQuery = useFunnelClicksQuery(filter);
   const growthQuery = useFunnelGrowthQuery(filter);
@@ -48,6 +49,17 @@ export default function FunnelPage() {
     }
     setFilter(next);
   };
+
+  useEffect(() => {
+    const resolved = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (resolved) setBrowserTimezone(resolved);
+  }, []);
+
+  const formatLocalDateTime = (value: string, withTime = true): string =>
+    formatBrowserLocalDateTime(value, {
+      withTime,
+      timeZone: browserTimezone,
+    });
 
   return (
     <main className='max-w-7xl mx-auto px-4 py-8 space-y-6'>
@@ -99,10 +111,10 @@ export default function FunnelPage() {
           <Card className='animate-dashboard-enter'>
             <CardHeader>
               <CardTitle>조회 범위</CardTitle>
-              <CardDescription>{query.data.displayTimezone} 기준 표시 (필터/저장은 UTC)</CardDescription>
+              <CardDescription>{browserTimezone} 기준 표시 (필터/저장은 UTC)</CardDescription>
             </CardHeader>
             <CardContent className='text-sm text-muted-foreground'>
-              {formatKstDateTime(query.data.filter.from)} ~ {formatKstDateTime(query.data.filter.to)}
+              {formatLocalDateTime(query.data.filter.from)} ~ {formatLocalDateTime(query.data.filter.to)}
             </CardContent>
           </Card>
 
@@ -116,7 +128,7 @@ export default function FunnelPage() {
               <CardDescription>P0-9b 라벨: 클릭 이벤트는 1차 KPI와 분리 집계됩니다.</CardDescription>
             </CardHeader>
             <CardContent className='text-sm text-muted-foreground'>
-              {formatKstDateTime(clickQuery.data.filter.from)} ~ {formatKstDateTime(clickQuery.data.filter.to)}
+              {formatLocalDateTime(clickQuery.data.filter.from)} ~ {formatLocalDateTime(clickQuery.data.filter.to)}
             </CardContent>
           </Card>
 
@@ -142,7 +154,7 @@ export default function FunnelPage() {
               <CardDescription>Organic 유입부터 가입/첫 알림 생성까지 전환을 조회합니다.</CardDescription>
             </CardHeader>
             <CardContent className='text-sm text-muted-foreground'>
-              {formatKstDateTime(growthQuery.data.filter.from)} ~ {formatKstDateTime(growthQuery.data.filter.to)}
+              {formatLocalDateTime(growthQuery.data.filter.from)} ~ {formatLocalDateTime(growthQuery.data.filter.to)}
             </CardContent>
           </Card>
 
@@ -157,24 +169,31 @@ export default function FunnelPage() {
                 impression → outbound_click 전환율. 카테고리 필터 기준이며 집계 캐시는 5분 TTL입니다.
               </CardDescription>
             </CardHeader>
-            <CardContent className='grid grid-cols-1 gap-3 md:grid-cols-4'>
-              <div className='rounded-lg border border-border p-3'>
-                <p className='text-xs text-muted-foreground'>impression</p>
-                <p className='text-2xl font-semibold'>{affiliateQuery.data.totals.impression.toLocaleString()}</p>
-              </div>
-              <div className='rounded-lg border border-border p-3'>
-                <p className='text-xs text-muted-foreground'>cta_attempt</p>
-                <p className='text-2xl font-semibold'>{affiliateQuery.data.totals.ctaAttempt.toLocaleString()}</p>
-              </div>
-              <div className='rounded-lg border border-border p-3'>
-                <p className='text-xs text-muted-foreground'>outbound_click</p>
-                <p className='text-2xl font-semibold'>{affiliateQuery.data.totals.outboundClick.toLocaleString()}</p>
-              </div>
-              <div className='rounded-lg border border-border p-3'>
-                <p className='text-xs text-muted-foreground'>CTR</p>
-                <p className='text-2xl font-semibold'>
-                  {(affiliateQuery.data.totals.clickThroughRate * 100).toFixed(1)}%
-                </p>
+            <CardContent className='space-y-3'>
+              <p className='text-xs text-muted-foreground'>
+                캐시 정책: TTL {affiliateQuery.data.cache.ttlSeconds}초, 무효화=
+                {affiliateQuery.data.cache.invalidation}, 이벤트 즉시 무효화=
+                {affiliateQuery.data.cache.immediateInvalidationOnEvent ? 'enabled' : 'disabled'}
+              </p>
+              <div className='grid grid-cols-1 gap-3 md:grid-cols-4'>
+                <div className='rounded-lg border border-border p-3'>
+                  <p className='text-xs text-muted-foreground'>impression</p>
+                  <p className='text-2xl font-semibold'>{affiliateQuery.data.totals.impression.toLocaleString()}</p>
+                </div>
+                <div className='rounded-lg border border-border p-3'>
+                  <p className='text-xs text-muted-foreground'>cta_attempt</p>
+                  <p className='text-2xl font-semibold'>{affiliateQuery.data.totals.ctaAttempt.toLocaleString()}</p>
+                </div>
+                <div className='rounded-lg border border-border p-3'>
+                  <p className='text-xs text-muted-foreground'>outbound_click</p>
+                  <p className='text-2xl font-semibold'>{affiliateQuery.data.totals.outboundClick.toLocaleString()}</p>
+                </div>
+                <div className='rounded-lg border border-border p-3'>
+                  <p className='text-xs text-muted-foreground'>CTR</p>
+                  <p className='text-2xl font-semibold'>
+                    {(affiliateQuery.data.totals.clickThroughRate * 100).toFixed(1)}%
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -237,7 +256,37 @@ export default function FunnelPage() {
 
           <Card className='animate-dashboard-enter'>
             <CardHeader>
-              <CardTitle>일별 시계열 (UTC)</CardTitle>
+              <CardTitle>Provider별 Affiliate 지표</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>provider</TableHead>
+                    <TableHead className='text-right'>impression</TableHead>
+                    <TableHead className='text-right'>cta_attempt</TableHead>
+                    <TableHead className='text-right'>outbound_click</TableHead>
+                    <TableHead className='text-right'>CTR</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {affiliateQuery.data.byProvider.map((item) => (
+                    <TableRow key={item.provider}>
+                      <TableCell>{item.provider}</TableCell>
+                      <TableCell className='text-right'>{item.impression.toLocaleString()}</TableCell>
+                      <TableCell className='text-right'>{item.ctaAttempt.toLocaleString()}</TableCell>
+                      <TableCell className='text-right'>{item.outboundClick.toLocaleString()}</TableCell>
+                      <TableCell className='text-right'>{(item.clickThroughRate * 100).toFixed(1)}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card className='animate-dashboard-enter'>
+            <CardHeader>
+              <CardTitle>일별 시계열 (브라우저 로컬)</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -253,7 +302,7 @@ export default function FunnelPage() {
                 <TableBody>
                   {query.data.series.map((item) => (
                     <TableRow key={item.date}>
-                      <TableCell>{formatKstDateTime(`${item.date}T00:00:00.000Z`, { withTime: false })}</TableCell>
+                      <TableCell>{formatLocalDateTime(`${item.date}T00:00:00.000Z`, false)}</TableCell>
                       <TableCell className='text-right'>{item.submitted}</TableCell>
                       <TableCell className='text-right'>{item.processed}</TableCell>
                       <TableCell className='text-right'>{item.paymentConfirmed}</TableCell>

@@ -21,11 +21,44 @@ interface AccommodationCardProps {
   trackingContext?: AffiliateTrackingContext;
 }
 
+function formatAffiliatePrice(amount: number, currency?: string): string {
+  if (!Number.isFinite(amount)) return '';
+  if (!currency) return amount.toLocaleString();
+
+  try {
+    return new Intl.NumberFormat('ko-KR', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${amount.toLocaleString()} ${currency}`;
+  }
+}
+
 export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }: AccommodationCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const showAffiliateBadge = accommodation.isAffiliate;
   const hasLink = Boolean(accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink);
-  const provider = trackingContext?.provider ?? 'awin_pending:accommodation';
+  const provider = trackingContext?.provider ?? 'agoda_pending:accommodation';
+  const isPendingProvider = provider.startsWith('awin_pending:') || provider.startsWith('agoda_pending:');
+  const isDisabledBySetting = provider.includes('_disabled:');
+  const isUnavailable = accommodation.isAvailable === false;
+  const disabledButtonLabel = isUnavailable
+    ? '현재 예약 불가'
+    : isDisabledBySetting
+      ? '제휴 링크 비활성화'
+      : '제휴 링크 준비중';
+  const modalTitle = isUnavailable
+    ? '현재 예약 불가'
+    : isDisabledBySetting
+      ? '제휴 링크 비활성화'
+      : '제휴 링크 준비 중';
+  const modalDescription = isUnavailable
+    ? '해당 숙소는 현재 Agoda 실시간 가용성 기준으로 예약이 어렵습니다. 다른 대안을 확인해 주세요.'
+    : isDisabledBySetting
+      ? '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.'
+      : '현재 해당 카테고리의 제휴 링크를 준비 중입니다. 잠시 후 다시 시도해 주세요.';
 
   useEffect(() => {
     if (!accommodation.isAffiliate) return;
@@ -44,9 +77,12 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
 
   function handleCtaClick() {
     if (hasLink) return; // <a> 태그가 직접 처리
-    const isPendingAdvertiser = provider.startsWith('awin_pending:');
-    const isDisabledBySetting = provider.startsWith('awin_disabled:');
-    if (isDisabledBySetting) {
+    if (isUnavailable) {
+      toast('현재 예약 불가', {
+        description: 'Agoda 실시간 가용성 기준으로 현재 예약 가능한 객실이 없습니다.',
+        duration: 3000,
+      });
+    } else if (isDisabledBySetting) {
       toast('제휴 링크 비활성화', {
         description: '현재 대화 설정에서 제휴 링크가 비활성화되어 있습니다.',
         duration: 3000,
@@ -64,7 +100,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
         sessionId: trackingContext.sessionId,
         provider,
         eventType: 'cta_attempt',
-        reasonCode: isPendingAdvertiser
+        reasonCode: isPendingProvider
           ? 'no_advertiser_for_category'
           : isDisabledBySetting
             ? 'affiliate_links_disabled'
@@ -136,9 +172,23 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
             <span className='line-clamp-1'>{accommodation.address}</span>
           </div>
 
-          {/* Stage A: 가격 필드 비노출 */}
+          {/* Stage A/B: 가격/가용성 필드 */}
           {accommodation.isAffiliate && (
-            <p className='text-[10px] text-muted-foreground italic'>가격은 제휴 연동 후 제공됩니다</p>
+            <>
+              {accommodation.priceAmount != null && accommodation.priceCurrency ? (
+                <p className='text-xs font-medium text-card-foreground'>
+                  실시간가 {formatAffiliatePrice(accommodation.priceAmount, accommodation.priceCurrency)} (
+                  {accommodation.priceCurrency})
+                </p>
+              ) : (
+                <p className='text-[10px] text-muted-foreground italic'>가격은 제휴 연동 후 제공됩니다</p>
+              )}
+              {accommodation.isAvailable === false ? (
+                <p className='text-[10px] text-destructive'>실시간 가용성: 예약 불가</p>
+              ) : accommodation.isAvailable === true ? (
+                <p className='text-[10px] text-emerald-600'>실시간 가용성: 예약 가능</p>
+              ) : null}
+            </>
           )}
         </div>
 
@@ -175,7 +225,7 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
                 className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed'
                 aria-disabled
               >
-                제휴 링크 준비중
+                {disabledButtonLabel}
               </button>
             )}
             <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>
@@ -203,13 +253,9 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
           {/* 모달 콘텐츠 */}
           <div className='relative z-10 mx-4 max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl'>
             <h3 id='aff-modal-title' className='mb-2 font-semibold text-base'>
-              제휴 링크 준비 중
+              {modalTitle}
             </h3>
-            <p className='text-sm text-muted-foreground leading-relaxed'>
-              현재 해당 카테고리의 제휴 광고주를 등록하는 중입니다.
-              <br />
-              연동이 완료되면 바로 예약 링크가 활성화됩니다.
-            </p>
+            <p className='text-sm text-muted-foreground leading-relaxed'>{modalDescription}</p>
             <button
               type='button'
               onClick={() => setModalOpen(false)}

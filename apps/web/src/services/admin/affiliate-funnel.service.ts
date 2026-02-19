@@ -17,6 +17,14 @@ export interface AdminAffiliateCategoryFunnel {
   clickThroughRate: number;
 }
 
+export interface AdminAffiliateProviderFunnel {
+  provider: string;
+  impression: number;
+  ctaAttempt: number;
+  outboundClick: number;
+  clickThroughRate: number;
+}
+
 export interface AdminAffiliateRevenueSummary {
   status: 'ok' | 'unavailable' | 'error';
   conversionCount: number;
@@ -35,8 +43,13 @@ export interface AdminAffiliateFunnelData {
     from: string;
     to: string;
   };
-  displayTimezone: 'Asia/Seoul';
+  displayTimezone: 'browser_local';
   categoryFilter: 'all' | AffiliateAdvertiserCategory;
+  cache: {
+    ttlSeconds: number;
+    invalidation: 'ttl_only';
+    immediateInvalidationOnEvent: false;
+  };
   totals: {
     impression: number;
     ctaAttempt: number;
@@ -44,6 +57,7 @@ export interface AdminAffiliateFunnelData {
     clickThroughRate: number;
   };
   byCategory: AdminAffiliateCategoryFunnel[];
+  byProvider: AdminAffiliateProviderFunnel[];
   revenue: AdminAffiliateRevenueSummary;
 }
 
@@ -300,8 +314,16 @@ export async function getAdminAffiliateFunnel(
       _all: true,
     },
   });
+  const providerRows = await prisma.affiliateEvent.groupBy({
+    by: ['provider', 'eventType'],
+    where,
+    _count: {
+      _all: true,
+    },
+  });
 
   const categoryMap = new Map<AffiliateAdvertiserCategory, AdminAffiliateCategoryFunnel>();
+  const providerMap = new Map<string, AdminAffiliateProviderFunnel>();
 
   for (const row of rows) {
     const current =
@@ -328,6 +350,31 @@ export async function getAdminAffiliateFunnel(
     }))
     .sort((a, b) => a.category.localeCompare(b.category));
 
+  for (const row of providerRows) {
+    const current =
+      providerMap.get(row.provider) ??
+      ({
+        provider: row.provider,
+        impression: 0,
+        ctaAttempt: 0,
+        outboundClick: 0,
+        clickThroughRate: 0,
+      } as AdminAffiliateProviderFunnel);
+
+    if (row.eventType === 'impression') current.impression = row._count._all;
+    if (row.eventType === 'cta_attempt') current.ctaAttempt = row._count._all;
+    if (row.eventType === 'outbound_click') current.outboundClick = row._count._all;
+
+    providerMap.set(row.provider, current);
+  }
+
+  const byProvider = [...providerMap.values()]
+    .map((item) => ({
+      ...item,
+      clickThroughRate: safeRatio(item.outboundClick, item.impression),
+    }))
+    .sort((a, b) => a.provider.localeCompare(b.provider));
+
   const totals = byCategory.reduce(
     (acc, item) => {
       acc.impression += item.impression;
@@ -352,10 +399,16 @@ export async function getAdminAffiliateFunnel(
       from: from.toISOString(),
       to: to.toISOString(),
     },
-    displayTimezone: 'Asia/Seoul',
+    displayTimezone: 'browser_local',
     categoryFilter: input.category ?? 'all',
+    cache: {
+      ttlSeconds: ttl,
+      invalidation: 'ttl_only',
+      immediateInvalidationOnEvent: false,
+    },
     totals,
     byCategory,
+    byProvider,
     revenue,
   };
 
