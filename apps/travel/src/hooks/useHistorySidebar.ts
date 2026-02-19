@@ -4,7 +4,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 
-import type { HistoryConversation } from '@/components/history/historySidebarTypes';
+import {
+  deleteHistoryConversation,
+  fetchHistoryConversations,
+  type HistoryConversationListResponse,
+  updateHistoryConversationTitle,
+} from '@/components/history/historySidebarApi';
 
 interface UseHistorySidebarOptions {
   open: boolean;
@@ -13,19 +18,6 @@ interface UseHistorySidebarOptions {
   onNewConversation: () => void;
   onSelectConversation: (conversationId: string) => void;
 }
-
-interface ConversationListResponse {
-  conversations: HistoryConversation[];
-}
-
-const fetchConversations = async (url: string): Promise<ConversationListResponse> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Failed to fetch');
-  }
-
-  return response.json() as Promise<ConversationListResponse>;
-};
 
 export function useHistorySidebar({
   open,
@@ -47,7 +39,7 @@ export function useHistorySidebar({
         ? '/api/conversations'
         : null;
 
-  const { data, error, mutate } = useSWR<ConversationListResponse>(conversationsApiUrl, fetchConversations);
+  const { data, error, mutate } = useSWR<HistoryConversationListResponse>(conversationsApiUrl, fetchHistoryConversations);
 
   const conversations = useMemo(() => data?.conversations ?? [], [data?.conversations]);
   const isLoading = !data && !error;
@@ -59,14 +51,7 @@ export function useHistorySidebar({
   const handleDeleteConfirm = useCallback(
     async (conversationId: string) => {
       try {
-        const response = await fetch(`/api/conversations?id=${conversationId}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete conversation');
-        }
-
+        await deleteHistoryConversation(conversationId);
         setPendingDeleteId(null);
         await mutate();
       } catch (error) {
@@ -125,16 +110,7 @@ export function useHistorySidebar({
       }
 
       try {
-        const response = await fetch(`/api/conversations/${conversationId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update title');
-        }
-
+        await updateHistoryConversationTitle(conversationId, title);
         setEditingConversationId(null);
         setEditingTitle('');
         await mutate();
