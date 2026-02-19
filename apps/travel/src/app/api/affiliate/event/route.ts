@@ -2,6 +2,7 @@ import { AffiliateAdvertiserCategory, AffiliateEventType } from '@workspace/db';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
+import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
 import { jsonError, jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
@@ -25,27 +26,21 @@ const bodySchema = z.object({
 
 export async function POST(req: Request) {
   const requestId = resolveRequestId(req);
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonError(400, 'Invalid JSON body', { requestId });
+  const parsedBody = await parseJsonBody(req, bodySchema, { errorExtra: { requestId } });
+  if ('response' in parsedBody) {
+    return parsedBody.response;
   }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonError(400, 'Validation failed', { details: parsed.error.flatten(), requestId });
-  }
+  const body = parsedBody.data;
 
   const session = await getServerSession(authOptions);
   const sessionId = await extractSessionIdFromRequest({
-    bodySessionId: parsed.data.sessionId,
+    bodySessionId: body.sessionId,
     headerSessionId: req.headers.get('x-travel-session-id'),
     generateIfMissing: false,
   });
 
-  if (parsed.data.conversationId) {
-    const conversation = await getConversationOwnership(parsed.data.conversationId);
+  if (body.conversationId) {
+    const conversation = await getConversationOwnership(body.conversationId);
     if (!conversation) {
       return jsonError(404, 'Conversation not found', { requestId });
     }
@@ -61,17 +56,17 @@ export async function POST(req: Request) {
 
   try {
     const result = await createAffiliateEvent({
-      conversationId: parsed.data.conversationId,
+      conversationId: body.conversationId,
       userId: session?.user?.id,
-      userTimezone: parsed.data.userTimezone,
-      provider: parsed.data.provider,
-      eventType: parsed.data.eventType,
-      reasonCode: parsed.data.reasonCode,
-      productId: parsed.data.productId,
-      productName: parsed.data.productName,
-      category: parsed.data.category,
-      isCtaEnabled: parsed.data.isCtaEnabled,
-      occurredAt: parsed.data.occurredAt ? new Date(parsed.data.occurredAt) : undefined,
+      userTimezone: body.userTimezone,
+      provider: body.provider,
+      eventType: body.eventType,
+      reasonCode: body.reasonCode,
+      productId: body.productId,
+      productName: body.productName,
+      category: body.category,
+      isCtaEnabled: body.isCtaEnabled,
+      occurredAt: body.occurredAt ? new Date(body.occurredAt) : undefined,
     });
 
     return jsonResponse({
@@ -84,10 +79,10 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Failed to create affiliate event', {
       requestId,
-      conversationId: parsed.data.conversationId,
+      conversationId: body.conversationId,
       userId: session?.user?.id,
-      eventType: parsed.data.eventType,
-      provider: parsed.data.provider,
+      eventType: body.eventType,
+      provider: body.provider,
       error,
     });
     return jsonError(500, 'Failed to create affiliate event', { requestId });

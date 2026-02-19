@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
+import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
 import { jsonError, jsonResponse } from '@/lib/httpResponse';
 import {
@@ -31,25 +32,17 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return jsonError(401, 'Unauthorized');
+  const requiredUser = await requireUserId();
+  if ('response' in requiredUser) {
+    return requiredUser.response;
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonError(400, 'Invalid JSON body');
+  const parsedBody = await parseJsonBody(req, patchBodySchema);
+  if ('response' in parsedBody) {
+    return parsedBody.response;
   }
 
-  const parsed = patchBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonError(400, 'Validation failed', { details: parsed.error.flatten() });
-  }
-
-  const enabled = await setAccountAffiliateLinksEnabled(session.user.id, parsed.data.affiliateLinksEnabled);
+  const enabled = await setAccountAffiliateLinksEnabled(requiredUser.userId, parsedBody.data.affiliateLinksEnabled);
   if (enabled == null) {
     return jsonError(404, 'User not found');
   }

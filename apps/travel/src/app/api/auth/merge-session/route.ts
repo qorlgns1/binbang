@@ -1,8 +1,8 @@
-import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { authOptions } from '@/lib/auth';
+import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
+import { jsonError, jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { createSessionId, parseSessionId, TRAVEL_SESSION_COOKIE_NAME, TRAVEL_SESSION_TTL_SECONDS } from '@/lib/session';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
@@ -19,32 +19,22 @@ const requestSchema = z.object({
  */
 export async function POST(req: Request) {
   const requestId = resolveRequestId(req);
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized', requestId }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const requiredUser = await requireUserId({ requestId });
+  if ('response' in requiredUser) {
+    return requiredUser.response;
   }
 
-  let body: unknown = {};
-  try {
-    body = await req.json();
-  } catch {
-    // body 없이 호출된 경우(cookie 기반 병합)도 허용
+  const parsedBody = await parseJsonBody(req, requestSchema, {
+    allowEmptyBody: true,
+    errorExtra: { requestId },
+  });
+  if ('response' in parsedBody) {
+    return parsedBody.response;
   }
-
-  const parsed = requestSchema.safeParse(body);
-  if (!parsed.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten(), requestId }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  const payload = parsedBody.data;
 
   const extractedSessionId = await extractSessionIdFromRequest({
-    bodySessionId: parsed.data.sessionId,
+    bodySessionId: payload.sessionId,
     headerSessionId: req.headers.get('x-travel-session-id'),
   });
 
@@ -52,7 +42,7 @@ export async function POST(req: Request) {
   if (extractedSessionId) {
     sessionIds.add(extractedSessionId);
   }
-  for (const candidate of parsed.data.sessionIds ?? []) {
+  for (const candidate of payload.sessionIds ?? []) {
     const parsedSessionId = parseSessionId(candidate);
     if (parsedSessionId) {
       sessionIds.add(parsedSessionId);
@@ -60,14 +50,11 @@ export async function POST(req: Request) {
   }
 
   if (sessionIds.size === 0) {
-    return new Response(JSON.stringify({ error: 'sessionId or sessionIds is required', requestId }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(400, 'sessionId or sessionIds is required', { requestId });
   }
 
   try {
-    const result = await mergeGuestSessionsToUser([...sessionIds], session.user.id);
+    const result = await mergeGuestSessionsToUser([...sessionIds], requiredUser.userId);
     const refreshedSessionId = createSessionId();
 
     const response = NextResponse.json(
@@ -95,20 +82,17 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Failed to merge session', {
       requestId,
-      userId: session.user.id,
+      userId: requiredUser.userId,
       sessionIdCandidates: [...sessionIds],
       error,
     });
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: false,
         error: 'Failed to merge session',
         requestId,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
       },
+      { status: 500 },
     );
   }
 }
