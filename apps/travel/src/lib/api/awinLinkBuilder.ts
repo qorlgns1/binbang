@@ -16,9 +16,7 @@ async function resolvePublisherId(token: string): Promise<number | null> {
 
   // 없으면 /accounts API로 동적 조회
   try {
-    const url = new URL(`${AWIN_API_BASE}/accounts`);
-    url.searchParams.set('accessToken', token);
-    const res = await fetch(url.toString(), {
+    const res = await fetch(`${AWIN_API_BASE}/accounts`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
       next: { revalidate: 0 },
@@ -68,10 +66,7 @@ export async function generateAffiliateLink(input: GenerateLinkInput): Promise<G
   if (input.shorten) body.shorten = true;
 
   try {
-    const url = new URL(`${AWIN_API_BASE}/publishers/${publisherId}/linkbuilder/generate`);
-    url.searchParams.set('accessToken', token);
-
-    const res = await fetch(url.toString(), {
+    const res = await fetch(`${AWIN_API_BASE}/publishers/${publisherId}/linkbuilder/generate`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

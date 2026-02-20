@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto';
+
 import { resolveRequestId } from '@/lib/requestId';
 import { runTravelCachePrewarm } from '@/services/cache-prewarm.service';
 
@@ -26,7 +28,11 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const providedToken = getProvidedToken(req);
-  if (!providedToken || providedToken !== expectedToken) {
+  const tokenMatch =
+    providedToken != null &&
+    providedToken.length === expectedToken.length &&
+    timingSafeEqual(Buffer.from(providedToken), Buffer.from(expectedToken));
+  if (!tokenMatch) {
     return Response.json(
       {
         ok: false,
