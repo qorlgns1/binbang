@@ -62,14 +62,8 @@
     "clean": "rm -rf dist node_modules",
     "lint": "biome lint ."
   },
-  "peerDependencies": {
-    "@date-fns/tz": "^1.4.1",
-    "date-fns": "^4.1.0"
-  },
   "devDependencies": {
-    "@date-fns/tz": "^1.4.1",
     "@types/node": "^24.10.9",
-    "date-fns": "^4.1.0",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.7.2",
     "vitest": "catalog:"
