@@ -8,12 +8,13 @@ import {
   mapConversationEntitiesToMapEntities,
   mapConversationMessagesToUiMessages,
 } from '@/components/chat/chatPanelUtils';
-import { fetchConversationDetail, findFallbackConversationId } from '@/hooks/conversationRestoreApi';
+import { fetchConversationDetail } from '@/hooks/conversationRestoreApi';
 import {
   clearConversationRestoreStorage,
   setLastConversationId,
   type RestoreTarget,
 } from '@/hooks/conversationRestoreStorage';
+import { executeRestoreStrategy } from '@/hooks/conversationRestoreStrategy';
 import { useConversationAutoRestore } from '@/hooks/useConversationAutoRestore';
 import { useConversationSnapshotSync } from '@/hooks/useConversationSnapshotSync';
 import { useChatSessionStore } from '@/stores/useChatSessionStore';
@@ -30,8 +31,14 @@ interface LoadConversationOptions {
   retryCount?: number;
 }
 
+// 불일치 상태 불가능 — status === 'failed'일 때만 targetConversationId/preview 존재
+type RestoreState =
+  | { status: 'idle' }
+  | { status: 'restoring' }
+  | { status: 'failed'; targetConversationId: string; preview: string };
+
 export interface UseConversationRestoreResult {
-  restoreStatus: 'idle' | 'restoring' | 'failed';
+  restoreStatus: RestoreState['status'];
   handleNewConversation: () => void;
   handleRetryRestore: () => Promise<void>;
   handleSelectConversation: (conversationId: string) => Promise<void>;
@@ -45,15 +52,7 @@ export function useConversationRestore({
   const { mergeStatus, currentConversationId, setCurrentConversationId, newConversation } = useChatSessionStore();
   const setEntities = usePlaceStore((s) => s.setEntities);
 
-  const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'failed'>('idle');
-  const [restoreTargetConversationId, setRestoreTargetConversationId] = useState<string | null>(null);
-  const [restorePreview, setRestorePreview] = useState('');
-
-  const clearRestoreState = useCallback(() => {
-    setRestoreStatus('idle');
-    setRestoreTargetConversationId(null);
-    setRestorePreview('');
-  }, []);
+  const [restoreState, setRestoreState] = useState<RestoreState>({ status: 'idle' });
 
   const loadConversation = useCallback(
     async (conversationId: string, options?: LoadConversationOptions): Promise<boolean> => {
@@ -89,64 +88,54 @@ export function useConversationRestore({
 
   const restoreConversationWithFallback = useCallback(
     async (targetConversationId: string, preview: string): Promise<boolean> => {
-      setRestoreStatus('restoring');
+      setRestoreState({ status: 'restoring' });
 
-      const restoredPrimary = await loadConversation(targetConversationId, { silent: true, retryCount: 1 });
-      if (restoredPrimary) {
-        clearRestoreState();
+      const outcome = await executeRestoreStrategy(targetConversationId, preview, loadConversation);
+
+      if (outcome.type === 'restored_primary') {
+        setRestoreState({ status: 'idle' });
         toast.success('이전 대화를 복원했어요.');
         return true;
       }
 
-      const fallbackConversationId = await findFallbackConversationId(preview, targetConversationId);
-      if (fallbackConversationId) {
-        const restoredFallback = await loadConversation(fallbackConversationId, { silent: true, retryCount: 1 });
-        if (restoredFallback) {
-          clearRestoreState();
-          toast.success('최근 대화로 복원했어요.');
-          return true;
-        }
+      if (outcome.type === 'restored_fallback') {
+        setRestoreState({ status: 'idle' });
+        toast.success('최근 대화로 복원했어요.');
+        return true;
       }
 
-      setRestoreStatus('failed');
-      setRestoreTargetConversationId(targetConversationId);
-      setRestorePreview(preview);
+      setRestoreState({ status: 'failed', targetConversationId, preview });
       toast.error('대화를 자동 복원하지 못했어요.');
       return false;
     },
-    [clearRestoreState, loadConversation],
+    [loadConversation],
   );
 
   const handleSelectConversation = useCallback(
     async (conversationId: string) => {
       const restored = await loadConversation(conversationId);
       if (restored) {
-        clearRestoreState();
+        setRestoreState({ status: 'idle' });
       }
     },
-    [clearRestoreState, loadConversation],
+    [loadConversation],
   );
 
   const handleRetryRestore = useCallback(async () => {
-    if (!restoreTargetConversationId) {
-      return;
-    }
-
-    await restoreConversationWithFallback(restoreTargetConversationId, restorePreview);
-  }, [restoreConversationWithFallback, restorePreview, restoreTargetConversationId]);
+    if (restoreState.status !== 'failed') return;
+    await restoreConversationWithFallback(restoreState.targetConversationId, restoreState.preview);
+  }, [restoreConversationWithFallback, restoreState]);
 
   const handleNewConversation = useCallback(() => {
     setMessages([]);
     newConversation();
-    clearRestoreState();
+    setRestoreState({ status: 'idle' });
     clearConversationRestoreStorage();
     setEntities([]);
-  }, [clearRestoreState, newConversation, setEntities, setMessages]);
+  }, [newConversation, setEntities, setMessages]);
 
   const handleAutoRestoreTarget = useCallback(
     (restoreTarget: RestoreTarget) => {
-      setRestorePreview(restoreTarget.preview);
-      setRestoreTargetConversationId(restoreTarget.conversationId);
       void restoreConversationWithFallback(restoreTarget.conversationId, restoreTarget.preview);
     },
     [restoreConversationWithFallback],
@@ -166,7 +155,7 @@ export function useConversationRestore({
   });
 
   return {
-    restoreStatus,
+    restoreStatus: restoreState.status,
     handleNewConversation,
     handleRetryRestore,
     handleSelectConversation,
