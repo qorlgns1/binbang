@@ -3,9 +3,8 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
+import type { AuthStatus } from '@/lib/authStatus';
 import type { MapEntity, PlaceEntity } from '@/lib/types';
-
-type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 interface UseHomePageStateOptions {
   authStatus: AuthStatus;
