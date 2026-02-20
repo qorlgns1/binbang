@@ -1,4 +1,8 @@
-import type { ConversationEntityPayload, ConversationMessagePayload, ConversationSummary } from '@/components/chat/chatPanelUtils';
+import type {
+  ConversationEntityPayload,
+  ConversationMessagePayload,
+  ConversationSummary,
+} from '@/components/chat/chatPanelUtils';
 
 interface ConversationDetailResponse {
   conversation: {

@@ -146,7 +146,11 @@ function renderSearchAccommodation(output: unknown, context: ToolRenderContext):
           <AccommodationCard
             accommodation={affiliate}
             ctaEnabled={data.ctaEnabled}
-            trackingContext={{ conversationId: context.conversationId, sessionId: context.sessionId, provider: data.provider }}
+            trackingContext={{
+              conversationId: context.conversationId,
+              sessionId: context.sessionId,
+              provider: data.provider,
+            }}
           />
         </EntityHoverGroup>
       )}
@@ -183,7 +187,11 @@ function renderSearchEsim(output: unknown, context: ToolRenderContext): ReactNod
       <EsimCard
         esim={data.primary}
         ctaEnabled={data.ctaEnabled}
-        trackingContext={{ conversationId: context.conversationId, sessionId: context.sessionId, provider: data.provider }}
+        trackingContext={{
+          conversationId: context.conversationId,
+          sessionId: context.sessionId,
+          provider: data.provider,
+        }}
       />
     </div>
   );
