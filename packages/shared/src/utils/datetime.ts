@@ -1,8 +1,6 @@
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 
-export const KST_TIMEZONE = 'Asia/Seoul';
-
 interface FormatDateTimeOptions {
   withTime?: boolean;
   timeZone?: string;
@@ -25,10 +23,4 @@ export function formatBrowserLocalDateTime(value: Date | string, options: Format
   const date = parseDate(value);
   const fmt = buildFormat(withTime);
   return timeZone ? format(date, fmt, { in: tz(timeZone) }) : format(date, fmt);
-}
-
-export function formatKstDateTime(value: Date | string, options: Omit<FormatDateTimeOptions, 'timeZone'> = {}): string {
-  const { withTime = true } = options;
-  const date = parseDate(value);
-  return format(date, buildFormat(withTime), { in: tz(KST_TIMEZONE) });
 }
