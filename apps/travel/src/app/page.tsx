@@ -2,60 +2,35 @@
 
 import { Compass, LogIn, LogOut, Map as MapIcon, MessageSquare } from 'lucide-react';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { MapPanel } from '@/components/map/MapPanel';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
 import { OnlineStatus } from '@/components/OnlineStatus';
-import type { MapEntity, PlaceEntity } from '@/lib/types';
+import { useHomePageState } from '@/hooks/useHomePageState';
 
 export default function HomePage() {
-  const [entities, setEntities] = useState<MapEntity[]>([]);
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
-  const [hoveredPlaceId, setHoveredPlaceId] = useState<string | undefined>();
-  const [mapHoveredEntityId, setMapHoveredEntityId] = useState<string | undefined>();
-  const [showMap, setShowMap] = useState(true);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const { status: authStatus } = useSession();
-
-  const handleEntitiesUpdate = useCallback((newEntities: MapEntity[]) => {
-    setEntities(newEntities);
-  }, []);
-
-  const handlePlaceSelect = useCallback((place: PlaceEntity) => {
-    setSelectedPlaceId(place.placeId);
-  }, []);
-
-  const handleMapEntitySelect = useCallback((entityId: string) => {
-    setSelectedPlaceId(entityId);
-  }, []);
-
-  const handleMapAlertClick = useCallback(
-    (_entityId: string) => {
-      if (authStatus === 'loading') return;
-      if (authStatus === 'authenticated') {
-        toast.info('빈방 알림 기능은 준비 중이에요.');
-        return;
-      }
-
-      setShowLoginModal(true);
-    },
-    [authStatus],
-  );
-
-  const handleCloseMapInfo = useCallback(() => {
-    setSelectedPlaceId(undefined);
-  }, []);
-
-  const handlePlaceHover = useCallback((placeId: string | undefined) => {
-    setHoveredPlaceId(placeId);
-  }, []);
-
-  const handleMapEntityHover = useCallback((entityId: string | undefined) => {
-    setMapHoveredEntityId(entityId);
-  }, []);
+  const {
+    entities,
+    hoveredPlaceId,
+    mapHoveredEntityId,
+    selectedPlaceId,
+    showLoginModal,
+    showMap,
+    closeLoginModal,
+    handleCloseMapInfo,
+    handleEntitiesUpdate,
+    handleMapAlertClick,
+    handleMapEntityHover,
+    handleMapEntitySelect,
+    handlePlaceHover,
+    handlePlaceSelect,
+    openChatView,
+    openMapView,
+  } = useHomePageState({
+    authStatus,
+  });
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
@@ -80,7 +55,7 @@ export default function HomePage() {
           <li>
             <button
               type='button'
-              onClick={() => setShowMap(false)}
+              onClick={openChatView}
               className={`flex w-full items-center py-2.5 text-sm font-medium transition-colors ${
                 !showMap ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
               }`}
@@ -97,7 +72,7 @@ export default function HomePage() {
           <li>
             <button
               type='button'
-              onClick={() => setShowMap(true)}
+              onClick={openMapView}
               className={`flex w-full items-center py-2.5 text-sm font-medium transition-colors ${
                 showMap ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
               }`}
@@ -237,7 +212,7 @@ export default function HomePage() {
         >
           <button
             type='button'
-            onClick={() => setShowMap(false)}
+            onClick={openChatView}
             className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
               !showMap ? '-mt-px border-t-2 border-primary text-primary' : 'text-muted-foreground'
             }`}
@@ -248,7 +223,7 @@ export default function HomePage() {
           </button>
           <button
             type='button'
-            onClick={() => setShowMap(true)}
+            onClick={openMapView}
             className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
               showMap ? '-mt-px border-t-2 border-primary text-primary' : 'text-muted-foreground'
             }`}
@@ -260,7 +235,7 @@ export default function HomePage() {
         </nav>
       </div>
 
-      <LoginPromptModal open={showLoginModal} onClose={() => setShowLoginModal(false)} trigger='bookmark' />
+      <LoginPromptModal open={showLoginModal} onClose={closeLoginModal} trigger='bookmark' />
     </div>
   );
 }
