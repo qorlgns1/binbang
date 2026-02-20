@@ -7,10 +7,7 @@ interface LoadConversationOptions {
 
 type LoadFn = (id: string, opts: LoadConversationOptions) => Promise<boolean>;
 
-export type RestoreOutcome =
-  | { type: 'restored_primary' }
-  | { type: 'restored_fallback' }
-  | { type: 'failed' };
+export type RestoreOutcome = { type: 'restored_primary' } | { type: 'restored_fallback' } | { type: 'failed' };
 
 /**
  * 복원 3단 fallback 시퀀스 (순수 함수 — React state 변경 없음).

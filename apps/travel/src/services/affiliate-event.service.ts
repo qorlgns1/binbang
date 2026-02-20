@@ -138,4 +138,3 @@ export async function createAffiliateEvent(input: CreateAffiliateEventInput): Pr
     throw error;
   }
 }
-
