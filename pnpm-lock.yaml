@@ -38,6 +38,9 @@ importers:
       '@ai-sdk/react':
         specifier: ^3.0.88
         version: 3.0.88(react@19.2.4)(zod@3.25.76)
+      '@date-fns/tz':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@googlemaps/markerclusterer':
         specifier: ^2.6.2
         version: 2.6.2
@@ -66,11 +69,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       date-fns:
-        specifier: ^3.0.0
-        version: 3.6.0
-      date-fns-tz:
-        specifier: ^3.2.0
-        version: 3.2.0(date-fns@3.6.0)
+        specifier: ^4.1.0
+        version: 4.1.0
       ioredis:
         specifier: ^5.9.3
         version: 5.9.3
@@ -135,6 +135,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@date-fns/tz':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@next-auth/prisma-adapter':
         specifier: ^1.0.7
         version: 1.0.7(@prisma/client@7.4.0(prisma@7.4.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3))(next-auth@4.24.13(next@15.5.12(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
@@ -300,9 +303,15 @@ importers:
 
   packages/shared:
     devDependencies:
+      '@date-fns/tz':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@types/node':
         specifier: ^24.10.9
         version: 24.10.9
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       tsc-alias:
         specifier: ^1.8.16
         version: 1.8.16
@@ -589,6 +598,9 @@ packages:
 
   '@chevrotain/utils@10.5.0':
     resolution: {integrity: sha512-hBzuU5+JjB2cqNZyszkDHZgOSrUUT8V3dhgRl8Q9Gp6dAj/H5+KILGjbhDpc3Iy9qmqlm/akuOI2ut9VUtzJxQ==}
+
+  '@date-fns/tz@1.4.1':
+    resolution: {integrity: sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA==}
 
   '@discoveryjs/json-ext@0.5.7':
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
@@ -2839,14 +2851,6 @@ packages:
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
     engines: {node: '>= 12'}
-
-  date-fns-tz@3.2.0:
-    resolution: {integrity: sha512-sg8HqoTEulcbbbVXeg84u5UnlsQa8GS5QXMqjjYIhS4abEVVKIUwe0/l/UhrZdKaL/W5eWZNlbTeEIiOXTcsBQ==}
-    peerDependencies:
-      date-fns: ^3.0.0 || ^4.0.0
-
-  date-fns@3.6.0:
-    resolution: {integrity: sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==}
 
   date-fns@4.1.0:
     resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
@@ -5294,6 +5298,8 @@ snapshots:
 
   '@chevrotain/utils@10.5.0': {}
 
+  '@date-fns/tz@1.4.1': {}
+
   '@discoveryjs/json-ext@0.5.7': {}
 
   '@dotenvx/dotenvx@1.52.0':
@@ -7431,12 +7437,6 @@ snapshots:
   d3-timer@3.0.1: {}
 
   data-uri-to-buffer@4.0.1: {}
-
-  date-fns-tz@3.2.0(date-fns@3.6.0):
-    dependencies:
-      date-fns: 3.6.0
-
-  date-fns@3.6.0: {}
 
   date-fns@4.1.0: {}
 
