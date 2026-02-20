@@ -1,13 +1,11 @@
+import { format } from 'date-fns';
+import { tz } from '@date-fns/tz';
+
 export const KST_TIMEZONE = 'Asia/Seoul';
 
 interface FormatDateTimeOptions {
   withTime?: boolean;
-  locale?: string;
   timeZone?: string;
-}
-
-function getPart(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string {
-  return parts.find((part): boolean => part.type === type)?.value ?? '';
 }
 
 function parseDate(value: Date | string): Date {
@@ -18,40 +16,19 @@ function parseDate(value: Date | string): Date {
   return date;
 }
 
+function buildFormat(withTime: boolean): string {
+  return withTime ? 'yyyy-MM-dd HH:mm' : 'yyyy-MM-dd';
+}
+
 export function formatBrowserLocalDateTime(value: Date | string, options: FormatDateTimeOptions = {}): string {
-  const { withTime = true, locale = 'ko-KR', timeZone } = options;
+  const { withTime = true, timeZone } = options;
   const date = parseDate(value);
-
-  const formatter = new Intl.DateTimeFormat(locale, {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    ...(withTime
-      ? {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          hourCycle: 'h23',
-        }
-      : {}),
-  });
-
-  const parts = formatter.formatToParts(date);
-  const year = getPart(parts, 'year');
-  const month = getPart(parts, 'month');
-  const day = getPart(parts, 'day');
-
-  if (!withTime) {
-    return `${year}-${month}-${day}`;
-  }
-
-  const hour = getPart(parts, 'hour');
-  const minute = getPart(parts, 'minute');
-
-  return `${year}-${month}-${day} ${hour}:${minute}`;
+  const fmt = buildFormat(withTime);
+  return timeZone ? format(date, fmt, { in: tz(timeZone) }) : format(date, fmt);
 }
 
 export function formatKstDateTime(value: Date | string, options: Omit<FormatDateTimeOptions, 'timeZone'> = {}): string {
-  return formatBrowserLocalDateTime(value, { ...options, timeZone: KST_TIMEZONE });
+  const { withTime = true } = options;
+  const date = parseDate(value);
+  return format(date, buildFormat(withTime), { in: tz(KST_TIMEZONE) });
 }
