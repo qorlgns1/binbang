@@ -2,13 +2,11 @@
 
 import { Map as MapIcon, MessageSquare } from 'lucide-react';
 
-interface HomeMobileTabBarProps {
-  showMap: boolean;
-  onShowChat: () => void;
-  onShowMap: () => void;
-}
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
-export function HomeMobileTabBar({ showMap, onShowChat, onShowMap }: HomeMobileTabBarProps) {
+export function HomeMobileTabBar() {
+  const { showMap, openChatView, openMapView } = usePlaceStore();
+
   return (
     <nav
       className='flex shrink-0 items-center justify-around border-t border-border/60 bg-background/95 py-3 backdrop-blur-md md:hidden'
@@ -16,7 +14,7 @@ export function HomeMobileTabBar({ showMap, onShowChat, onShowMap }: HomeMobileT
     >
       <button
         type='button'
-        onClick={onShowChat}
+        onClick={openChatView}
         className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
           !showMap ? '-mt-px border-t-2 border-primary text-primary' : 'text-muted-foreground'
         }`}
@@ -27,7 +25,7 @@ export function HomeMobileTabBar({ showMap, onShowChat, onShowMap }: HomeMobileT
       </button>
       <button
         type='button'
-        onClick={onShowMap}
+        onClick={openMapView}
         className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
           showMap ? '-mt-px border-t-2 border-primary text-primary' : 'text-muted-foreground'
         }`}

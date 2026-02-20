@@ -4,15 +4,15 @@ import { Compass, LogIn, LogOut, Map as MapIcon, MessageSquare } from 'lucide-re
 import { signIn, signOut } from 'next-auth/react';
 
 import type { AuthStatus } from '@/lib/authStatus';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface HomeSidebarProps {
   authStatus: AuthStatus;
-  showMap: boolean;
-  onShowChat: () => void;
-  onShowMap: () => void;
 }
 
-export function HomeSidebar({ authStatus, showMap, onShowChat, onShowMap }: HomeSidebarProps) {
+export function HomeSidebar({ authStatus }: HomeSidebarProps) {
+  const { showMap, openChatView, openMapView } = usePlaceStore();
+
   return (
     <aside className='group hidden md:flex flex-col w-14 hover:w-52 shrink-0 overflow-hidden border-r border-border/60 bg-background transition-[width] duration-200 ease-in-out'>
       <div className='flex h-12 shrink-0 items-center border-b border-border/60'>
@@ -30,7 +30,7 @@ export function HomeSidebar({ authStatus, showMap, onShowChat, onShowMap }: Home
         <li>
           <button
             type='button'
-            onClick={onShowChat}
+            onClick={openChatView}
             className={`flex w-full items-center py-2.5 text-sm font-medium transition-colors ${
               !showMap ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
             }`}
@@ -47,7 +47,7 @@ export function HomeSidebar({ authStatus, showMap, onShowChat, onShowMap }: Home
         <li>
           <button
             type='button'
-            onClick={onShowMap}
+            onClick={openMapView}
             className={`flex w-full items-center py-2.5 text-sm font-medium transition-colors ${
               showMap ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
             }`}

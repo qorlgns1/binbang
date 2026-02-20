@@ -5,31 +5,13 @@ import { Bot, User } from 'lucide-react';
 import Markdown from 'react-markdown';
 
 import { ChatToolPart } from '@/components/chat/ChatToolPart';
-import type { PlaceEntity } from '@/lib/types';
 
 interface ChatMessageProps {
   message: UIMessage;
-  onPlaceSelect?: (place: PlaceEntity) => void;
-  onPlaceHover?: (placeId: string | undefined) => void;
-  onAlertClick?: (place: PlaceEntity) => void;
-  selectedPlaceId?: string;
-  mapHoveredEntityId?: string;
   isStreaming?: boolean;
-  conversationId?: string;
-  sessionId?: string;
 }
 
-export function ChatMessage({
-  message,
-  onPlaceSelect,
-  onPlaceHover,
-  onAlertClick,
-  selectedPlaceId,
-  mapHoveredEntityId,
-  isStreaming,
-  conversationId,
-  sessionId,
-}: ChatMessageProps) {
+export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
   return (
@@ -72,19 +54,7 @@ export function ChatMessage({
 
               const toolPart = part as unknown as { type: string; toolCallId?: string };
               const key = toolPart.toolCallId ?? `part-${part.type}-${idx}`;
-              return (
-                <ChatToolPart
-                  key={key}
-                  part={part}
-                  onPlaceSelect={onPlaceSelect}
-                  onPlaceHover={onPlaceHover}
-                  onAlertClick={onAlertClick}
-                  selectedPlaceId={selectedPlaceId}
-                  mapHoveredEntityId={mapHoveredEntityId}
-                  conversationId={conversationId}
-                  sessionId={sessionId}
-                />
-              );
+              return <ChatToolPart key={key} part={part} />;
             })}
             <p className='text-[10px] text-muted-foreground/80 mt-1.5 -ml-1 flex items-center gap-0.5' aria-hidden>
               방금

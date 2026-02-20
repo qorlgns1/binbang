@@ -10,7 +10,6 @@ import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatPanelErrorBanner, ChatPanelRestoreBanner } from '@/components/chat/ChatPanelSections';
 import { extractMapEntitiesFromMessages, isRateLimitErrorMessage } from '@/components/chat/chatPanelUtils';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
-import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
 import { useChatComposer } from '@/hooks/useChatComposer';
 import { useChatViewport } from '@/hooks/useChatViewport';
 import { useChatLoginGate } from '@/hooks/useChatLoginGate';
@@ -19,15 +18,8 @@ import { useGuestSession } from '@/hooks/useGuestSession';
 import { useRateLimitLoginPrompt } from '@/hooks/useRateLimitLoginPrompt';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
 import { isRestoreAutoEnabled } from '@/lib/featureFlags';
-import type { MapEntity, PlaceEntity } from '@/lib/types';
-
-interface ChatPanelProps {
-  onEntitiesUpdate: (entities: MapEntity[]) => void;
-  onPlaceSelect: (place: PlaceEntity) => void;
-  onPlaceHover?: (placeId: string | undefined) => void;
-  selectedPlaceId?: string;
-  mapHoveredEntityId?: string;
-}
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 const EXAMPLE_QUERIES = [
   '파리 에펠탑 근처, 취소분이 자주 나오는 가성비 숙소 찾아줘.',
@@ -35,41 +27,31 @@ const EXAMPLE_QUERIES = [
   '특정 숙소의 빈 방 알림을 설정하고 싶어.',
 ];
 
-export function ChatPanel({
-  onEntitiesUpdate,
-  onPlaceSelect,
-  onPlaceHover,
-  selectedPlaceId,
-  mapHoveredEntityId,
-}: ChatPanelProps) {
+export function ChatPanel() {
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
-  const { sessionId } = useGuestSession();
-  const { mergeStatus } = useSessionMerge();
   const { status: authStatus } = useSession();
   const restoreAutoEnabled = isRestoreAutoEnabled();
 
+  const { sessionId, currentConversationId } = useChatSessionStore();
+  const { selectedPlaceId, setEntities } = usePlaceStore();
+
+  // 세션 초기화 (store에 sessionId/mergeStatus 기록)
+  useGuestSession();
+  useSessionMerge();
+
   const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat();
 
-  const { currentConversationId, restoreStatus, handleNewConversation, handleRetryRestore, handleSelectConversation } =
-    useConversationRestore({
-      mergeStatus,
+  const { restoreStatus, handleNewConversation, handleRetryRestore, handleSelectConversation } = useConversationRestore(
+    {
       messages,
-      onEntitiesUpdate,
       restoreAutoEnabled,
       setMessages,
-    });
+    },
+  );
 
-  const {
-    showLoginModal,
-    loginModalTrigger,
-    closeLoginModal,
-    openLoginModalForRateLimit,
-    handleAlertClick,
-    handleHistoryClick,
-    handleSaveClick,
-  } = useChatLoginGate({
+  const { openLoginModalForRateLimit, handleHistoryClick, handleSaveClick } = useChatLoginGate({
     authStatus,
     messagesCount: messages.length,
     onOpenHistory: () => setShowHistory(true),
@@ -102,8 +84,8 @@ export function ChatPanel({
   });
 
   useEffect(() => {
-    onEntitiesUpdate(extractMapEntitiesFromMessages(messages));
-  }, [messages, onEntitiesUpdate]);
+    setEntities(extractMapEntitiesFromMessages(messages));
+  }, [messages, setEntities]);
 
   return (
     <div className='flex h-full flex-col'>
@@ -125,14 +107,7 @@ export function ChatPanel({
         exampleQueries={EXAMPLE_QUERIES}
         scrollAreaRef={scrollAreaRef}
         messagesEndRef={messagesEndRef}
-        currentConversationId={currentConversationId}
-        sessionId={sessionId ?? undefined}
         onExampleClick={handleExampleClick}
-        onPlaceSelect={onPlaceSelect}
-        onPlaceHover={onPlaceHover}
-        onAlertClick={handleAlertClick}
-        selectedPlaceId={selectedPlaceId}
-        mapHoveredEntityId={mapHoveredEntityId}
       />
 
       {error && (
@@ -149,7 +124,6 @@ export function ChatPanel({
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
 
-      <LoginPromptModal open={showLoginModal} onClose={closeLoginModal} trigger={loginModalTrigger} />
       <HistorySidebar
         open={showHistory}
         onClose={() => setShowHistory(false)}

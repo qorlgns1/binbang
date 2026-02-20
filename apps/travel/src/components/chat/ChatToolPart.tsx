@@ -1,21 +1,19 @@
 'use client';
 
 import type { UIMessage } from 'ai';
+import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
 import { renderToolOutput } from '@/components/chat/ChatToolRenderers';
 import { normalizeToolPart } from '@/components/chat/toolPartUtils';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
 import type { PlaceEntity } from '@/lib/types';
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
+import { useModalStore } from '@/stores/useModalStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface ToolPartProps {
   part: UIMessage['parts'][number];
-  onPlaceSelect?: (place: PlaceEntity) => void;
-  onPlaceHover?: (placeId: string | undefined) => void;
-  onAlertClick?: (place: PlaceEntity) => void;
-  selectedPlaceId?: string;
-  mapHoveredEntityId?: string;
-  conversationId?: string;
-  sessionId?: string;
 }
 
 function CardSkeleton({ label }: { label?: string }) {
@@ -46,16 +44,20 @@ function CardSkeleton({ label }: { label?: string }) {
   );
 }
 
-export function ChatToolPart({
-  part,
-  onPlaceSelect,
-  onPlaceHover,
-  onAlertClick,
-  selectedPlaceId,
-  mapHoveredEntityId,
-  conversationId,
-  sessionId,
-}: ToolPartProps) {
+export function ChatToolPart({ part }: ToolPartProps) {
+  const { selectedPlaceId, mapHoveredEntityId, selectPlace, hoverPlace } = usePlaceStore();
+  const { sessionId, currentConversationId } = useChatSessionStore();
+  const openLoginModal = useModalStore((s) => s.openLoginModal);
+  const { status: authStatus } = useSession();
+
+  const handleAlertClick = (_place: PlaceEntity) => {
+    if (authStatus === 'authenticated') {
+      toast.info('빈방 알림 기능은 준비 중이에요.');
+      return;
+    }
+    openLoginModal('bookmark');
+  };
+
   const normalized = normalizeToolPart(part);
   if (!normalized) {
     return null;
@@ -75,12 +77,12 @@ export function ChatToolPart({
   }
 
   return renderToolOutput(toolName, output, {
-    onPlaceSelect,
-    onPlaceHover,
-    onAlertClick,
+    onPlaceSelect: selectPlace,
+    onPlaceHover: hoverPlace,
+    onAlertClick: handleAlertClick,
     selectedPlaceId,
     mapHoveredEntityId,
-    conversationId,
-    sessionId,
+    conversationId: currentConversationId,
+    sessionId: sessionId ?? undefined,
   });
 }

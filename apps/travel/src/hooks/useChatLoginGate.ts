@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { PlaceEntity } from '@/lib/types';
+import { useModalStore } from '@/stores/useModalStore';
 
 export type LoginModalTrigger = 'save' | 'history' | 'bookmark' | 'limit';
 
@@ -14,11 +14,7 @@ interface UseChatLoginGateOptions {
 }
 
 interface UseChatLoginGateResult {
-  showLoginModal: boolean;
-  loginModalTrigger: LoginModalTrigger;
-  closeLoginModal: () => void;
   openLoginModalForRateLimit: () => void;
-  handleAlertClick: (_place: PlaceEntity) => void;
   handleHistoryClick: () => void;
   handleSaveClick: () => void;
 }
@@ -28,29 +24,7 @@ export function useChatLoginGate({
   messagesCount,
   onOpenHistory,
 }: UseChatLoginGateOptions): UseChatLoginGateResult {
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginModalTrigger, setLoginModalTrigger] = useState<LoginModalTrigger>('save');
-
-  const openLoginModal = useCallback((trigger: LoginModalTrigger) => {
-    setLoginModalTrigger(trigger);
-    setShowLoginModal(true);
-  }, []);
-
-  const closeLoginModal = useCallback(() => {
-    setShowLoginModal(false);
-  }, []);
-
-  const handleAlertClick = useCallback(
-    (_place: PlaceEntity) => {
-      if (authStatus === 'authenticated') {
-        toast.info('빈방 알림 기능은 준비 중이에요.');
-        return;
-      }
-
-      openLoginModal('bookmark');
-    },
-    [authStatus, openLoginModal],
-  );
+  const openLoginModal = useModalStore((s) => s.openLoginModal);
 
   const handleSaveClick = useCallback(() => {
     if (messagesCount === 0) {
@@ -80,11 +54,7 @@ export function useChatLoginGate({
   }, [openLoginModal]);
 
   return {
-    showLoginModal,
-    loginModalTrigger,
-    closeLoginModal,
     openLoginModalForRateLimit,
-    handleAlertClick,
     handleHistoryClick,
     handleSaveClick,
   };

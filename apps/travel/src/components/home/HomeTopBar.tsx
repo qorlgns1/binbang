@@ -5,13 +5,16 @@ import { signIn, signOut } from 'next-auth/react';
 
 import { OnlineStatus } from '@/components/OnlineStatus';
 import type { AuthStatus } from '@/lib/authStatus';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface HomeTopBarProps {
   authStatus: AuthStatus;
-  entityCount: number;
 }
 
-export function HomeTopBar({ authStatus, entityCount }: HomeTopBarProps) {
+export function HomeTopBar({ authStatus }: HomeTopBarProps) {
+  const entities = usePlaceStore((s) => s.entities);
+  const entityCount = entities.length;
+
   return (
     <header className='flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-background/95 px-4 backdrop-blur-md'>
       <div className='flex items-center gap-2 md:hidden'>

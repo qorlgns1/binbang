@@ -5,7 +5,6 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
-  createConversationId,
   mapConversationEntitiesToMapEntities,
   mapConversationMessagesToUiMessages,
 } from '@/components/chat/chatPanelUtils';
@@ -17,13 +16,11 @@ import {
 } from '@/hooks/conversationRestoreStorage';
 import { useConversationAutoRestore } from '@/hooks/useConversationAutoRestore';
 import { useConversationSnapshotSync } from '@/hooks/useConversationSnapshotSync';
-import type { MergeStatus } from '@/hooks/useSessionMerge';
-import type { MapEntity } from '@/lib/types';
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface UseConversationRestoreOptions {
-  mergeStatus: MergeStatus;
   messages: UIMessage[];
-  onEntitiesUpdate: (entities: MapEntity[]) => void;
   restoreAutoEnabled: boolean;
   setMessages: (messages: UIMessage[] | ((messages: UIMessage[]) => UIMessage[])) => void;
 }
@@ -34,7 +31,6 @@ interface LoadConversationOptions {
 }
 
 export interface UseConversationRestoreResult {
-  currentConversationId: string;
   restoreStatus: 'idle' | 'restoring' | 'failed';
   handleNewConversation: () => void;
   handleRetryRestore: () => Promise<void>;
@@ -42,16 +38,16 @@ export interface UseConversationRestoreResult {
 }
 
 export function useConversationRestore({
-  mergeStatus,
   messages,
-  onEntitiesUpdate,
   restoreAutoEnabled,
   setMessages,
 }: UseConversationRestoreOptions): UseConversationRestoreResult {
+  const { mergeStatus, currentConversationId, setCurrentConversationId, newConversation } = useChatSessionStore();
+  const setEntities = usePlaceStore((s) => s.setEntities);
+
   const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'failed'>('idle');
   const [restoreTargetConversationId, setRestoreTargetConversationId] = useState<string | null>(null);
   const [restorePreview, setRestorePreview] = useState('');
-  const [currentConversationId, setCurrentConversationId] = useState<string>(() => createConversationId());
 
   const clearRestoreState = useCallback(() => {
     setRestoreStatus('idle');
@@ -73,7 +69,7 @@ export function useConversationRestore({
         setMessages(mapConversationMessagesToUiMessages(data.conversation.messages));
         setCurrentConversationId(conversationId);
         setLastConversationId(conversationId);
-        onEntitiesUpdate(mapConversationEntitiesToMapEntities(data.conversation.entities));
+        setEntities(mapConversationEntitiesToMapEntities(data.conversation.entities));
 
         if (!options?.silent) {
           toast.success('대화를 불러왔습니다');
@@ -88,14 +84,13 @@ export function useConversationRestore({
         return false;
       }
     },
-    [onEntitiesUpdate, setMessages],
+    [setCurrentConversationId, setEntities, setMessages],
   );
 
   const restoreConversationWithFallback = useCallback(
     async (targetConversationId: string, preview: string): Promise<boolean> => {
       setRestoreStatus('restoring');
 
-      // merge 완료 후 트리거되므로 retry 1회로 충분하다 (네트워크 일시 오류 대비)
       const restoredPrimary = await loadConversation(targetConversationId, { silent: true, retryCount: 1 });
       if (restoredPrimary) {
         clearRestoreState();
@@ -142,11 +137,11 @@ export function useConversationRestore({
 
   const handleNewConversation = useCallback(() => {
     setMessages([]);
-    setCurrentConversationId(createConversationId());
+    newConversation();
     clearRestoreState();
     clearConversationRestoreStorage();
-    onEntitiesUpdate([]);
-  }, [clearRestoreState, onEntitiesUpdate, setMessages]);
+    setEntities([]);
+  }, [clearRestoreState, newConversation, setEntities, setMessages]);
 
   const handleAutoRestoreTarget = useCallback(
     (restoreTarget: RestoreTarget) => {
@@ -163,8 +158,6 @@ export function useConversationRestore({
   });
 
   // merge 완료(done) 이후에 restore를 트리거한다.
-  // authStatus 기반이 아니라 mergeStatus 기반으로 순서를 보장하여,
-  // merge DB write 이전에 GET /api/conversations/:id 가 실행되는 race condition을 제거한다.
   useConversationAutoRestore({
     restoreAutoEnabled,
     mergeStatus,
@@ -173,7 +166,6 @@ export function useConversationRestore({
   });
 
   return {
-    currentConversationId,
     restoreStatus,
     handleNewConversation,
     handleRetryRestore,

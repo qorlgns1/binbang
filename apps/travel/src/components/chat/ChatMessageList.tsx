@@ -6,7 +6,6 @@ import type { RefObject } from 'react';
 
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatPanelEmptyState } from '@/components/chat/ChatPanelSections';
-import type { PlaceEntity } from '@/lib/types';
 
 interface ChatMessageListProps {
   messages: UIMessage[];
@@ -14,14 +13,7 @@ interface ChatMessageListProps {
   exampleQueries: string[];
   scrollAreaRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  currentConversationId: string;
-  sessionId?: string;
-  selectedPlaceId?: string;
-  mapHoveredEntityId?: string;
   onExampleClick: (query: string) => void;
-  onPlaceSelect: (place: PlaceEntity) => void;
-  onAlertClick: (place: PlaceEntity) => void;
-  onPlaceHover?: (placeId: string | undefined) => void;
 }
 
 export function ChatMessageList({
@@ -30,14 +22,7 @@ export function ChatMessageList({
   exampleQueries,
   scrollAreaRef,
   messagesEndRef,
-  currentConversationId,
-  sessionId,
-  selectedPlaceId,
-  mapHoveredEntityId,
   onExampleClick,
-  onPlaceSelect,
-  onAlertClick,
-  onPlaceHover,
 }: ChatMessageListProps) {
   return (
     <div ref={scrollAreaRef} className='flex-1 overflow-y-auto scrollbar-hide px-4 md:px-5 py-5'>
@@ -51,17 +36,7 @@ export function ChatMessageList({
 
             return (
               <div key={message.id} className='message-block first:pt-0 first:mt-0 last:pb-4 last:mb-0 last:border-b-0'>
-                <ChatMessage
-                  message={message}
-                  onPlaceSelect={onPlaceSelect}
-                  onPlaceHover={onPlaceHover}
-                  onAlertClick={onAlertClick}
-                  selectedPlaceId={selectedPlaceId}
-                  mapHoveredEntityId={mapHoveredEntityId}
-                  isStreaming={isStreamingAssistant}
-                  conversationId={currentConversationId}
-                  sessionId={sessionId}
-                />
+                <ChatMessage message={message} isStreaming={isStreamingAssistant} />
               </div>
             );
           })}

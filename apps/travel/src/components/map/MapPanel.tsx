@@ -14,29 +14,13 @@ import {
 } from '@/components/map/mapPanelConstants';
 import { MapSelectedInfoWindow } from '@/components/map/MapSelectedInfoWindow';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
-import type { MapEntity } from '@/lib/types';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface MapPanelProps {
-  entities: MapEntity[];
-  selectedEntityId?: string;
-  hoveredEntityId?: string;
-  onEntitySelect?: (entityId: string) => void;
-  onEntityHover?: (entityId: string | undefined) => void;
-  onAlertClick?: (entityId: string) => void;
-  onCloseInfoWindow?: () => void;
   apiKey: string;
 }
 
-export function MapPanel({
-  entities,
-  selectedEntityId,
-  hoveredEntityId,
-  onEntitySelect,
-  onEntityHover,
-  onAlertClick,
-  onCloseInfoWindow,
-  apiKey,
-}: MapPanelProps) {
+export function MapPanel({ apiKey }: MapPanelProps) {
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -86,16 +70,7 @@ export function MapPanel({
           disableDefaultUI={false}
           className='h-full w-full'
         >
-          <MapContent
-            entities={entities}
-            selectedEntityId={selectedEntityId}
-            hoveredEntityId={hoveredEntityId}
-            onEntitySelect={onEntitySelect}
-            onEntityHover={onEntityHover}
-            onAlertClick={onAlertClick}
-            onCloseInfoWindow={onCloseInfoWindow}
-            onLoadTimeout={() => setLoadError(true)}
-          />
+          <MapContent onLoadTimeout={() => setLoadError(true)} />
         </GoogleMap>
         <MapLoadingOverlay />
       </div>
@@ -119,30 +94,16 @@ function MapLoadingOverlay() {
 }
 
 interface MapContentProps {
-  entities: MapEntity[];
-  selectedEntityId?: string;
-  hoveredEntityId?: string;
-  onEntitySelect?: (entityId: string) => void;
-  onEntityHover?: (entityId: string | undefined) => void;
-  onAlertClick?: (entityId: string) => void;
-  onCloseInfoWindow?: () => void;
   onLoadTimeout?: () => void;
 }
 
-function MapContent({
-  entities,
-  selectedEntityId,
-  hoveredEntityId,
-  onEntitySelect,
-  onEntityHover,
-  onAlertClick,
-  onCloseInfoWindow,
-  onLoadTimeout,
-}: MapContentProps) {
+function MapContent({ onLoadTimeout }: MapContentProps) {
+  const { entities, selectedPlaceId, hoveredPlaceId, selectEntity, hoverEntity } = usePlaceStore();
+
   const map = useMap();
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
+  const selectedEntity = selectedPlaceId ? entities.find((e) => e.id === selectedPlaceId) : undefined;
   const markerRefs = useRef<unknown[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const handleMarkerRef = useCallback((index: number, marker: unknown) => {
@@ -206,21 +167,21 @@ function MapContent({
   }, [fitEntities]);
 
   const handleSelectedEntity = useCallback(() => {
-    if (!map || !selectedEntityId) return;
-    const entity = entities.find((e) => e.id === selectedEntityId);
+    if (!map || !selectedPlaceId) return;
+    const entity = entities.find((e) => e.id === selectedPlaceId);
     if (entity) {
       map.panTo({ lat: entity.latitude, lng: entity.longitude });
       map.setZoom(15);
     }
-  }, [map, selectedEntityId, entities]);
+  }, [map, selectedPlaceId, entities]);
 
   useEffect(() => {
     handleSelectedEntity();
   }, [handleSelectedEntity]);
 
   useEffect(() => {
-    if (!map || !onCloseInfoWindow) return;
-    const handler = () => onCloseInfoWindow();
+    if (!map) return;
+    const handler = () => selectEntity(undefined);
     const g = (
       globalThis as unknown as {
         google?: {
@@ -237,7 +198,7 @@ function MapContent({
     return () => {
       if (listener?.remove) listener.remove();
     };
-  }, [map, onCloseInfoWindow]);
+  }, [map, selectEntity]);
 
   return (
     <>
@@ -246,22 +207,16 @@ function MapContent({
           key={entity.id}
           entity={entity}
           index={index}
-          selectedEntityId={selectedEntityId}
-          hoveredEntityId={hoveredEntityId}
+          selectedEntityId={selectedPlaceId}
+          hoveredEntityId={hoveredPlaceId}
           localHoveredId={hoveredId}
           onSetMarkerRef={handleMarkerRef}
           onSetHoveredId={setHoveredId}
-          onEntitySelect={onEntitySelect}
-          onEntityHover={onEntityHover}
+          onEntitySelect={selectEntity}
+          onEntityHover={hoverEntity}
         />
       ))}
-      {selectedEntity && (
-        <MapSelectedInfoWindow
-          selectedEntity={selectedEntity}
-          onAlertClick={onAlertClick}
-          onCloseInfoWindow={onCloseInfoWindow}
-        />
-      )}
+      {selectedEntity && <MapSelectedInfoWindow selectedEntity={selectedEntity} />}
     </>
   );
 }

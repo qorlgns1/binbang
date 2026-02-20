@@ -2,22 +2,36 @@
 
 import { Bell } from 'lucide-react';
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 import { InfoWindow } from '@vis.gl/react-google-maps';
+import { toast } from 'sonner';
 
 import { TYPE_COLORS, TYPE_LABELS } from '@/components/map/mapPanelConstants';
 import type { MapEntity } from '@/lib/types';
+import { useModalStore } from '@/stores/useModalStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface MapSelectedInfoWindowProps {
   selectedEntity: MapEntity;
-  onAlertClick?: (entityId: string) => void;
-  onCloseInfoWindow?: () => void;
 }
 
-export function MapSelectedInfoWindow({ selectedEntity, onAlertClick, onCloseInfoWindow }: MapSelectedInfoWindowProps) {
+export function MapSelectedInfoWindow({ selectedEntity }: MapSelectedInfoWindowProps) {
+  const selectEntity = usePlaceStore((s) => s.selectEntity);
+  const openLoginModal = useModalStore((s) => s.openLoginModal);
+  const { status: authStatus } = useSession();
+
+  const handleAlertClick = () => {
+    if (authStatus === 'authenticated') {
+      toast.info('빈방 알림 기능은 준비 중이에요.');
+      return;
+    }
+    openLoginModal('bookmark');
+  };
+
   return (
     <InfoWindow
       position={{ lat: selectedEntity.latitude, lng: selectedEntity.longitude }}
-      onCloseClick={() => onCloseInfoWindow?.()}
+      onCloseClick={() => selectEntity(undefined)}
     >
       <div className='w-[220px]'>
         {selectedEntity.photoUrl && (
@@ -50,7 +64,7 @@ export function MapSelectedInfoWindow({ selectedEntity, onAlertClick, onCloseInf
           {selectedEntity.type === 'accommodation' && (
             <button
               type='button'
-              onClick={() => onAlertClick?.(selectedEntity.id)}
+              onClick={handleAlertClick}
               className='w-full flex items-center justify-center gap-1.5 rounded-full bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-xs font-medium py-2 transition-all duration-150'
               aria-label={`${selectedEntity.name}의 빈방 알림 설정하기`}
             >
