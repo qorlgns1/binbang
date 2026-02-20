@@ -165,9 +165,7 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
                 userRatingsTotal: firstPlace.userRatingsTotal,
                 types: firstPlace.types,
                 photoUrl: firstPlace.photoUrl,
-                affiliateLink,
-                isAffiliate: true,
-                advertiserName: 'Agoda',
+                isAffiliate: false,
               }
             : null;
 
@@ -246,8 +244,8 @@ export function createTravelTools(options: TravelToolsOptions = {}) {
           description: buildEsimDescription(location, tripDays, dataNeedGB),
           coverage: location?.trim() || 'Global',
           affiliateLink,
-          isAffiliate: true,
-          advertiserName: advertiser?.name,
+          isAffiliate: !!affiliateLink,
+          advertiserName: affiliateLink ? advertiser?.name : undefined,
         };
 
         return { primary, ctaEnabled, provider };
