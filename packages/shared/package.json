@@ -39,6 +39,21 @@
       "development": "./src/utils/date.ts",
       "default": "./dist/utils/date.js"
     },
+    "./utils/datetime": {
+      "types": "./src/utils/datetime.ts",
+      "development": "./src/utils/datetime.ts",
+      "default": "./dist/utils/datetime.js"
+    },
+    "./utils/timeout": {
+      "types": "./src/utils/timeout.ts",
+      "development": "./src/utils/timeout.ts",
+      "default": "./dist/utils/timeout.js"
+    },
+    "./utils/price": {
+      "types": "./src/utils/price.ts",
+      "development": "./src/utils/price.ts",
+      "default": "./dist/utils/price.js"
+    },
     "./errors": {
       "types": "./src/errors/index.ts",
       "development": "./src/errors/index.ts",
