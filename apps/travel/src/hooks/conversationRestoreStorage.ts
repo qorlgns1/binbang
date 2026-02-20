@@ -9,7 +9,7 @@ import {
   type PendingRestoreSnapshot,
 } from '@/components/chat/chatPanelUtils';
 
-interface RestoreTarget {
+export interface RestoreTarget {
   conversationId: string;
   preview: string;
 }

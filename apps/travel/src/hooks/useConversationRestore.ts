@@ -1,7 +1,7 @@
 'use client';
 
 import type { UIMessage } from 'ai';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -12,10 +12,11 @@ import {
 import { fetchConversationDetail, findFallbackConversationId } from '@/hooks/conversationRestoreApi';
 import {
   clearConversationRestoreStorage,
-  consumeRestoreTarget,
-  saveConversationRestoreSnapshot,
   setLastConversationId,
+  type RestoreTarget,
 } from '@/hooks/conversationRestoreStorage';
+import { useConversationAutoRestore } from '@/hooks/useConversationAutoRestore';
+import { useConversationSnapshotSync } from '@/hooks/useConversationSnapshotSync';
 import type { MergeStatus } from '@/hooks/useSessionMerge';
 import type { MapEntity } from '@/lib/types';
 
@@ -47,7 +48,6 @@ export function useConversationRestore({
   restoreAutoEnabled,
   setMessages,
 }: UseConversationRestoreOptions): UseConversationRestoreResult {
-  const hasAutoRestoredConversationRef = useRef(false);
   const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'failed'>('idle');
   const [restoreTargetConversationId, setRestoreTargetConversationId] = useState<string | null>(null);
   const [restorePreview, setRestorePreview] = useState('');
@@ -148,40 +148,29 @@ export function useConversationRestore({
     onEntitiesUpdate([]);
   }, [clearRestoreState, onEntitiesUpdate, setMessages]);
 
-  useEffect(() => {
-    if (messages.length === 0) {
-      return;
-    }
+  const handleAutoRestoreTarget = useCallback(
+    (restoreTarget: RestoreTarget) => {
+      setRestorePreview(restoreTarget.preview);
+      setRestoreTargetConversationId(restoreTarget.conversationId);
+      void restoreConversationWithFallback(restoreTarget.conversationId, restoreTarget.preview);
+    },
+    [restoreConversationWithFallback],
+  );
 
-    saveConversationRestoreSnapshot(currentConversationId, messages);
-  }, [currentConversationId, messages]);
+  useConversationSnapshotSync({
+    currentConversationId,
+    messages,
+  });
 
   // merge 완료(done) 이후에 restore를 트리거한다.
   // authStatus 기반이 아니라 mergeStatus 기반으로 순서를 보장하여,
   // merge DB write 이전에 GET /api/conversations/:id 가 실행되는 race condition을 제거한다.
-  useEffect(() => {
-    if (!restoreAutoEnabled) {
-      return;
-    }
-
-    if (mergeStatus !== 'done' || hasAutoRestoredConversationRef.current) {
-      return;
-    }
-
-    hasAutoRestoredConversationRef.current = true;
-    if (messages.length > 0) {
-      return;
-    }
-
-    const restoreTarget = consumeRestoreTarget();
-    if (!restoreTarget) {
-      return;
-    }
-
-    setRestorePreview(restoreTarget.preview);
-    setRestoreTargetConversationId(restoreTarget.conversationId);
-    void restoreConversationWithFallback(restoreTarget.conversationId, restoreTarget.preview);
-  }, [mergeStatus, messages.length, restoreAutoEnabled, restoreConversationWithFallback]);
+  useConversationAutoRestore({
+    restoreAutoEnabled,
+    mergeStatus,
+    hasMessages: messages.length > 0,
+    onRestoreTarget: handleAutoRestoreTarget,
+  });
 
   return {
     currentConversationId,
