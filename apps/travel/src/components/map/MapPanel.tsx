@@ -1,25 +1,20 @@
 'use client';
 
-import {
-  APIProvider,
-  AdvancedMarker,
-  InfoWindow,
-  Map as GoogleMap,
-  Pin,
-  useMap,
-  useApiIsLoaded,
-} from '@vis.gl/react-google-maps';
+import { APIProvider, Map as GoogleMap, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { Bell, MapPin, RefreshCw } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { MapEntity } from '@/lib/types';
+import { MapEntityMarker } from '@/components/map/MapEntityMarker';
+import {
+  CLUSTER_THRESHOLD,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  MAP_LOAD_TIMEOUT_MS,
+} from '@/components/map/mapPanelConstants';
+import { MapSelectedInfoWindow } from '@/components/map/MapSelectedInfoWindow';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
-
-const CLUSTER_THRESHOLD = 12;
-
-const MAP_LOAD_TIMEOUT_MS = 15000;
+import type { MapEntity } from '@/lib/types';
 
 interface MapPanelProps {
   entities: MapEntity[];
@@ -31,23 +26,6 @@ interface MapPanelProps {
   onCloseInfoWindow?: () => void;
   apiKey: string;
 }
-
-const DEFAULT_CENTER = { lat: 20, lng: 100 };
-const DEFAULT_ZOOM = 3;
-
-const TYPE_COLORS: Record<string, { background: string; glyph: string }> = {
-  place: { background: '#2563eb', glyph: '#ffffff' },
-  restaurant: { background: '#f97316', glyph: '#ffffff' },
-  accommodation: { background: '#8b5cf6', glyph: '#ffffff' },
-  attraction: { background: '#10b981', glyph: '#ffffff' },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  place: '장소',
-  restaurant: '음식점',
-  accommodation: '숙소',
-  attraction: '관광지',
-};
 
 export function MapPanel({
   entities,
@@ -167,6 +145,9 @@ function MapContent({
   const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
   const markerRefs = useRef<unknown[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
+  const handleMarkerRef = useCallback((index: number, marker: unknown) => {
+    markerRefs.current[index] = marker;
+  }, []);
 
   useEffect(() => {
     if (isLoaded) return;
@@ -260,81 +241,26 @@ function MapContent({
 
   return (
     <>
-      {entities.map((entity, index) => {
-        const isSelected = entity.id === selectedEntityId;
-        const isHovered = entity.id === hoveredId || entity.id === hoveredEntityId;
-        const colors = TYPE_COLORS[entity.type] ?? TYPE_COLORS.place;
-        const scale = isSelected || isHovered ? 1.3 : 1;
-
-        return (
-          <AdvancedMarker
-            key={entity.id}
-            ref={(el: unknown) => {
-              markerRefs.current[index] = el;
-            }}
-            position={{ lat: entity.latitude, lng: entity.longitude }}
-            title={entity.name}
-            onClick={() => onEntitySelect?.(entity.id)}
-            onMouseEnter={() => {
-              setHoveredId(entity.id);
-              onEntityHover?.(entity.id);
-            }}
-            onMouseLeave={() => {
-              setHoveredId(null);
-              onEntityHover?.(undefined);
-            }}
-          >
-            <Pin background={colors.background} glyphColor={colors.glyph} scale={scale} />
-          </AdvancedMarker>
-        );
-      })}
+      {entities.map((entity, index) => (
+        <MapEntityMarker
+          key={entity.id}
+          entity={entity}
+          index={index}
+          selectedEntityId={selectedEntityId}
+          hoveredEntityId={hoveredEntityId}
+          localHoveredId={hoveredId}
+          onSetMarkerRef={handleMarkerRef}
+          onSetHoveredId={setHoveredId}
+          onEntitySelect={onEntitySelect}
+          onEntityHover={onEntityHover}
+        />
+      ))}
       {selectedEntity && (
-        <InfoWindow
-          position={{ lat: selectedEntity.latitude, lng: selectedEntity.longitude }}
-          onCloseClick={() => onCloseInfoWindow?.()}
-        >
-          <div className='w-[220px]'>
-            {selectedEntity.photoUrl && (
-              <div className='relative mb-3 aspect-video w-full overflow-hidden rounded-lg bg-muted'>
-                <Image
-                  src={selectedEntity.photoUrl}
-                  alt={selectedEntity.name}
-                  fill
-                  sizes='220px'
-                  className='object-cover'
-                  unoptimized
-                />
-              </div>
-            )}
-            <div className='space-y-2.5'>
-              <div className='flex items-start gap-2'>
-                <span
-                  className='mt-1 h-2.5 w-2.5 shrink-0 rounded-full'
-                  style={{ backgroundColor: TYPE_COLORS[selectedEntity.type]?.background ?? '#2563eb' }}
-                />
-                <div className='min-w-0'>
-                  <h4 className='truncate text-sm font-semibold leading-tight text-gray-900 dark:text-gray-100'>
-                    {selectedEntity.name}
-                  </h4>
-                  <p className='mt-0.5 text-xs text-gray-500 dark:text-gray-400'>
-                    {TYPE_LABELS[selectedEntity.type] ?? selectedEntity.type}
-                  </p>
-                </div>
-              </div>
-              {selectedEntity.type === 'accommodation' && (
-                <button
-                  type='button'
-                  onClick={() => onAlertClick?.(selectedEntity.id)}
-                  className='w-full flex items-center justify-center gap-1.5 rounded-full bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-xs font-medium py-2 transition-all duration-150'
-                  aria-label={`${selectedEntity.name}의 빈방 알림 설정하기`}
-                >
-                  <Bell className='h-3.5 w-3.5 shrink-0' aria-hidden />
-                  빈방 알림 설정하기
-                </button>
-              )}
-            </div>
-          </div>
-        </InfoWindow>
+        <MapSelectedInfoWindow
+          selectedEntity={selectedEntity}
+          onAlertClick={onAlertClick}
+          onCloseInfoWindow={onCloseInfoWindow}
+        />
       )}
     </>
   );
