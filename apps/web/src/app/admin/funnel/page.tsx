@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatBrowserLocalDateTime } from '@/lib/datetime/formatBrowserLocal';
+import { format } from 'date-fns';
+import { tz } from '@date-fns/tz';
 import type { AffiliateCategoryFilter } from '@/types/admin';
 
 import { useAffiliateFunnelQuery } from './_hooks/useAffiliateFunnelQuery';
@@ -56,10 +57,7 @@ export default function FunnelPage() {
   }, []);
 
   const formatLocalDateTime = (value: string, withTime = true): string =>
-    formatBrowserLocalDateTime(value, {
-      withTime,
-      timeZone: browserTimezone,
-    });
+    format(new Date(value), withTime ? 'yyyy-MM-dd HH:mm' : 'yyyy-MM-dd', { in: tz(browserTimezone) });
 
   return (
     <main className='max-w-7xl mx-auto px-4 py-8 space-y-6'>

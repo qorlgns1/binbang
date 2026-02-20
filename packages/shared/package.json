@@ -39,11 +39,6 @@
       "development": "./src/utils/date.ts",
       "default": "./dist/utils/date.js"
     },
-    "./utils/datetime": {
-      "types": "./src/utils/datetime.ts",
-      "development": "./src/utils/datetime.ts",
-      "default": "./dist/utils/datetime.js"
-    },
     "./utils/timeout": {
       "types": "./src/utils/timeout.ts",
       "development": "./src/utils/timeout.ts",
