@@ -6,6 +6,7 @@ import { generateCacheKey, getCacheEntryState } from '@/services/cache.service';
 
 const PLACE_TYPES = ['tourist_attraction', 'restaurant', 'hotel'] as const;
 const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }] as const;
+const PREWARM_CONCURRENCY = Math.max(1, Number.parseInt(process.env.CACHE_PREWARM_CONCURRENCY ?? '5', 10));
 
 interface PlacePrewarmTarget {
   destination: string;
@@ -77,6 +78,7 @@ interface RunPrewarmTargetsOptions<T> {
   keyOf: (item: T) => string;
   fetch: (item: T) => Promise<unknown>;
   failMessage: (item: T) => string;
+  concurrency?: number;
 }
 
 async function runPrewarmTargets<T>({
@@ -86,15 +88,15 @@ async function runPrewarmTargets<T>({
   keyOf,
   fetch,
   failMessage,
+  concurrency = PREWARM_CONCURRENCY,
 }: RunPrewarmTargetsOptions<T>): Promise<void> {
-  for (const item of items) {
+  const runOne = async (item: T): Promise<void> => {
     const cacheKey = keyOf(item);
     const state = await getCacheEntryState(cacheKey, logLabel);
     if (state !== 'miss') {
       metrics.skipped += 1;
-      continue;
+      return;
     }
-
     try {
       await fetch(item);
       metrics.warmed += 1;
@@ -102,6 +104,10 @@ async function runPrewarmTargets<T>({
       metrics.failed += 1;
       console.error(failMessage(item), error);
     }
+  };
+
+  for (let i = 0; i < items.length; i += concurrency) {
+    await Promise.allSettled(items.slice(i, i + concurrency).map(runOne));
   }
 }
 
@@ -153,9 +159,7 @@ export async function runTravelCachePrewarm(): Promise<TravelCachePrewarmResult>
   const weather = createMetrics(WEATHER_PREWARM_TARGETS.length);
   const exchangeRate = createMetrics(EXCHANGE_RATE_PREWARM_TARGETS.length);
 
-  await runPlacesPrewarm(places);
-  await runWeatherPrewarm(weather);
-  await runExchangeRatePrewarm(exchangeRate);
+  await Promise.all([runPlacesPrewarm(places), runWeatherPrewarm(weather), runExchangeRatePrewarm(exchangeRate)]);
 
   const finishedAt = new Date();
   const durationMs = finishedAt.getTime() - startedAt.getTime();
