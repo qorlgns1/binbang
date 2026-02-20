@@ -1,357 +1,26 @@
 import crypto from 'node:crypto';
-import { getRedisClient } from '@/lib/redis';
 
-export interface CacheOptions {
-  ttl?: number; // Time to live in seconds
-  prefix?: string;
-}
+import {
+  CACHE_INVALIDATION_PREFIX_BY_TARGET,
+  DEFAULT_INVALIDATE_SCAN_COUNT,
+  DEFAULT_STALE_TTL,
+  DEFAULT_TTL,
+  INVALIDATE_DELETE_BATCH_SIZE,
+} from '@/lib/cache/cacheConfig';
+import { applyTtlJitter, normalizeTtlSeconds, readCacheEnvelope, writeCacheEnvelope } from '@/lib/cache/cacheEnvelope';
+import { refreshWithLock, triggerBackgroundRevalidation } from '@/lib/cache/cacheStrategies';
+import { resolveConnectedRedis, scanKeysByPattern } from '@/lib/cache/redisClient';
+import type { CachedFetchOptions, CacheEntryState, CacheOptions } from '@/lib/cache/cacheTypes';
+import type { CacheInvalidationTarget } from '@/lib/cache/cacheConfig';
 
-const DEFAULT_TTL = Number.parseInt(process.env.CACHE_DEFAULT_TTL_SECONDS ?? '86400', 10); // 24 hours
-const DEFAULT_STALE_TTL = Number.parseInt(process.env.CACHE_STALE_TTL_SECONDS ?? '3600', 10); // 1 hour
-const DEFAULT_LOCK_TTL_SECONDS = Number.parseInt(process.env.CACHE_LOCK_TTL_SECONDS ?? '15', 10);
-const DEFAULT_LOCK_WAIT_TIMEOUT_MS = Number.parseInt(process.env.CACHE_LOCK_WAIT_TIMEOUT_MS ?? '1500', 10);
-const DEFAULT_LOCK_WAIT_INTERVAL_MS = Number.parseInt(process.env.CACHE_LOCK_WAIT_INTERVAL_MS ?? '100', 10);
-const DEFAULT_INVALIDATE_SCAN_COUNT = Number.parseInt(process.env.CACHE_INVALIDATE_SCAN_COUNT ?? '200', 10);
-const INVALIDATE_DELETE_BATCH_SIZE = 500;
-
-export const CACHE_INVALIDATION_PREFIX_BY_TARGET = {
-  places: 'places',
-  weather: 'weather',
-  exchange: 'exchange_rate',
-} as const;
-
-export type CacheInvalidationTarget = keyof typeof CACHE_INVALIDATION_PREFIX_BY_TARGET;
-
-interface CacheEnvelope<T> {
-  value: T;
-  expiresAt: number;
-  staleUntil: number;
-  updatedAt: number;
-}
-
-type CacheReadResult<T> = { status: 'miss' } | { status: 'fresh'; value: T } | { status: 'stale'; value: T };
-export type CacheEntryState = CacheReadResult<unknown>['status'];
-
-interface InternalReadOptions {
-  label: string;
-  log?: boolean;
-}
-
-export interface CachedFetchOptions<T> {
-  key: string;
-  fetcher: () => Promise<T>;
-  freshTtlSeconds?: number;
-  staleTtlSeconds?: number;
-  jitterRatio?: number;
-  lockTtlSeconds?: number;
-  waitTimeoutMs?: number;
-  waitIntervalMs?: number;
-  logLabel?: string;
-}
-
-const activeRevalidations = new Set<string>();
-type RedisClient = NonNullable<ReturnType<typeof getRedisClient>>;
-
-function getNowMs(): number {
-  return Date.now();
-}
-
-function normalizeTtlSeconds(ttlSeconds: number): number {
-  return Math.max(1, Math.round(ttlSeconds));
-}
-
-function applyTtlJitter(ttlSeconds: number, jitterRatio: number): number {
-  if (jitterRatio <= 0) return normalizeTtlSeconds(ttlSeconds);
-  const clampedRatio = Math.min(Math.max(jitterRatio, 0), 1);
-  const jitter = (Math.random() * 2 - 1) * clampedRatio;
-  return normalizeTtlSeconds(ttlSeconds * (1 + jitter));
-}
-
-async function ensureRedisConnected(redis: NonNullable<ReturnType<typeof getRedisClient>>): Promise<boolean> {
-  if (redis.status === 'ready' || redis.status === 'connect') {
-    return true;
-  }
-
-  if (redis.status === 'connecting' || redis.status === 'reconnecting') {
-    return new Promise<boolean>((resolve) => {
-      const timer = setTimeout(() => {
-        off();
-        resolve(false);
-      }, 3000);
-      const off = () => {
-        clearTimeout(timer);
-        redis.off('ready', onReady);
-        redis.off('error', onFail);
-        redis.off('close', onFail);
-      };
-      const onReady = () => {
-        off();
-        resolve(true);
-      };
-      const onFail = () => {
-        off();
-        resolve(false);
-      };
-      redis.once('ready', onReady);
-      redis.once('error', onFail);
-      redis.once('close', onFail);
-    });
-  }
-
-  try {
-    await redis.connect();
-    return true;
-  } catch (error) {
-    console.error('[Cache] Failed to connect Redis:', error);
-    return false;
-  }
-}
-
-async function resolveConnectedRedis(): Promise<RedisClient | null> {
-  const redis = getRedisClient();
-  if (!redis) {
-    return null;
-  }
-
-  const connected = await ensureRedisConnected(redis);
-  if (!connected) {
-    return null;
-  }
-
-  return redis;
-}
-
-function parseEnvelope<T>(raw: string): CacheEnvelope<T> | null {
-  try {
-    const parsed = JSON.parse(raw) as Partial<CacheEnvelope<T>>;
-    if (!parsed || typeof parsed !== 'object') return null;
-    if (typeof parsed.expiresAt !== 'number') return null;
-    if (typeof parsed.staleUntil !== 'number') return null;
-    if (typeof parsed.updatedAt !== 'number') return null;
-    if (!('value' in parsed)) return null;
-    return parsed as CacheEnvelope<T>;
-  } catch {
-    return null;
-  }
-}
-
-async function readCacheEnvelope<T>(key: string, options: InternalReadOptions): Promise<CacheReadResult<T>> {
-  const { label, log = true } = options;
-  const redis = await resolveConnectedRedis();
-  if (!redis) {
-    if (log) console.log(`[Cache:${label}] BYPASS(redis-unavailable): ${key}`);
-    return { status: 'miss' };
-  }
-
-  try {
-    const cached = await redis.get(key);
-    if (!cached) {
-      if (log) console.log(`[Cache:${label}] MISS: ${key}`);
-      return { status: 'miss' };
-    }
-
-    const envelope = parseEnvelope<T>(cached);
-    if (!envelope) {
-      await redis.del(key);
-      if (log) console.warn(`[Cache:${label}] INVALID_PAYLOAD: ${key}`);
-      return { status: 'miss' };
-    }
-
-    const now = getNowMs();
-    if (now < envelope.expiresAt) {
-      if (log) console.log(`[Cache:${label}] HIT: ${key}`);
-      return { status: 'fresh', value: envelope.value };
-    }
-
-    if (now < envelope.staleUntil) {
-      if (log) console.log(`[Cache:${label}] STALE: ${key}`);
-      return { status: 'stale', value: envelope.value };
-    }
-
-    await redis.del(key);
-    if (log) console.log(`[Cache:${label}] EXPIRED: ${key}`);
-    return { status: 'miss' };
-  } catch (error) {
-    console.error(`[Cache:${label}] READ_ERROR ${key}:`, error);
-    return { status: 'miss' };
-  }
-}
-
-async function writeCacheEnvelope<T>(
-  key: string,
-  value: T,
-  freshTtlSeconds: number,
-  staleTtlSeconds: number,
-  label: string,
-): Promise<void> {
-  const redis = await resolveConnectedRedis();
-  if (!redis) return;
-
-  try {
-    const now = getNowMs();
-    const envelope: CacheEnvelope<T> = {
-      value,
-      updatedAt: now,
-      expiresAt: now + freshTtlSeconds * 1000,
-      staleUntil: now + (freshTtlSeconds + staleTtlSeconds) * 1000,
-    };
-
-    const redisTtl = normalizeTtlSeconds(freshTtlSeconds + staleTtlSeconds);
-    await redis.setex(key, redisTtl, JSON.stringify(envelope));
-    console.log(`[Cache:${label}] SET: ${key} (fresh=${freshTtlSeconds}s, stale=${staleTtlSeconds}s)`);
-  } catch (error) {
-    console.error(`[Cache:${label}] WRITE_ERROR ${key}:`, error);
-  }
-}
-
-async function releaseLock(redis: RedisClient, lockKey: string, lockValue: string): Promise<void> {
-  try {
-    await redis.eval(
-      "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-      1,
-      lockKey,
-      lockValue,
-    );
-  } catch (error) {
-    console.error(`[Cache] Failed to release lock ${lockKey}:`, error);
-  }
-}
-
-async function scanKeysByPattern(redis: RedisClient, pattern: string): Promise<string[]> {
-  const keys: string[] = [];
-  let cursor = '0';
-  const scanCount = Number.isFinite(DEFAULT_INVALIDATE_SCAN_COUNT) ? Math.max(10, DEFAULT_INVALIDATE_SCAN_COUNT) : 200;
-
-  do {
-    const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', String(scanCount));
-    cursor = nextCursor;
-    if (batch.length > 0) {
-      keys.push(...batch);
-    }
-  } while (cursor !== '0');
-
-  return keys;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForCacheFill<T>(
-  key: string,
-  timeoutMs: number,
-  intervalMs: number,
-  label: string,
-): Promise<CacheReadResult<T>> {
-  const deadline = Date.now() + Math.max(0, timeoutMs);
-  while (Date.now() < deadline) {
-    await sleep(Math.max(10, intervalMs));
-    const found = await readCacheEnvelope<T>(key, { label, log: false });
-    if (found.status !== 'miss') return found;
-  }
-  return { status: 'miss' };
-}
-
-async function runFetcherWithCacheWrite<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  label: string,
-  freshTtlSeconds: number,
-  staleTtlSeconds: number,
-  staleFallback?: T,
-): Promise<T> {
-  try {
-    const freshValue = await fetcher();
-    await writeCacheEnvelope(key, freshValue, freshTtlSeconds, staleTtlSeconds, label);
-    return freshValue;
-  } catch (error) {
-    if (staleFallback !== undefined) {
-      console.warn(`[Cache:${label}] STALE_IF_ERROR: ${key}`);
-      return staleFallback;
-    }
-    throw error;
-  }
-}
-
-async function refreshWithLock<T>(
-  options: CachedFetchOptions<T>,
-  params: {
-    label: string;
-    freshTtlSeconds: number;
-    staleTtlSeconds: number;
-    staleFallback?: T;
-  },
-): Promise<T> {
-  const { key, fetcher } = options;
-  const { label, freshTtlSeconds, staleTtlSeconds, staleFallback } = params;
-
-  const redis = await resolveConnectedRedis();
-  if (!redis) {
-    return runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
-  }
-
-  const lockKey = `${key}:lock`;
-  const lockValue = crypto.randomUUID();
-  const lockTtlSeconds = normalizeTtlSeconds(options.lockTtlSeconds ?? DEFAULT_LOCK_TTL_SECONDS);
-  let lockAcquired = false;
-
-  try {
-    const lockResult = await redis.set(lockKey, lockValue, 'EX', lockTtlSeconds, 'NX');
-    if (lockResult === 'OK') {
-      lockAcquired = true;
-      return await runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
-    }
-
-    console.log(`[Cache:${label}] LOCK_WAIT: ${key}`);
-    const waited = await waitForCacheFill<T>(
-      key,
-      options.waitTimeoutMs ?? DEFAULT_LOCK_WAIT_TIMEOUT_MS,
-      options.waitIntervalMs ?? DEFAULT_LOCK_WAIT_INTERVAL_MS,
-      label,
-    );
-    if (waited.status === 'fresh') {
-      console.log(`[Cache:${label}] WAIT_HIT: ${key}`);
-      return waited.value;
-    }
-    if (waited.status === 'stale') {
-      console.log(`[Cache:${label}] WAIT_STALE: ${key}`);
-      return waited.value;
-    }
-
-    console.warn(`[Cache:${label}] LOCK_TIMEOUT_FETCH: ${key}`);
-    return runFetcherWithCacheWrite(key, fetcher, label, freshTtlSeconds, staleTtlSeconds, staleFallback);
-  } finally {
-    if (lockAcquired) {
-      await releaseLock(redis, lockKey, lockValue);
-    }
-  }
-}
-
-function triggerBackgroundRevalidation<T>(
-  options: CachedFetchOptions<T>,
-  params: { label: string; freshTtlSeconds: number; staleTtlSeconds: number },
-): void {
-  const { key } = options;
-  if (activeRevalidations.has(key)) return;
-
-  activeRevalidations.add(key);
-  void (async () => {
-    try {
-      await refreshWithLock(options, params);
-      console.log(`[Cache:${params.label}] REVALIDATE_OK: ${key}`);
-    } catch (error) {
-      console.warn(`[Cache:${params.label}] REVALIDATE_FAIL: ${key}`, error);
-    } finally {
-      activeRevalidations.delete(key);
-    }
-  })();
-}
+export type { CacheOptions, CachedFetchOptions, CacheEntryState };
+export type { CacheInvalidationTarget };
+export { CACHE_INVALIDATION_PREFIX_BY_TARGET };
 
 /**
  * Generate a stable cache key from parameters
  */
 export function generateCacheKey(prefix: string, params: unknown): string {
-  // Sort keys for consistent hashing if it's an object
   let normalizedParams: unknown = params;
 
   if (params && typeof params === 'object' && !Array.isArray(params)) {
@@ -423,9 +92,7 @@ export async function getCachedOrFetch<T>(options: CachedFetchOptions<T>): Promi
  */
 export async function deleteCachedData(key: string): Promise<void> {
   const redis = await resolveConnectedRedis();
-  if (!redis) {
-    return;
-  }
+  if (!redis) return;
 
   try {
     await redis.del(key);
@@ -440,15 +107,14 @@ export async function deleteCachedData(key: string): Promise<void> {
  */
 export async function invalidateCachePattern(pattern: string): Promise<number> {
   const redis = await resolveConnectedRedis();
-  if (!redis) {
-    return 0;
-  }
+  if (!redis) return 0;
 
   try {
-    const keys = await scanKeysByPattern(redis, pattern);
-    if (keys.length === 0) {
-      return 0;
-    }
+    const scanCount = Number.isFinite(DEFAULT_INVALIDATE_SCAN_COUNT)
+      ? Math.max(10, DEFAULT_INVALIDATE_SCAN_COUNT)
+      : 200;
+    const keys = await scanKeysByPattern(redis, pattern, scanCount);
+    if (keys.length === 0) return 0;
 
     let deletedCount = 0;
     for (let i = 0; i < keys.length; i += INVALIDATE_DELETE_BATCH_SIZE) {
