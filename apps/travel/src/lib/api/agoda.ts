@@ -116,6 +116,7 @@ function mapCandidateToAccommodation(item: unknown, siteId: string): AgodaAccomm
   const longitude = firstNumber(item, ['longitude', 'lng', 'lon', 'geo.longitude', 'location.longitude']);
 
   if (!hotelId || !name || latitude == null || longitude == null) {
+    console.warn('[agoda] skipping item: missing required fields', { hotelId, name, latitude, longitude });
     return null;
   }
 

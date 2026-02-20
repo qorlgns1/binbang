@@ -68,13 +68,34 @@ function applyTtlJitter(ttlSeconds: number, jitterRatio: number): number {
 }
 
 async function ensureRedisConnected(redis: NonNullable<ReturnType<typeof getRedisClient>>): Promise<boolean> {
-  if (
-    redis.status === 'ready' ||
-    redis.status === 'connect' ||
-    redis.status === 'connecting' ||
-    redis.status === 'reconnecting'
-  ) {
+  if (redis.status === 'ready' || redis.status === 'connect') {
     return true;
+  }
+
+  if (redis.status === 'connecting' || redis.status === 'reconnecting') {
+    return new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => {
+        off();
+        resolve(false);
+      }, 3000);
+      const off = () => {
+        clearTimeout(timer);
+        redis.off('ready', onReady);
+        redis.off('error', onFail);
+        redis.off('close', onFail);
+      };
+      const onReady = () => {
+        off();
+        resolve(true);
+      };
+      const onFail = () => {
+        off();
+        resolve(false);
+      };
+      redis.once('ready', onReady);
+      redis.once('error', onFail);
+      redis.once('close', onFail);
+    });
   }
 
   try {
