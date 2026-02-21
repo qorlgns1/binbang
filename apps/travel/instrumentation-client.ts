@@ -19,3 +19,5 @@ Sentry.init({
   // /monitoring 터널을 통해 광고 차단기 우회
   tunnel: '/monitoring',
 });
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

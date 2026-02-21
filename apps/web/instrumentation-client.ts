@@ -10,3 +10,5 @@ Sentry.init({
   integrations: [Sentry.replayIntegration()],
   tunnel: '/monitoring',
 });
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

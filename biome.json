@@ -21,7 +21,8 @@
       "!*.config.mjs",
       "!next-env.d.ts",
       "!docs",
-      "!pnpm-lock.yaml"
+      "!pnpm-lock.yaml",
+      "!**/test-results"
     ]
   },
   "formatter": {
