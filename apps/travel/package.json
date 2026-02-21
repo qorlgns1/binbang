@@ -12,6 +12,7 @@
     "clean": "rm -rf .next node_modules"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.39.0",
     "@ai-sdk/google": "^3.0.29",
     "@ai-sdk/react": "^3.0.88",
     "@googlemaps/markerclusterer": "^2.6.2",
