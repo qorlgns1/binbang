@@ -136,6 +136,17 @@ export async function getConversation(conversationId: string) {
   });
 }
 
+export async function getConversationOwnership(conversationId: string) {
+  return prisma.travelConversation.findUnique({
+    where: { id: conversationId },
+    select: {
+      id: true,
+      userId: true,
+      sessionId: true,
+    },
+  });
+}
+
 interface EntityCreateData {
   conversationId: string;
   type: string;

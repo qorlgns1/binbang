@@ -1,5 +1,7 @@
 import type { NextRequest } from 'next/server';
 
+import { resolveRequestId } from '@/lib/requestId';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +9,7 @@ const FETCH_TIMEOUT_MS = 10000;
 const MAX_DIMENSION_PX = 4800; // Places API v1 maximum dimension
 
 export async function GET(req: NextRequest) {
+  const requestId = resolveRequestId(req);
   const searchParams = req.nextUrl.searchParams;
   const photoName = searchParams.get('photoName');
   const maxHeightPx = Number.parseInt(searchParams.get('maxHeightPx') ?? '400', 10);
@@ -61,10 +64,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Place photo request timed out');
+      console.error('Place photo request timed out', { requestId, photoName, maxHeightPx, maxWidthPx });
       return new Response('Request timeout', { status: 504 });
     }
-    console.error('Place photo fetch error:', error);
+    console.error('Place photo fetch error', { requestId, photoName, maxHeightPx, maxWidthPx, error });
     return new Response('Internal server error', { status: 500 });
   } finally {
     clearTimeout(timeoutId);

@@ -1,0 +1,36 @@
+/**
+ * Stage B pre-warm target cities (Top 30).
+ * Source of truth for cache warming jobs.
+ */
+export const POPULAR_TRAVEL_DESTINATIONS = [
+  'Tokyo',
+  'Seoul',
+  'Bangkok',
+  'Paris',
+  'London',
+  'New York',
+  'Singapore',
+  'Dubai',
+  'Hong Kong',
+  'Barcelona',
+  'Rome',
+  'Istanbul',
+  'Amsterdam',
+  'Vienna',
+  'Prague',
+  'Sydney',
+  'Melbourne',
+  'Los Angeles',
+  'San Francisco',
+  'Las Vegas',
+  'Miami',
+  'Toronto',
+  'Vancouver',
+  'Berlin',
+  'Munich',
+  'Zurich',
+  'Copenhagen',
+  'Stockholm',
+  'Oslo',
+  'Reykjavik',
+] as const;

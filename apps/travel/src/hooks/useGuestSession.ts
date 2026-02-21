@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import {
   createSessionId,
@@ -9,15 +9,17 @@ import {
   TRAVEL_SESSION_STORAGE_KEY,
   TRAVEL_SESSION_TTL_MS,
 } from '@/lib/session';
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
 
 /**
  * 게스트 사용자를 위한 영속적인 세션 ID 관리
  * - localStorage에 UUID 저장
  * - 7일 TTL (만료 시 자동 재생성)
  * - 서버 httpOnly cookie와 동기화
+ * - 초기화 완료 후 useChatSessionStore에 sessionId 저장
  */
 export function useGuestSession() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const setSessionId = useChatSessionStore((s) => s.setSessionId);
 
   useEffect(() => {
     const now = Date.now();
@@ -83,7 +85,5 @@ export function useGuestSession() {
     }).catch((error) => {
       console.error('Failed to sync session cookie:', error);
     });
-  }, []);
-
-  return { sessionId };
+  }, [setSessionId]);
 }

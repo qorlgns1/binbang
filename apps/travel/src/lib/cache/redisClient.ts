@@ -1,0 +1,66 @@
+import { getRedisClient } from '@/lib/redis';
+
+export type RedisClient = NonNullable<ReturnType<typeof getRedisClient>>;
+
+export async function ensureRedisConnected(redis: RedisClient): Promise<boolean> {
+  if (redis.status === 'ready' || redis.status === 'connect') {
+    return true;
+  }
+
+  if (redis.status === 'connecting' || redis.status === 'reconnecting') {
+    return new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => {
+        off();
+        resolve(false);
+      }, 3000);
+      const off = () => {
+        clearTimeout(timer);
+        redis.off('ready', onReady);
+        redis.off('error', onFail);
+        redis.off('close', onFail);
+      };
+      const onReady = () => {
+        off();
+        resolve(true);
+      };
+      const onFail = () => {
+        off();
+        resolve(false);
+      };
+      redis.once('ready', onReady);
+      redis.once('error', onFail);
+      redis.once('close', onFail);
+    });
+  }
+
+  try {
+    await redis.connect();
+    return true;
+  } catch (error) {
+    console.error('[Cache] Failed to connect Redis:', error);
+    return false;
+  }
+}
+
+export async function resolveConnectedRedis(): Promise<RedisClient | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  const connected = await ensureRedisConnected(redis);
+  if (!connected) return null;
+
+  return redis;
+}
+
+export async function scanKeysByPattern(redis: RedisClient, pattern: string, scanCount: number): Promise<string[]> {
+  const keys: string[] = [];
+  let cursor = '0';
+
+  do {
+    const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', String(scanCount));
+    cursor = nextCursor;
+    if (batch.length > 0) keys.push(...batch);
+  } while (cursor !== '0');
+
+  return keys;
+}
