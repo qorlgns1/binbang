@@ -10,6 +10,7 @@
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e:run": "playwright test --config=e2e/playwright.config.ts",
     "clean": "rm -rf .next node_modules",
     "warm-cache": "tsx src/scripts/warmCache.ts",
     "invalidate-cache": "tsx src/scripts/invalidateCache.ts"
@@ -45,6 +46,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.9",
     "@types/react": "^19.2.13",

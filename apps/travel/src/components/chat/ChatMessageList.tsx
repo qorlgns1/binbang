@@ -25,7 +25,11 @@ export function ChatMessageList({
   onExampleClick,
 }: ChatMessageListProps) {
   return (
-    <div ref={scrollAreaRef} className='flex-1 overflow-y-auto scrollbar-hide px-4 md:px-5 py-5'>
+    <div
+      ref={scrollAreaRef}
+      className='flex-1 overflow-y-auto scrollbar-hide px-4 md:px-5 py-5'
+      data-testid='chat-message-list'
+    >
       {messages.length === 0 ? (
         <ChatPanelEmptyState queries={exampleQueries} onExampleClick={onExampleClick} />
       ) : (
@@ -35,7 +39,11 @@ export function ChatMessageList({
             const isStreamingAssistant = status === 'streaming' && isLast && message.role === 'assistant';
 
             return (
-              <div key={message.id} className='message-block first:pt-0 first:mt-0 last:pb-4 last:mb-0 last:border-b-0'>
+              <div
+                key={message.id}
+                className='message-block first:pt-0 first:mt-0 last:pb-4 last:mb-0 last:border-b-0'
+                data-testid={`chat-message-${message.role}`}
+              >
                 <ChatMessage message={message} isStreaming={isStreamingAssistant} />
               </div>
             );

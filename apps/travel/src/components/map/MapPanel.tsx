@@ -20,15 +20,9 @@ interface MapPanelProps {
   apiKey: string;
 }
 
-const E2E_MAP_STUB_ENABLED = process.env.NEXT_PUBLIC_E2E_MAP_STUB === '1';
-
 export function MapPanel({ apiKey }: MapPanelProps) {
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-
-  if (E2E_MAP_STUB_ENABLED) {
-    return <MapPanelE2EStub />;
-  }
 
   if (!apiKey) {
     return (
@@ -99,51 +93,6 @@ function MapLoadingOverlay() {
     >
       <LighthouseSpinner size='lg' />
       <p className='text-sm font-medium text-muted-foreground'>어둠 속에서 길을 찾고 있어요...</p>
-    </div>
-  );
-}
-
-function MapPanelE2EStub() {
-  const { entities, selectedPlaceId, hoveredPlaceId, mapHoveredEntityId, selectEntity, hoverEntity } = usePlaceStore();
-
-  return (
-    <div className='relative h-full w-full bg-muted/20' data-testid='map-panel' data-map-provider='stub'>
-      <div
-        className='grid h-full w-full place-items-center gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3'
-        data-testid='map-stub-canvas'
-      >
-        {entities.length === 0 ? (
-          <p className='text-sm text-muted-foreground' data-testid='map-stub-empty'>
-            지도에 표시할 추천 결과가 아직 없어요.
-          </p>
-        ) : (
-          entities.map((entity) => {
-            const isSelected = entity.id === selectedPlaceId;
-            const isHovered = entity.id === hoveredPlaceId || entity.id === mapHoveredEntityId;
-            const markerScale = isSelected || isHovered ? '1.3' : '1';
-            return (
-              <button
-                key={entity.id}
-                type='button'
-                data-testid={`map-marker-${entity.id}`}
-                data-marker-scale={markerScale}
-                data-marker-selected={isSelected ? 'true' : 'false'}
-                className={`min-h-16 w-full rounded-xl border border-border bg-card px-3 py-2 text-left text-sm shadow-sm transition-transform ${
-                  markerScale === '1.3' ? 'scale-[1.03] border-primary/40 shadow-md' : 'scale-100'
-                }`}
-                onClick={() => selectEntity(entity.id)}
-                onMouseEnter={() => hoverEntity(entity.id)}
-                onMouseLeave={() => hoverEntity(undefined)}
-              >
-                <p className='font-medium text-card-foreground'>{entity.name}</p>
-                <p className='text-xs text-muted-foreground'>
-                  {entity.latitude.toFixed(3)}, {entity.longitude.toFixed(3)}
-                </p>
-              </button>
-            );
-          })
-        )}
-      </div>
     </div>
   );
 }

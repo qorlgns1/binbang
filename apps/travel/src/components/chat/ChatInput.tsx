@@ -33,7 +33,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
   };
 
   return (
-    <form onSubmit={onSubmit} className='relative'>
+    <form onSubmit={onSubmit} className='relative' data-testid='chat-input-form'>
       <div className='relative flex items-center rounded-2xl border border-border/80 bg-card/90 shadow-sm focus-within:ring-2 focus-within:ring-primary/15 focus-within:border-primary/30 transition-shadow'>
         <textarea
           ref={textareaRef}
@@ -44,6 +44,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
           rows={1}
           className='flex-1 min-h-11 resize-none bg-transparent px-4 py-3 text-sm leading-normal placeholder:text-muted-foreground focus:outline-none max-h-[200px]'
           disabled={isLoading}
+          data-testid='chat-input'
         />
         <div className='p-2'>
           {isLoading ? (
@@ -52,6 +53,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
               onClick={onStop}
               className='touch-target flex h-9 w-9 items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-[0.98] transition-all duration-150'
               aria-label='응답 생성 중지'
+              data-testid='chat-stop'
             >
               <Loader2 className='h-4 w-4 animate-spin' aria-hidden />
             </button>
@@ -61,6 +63,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }:
               disabled={!input.trim()}
               className='touch-target flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150'
               aria-label='메시지 전송'
+              data-testid='chat-submit'
             >
               <ArrowUp className='h-4 w-4' aria-hidden />
             </button>

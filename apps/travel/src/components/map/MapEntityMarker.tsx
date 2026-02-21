@@ -50,7 +50,9 @@ export function MapEntityMarker({
         onEntityHover?.(undefined);
       }}
     >
-      <Pin background={colors.background} glyphColor={colors.glyph} scale={scale} />
+      <div data-testid={`map-marker-${entity.id}`} data-marker-scale={String(scale)}>
+        <Pin background={colors.background} glyphColor={colors.glyph} scale={scale} />
+      </div>
     </AdvancedMarker>
   );
 }

@@ -42,6 +42,7 @@ function EntityHoverGroup({ placeId, mapHoveredEntityId, onPlaceHover, children 
     <div
       role='group'
       data-place-id={placeId}
+      data-testid={`entity-hover-${placeId}`}
       className={`rounded-2xl transition-all duration-200 ${mapHoveredEntityId === placeId ? 'ring-2 ring-primary/30 shadow-md' : ''}`}
       onMouseEnter={() => onPlaceHover?.(placeId)}
       onMouseLeave={() => onPlaceHover?.(undefined)}
