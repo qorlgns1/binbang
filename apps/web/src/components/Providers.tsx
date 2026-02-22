@@ -3,6 +3,7 @@
 import { type ReactNode, Suspense, lazy, useState } from 'react';
 
 import { SessionProvider } from 'next-auth/react';
+import { Toaster } from 'sonner';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -49,6 +50,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>{children}</SessionProvider>
+      <Toaster position='top-center' richColors closeButton />
       <Suspense fallback={null}>
         <ReactQueryDevtools initialIsOpen={false} />
       </Suspense>

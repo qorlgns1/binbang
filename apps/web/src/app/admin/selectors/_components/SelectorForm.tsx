@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { useCreateSelector, useUpdateSelector } from '@/hooks/useSelectors';
@@ -67,7 +68,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
               });
               return;
             }
-            alert(getUserMessage(error));
+            toast.error(getUserMessage(error));
           },
         },
       );
@@ -98,7 +99,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
               });
               return;
             }
-            alert(getUserMessage(error));
+            toast.error(getUserMessage(error));
           },
         },
       );

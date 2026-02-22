@@ -167,7 +167,7 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 ## Phase 6 — Travel UI 메시지 표준화 ✅
 
-**커밋**: (이번 작업 커밋)
+**커밋**: `1db8be4`
 
 ### 반영 내용
 
@@ -193,10 +193,35 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 ---
 
+## Phase 7 — Admin `alert()` 제거 및 toast 통일 ✅
+
+**커밋**: (이번 작업 커밋)
+
+### 반영 내용
+
+- web 공통 provider에 toast renderer 추가
+  - `apps/web/src/components/Providers.tsx`
+- selectors 관리 화면의 `alert()` 제거 후 `sonner` toast로 전환
+  - `apps/web/src/app/admin/selectors/_components/SelectorForm.tsx`
+  - `apps/web/src/app/admin/selectors/_components/PatternForm.tsx`
+  - `apps/web/src/app/admin/selectors/_components/SelectorManager.tsx`
+- web 패키지에 `sonner` 의존성 명시
+  - `apps/web/package.json`
+  - `pnpm-lock.yaml`
+
+### 검증
+
+- `rg -n "alert\\(" apps/web/src/app/admin/selectors/_components`
+- `pnpm --filter @workspace/web lint`
+- `pnpm --filter @workspace/web typecheck`
+- `pnpm --filter @workspace/web test`
+- `pnpm format:check`
+
+---
+
 ## 현재 남은 갭 (코드 스캔 기준)
 
-1. admin 일부 화면에서 `window.alert()` 사용 중
-2. web/travel `parseApiError` 유틸 중복이 남아 있음
+1. web/travel `parseApiError` 유틸 중복이 남아 있음
 
 ---
 
@@ -268,7 +293,7 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 - travel 주요 시나리오(로그인 실패/채팅 실패/rate-limit) 수동 확인
 
-### TODO-4 (P1) Admin `alert()` 제거 후 toast로 통일
+### TODO-4 (P1) Admin `alert()` 제거 후 toast로 통일 ✅ 완료
 
 **작업**
 

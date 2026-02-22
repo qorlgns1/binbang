@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import type { PatternType, Platform } from '@workspace/db/enums';
 import { useCreatePattern, useUpdatePattern } from '@/hooks/usePatterns';
@@ -56,7 +57,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
               });
               return;
             }
-            alert(getUserMessage(error));
+            toast.error(getUserMessage(error));
           },
         },
       );
@@ -83,7 +84,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
               });
               return;
             }
-            alert(getUserMessage(error));
+            toast.error(getUserMessage(error));
           },
         },
       );

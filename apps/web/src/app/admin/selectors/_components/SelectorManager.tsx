@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import type { Platform } from '@workspace/db/enums';
 import { useInvalidateSelectorCache } from '@/hooks/useSelectors';
@@ -28,10 +29,14 @@ export function SelectorManager() {
         const workerMsg = data.workerCacheInvalidated
           ? `워커: ${data.workerResult?.reloaded.join(', ') || '갱신됨'}`
           : '워커: 연결 안됨 (워커 실행 필요)';
-        alert(`캐시 무효화 완료\n${apiMsg}\n${workerMsg}`);
+        toast.success('캐시 무효화 완료', {
+          description: `${apiMsg} · ${workerMsg}`,
+        });
       },
       onError: (error) => {
-        alert(`캐시 무효화 실패: ${getUserMessage(error)}`);
+        toast.error('캐시 무효화 실패', {
+          description: getUserMessage(error),
+        });
       },
     });
   };
