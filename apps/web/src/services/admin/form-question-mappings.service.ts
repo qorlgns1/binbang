@@ -1,4 +1,5 @@
 import { type FormQuestionField, prisma } from '@workspace/db';
+import { BadRequestError, ConflictError, NotFoundError } from '@workspace/shared/errors';
 
 // ============================================================================
 // Types
@@ -72,7 +73,7 @@ function normalizeFormKey(formKey?: string): string {
 function normalizeRequiredText(value: string, fieldName: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
-    throw new Error(`${fieldName} is required`);
+    throw new BadRequestError(`${fieldName} is required`);
   }
   return trimmed;
 }
@@ -119,7 +120,7 @@ function toOutput(row: {
 
 function validateExpectedAnswer(field: FormQuestionField, expectedAnswer: string | null): string | null {
   if (requiresExpectedAnswer(field) && !expectedAnswer) {
-    throw new Error(`expectedAnswer is required for ${field}`);
+    throw new BadRequestError(`expectedAnswer is required for ${field}`);
   }
   return requiresExpectedAnswer(field) ? expectedAnswer : null;
 }
@@ -169,7 +170,7 @@ export async function createFormQuestionMapping(
     return toOutput(created);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      throw new Error('Mapping already exists for formKey and field');
+      throw new ConflictError('Mapping already exists for formKey and field');
     }
     throw error;
   }
@@ -184,7 +185,7 @@ export async function updateFormQuestionMapping(
   });
 
   if (!existing) {
-    throw new Error('Mapping not found');
+    throw new NotFoundError('Mapping not found');
   }
 
   const formKey = input.formKey !== undefined ? normalizeFormKey(input.formKey) : existing.formKey;
@@ -217,7 +218,7 @@ export async function updateFormQuestionMapping(
     return toOutput(updated);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      throw new Error('Mapping already exists for formKey and field');
+      throw new ConflictError('Mapping already exists for formKey and field');
     }
     throw error;
   }
@@ -231,7 +232,7 @@ export async function deleteFormQuestionMapping(id: string): Promise<void> {
     });
   } catch (error) {
     if (error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
-      throw new Error('Mapping not found');
+      throw new NotFoundError('Mapping not found');
     }
     throw error;
   }

@@ -1,5 +1,6 @@
 import type { Prisma } from '@workspace/db';
 import { prisma } from '@workspace/db';
+import { ForbiddenError } from '@workspace/shared/errors';
 
 interface SaveMessageParams {
   conversationId?: string;
@@ -44,10 +45,10 @@ export async function saveConversationMessages(params: SaveMessageParams) {
         });
       } else if (existingConversation.userId != null && existingConversation.userId !== userId) {
         // 다른 유저 소유 대화에는 메시지 추가 불가
-        throw new Error('ConversationForbidden');
+        throw new ForbiddenError('ConversationForbidden');
       } else if (existingConversation.userId == null && existingConversation.sessionId !== sessionId) {
         // 다른 게스트 세션의 대화에는 메시지 추가 불가 (sessionId 불일치)
-        throw new Error('ConversationForbidden');
+        throw new ForbiddenError('ConversationForbidden');
       }
     } else {
       const conversation = await tx.travelConversation.create({

@@ -1,4 +1,5 @@
 import { prisma } from '@workspace/db';
+import { NotFoundError } from '@workspace/shared/errors';
 
 // ============================================================================
 // Types
@@ -136,7 +137,7 @@ export async function createCaseMessage(input: CreateCaseMessageInput): Promise<
   });
 
   if (!caseRecord) {
-    throw new Error('Case not found');
+    throw new NotFoundError('Case not found');
   }
 
   const message = await prisma.caseMessage.create({

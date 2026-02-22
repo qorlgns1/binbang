@@ -1,4 +1,5 @@
 import { type Prisma, prisma } from '@workspace/db';
+import { NotFoundError } from '@workspace/shared/errors';
 import { createAuditLog } from '@/services/admin/audit-logs.service';
 import type { ActivityType, UserActivityItem, UserActivityResponse } from '@/types/activity';
 import type { AdminUserInfo, AdminUsersResponse } from '@/types/admin';
@@ -184,7 +185,7 @@ export async function updateUserRoles(input: UpdateUserRolesInput): Promise<Upda
   });
 
   if (!oldUser) {
-    throw new Error('User not found');
+    throw new NotFoundError('User not found');
   }
 
   const oldRoles = oldUser.roles.map((r: { name: string }): string => r.name);
@@ -249,7 +250,7 @@ export async function updateUserPlan(input: UpdateUserPlanInput): Promise<Update
 
   const plan = await prisma.plan.findUnique({ where: { name: planName }, select: { id: true } });
   if (!plan) {
-    throw new Error('Plan not found');
+    throw new NotFoundError('Plan not found');
   }
 
   const oldUser = await prisma.user.findUnique({
@@ -258,7 +259,7 @@ export async function updateUserPlan(input: UpdateUserPlanInput): Promise<Update
   });
 
   if (!oldUser) {
-    throw new Error('User not found');
+    throw new NotFoundError('User not found');
   }
 
   const user = await prisma.user.update({

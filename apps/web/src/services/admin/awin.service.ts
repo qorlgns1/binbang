@@ -1,3 +1,5 @@
+import { InternalServerError } from '@workspace/shared/errors';
+
 import { AWIN_API_BASE, fetchPublisherId, getAwinToken } from '@/lib/awin';
 
 import { upsertFromProgrammes } from './affiliate-advertiser.service';
@@ -269,7 +271,7 @@ export async function syncAwinAdvertisers(): Promise<SyncAdvertisersResult> {
 
   const result = await callAwinApi(url);
   if (!result.ok) {
-    throw new Error(
+    throw new InternalServerError(
       `Awin programmes fetch failed: ${result.status} ${(result.body as { raw?: string })?.raw ?? ''}`.slice(0, 300),
     );
   }
