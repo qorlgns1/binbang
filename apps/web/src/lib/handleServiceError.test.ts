@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { AppError, ConflictError, NotFoundError, ValidationError } from '@workspace/shared/errors';
+import { AppError, ConflictError, InternalServerError, NotFoundError, ValidationError } from '@workspace/shared/errors';
 
 import { handleServiceError } from './handleServiceError';
 
@@ -38,6 +38,15 @@ describe('handleServiceError', () => {
 
     const body = await res.json();
     expect(body.error.code).toBe('RATE_LIMITED');
+  });
+
+  it('maps InternalServerError to 500 with expected code', async () => {
+    const res = handleServiceError(new InternalServerError());
+    expect(res.status).toBe(500);
+
+    const body = await res.json();
+    expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(body.error.message).toBe('Internal server error');
   });
 
   it('maps unknown Error to 500 and logs', async () => {

@@ -5,7 +5,6 @@ export class NotFoundError extends AppError {
   /** @param message - 에러 메시지 (기본: 'Not found') */
   constructor(message = 'Not found') {
     super(message, 404, 'NOT_FOUND');
-    this.name = 'NotFoundError';
   }
 }
 
@@ -14,7 +13,6 @@ export class ConflictError extends AppError {
   /** @param message - 에러 메시지 (기본: 'Conflict') */
   constructor(message = 'Conflict') {
     super(message, 409, 'CONFLICT');
-    this.name = 'ConflictError';
   }
 }
 
@@ -23,7 +21,6 @@ export class ForbiddenError extends AppError {
   /** @param message - 에러 메시지 (기본: 'Forbidden') */
   constructor(message = 'Forbidden') {
     super(message, 403, 'FORBIDDEN');
-    this.name = 'ForbiddenError';
   }
 }
 
@@ -32,6 +29,5 @@ export class UnauthorizedError extends AppError {
   /** @param message - 에러 메시지 (기본: 'Unauthorized') */
   constructor(message = 'Unauthorized') {
     super(message, 401, 'UNAUTHORIZED');
-    this.name = 'UnauthorizedError';
   }
 }
