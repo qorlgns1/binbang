@@ -1,6 +1,7 @@
 import type { CheckJobPayload } from '@workspace/worker-shared/jobs';
 import {
   anonymizeExpiredLandingEventPii,
+  checkAffiliateAuditPurgeCronMiss,
   cleanupTravelGuestConversations,
   createCheckCycle,
   expireOverdueCases,
@@ -10,6 +11,8 @@ import {
   loadSettings,
   refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
+  runAffiliateAuditPurge,
+  triggerTravelCachePrewarm,
   updateHeartbeat,
   type ActiveAccommodation,
   type ActiveCaseLink,
@@ -17,8 +20,41 @@ import {
   type Queue,
 } from '@workspace/worker-shared/runtime';
 
-export function createCycleProcessor(checkQueue: Queue): (job: Job) => Promise<void> {
+interface RedisLike {
+  get(key: string): Promise<string | null>;
+  setex(key: string, seconds: number, value: string): Promise<unknown>;
+}
+
+export function createCycleProcessor(checkQueue: Queue, redisConnection: RedisLike): (job: Job) => Promise<void> {
   return async (job: Job): Promise<void> => {
+    if (job.name === 'affiliate-audit-purge') {
+      const result = await runAffiliateAuditPurge({
+        redis: redisConnection,
+      });
+      console.log(
+        `[affiliate-audit-purge] deleted=${result.deletedCount} retentionDays=${result.retentionDays} retryCount=${result.retryCount} startedAt=${result.runStartedAt} finishedAt=${result.runFinishedAt}`,
+      );
+      return;
+    }
+
+    if (job.name === 'affiliate-audit-cron-watchdog') {
+      const result = await checkAffiliateAuditPurgeCronMiss({
+        redis: redisConnection,
+      });
+      console.log(
+        `[affiliate-audit-cron-watchdog] missed=${result.missed} source=${result.source} lastRunStartedAt=${result.lastRunStartedAt} elapsedMinutes=${result.elapsedMinutes} thresholdMinutes=${result.thresholdMinutes} alerted=${result.alerted}`,
+      );
+      return;
+    }
+
+    if (job.name === 'travel-cache-prewarm') {
+      const result = await triggerTravelCachePrewarm();
+      console.log(
+        `[travel-cache-prewarm] durationMs=${result.durationMs} places(warmed=${result.places.warmed}, skipped=${result.places.skipped}, failed=${result.places.failed}) weather(warmed=${result.weather.warmed}, skipped=${result.weather.skipped}, failed=${result.weather.failed}) exchange(warmed=${result.exchangeRate.warmed}, skipped=${result.exchangeRate.skipped}, failed=${result.exchangeRate.failed})`,
+      );
+      return;
+    }
+
     if (job.name === 'notification-retry') {
       const retryResult = await retryStaleCaseNotifications({ batchSize: 25, pendingStaleMs: 2 * 60_000 });
       console.log(

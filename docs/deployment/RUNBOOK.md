@@ -123,3 +123,30 @@ APP_ENV=development pnpm db:migrate:deploy
 - Secondary on-call: `없음`
 - Escalation path: `github:issues -> KIHOON BAE`
 - Vendor/infra support contacts: `github:issues`
+
+## 9) Travel app feature-flag rollback
+
+Travel 앱 제휴/복원 관련 장애 시 플래그로 기능을 순차 완화한다. 플래그는 앱 런타임 환경 변수로 적용한다.
+
+**절차 (우선순위 순):**
+
+1. **이벤트/트래킹 장애**  
+   장애 감지 후 5분 내 `TRAVEL_AFFILIATE_TRACKING_ENABLED=false` 적용. 이벤트 전송 중단, UI는 정상 동작 유지.
+
+2. **제휴 CTA 클릭 오류 지속**  
+   클릭 오류가 지속되면 10분 내 `TRAVEL_AFFILIATE_CTA_ENABLED=false` 적용. 모든 CTA를 pending 상태로 강등.
+
+3. **복원 장애 급증**  
+   로그인 후 자동 복원 실패율이 임계값을 넘으면 `TRAVEL_RESTORE_AUTO_ENABLED=false` 적용 후, 수동 복원(히스토리 열기) 안내 유지.
+
+4. **기록**  
+   플래그 변경 시 변경자, 시각(UTC), 사유를 운영 로그에 기록.
+
+**플래그 요약:**
+
+| Flag | 롤백 시 동작 |
+| --- | --- |
+| `TRAVEL_AFFILIATE_TRACKING_ENABLED` | 이벤트 전송 중단 |
+| `TRAVEL_AFFILIATE_CTA_ENABLED` | 모든 CTA pending 강등 |
+| `TRAVEL_RESTORE_AUTO_ENABLED` | 자동 복원 비활성, 수동 히스토리만 |
+| `TRAVEL_HISTORY_EDIT_ENABLED` | 제목 수정 비활성(읽기 전용) |

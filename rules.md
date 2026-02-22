@@ -404,10 +404,33 @@ Boundaries are enforced by import rules, not by discipline.
 - External/tooling contract filenames MAY keep upstream conventions when required for integration.
   - Example: `next-auth.d.ts`
 - `apps/web/src/components/ui/**` MAY use kebab-case component filenames to keep upstream shadcn-style compatibility.
-- Service-layer files under `apps/web/src/services/**` MUST use kebab-case with `.service` suffix.
-  - Examples: `accommodations.service.ts`, `admin/funnel-clicks.service.ts`
-- Service tests under `apps/web/src/services/**` MUST use kebab-case with `.service.test` suffix.
+- Service-layer files under `apps/web/src/services/**` and `apps/travel/src/services/**` MUST use kebab-case with `.service` suffix.
+  - Examples: `accommodations.service.ts`, `admin/funnel-clicks.service.ts`, `affiliate-funnel.service.ts`
+- Service tests under `apps/web/src/services/**` and `apps/travel/src/services/**` MUST use kebab-case with `.service.test` suffix.
   - Examples: `accommodations.service.test.ts`, `admin/__tests__/funnel-clicks.service.test.ts`
+
+---
+
+## 13. `lib/` Internal Module Access (`apps/web` and `apps/travel`)
+
+Internal `lib/` sub-modules are implementation details and MUST NOT be exposed as open imports.
+
+### 13.1 Index-based modules
+
+If a `lib/` subdirectory contains an `index.ts`, that file is the **sole public entry point** for that module.
+
+- Consumers MUST import from `@/lib/foo` (resolves to `index.ts`), never from `@/lib/foo/bar`.
+- ✅ Allowed: `import { createTravelTools } from '@/lib/ai/tools'`
+- ❌ Forbidden: `import { createSearchAccommodationTool } from '@/lib/ai/tools/searchAccommodation'`
+
+### 13.2 Service-facade modules
+
+If a `lib/` subdirectory has no `index.ts` but is split into internal helper files, it MUST be accessed exclusively through a designated `services/**` facade file.
+
+- Route Handlers, Server Components, Client Components, and other `lib/` files MUST NOT import directly from such internal sub-modules.
+- Only the designated `services/**` facade MAY import from those internal files.
+- ✅ Allowed: `services/cache.service.ts` importing from `@/lib/cache/cacheEnvelope`
+- ❌ Forbidden: a Route Handler importing from `@/lib/cache/cacheEnvelope` directly
 
 ---
 

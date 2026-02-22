@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { parseJsonBody } from '@/lib/apiRoute';
+import { jsonError } from '@/lib/httpResponse';
 import { parseSessionId, TRAVEL_SESSION_COOKIE_NAME, TRAVEL_SESSION_TTL_SECONDS } from '@/lib/session';
 
 const requestSchema = z.object({
@@ -12,21 +14,14 @@ const requestSchema = z.object({
  * POST /api/session
  */
 export async function POST(req: Request) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  const parsedBody = await parseJsonBody(req, requestSchema);
+  if ('response' in parsedBody) {
+    return parsedBody.response;
   }
 
-  const parsed = requestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const sessionId = parseSessionId(parsed.data.sessionId);
+  const sessionId = parseSessionId(parsedBody.data.sessionId);
   if (!sessionId) {
-    return NextResponse.json({ error: 'Invalid sessionId' }, { status: 400 });
+    return jsonError(400, 'Invalid sessionId');
   }
 
   const response = NextResponse.json({ success: true }, { status: 200 });
