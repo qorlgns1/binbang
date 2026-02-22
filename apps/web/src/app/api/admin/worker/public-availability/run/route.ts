@@ -17,7 +17,7 @@ export async function POST(request: Request): Promise<Response> {
   const rawBody = (await request.json().catch((): Record<string, unknown> => ({}))) as Record<string, unknown>;
   const parsed = payloadSchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
   }
 
   const workerUrl = process.env.WORKER_INTERNAL_URL || 'http://localhost:3500';

@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const parsed = updateMappingSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
     }
 
     const { id } = await params;

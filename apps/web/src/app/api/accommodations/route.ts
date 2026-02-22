@@ -89,7 +89,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     return NextResponse.json(accommodation, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 });
     }
 
     console.error('숙소 생성 오류:', error);

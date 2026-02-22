@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const parsed = createPlanSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
     }
 
     const plan = await createAdminPlan(parsed.data);

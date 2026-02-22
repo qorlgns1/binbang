@@ -166,8 +166,8 @@ const rawPayloadFieldsSchema = z.object({
   condition_definition: z.string().min(10, '조건 정의가 너무 짧습니다 (최소 10자)'),
   request_window: z.string().refine(isValidFutureDate, '유효하지 않은 날짜이거나 이미 지난 날짜입니다'),
   check_frequency: z.string().nullable().optional(),
-  billing_consent: z.literal(true, { errorMap: () => ({ message: '비용 발생 동의가 필요합니다' }) }),
-  scope_consent: z.literal(true, { errorMap: () => ({ message: '서비스 범위 동의가 필요합니다' }) }),
+  billing_consent: z.literal(true, { error: '비용 발생 동의가 필요합니다' }),
+  scope_consent: z.literal(true, { error: '서비스 범위 동의가 필요합니다' }),
   // Apps Script가 전달할 수 있는 옵션 메타/원문
   form_version: z.string().min(1).optional(),
   formVersion: z.string().min(1).optional(),
@@ -585,9 +585,9 @@ export async function createFormSubmission(input: CreateFormSubmissionInput): Pr
       } else {
         const reasons = [
           ...normalized.mappingWarnings,
-          ...parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+          ...parseResult.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
         ];
-        const hasNonConsentError = parseResult.error.errors.some((e) => {
+        const hasNonConsentError = parseResult.error.issues.some((e) => {
           const field = String(e.path[0] ?? '');
           return field !== 'billing_consent' && field !== 'scope_consent';
         });

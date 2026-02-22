@@ -25,7 +25,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const parsed = historyParamsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
     }
 
     const response = await getSettingsHistory({

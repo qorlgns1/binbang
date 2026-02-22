@@ -42,7 +42,7 @@ export async function PATCH(request: Request): Promise<Response> {
     const parsed = tutorialActionSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
     }
 
     if (parsed.data.action === 'complete') {

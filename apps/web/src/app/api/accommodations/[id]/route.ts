@@ -84,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
     return NextResponse.json(accommodation);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 });
     }
 
     console.error('숙소 수정 오류:', error);

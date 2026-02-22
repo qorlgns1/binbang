@@ -23,7 +23,7 @@ export async function GET(request: Request): Promise<Response> {
     countryCode: searchParams.get('countryCode')?.trim() || undefined,
   });
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
   }
 
   try {

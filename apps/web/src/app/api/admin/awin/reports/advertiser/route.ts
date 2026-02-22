@@ -53,7 +53,7 @@ export async function GET(request: Request): Promise<Response> {
     timezone: searchParams.get('timezone')?.trim() || undefined,
   });
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
   }
 
   try {

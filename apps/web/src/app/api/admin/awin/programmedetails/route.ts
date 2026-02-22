@@ -24,7 +24,7 @@ export async function GET(request: Request): Promise<Response> {
     relationship: searchParams.get('relationship') || undefined,
   });
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
   }
 
   try {
