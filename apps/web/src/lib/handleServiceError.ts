@@ -62,3 +62,12 @@ export function validationErrorResponse(details: unknown): NextResponse<ErrorRes
 export function notFoundResponse(message = 'Not found'): NextResponse<ErrorResponseBody> {
   return NextResponse.json({ error: { code: 'NOT_FOUND', message } }, { status: 404 });
 }
+
+export function serviceUnavailableResponse(
+  message = 'Service unavailable',
+  details?: unknown,
+): NextResponse<ErrorResponseBody> {
+  const body: ErrorResponseBody = { error: { code: 'SERVICE_UNAVAILABLE', message } };
+  if (details !== undefined) body.error.details = details;
+  return NextResponse.json(body, { status: 503 });
+}

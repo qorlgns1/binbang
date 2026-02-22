@@ -3,7 +3,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { AwinConfigError, generateAwinLink } from '@/services/admin/awin.service';
 
 const linkBuilderSchema = z.object({
@@ -29,7 +34,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const parsed = linkBuilderSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
+    return validationErrorResponse(parsed.error.issues);
   }
 
   try {
@@ -37,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof AwinConfigError) {
-      return NextResponse.json({ ok: false, error: err.message }, { status: 400 });
+      return badRequestResponse(err.message);
     }
     return handleServiceError(err, 'Awin linkbuilder error');
   }

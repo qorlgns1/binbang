@@ -342,13 +342,19 @@ export function SettingsManager() {
       });
 
       const payload = (await response.json().catch((): null => null)) as {
-        error?: string;
+        error?: string | { message?: string };
         message?: string;
         jobId?: string | number;
       } | null;
 
       if (!response.ok) {
-        throw new Error(payload?.error || '공개 가용성 스냅샷 즉시 실행에 실패했습니다.');
+        const errorMessage =
+          typeof payload?.error === 'string'
+            ? payload.error
+            : payload?.error && typeof payload.error.message === 'string'
+              ? payload.error.message
+              : '공개 가용성 스냅샷 즉시 실행에 실패했습니다.';
+        throw new Error(errorMessage);
       }
 
       const message = payload?.message || '공개 가용성 스냅샷 작업이 큐에 등록되었습니다.';

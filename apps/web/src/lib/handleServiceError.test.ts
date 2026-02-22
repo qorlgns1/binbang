@@ -6,6 +6,7 @@ import {
   badRequestResponse,
   handleServiceError,
   notFoundResponse,
+  serviceUnavailableResponse,
   unauthorizedResponse,
   validationErrorResponse,
 } from './handleServiceError';
@@ -145,5 +146,22 @@ describe('notFoundResponse', () => {
     const res = notFoundResponse('User not found');
     const body = await res.json();
     expect(body.error.message).toBe('User not found');
+  });
+});
+
+describe('serviceUnavailableResponse', () => {
+  it('returns 503 with SERVICE_UNAVAILABLE code', async () => {
+    const res = serviceUnavailableResponse('Worker unavailable');
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
+    expect(body.error.message).toBe('Worker unavailable');
+  });
+
+  it('includes details when provided', async () => {
+    const details = { source: 'worker', timeoutMs: 7000 };
+    const res = serviceUnavailableResponse('Timeout', details);
+    const body = await res.json();
+    expect(body.error.details).toEqual(details);
   });
 });

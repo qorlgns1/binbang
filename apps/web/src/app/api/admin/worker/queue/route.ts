@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { serviceUnavailableResponse, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 
 const DEFAULT_LIMIT = 20;
 
@@ -36,24 +36,16 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (!workerRes.ok) {
       const workerError = await workerRes.text().catch((): string => '');
-      return NextResponse.json(
-        {
-          error: workerError || '워커 큐 스냅샷을 가져오지 못했습니다.',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 503 },
-      );
+      return serviceUnavailableResponse(workerError || '워커 큐 스냅샷을 가져오지 못했습니다.', {
+        timestamp: new Date().toISOString(),
+      });
     }
 
     const data = await workerRes.json();
     return NextResponse.json(data);
   } catch {
-    return NextResponse.json(
-      {
-        error: '워커가 실행 중이지 않거나 응답이 지연되고 있습니다.',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 503 },
-    );
+    return serviceUnavailableResponse('워커가 실행 중이지 않거나 응답이 지연되고 있습니다.', {
+      timestamp: new Date().toISOString(),
+    });
   }
 }

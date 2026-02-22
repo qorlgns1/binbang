@@ -3,7 +3,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { AwinConfigError, getAwinAdvertiserReport } from '@/services/admin/awin.service';
 
 const REGIONS = [
@@ -54,7 +59,7 @@ export async function GET(request: Request): Promise<Response> {
     timezone: searchParams.get('timezone')?.trim() || undefined,
   });
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
+    return validationErrorResponse(parsed.error.issues);
   }
 
   try {
@@ -62,7 +67,7 @@ export async function GET(request: Request): Promise<Response> {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof AwinConfigError) {
-      return NextResponse.json({ ok: false, error: err.message }, { status: 400 });
+      return badRequestResponse(err.message);
     }
     return handleServiceError(err, 'Awin advertiser report error');
   }
