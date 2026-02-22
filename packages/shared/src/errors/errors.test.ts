@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { AppError } from './base';
+import { ApiError, parseApiError } from './apiError';
 import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError } from './resource';
 import { InternalServerError } from './system';
 import { BadRequestError, ValidationError } from './validation';
@@ -105,5 +106,38 @@ describe('AppError hierarchy', () => {
       expect(error).toBeInstanceOf(Error);
       expect(error).toBeInstanceOf(AppError);
     }
+  });
+});
+
+describe('parseApiError', () => {
+  it('parses ErrorResponseBody to ApiError', async () => {
+    const res = new Response(
+      JSON.stringify({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          details: [{ path: ['name'], message: 'Required' }],
+        },
+      }),
+      { status: 400 },
+    );
+
+    const error = await parseApiError(res, 'fallback');
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.code).toBe('VALIDATION_ERROR');
+    expect(error.message).toBe('Validation failed');
+    expect(error.status).toBe(400);
+    expect(error.details).toEqual([{ path: ['name'], message: 'Required' }]);
+  });
+
+  it('falls back to UNKNOWN when response body is not parseable json', async () => {
+    const res = new Response('not-json', { status: 500 });
+    const error = await parseApiError(res, 'fallback');
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.code).toBe('UNKNOWN');
+    expect(error.message).toBe('fallback');
+    expect(error.status).toBe(500);
   });
 });

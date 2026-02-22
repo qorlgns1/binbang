@@ -195,7 +195,7 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 ## Phase 7 — Admin `alert()` 제거 및 toast 통일 ✅
 
-**커밋**: (이번 작업 커밋)
+**커밋**: `95f68a4`
 
 ### 반영 내용
 
@@ -219,9 +219,36 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 ---
 
+## Phase 8 — `parseApiError` shared 승격 ✅
+
+**커밋**: (이번 작업 커밋)
+
+### 반영 내용
+
+- `packages/shared/src/errors/apiError.ts`
+  - 공용 `parseApiError` 구현 추가
+- `packages/shared/src/errors/index.ts`
+  - `parseApiError` public export 추가
+- 앱 단 중복 구현 제거
+  - `apps/web/src/lib/apiError.ts`
+  - `apps/travel/src/lib/apiError.ts`
+- shared 테스트 보강
+  - `packages/shared/src/errors/errors.test.ts`
+
+### 검증
+
+- `pnpm --filter @workspace/shared lint`
+- `pnpm --filter @workspace/shared typecheck`
+- `pnpm --filter @workspace/shared test`
+- `pnpm --filter @workspace/web typecheck`
+- `pnpm --filter @workspace/travel typecheck`
+- `pnpm format:check`
+
+---
+
 ## 현재 남은 갭 (코드 스캔 기준)
 
-1. web/travel `parseApiError` 유틸 중복이 남아 있음
+- 현재 범위 기준 잔여 갭 없음 (TODO-1~5 완료)
 
 ---
 
@@ -313,7 +340,7 @@ Route Handler에서 에러 응답 패턴이 혼재:
 - `rg -n "alert\\(" apps/web/src/app/admin/selectors/_components`
 - 수동 플로우: 생성/수정/삭제/캐시 무효화
 
-### TODO-5 (P2) 중복 유틸 정리 (shared로 승격)
+### TODO-5 (P2) 중복 유틸 정리 (shared로 승격) ✅ 완료
 
 **작업**
 
