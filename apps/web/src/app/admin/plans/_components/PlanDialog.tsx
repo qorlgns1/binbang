@@ -17,13 +17,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { QuotaKey } from '@workspace/db/enums';
 import { type AdminPlanInfo, useCreatePlan, useUpdatePlan } from '@/hooks/useAdminPlans';
-import { getUserMessage } from '@/lib/apiError';
+import { getUserMessage, getValidationFieldErrors } from '@/lib/apiError';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plan: AdminPlanInfo | null;
 }
+
+type PlanField = 'name' | 'description' | 'price' | 'maxAccommodations' | 'checkIntervalMin' | '_form';
 
 function getQuotaValue(
   quotas: { key: QuotaKey; value: number }[] | undefined,
@@ -43,6 +45,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
   const [price, setPrice] = useState(0);
   const [maxAccommodations, setMaxAccommodations] = useState(5);
   const [checkIntervalMin, setCheckIntervalMin] = useState(30);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<PlanField, string>>>({});
 
   useEffect(() => {
     if (plan) {
@@ -58,13 +61,35 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
       setMaxAccommodations(5);
       setCheckIntervalMin(30);
     }
+    setFieldErrors({});
   }, [plan]);
 
   const error = createMutation.error || updateMutation.error;
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
+    const errors = getValidationFieldErrors(error);
+    if (!errors) {
+      return;
+    }
+
+    setFieldErrors({
+      _form: errors._form,
+      name: errors.name,
+      description: errors.description,
+      price: errors.price,
+      maxAccommodations: errors.maxAccommodations,
+      checkIntervalMin: errors.checkIntervalMin,
+    });
+  }, [error]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFieldErrors({});
 
     const data = {
       name,
@@ -108,10 +133,21 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
               <AlertDescription>{getUserMessage(error)}</AlertDescription>
             </Alert>
           )}
+          {fieldErrors._form && <p className='text-sm text-destructive'>{fieldErrors._form}</p>}
 
           <div className='space-y-2'>
             <Label htmlFor='name'>플랜 이름 *</Label>
-            <Input id='name' value={name} onChange={(e) => setName(e.target.value)} placeholder='예: PRO' required />
+            <Input
+              id='name'
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              placeholder='예: PRO'
+              required
+            />
+            {fieldErrors.name && <p className='text-xs text-destructive'>{fieldErrors.name}</p>}
           </div>
 
           <div className='space-y-2'>
@@ -119,10 +155,14 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
             <Textarea
               id='description'
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, description: undefined }));
+              }}
               placeholder='플랜에 대한 설명'
               rows={2}
             />
+            {fieldErrors.description && <p className='text-xs text-destructive'>{fieldErrors.description}</p>}
           </div>
 
           <div className='space-y-2'>
@@ -132,8 +172,12 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
               type='number'
               min={0}
               value={price}
-              onChange={(e) => setPrice(parseInt(e.target.value, 10) || 0)}
+              onChange={(e) => {
+                setPrice(parseInt(e.target.value, 10) || 0);
+                setFieldErrors((prev) => ({ ...prev, price: undefined }));
+              }}
             />
+            {fieldErrors.price && <p className='text-xs text-destructive'>{fieldErrors.price}</p>}
           </div>
 
           <div className='grid grid-cols-2 gap-4'>
@@ -144,8 +188,14 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
                 type='number'
                 min={1}
                 value={maxAccommodations}
-                onChange={(e) => setMaxAccommodations(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) => {
+                  setMaxAccommodations(parseInt(e.target.value, 10) || 1);
+                  setFieldErrors((prev) => ({ ...prev, maxAccommodations: undefined }));
+                }}
               />
+              {fieldErrors.maxAccommodations && (
+                <p className='text-xs text-destructive'>{fieldErrors.maxAccommodations}</p>
+              )}
             </div>
             <div className='space-y-2'>
               <Label htmlFor='checkIntervalMin'>체크 주기 (분)</Label>
@@ -154,8 +204,14 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
                 type='number'
                 min={1}
                 value={checkIntervalMin}
-                onChange={(e) => setCheckIntervalMin(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) => {
+                  setCheckIntervalMin(parseInt(e.target.value, 10) || 1);
+                  setFieldErrors((prev) => ({ ...prev, checkIntervalMin: undefined }));
+                }}
               />
+              {fieldErrors.checkIntervalMin && (
+                <p className='text-xs text-destructive'>{fieldErrors.checkIntervalMin}</p>
+              )}
             </div>
           </div>
 

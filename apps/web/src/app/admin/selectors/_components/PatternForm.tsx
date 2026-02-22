@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import type { PatternType, Platform } from '@workspace/db/enums';
 import { useCreatePattern, useUpdatePattern } from '@/hooks/usePatterns';
-import { getUserMessage } from '@/lib/apiError';
+import { getUserMessage, getValidationFieldErrors } from '@/lib/apiError';
 import type { PlatformPatternItem } from '@/types/admin';
 
 interface PatternFormProps {
@@ -13,6 +13,8 @@ interface PatternFormProps {
   onClose: () => void;
 }
 
+type PatternFormField = 'patternType' | 'pattern' | 'locale' | 'priority' | '_form';
+
 export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
   const isEdit = !!pattern;
 
@@ -20,6 +22,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
   const [patternValue, setPatternValue] = useState(pattern?.pattern ?? '');
   const [locale, setLocale] = useState(pattern?.locale ?? 'ko');
   const [priority, setPriority] = useState(pattern?.priority ?? 0);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<PatternFormField, string>>>({});
 
   const createPattern = useCreatePattern();
   const updatePattern = useUpdatePattern();
@@ -28,6 +31,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
 
     if (isEdit) {
       updatePattern.mutate(
@@ -41,7 +45,19 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(getUserMessage(error)),
+          onError: (error) => {
+            const errors = getValidationFieldErrors(error);
+            if (errors) {
+              setFieldErrors({
+                _form: errors._form,
+                pattern: errors.pattern,
+                locale: errors.locale,
+                priority: errors.priority,
+              });
+              return;
+            }
+            alert(getUserMessage(error));
+          },
         },
       );
     } else {
@@ -55,7 +71,20 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(getUserMessage(error)),
+          onError: (error) => {
+            const errors = getValidationFieldErrors(error);
+            if (errors) {
+              setFieldErrors({
+                _form: errors._form,
+                patternType: errors.patternType,
+                pattern: errors.pattern,
+                locale: errors.locale,
+                priority: errors.priority,
+              });
+              return;
+            }
+            alert(getUserMessage(error));
+          },
         },
       );
     }
@@ -67,6 +96,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
         <h2 className='mb-4 text-lg font-semibold'>{isEdit ? '패턴 수정' : '새 패턴 추가'}</h2>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
+          {fieldErrors._form && <p className='text-sm text-destructive'>{fieldErrors._form}</p>}
           {/* Pattern Type */}
           <div>
             <label htmlFor='pattern-type' className='mb-1 block text-sm font-medium'>
@@ -75,13 +105,17 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
             <select
               id='pattern-type'
               value={patternType}
-              onChange={(e) => setPatternType(e.target.value as PatternType)}
+              onChange={(e) => {
+                setPatternType(e.target.value as PatternType);
+                setFieldErrors((prev) => ({ ...prev, patternType: undefined }));
+              }}
               disabled={isEdit}
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50'
             >
               <option value='AVAILABLE'>예약 가능</option>
               <option value='UNAVAILABLE'>예약 불가</option>
             </select>
+            {fieldErrors.patternType && <p className='mt-1 text-xs text-destructive'>{fieldErrors.patternType}</p>}
           </div>
 
           {/* Pattern */}
@@ -93,7 +127,10 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
               id='pattern-text'
               type='text'
               value={patternValue}
-              onChange={(e) => setPatternValue(e.target.value)}
+              onChange={(e) => {
+                setPatternValue(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, pattern: undefined }));
+              }}
               placeholder='예: 예약하기, Reserve, "날짜 변경"'
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
               required
@@ -101,6 +138,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
             <p className='mt-1 text-xs text-muted-foreground'>
               페이지 본문에서 이 텍스트가 발견되면 해당 상태로 판단합니다.
             </p>
+            {fieldErrors.pattern && <p className='mt-1 text-xs text-destructive'>{fieldErrors.pattern}</p>}
           </div>
 
           {/* Locale */}
@@ -111,7 +149,10 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
             <select
               id='pattern-locale'
               value={locale}
-              onChange={(e) => setLocale(e.target.value)}
+              onChange={(e) => {
+                setLocale(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, locale: undefined }));
+              }}
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
             >
               <option value='ko'>한국어</option>
@@ -119,6 +160,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
               <option value='ja'>일본어</option>
               <option value='zh'>중국어</option>
             </select>
+            {fieldErrors.locale && <p className='mt-1 text-xs text-destructive'>{fieldErrors.locale}</p>}
           </div>
 
           {/* Priority */}
@@ -130,10 +172,14 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
               id='pattern-priority'
               type='number'
               value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
+              onChange={(e) => {
+                setPriority(parseInt(e.target.value, 10) || 0);
+                setFieldErrors((prev) => ({ ...prev, priority: undefined }));
+              }}
               className='w-32 rounded-md border border-input bg-background px-3 py-2 text-sm'
             />
             <p className='mt-1 text-xs text-muted-foreground'>높을수록 먼저 확인합니다.</p>
+            {fieldErrors.priority && <p className='mt-1 text-xs text-destructive'>{fieldErrors.priority}</p>}
           </div>
 
           {/* Actions */}

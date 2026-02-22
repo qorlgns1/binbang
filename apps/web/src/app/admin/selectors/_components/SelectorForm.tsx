@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { useCreateSelector, useUpdateSelector } from '@/hooks/useSelectors';
-import { getUserMessage } from '@/lib/apiError';
+import { getUserMessage, getValidationFieldErrors } from '@/lib/apiError';
 import type { PlatformSelectorItem } from '@/types/admin';
 
 interface SelectorFormProps {
@@ -12,6 +12,8 @@ interface SelectorFormProps {
   selector: PlatformSelectorItem | null;
   onClose: () => void;
 }
+
+type SelectorFormField = 'category' | 'name' | 'selector' | 'extractorCode' | 'priority' | 'description' | '_form';
 
 const CATEGORIES: { value: SelectorCategory; label: string }[] = [
   { value: 'PRICE', label: '가격' },
@@ -29,6 +31,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
   const [extractorCode, setExtractorCode] = useState(selector?.extractorCode ?? '');
   const [priority, setPriority] = useState(selector?.priority ?? 0);
   const [description, setDescription] = useState(selector?.description ?? '');
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<SelectorFormField, string>>>({});
 
   const createSelector = useCreateSelector();
   const updateSelector = useUpdateSelector();
@@ -37,6 +40,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
 
     if (isEdit) {
       updateSelector.mutate(
@@ -51,7 +55,20 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(getUserMessage(error)),
+          onError: (error) => {
+            const errors = getValidationFieldErrors(error);
+            if (errors) {
+              setFieldErrors({
+                _form: errors._form,
+                selector: errors.selector,
+                extractorCode: errors.extractorCode,
+                priority: errors.priority,
+                description: errors.description,
+              });
+              return;
+            }
+            alert(getUserMessage(error));
+          },
         },
       );
     } else {
@@ -67,7 +84,22 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(getUserMessage(error)),
+          onError: (error) => {
+            const errors = getValidationFieldErrors(error);
+            if (errors) {
+              setFieldErrors({
+                _form: errors._form,
+                category: errors.category,
+                name: errors.name,
+                selector: errors.selector,
+                extractorCode: errors.extractorCode,
+                priority: errors.priority,
+                description: errors.description,
+              });
+              return;
+            }
+            alert(getUserMessage(error));
+          },
         },
       );
     }
@@ -79,6 +111,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
         <h2 className='mb-4 text-lg font-semibold'>{isEdit ? '셀렉터 수정' : '새 셀렉터 추가'}</h2>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
+          {fieldErrors._form && <p className='text-sm text-destructive'>{fieldErrors._form}</p>}
           {/* Category */}
           <div>
             <label htmlFor='selector-category' className='mb-1 block text-sm font-medium'>
@@ -87,7 +120,10 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
             <select
               id='selector-category'
               value={category}
-              onChange={(e) => setCategory(e.target.value as SelectorCategory)}
+              onChange={(e) => {
+                setCategory(e.target.value as SelectorCategory);
+                setFieldErrors((prev) => ({ ...prev, category: undefined }));
+              }}
               disabled={isEdit}
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50'
             >
@@ -97,6 +133,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
                 </option>
               ))}
             </select>
+            {fieldErrors.category && <p className='mt-1 text-xs text-destructive'>{fieldErrors.category}</p>}
           </div>
 
           {/* Name */}
@@ -108,12 +145,16 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
               id='selector-name'
               type='text'
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+              }}
               disabled={isEdit}
               placeholder='예: Total Price Aria Label'
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50'
               required
             />
+            {fieldErrors.name && <p className='mt-1 text-xs text-destructive'>{fieldErrors.name}</p>}
           </div>
 
           {/* Selector */}
@@ -125,11 +166,15 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
               id='selector-css'
               type='text'
               value={selectorValue}
-              onChange={(e) => setSelectorValue(e.target.value)}
+              onChange={(e) => {
+                setSelectorValue(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, selector: undefined }));
+              }}
               placeholder='예: [aria-label*="총액"]'
               className='w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm'
               required
             />
+            {fieldErrors.selector && <p className='mt-1 text-xs text-destructive'>{fieldErrors.selector}</p>}
           </div>
 
           {/* Extractor Code */}
@@ -140,7 +185,10 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
             <textarea
               id='selector-extractor-code'
               value={extractorCode}
-              onChange={(e) => setExtractorCode(e.target.value)}
+              onChange={(e) => {
+                setExtractorCode(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, extractorCode: undefined }));
+              }}
               placeholder={`// el은 선택된 요소입니다
 const text = el.innerText || '';
 const match = text.match(/[₩$€£][\\s]*[\\d,]+/);
@@ -151,6 +199,7 @@ return match ? match[0] : null;`}
             <p className='mt-1 text-xs text-muted-foreground'>
               JavaScript 코드로 요소에서 값을 추출합니다. <code>el</code> 변수로 선택된 요소에 접근할 수 있습니다.
             </p>
+            {fieldErrors.extractorCode && <p className='mt-1 text-xs text-destructive'>{fieldErrors.extractorCode}</p>}
           </div>
 
           {/* Priority */}
@@ -162,10 +211,14 @@ return match ? match[0] : null;`}
               id='selector-priority'
               type='number'
               value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
+              onChange={(e) => {
+                setPriority(parseInt(e.target.value, 10) || 0);
+                setFieldErrors((prev) => ({ ...prev, priority: undefined }));
+              }}
               className='w-32 rounded-md border border-input bg-background px-3 py-2 text-sm'
             />
             <p className='mt-1 text-xs text-muted-foreground'>높을수록 먼저 시도됩니다.</p>
+            {fieldErrors.priority && <p className='mt-1 text-xs text-destructive'>{fieldErrors.priority}</p>}
           </div>
 
           {/* Description */}
@@ -177,10 +230,14 @@ return match ? match[0] : null;`}
               id='selector-description'
               type='text'
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, description: undefined }));
+              }}
               placeholder='예: aria-label에서 총액 추출'
               className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
             />
+            {fieldErrors.description && <p className='mt-1 text-xs text-destructive'>{fieldErrors.description}</p>}
           </div>
 
           {/* Actions */}

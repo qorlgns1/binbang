@@ -1,5 +1,6 @@
 import { ApiError } from '@workspace/shared/errors';
 import type { ErrorResponseBody } from '@workspace/shared/errors';
+import type { ZodIssue } from 'zod';
 
 export { ApiError } from '@workspace/shared/errors';
 
@@ -20,6 +21,46 @@ export function getUserMessage(error: Error): string {
     return ERROR_MESSAGES[error.code] ?? '오류가 발생했습니다';
   }
   return '오류가 발생했습니다';
+}
+
+function isZodIssueLike(value: unknown): value is ZodIssue {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const issue = value as { path?: unknown; message?: unknown };
+  return Array.isArray(issue.path) && typeof issue.message === 'string';
+}
+
+export function getValidationDetails(error: Error): ZodIssue[] | null {
+  if (!(error instanceof ApiError) || error.code !== 'VALIDATION_ERROR') {
+    return null;
+  }
+
+  if (!Array.isArray(error.details)) {
+    return null;
+  }
+
+  const issues = error.details.filter(isZodIssueLike);
+  return issues.length > 0 ? issues : null;
+}
+
+export function getValidationFieldErrors(error: Error): Record<string, string> | null {
+  const issues = getValidationDetails(error);
+  if (!issues) {
+    return null;
+  }
+
+  const fieldErrors: Record<string, string> = {};
+
+  for (const issue of issues) {
+    const [firstPath] = issue.path;
+    const key = typeof firstPath === 'string' ? firstPath : '_form';
+
+    if (!fieldErrors[key]) {
+      fieldErrors[key] = issue.message;
+    }
+  }
+
+  return fieldErrors;
 }
 
 /**

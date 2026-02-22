@@ -1,10 +1,24 @@
 import { NextResponse } from 'next/server';
 
+import { z } from 'zod';
+
 import type { PatternType, Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
-import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { createPattern, getPatterns } from '@/services/admin/patterns.service';
-import type { CreatePatternPayload } from '@/types/admin';
+
+const createPatternSchema = z.object({
+  platform: z.enum(['AIRBNB', 'AGODA']),
+  patternType: z.enum(['AVAILABLE', 'UNAVAILABLE']),
+  pattern: z.string().min(1, '패턴 텍스트를 입력해주세요'),
+  locale: z.string().min(1).optional(),
+  priority: z.number().int().optional(),
+});
 
 // GET /api/admin/patterns
 export async function GET(request: Request): Promise<Response> {
@@ -30,16 +44,22 @@ export async function POST(request: Request): Promise<Response> {
     return unauthorizedResponse();
   }
 
-  const body = (await request.json()) as CreatePatternPayload;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequestResponse('Invalid JSON');
+  }
 
-  // 필수 필드 검증
-  if (!body.platform || !body.patternType || !body.pattern) {
-    return badRequestResponse('Missing required fields');
+  const parsed = createPatternSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.issues);
   }
 
   try {
     const pattern = await createPattern({
-      ...body,
+      ...parsed.data,
       createdById: session.user.id,
     });
 
