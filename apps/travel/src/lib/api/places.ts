@@ -1,3 +1,6 @@
+import { generateCacheKey, getCachedOrFetch } from '@/services/cache.service';
+import { isAbortError, withAbortTimeout } from '@/lib/withTimeout';
+
 export interface SearchPlacesParams {
   query: string;
   location?: string;
@@ -18,6 +21,9 @@ export interface PlaceResult {
 }
 
 const FETCH_TIMEOUT_MS = 10000;
+const PLACES_CACHE_FRESH_TTL = 86400; // 24 hours
+const PLACES_CACHE_STALE_TTL = 86400; // stale-if-error window
+const PLACES_TTL_JITTER_RATIO = 0.1;
 
 export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
   places: PlaceResult[];
@@ -28,6 +34,26 @@ export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
     return { places: [], query: params.query };
   }
 
+  const cacheKey = generateCacheKey('places', params);
+  try {
+    return await getCachedOrFetch({
+      key: cacheKey,
+      logLabel: 'places',
+      freshTtlSeconds: PLACES_CACHE_FRESH_TTL,
+      staleTtlSeconds: PLACES_CACHE_STALE_TTL,
+      jitterRatio: PLACES_TTL_JITTER_RATIO,
+      fetcher: async () => fetchPlacesFromApi(params, apiKey),
+    });
+  } catch (error) {
+    console.error('Google Places API fetch failed:', error);
+    return { places: [], query: params.query };
+  }
+}
+
+async function fetchPlacesFromApi(
+  params: SearchPlacesParams,
+  apiKey: string,
+): Promise<{ places: PlaceResult[]; query: string }> {
   const searchQuery = params.location ? `${params.query} in ${params.location}` : params.query;
 
   const url = 'https://places.googleapis.com/v1/places:searchText';
@@ -44,20 +70,19 @@ export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
       'places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.types,places.photos,places.id',
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    const response = await withAbortTimeout(FETCH_TIMEOUT_MS, (signal) =>
+      fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal,
+      }),
+    );
 
     if (!response.ok) {
-      console.error('Google Places API error:', response.status, await response.text());
-      return { places: [], query: params.query };
+      const responseText = await response.text();
+      throw new Error(`Google Places API error (${response.status}): ${responseText}`);
     }
 
     const data = (await response.json()) as {
@@ -94,13 +119,12 @@ export async function searchGooglePlaces(params: SearchPlacesParams): Promise<{
         placeId: place.id,
       }));
 
-    return { places, query: params.query };
+    const result = { places, query: params.query };
+    return result;
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Google Places API request timed out');
+    if (isAbortError(error)) {
+      throw new Error('Google Places API request timed out');
     }
-    return { places: [], query: params.query };
-  } finally {
-    clearTimeout(timeoutId);
+    throw error;
   }
 }

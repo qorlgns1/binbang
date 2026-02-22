@@ -8,10 +8,16 @@ const DEFAULT_TRAVEL_GUEST_RETENTION_DAYS = 7;
 const DEFAULT_PUBLIC_AVAILABILITY_SNAPSHOT_SCHEDULE = '7 1 * * *';
 const DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS = 7;
 const DEFAULT_CASE_EXPIRATION_SCHEDULE = '37 0 * * *';
+const DEFAULT_AFFILIATE_AUDIT_PURGE_SCHEDULE = '10 3 * * *';
+const DEFAULT_AFFILIATE_AUDIT_CRON_WATCHDOG_SCHEDULE = '*/15 * * * *';
+const DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE = '20 */6 * * *';
 
 interface SetupRepeatableJobsOptions {
   publicAvailabilitySnapshotSchedule?: string;
   publicAvailabilityWindowDays?: number;
+  affiliateAuditPurgeSchedule?: string;
+  affiliateAuditCronWatchdogSchedule?: string;
+  travelCachePrewarmSchedule?: string;
 }
 
 function resolvePublicAvailabilitySchedule(value: string | undefined): string {
@@ -28,6 +34,12 @@ function resolvePublicAvailabilityWindowDays(value: number | undefined): number 
   return floored > 0 ? floored : DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS;
 }
 
+function resolveSchedule(value: string | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return fallback;
+  return trimmed;
+}
+
 export async function setupRepeatableJobs(
   queue: Queue,
   schedule: string,
@@ -37,6 +49,18 @@ export async function setupRepeatableJobs(
     options.publicAvailabilitySnapshotSchedule,
   );
   const publicAvailabilityWindowDays = resolvePublicAvailabilityWindowDays(options.publicAvailabilityWindowDays);
+  const affiliateAuditPurgeSchedule = resolveSchedule(
+    options.affiliateAuditPurgeSchedule,
+    DEFAULT_AFFILIATE_AUDIT_PURGE_SCHEDULE,
+  );
+  const affiliateAuditCronWatchdogSchedule = resolveSchedule(
+    options.affiliateAuditCronWatchdogSchedule,
+    DEFAULT_AFFILIATE_AUDIT_CRON_WATCHDOG_SCHEDULE,
+  );
+  const travelCachePrewarmSchedule = resolveSchedule(
+    options.travelCachePrewarmSchedule,
+    DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE,
+  );
 
   await queue.upsertJobScheduler(
     'cycle-scheduler',
@@ -95,6 +119,39 @@ export async function setupRepeatableJobs(
       },
     },
   );
+
+  await queue.upsertJobScheduler(
+    'affiliate-audit-purge-scheduler',
+    { pattern: affiliateAuditPurgeSchedule },
+    {
+      name: 'affiliate-audit-purge',
+      data: {
+        triggeredAt: new Date().toISOString(),
+      },
+    },
+  );
+
+  await queue.upsertJobScheduler(
+    'affiliate-audit-cron-watchdog-scheduler',
+    { pattern: affiliateAuditCronWatchdogSchedule },
+    {
+      name: 'affiliate-audit-cron-watchdog',
+      data: {
+        triggeredAt: new Date().toISOString(),
+      },
+    },
+  );
+
+  await queue.upsertJobScheduler(
+    'travel-cache-prewarm-scheduler',
+    { pattern: travelCachePrewarmSchedule },
+    {
+      name: 'travel-cache-prewarm',
+      data: {
+        triggeredAt: new Date().toISOString(),
+      },
+    },
+  );
 }
 
 export async function removeRepeatableJobs(queue: Queue): Promise<void> {
@@ -104,4 +161,7 @@ export async function removeRepeatableJobs(queue: Queue): Promise<void> {
   await queue.removeJobScheduler('public-availability-snapshot-scheduler');
   await queue.removeJobScheduler('case-expiration-scheduler');
   await queue.removeJobScheduler('travel-guest-cleanup-scheduler');
+  await queue.removeJobScheduler('affiliate-audit-purge-scheduler');
+  await queue.removeJobScheduler('affiliate-audit-cron-watchdog-scheduler');
+  await queue.removeJobScheduler('travel-cache-prewarm-scheduler');
 }

@@ -1,6 +1,6 @@
-import { getServerSession } from 'next-auth';
-
-import { authOptions } from '@/lib/auth';
+import { requireUserId } from '@/lib/apiRoute';
+import { jsonError, jsonResponse } from '@/lib/httpResponse';
+import { resolveRequestId } from '@/lib/requestId';
 import { deleteConversation, getConversationsByUser } from '@/services/conversation.service';
 
 /**
@@ -8,40 +8,25 @@ import { deleteConversation, getConversationsByUser } from '@/services/conversat
  * GET /api/conversations
  */
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const requestId = resolveRequestId(req);
+  const requiredUser = await requireUserId({ requestId });
+  if ('response' in requiredUser) {
+    return requiredUser.response;
   }
+  const { userId } = requiredUser;
 
   try {
     const url = new URL(req.url);
     const searchQuery = url.searchParams.get('q')?.trim();
-    const conversations = await getConversationsByUser(session.user.id, searchQuery);
-
-    return new Response(
-      JSON.stringify({
-        conversations,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    const conversations = await getConversationsByUser(userId, searchQuery);
+    return jsonResponse({ conversations });
   } catch (error) {
-    console.error('Failed to fetch conversations:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to fetch conversations',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    console.error('Failed to fetch conversations', {
+      requestId,
+      userId,
+      error,
+    });
+    return jsonError(500, 'Failed to fetch conversations', { requestId });
   }
 }
 
@@ -50,54 +35,35 @@ export async function GET(req: Request) {
  * DELETE /api/conversations?id=xxx
  */
 export async function DELETE(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const requestId = resolveRequestId(req);
+  const requiredUser = await requireUserId({ requestId });
+  if ('response' in requiredUser) {
+    return requiredUser.response;
   }
+  const { userId } = requiredUser;
 
   const url = new URL(req.url);
   const conversationId = url.searchParams.get('id');
 
   if (!conversationId) {
-    return new Response(JSON.stringify({ error: 'Conversation ID is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(400, 'Conversation ID is required', { requestId });
   }
 
   try {
-    const deleted = await deleteConversation(conversationId, session.user.id);
+    const deleted = await deleteConversation(conversationId, userId);
 
     if (!deleted) {
-      return new Response(JSON.stringify({ error: 'Not found or unauthorized' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError(404, 'Not found or unauthorized', { requestId });
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    return jsonResponse({ success: true, requestId });
   } catch (error) {
-    console.error('Failed to delete conversation:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to delete conversation',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    console.error('Failed to delete conversation', {
+      requestId,
+      userId,
+      conversationId,
+      error,
+    });
+    return jsonError(500, 'Failed to delete conversation', { requestId });
   }
 }

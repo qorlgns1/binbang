@@ -1,7 +1,8 @@
-import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 
-import { authOptions } from '@/lib/auth';
+import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
+import { jsonError, jsonResponse } from '@/lib/httpResponse';
+import { resolveRequestId } from '@/lib/requestId';
 import { getConversation, updateConversationTitle } from '@/services/conversation.service';
 
 const patchBodySchema = z.object({
@@ -12,15 +13,13 @@ const patchBodySchema = z.object({
  * 대화 상세 조회
  * GET /api/conversations/:id
  */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const requestId = resolveRequestId(req);
+  const requiredUser = await requireUserId({ requestId });
+  if ('response' in requiredUser) {
+    return requiredUser.response;
   }
+  const { userId } = requiredUser;
 
   const { id: conversationId } = await params;
 
@@ -28,40 +27,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const conversation = await getConversation(conversationId);
 
     if (!conversation) {
-      return new Response(JSON.stringify({ error: 'Conversation not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError(404, 'Conversation not found', { requestId });
     }
 
     // 소유권 확인
-    if (conversation.userId !== session.user.id) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (conversation.userId !== userId) {
+      return jsonError(403, 'Unauthorized', { requestId });
     }
 
-    return new Response(
-      JSON.stringify({
-        conversation,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    return jsonResponse({ conversation });
   } catch (error) {
-    console.error('Failed to fetch conversation:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to fetch conversation',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    console.error('Failed to fetch conversation', {
+      requestId,
+      userId,
+      error,
+    });
+    return jsonError(500, 'Failed to fetch conversation', { requestId });
   }
 }
 
@@ -70,66 +51,39 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
  * PATCH /api/conversations/:id
  */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const requestId = resolveRequestId(req);
+  const requiredUser = await requireUserId({ requestId });
+  if ('response' in requiredUser) {
+    return requiredUser.response;
   }
+  const { userId } = requiredUser;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const parsedBody = patchBodySchema.safeParse(body);
-  if (!parsedBody.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsedBody.error.flatten() }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const parsedBody = await parseJsonBody(req, patchBodySchema, { errorExtra: { requestId } });
+  if ('response' in parsedBody) {
+    return parsedBody.response;
   }
 
   const { id: conversationId } = await params;
 
   try {
-    const updated = await updateConversationTitle(conversationId, session.user.id, parsedBody.data.title);
+    const updated = await updateConversationTitle(conversationId, userId, parsedBody.data.title);
 
     if (!updated) {
-      return new Response(JSON.stringify({ error: 'Not found or unauthorized' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError(404, 'Not found or unauthorized', { requestId });
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        conversationId,
-        title: parsedBody.data.title,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    return jsonResponse({
+      success: true,
+      conversationId,
+      title: parsedBody.data.title,
+      requestId,
+    });
   } catch (error) {
-    console.error('Failed to update conversation title:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to update conversation title',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    console.error('Failed to update conversation title', {
+      requestId,
+      userId,
+      error,
+    });
+    return jsonError(500, 'Failed to update conversation title', { requestId });
   }
 }

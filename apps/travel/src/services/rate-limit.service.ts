@@ -1,5 +1,6 @@
+import { format } from 'date-fns';
+import { TZDate, tz } from '@date-fns/tz';
 import { prisma } from '@workspace/db';
-import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 /**
  * Rate Limiting 서비스
@@ -53,17 +54,14 @@ type OwnerFilter = { type: 'session'; sessionId: string } | { type: 'user'; user
 const KST = 'Asia/Seoul';
 
 function getDailyWindow(now: Date) {
-  const zonedNow = toZonedTime(now, KST);
-  const startLocal = new Date(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate(), 0, 0, 0, 0);
-  const endLocal = new Date(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate() + 1, 0, 0, 0, 0);
-  return {
-    start: fromZonedTime(startLocal, KST),
-    end: fromZonedTime(endLocal, KST),
-  };
+  const zonedNow = new TZDate(now, KST);
+  const start = new TZDate(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate(), 0, 0, 0, 0, KST);
+  const end = new TZDate(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate() + 1, 0, 0, 0, 0, KST);
+  return { start, end };
 }
 
 function formatResetTime(resetAt: Date): string {
-  return formatInTimeZone(resetAt, KST, 'HH:mm');
+  return format(resetAt, 'HH:mm', { in: tz(KST) });
 }
 
 /**

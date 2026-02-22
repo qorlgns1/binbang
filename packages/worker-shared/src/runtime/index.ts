@@ -1,7 +1,19 @@
 // Settings
 export { getSettings, loadSettings } from './settings';
-export { validateWorkerEnv, validateWebEnv, getEnv, getEnvNumber } from './settings/env';
+export {
+  validateWorkerEnv,
+  validateWebEnv,
+  getEnv,
+  getEnvNumber,
+  getAffiliateAuditPurgeConfig,
+  getTravelCachePrewarmConfig,
+} from './settings/env';
 export type { SystemSettingsCache } from './settings';
+export type {
+  AffiliateAuditPurgeConfig,
+  AffiliateAuditTelegramConfig,
+  TravelCachePrewarmConfig,
+} from './settings/env';
 
 // Redis & Queue
 export { createRedisConnection } from './connection';
@@ -26,6 +38,19 @@ export type {
 } from './publicAvailabilitySnapshots';
 export { generatePredictions, DEFAULT_PREDICTION_WINDOW_DAYS } from './availabilityPredictor';
 export type { GeneratePredictionsInput, GeneratePredictionsResult } from './availabilityPredictor';
+export {
+  runAffiliateAuditPurge,
+  checkAffiliateAuditPurgeCronMiss,
+  AFFILIATE_AUDIT_PURGE_JOB_NAME,
+} from './affiliateAuditPurge';
+export type {
+  RunAffiliateAuditPurgeOptions,
+  RunAffiliateAuditPurgeResult,
+  CheckAffiliateAuditPurgeCronMissOptions,
+  CheckAffiliateAuditPurgeCronMissResult,
+} from './affiliateAuditPurge';
+export { triggerTravelCachePrewarm } from './travelCachePrewarm';
+export type { TriggerTravelCachePrewarmResult, TravelCachePrewarmMetrics } from './travelCachePrewarm';
 
 // Heartbeat
 export {

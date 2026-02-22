@@ -1,159 +1,48 @@
 'use client';
 
-import { Compass, LogIn, LogOut, Map as MapIcon, MessageSquare } from 'lucide-react';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { HomeMobileTabBar } from '@/components/home/HomeMobileTabBar';
+import { HomeSidebar } from '@/components/home/HomeSidebar';
+import { HomeTopBar } from '@/components/home/HomeTopBar';
 import { MapPanel } from '@/components/map/MapPanel';
 import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
-import { OnlineStatus } from '@/components/OnlineStatus';
-import type { MapEntity, PlaceEntity } from '@/lib/types';
+import { useModalStore } from '@/stores/useModalStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 export default function HomePage() {
-  const [entities, setEntities] = useState<MapEntity[]>([]);
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
-  const [hoveredPlaceId, setHoveredPlaceId] = useState<string | undefined>();
-  const [showMap, setShowMap] = useState(true);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const { status: authStatus } = useSession();
-
-  const handleEntitiesUpdate = useCallback((newEntities: MapEntity[]) => {
-    setEntities(newEntities);
-  }, []);
-
-  const handlePlaceSelect = useCallback((place: PlaceEntity) => {
-    setSelectedPlaceId(place.placeId);
-  }, []);
-
-  const handleMapEntitySelect = useCallback((entityId: string) => {
-    setSelectedPlaceId(entityId);
-  }, []);
-
-  const handleMapAlertClick = useCallback(
-    (_entityId: string) => {
-      if (authStatus === 'loading') return;
-      if (authStatus === 'authenticated') {
-        toast.info('빈방 알림 기능은 준비 중이에요.');
-        return;
-      }
-
-      setShowLoginModal(true);
-    },
-    [authStatus],
-  );
-
-  const handleCloseMapInfo = useCallback(() => {
-    setSelectedPlaceId(undefined);
-  }, []);
-
-  const handlePlaceHover = useCallback((placeId: string | undefined) => {
-    setHoveredPlaceId(placeId);
-  }, []);
+  const showMap = usePlaceStore((s) => s.showMap);
+  const showLoginModal = useModalStore((s) => s.showLoginModal);
+  const loginModalTrigger = useModalStore((s) => s.loginModalTrigger);
+  const closeLoginModal = useModalStore((s) => s.closeLoginModal);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
   return (
-    <div className='flex h-screen flex-col'>
-      {/* Header: compact on mobile */}
-      <header className='flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-3 py-2 md:px-4 md:py-3'>
-        <div className='flex min-w-0 items-center gap-2'>
-          <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary md:h-8 md:w-8'>
-            <Compass className='h-4 w-4 text-primary-foreground md:h-5 md:w-5' />
-          </div>
-          <h1 className='truncate text-base font-bold md:text-lg'>빈방</h1>
-        </div>
-        <div className='flex shrink-0 items-center gap-2'>
-          <OnlineStatus />
-          {authStatus === 'authenticated' ? (
-            <button
-              type='button'
-              onClick={() => void signOut({ callbackUrl: '/' })}
-              className='inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors'
-              aria-label='로그아웃'
-            >
-              <LogOut className='h-3.5 w-3.5' aria-hidden />
-              <span className='hidden sm:inline'>로그아웃</span>
-            </button>
-          ) : (
-            <button
-              type='button'
-              onClick={() => void signIn(undefined, { callbackUrl: '/' })}
-              className='inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors'
-              aria-label='로그인'
-            >
-              <LogIn className='h-3.5 w-3.5' aria-hidden />
-              <span className='hidden sm:inline'>로그인</span>
-            </button>
-          )}
-          {entities.length > 0 && (
-            <span className='text-xs text-muted-foreground bg-muted hidden rounded-full px-2 py-1 sm:inline-flex'>
-              {entities.length}곳
-            </span>
-          )}
-        </div>
-      </header>
+    <div className='flex h-screen overflow-hidden bg-background'>
+      <HomeSidebar authStatus={authStatus} />
 
-      {/* Main Content: Chat + Map split (desktop) / single view + bottom tabs (mobile) */}
-      <div className='flex flex-1 flex-col overflow-hidden'>
+      <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
+        <HomeTopBar authStatus={authStatus} />
+
         <div className='flex flex-1 overflow-hidden'>
-          {/* Chat Panel */}
           <div
-            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 flex-col border-r border-border md:w-[42%] lg:max-w-2xl`}
+            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 flex-col border-r border-border/60 bg-card/30 md:w-[42%] lg:max-w-2xl`}
           >
-            <ChatPanel
-              onEntitiesUpdate={handleEntitiesUpdate}
-              onPlaceSelect={handlePlaceSelect}
-              onPlaceHover={handlePlaceHover}
-              selectedPlaceId={selectedPlaceId}
-            />
+            <ChatPanel />
           </div>
 
-          {/* Map Panel */}
           <div className={`${showMap ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
-            <MapPanel
-              entities={entities}
-              selectedEntityId={selectedPlaceId}
-              hoveredEntityId={hoveredPlaceId}
-              onEntitySelect={handleMapEntitySelect}
-              onAlertClick={handleMapAlertClick}
-              onCloseInfoWindow={handleCloseMapInfo}
-              apiKey={apiKey}
-            />
+            <MapPanel apiKey={apiKey} />
           </div>
         </div>
 
-        {/* Mobile: bottom tab bar (Chat / Map) */}
-        <nav
-          className='md:hidden flex shrink-0 items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm py-3'
-          aria-label='채팅과 지도 전환'
-        >
-          <button
-            type='button'
-            onClick={() => setShowMap(false)}
-            className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-              !showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
-            }`}
-            aria-current={!showMap ? 'page' : undefined}
-          >
-            <MessageSquare className='h-5 w-5' aria-hidden />
-            채팅
-          </button>
-          <button
-            type='button'
-            onClick={() => setShowMap(true)}
-            className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-              showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
-            }`}
-            aria-current={showMap ? 'page' : undefined}
-          >
-            <MapIcon className='h-5 w-5' aria-hidden />
-            지도
-          </button>
-        </nav>
+        <HomeMobileTabBar />
       </div>
-      <LoginPromptModal open={showLoginModal} onClose={() => setShowLoginModal(false)} trigger='bookmark' />
+
+      <LoginPromptModal open={showLoginModal} onClose={closeLoginModal} trigger={loginModalTrigger} />
     </div>
   );
 }

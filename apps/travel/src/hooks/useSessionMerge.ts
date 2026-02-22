@@ -1,10 +1,11 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { parseSessionId, TRAVEL_SESSION_STORAGE_KEY, TRAVEL_SESSION_TTL_MS } from '@/lib/session';
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
 
 export type MergeStatus = 'idle' | 'pending' | 'done';
 
@@ -16,10 +17,10 @@ export type MergeStatus = 'idle' | 'pending' | 'done';
  * - 'pending': merge API 요청 진행 중
  * - 'done'   : merge 완료 (성공·no-op·오류 모두 포함 — "시도가 끝난" 상태)
  */
-export function useSessionMerge(): { mergeStatus: MergeStatus } {
+export function useSessionMerge(): void {
   const { status } = useSession();
   const hasMergedRef = useRef(false);
-  const [mergeStatus, setMergeStatus] = useState<MergeStatus>('idle');
+  const setMergeStatus = useChatSessionStore((s) => s.setMergeStatus);
 
   useEffect(() => {
     if (status !== 'authenticated' || hasMergedRef.current) return;
@@ -93,7 +94,5 @@ export function useSessionMerge(): { mergeStatus: MergeStatus } {
     };
 
     void mergeSession();
-  }, [status]);
-
-  return { mergeStatus };
+  }, [status, setMergeStatus]);
 }
