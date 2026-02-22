@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 
 const payloadSchema = z.object({
   windowDays: z.number().int().min(1).max(180).optional(),
@@ -11,13 +12,13 @@ const payloadSchema = z.object({
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const rawBody = (await request.json().catch((): Record<string, unknown> => ({}))) as Record<string, unknown>;
   const parsed = payloadSchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
+    return validationErrorResponse(parsed.error.issues);
   }
 
   const workerUrl = process.env.WORKER_INTERNAL_URL || 'http://localhost:3500';

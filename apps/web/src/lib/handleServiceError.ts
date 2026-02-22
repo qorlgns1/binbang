@@ -47,3 +47,24 @@ export function handleServiceError(error: unknown, logPrefix?: string): NextResp
     { status: 500 },
   );
 }
+
+export function unauthorizedResponse(message = 'Unauthorized'): NextResponse<ErrorResponseBody> {
+  return NextResponse.json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+}
+
+export function badRequestResponse(message: string, details?: unknown): NextResponse<ErrorResponseBody> {
+  const body: ErrorResponseBody = { error: { code: 'BAD_REQUEST', message } };
+  if (details !== undefined) body.error.details = details;
+  return NextResponse.json(body, { status: 400 });
+}
+
+export function validationErrorResponse(details: unknown): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(
+    { error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details } },
+    { status: 400 },
+  );
+}
+
+export function notFoundResponse(message = 'Not found'): NextResponse<ErrorResponseBody> {
+  return NextResponse.json({ error: { code: 'NOT_FOUND', message } }, { status: 404 });
+}

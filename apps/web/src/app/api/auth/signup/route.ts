@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
+import { handleServiceError, validationErrorResponse } from '@/lib/handleServiceError';
 import { checkEmailExists, createUserWithCredentials } from '@/services/auth.service';
 
 const signupSchema = z.object({
@@ -16,20 +17,23 @@ export async function POST(request: Request): Promise<Response> {
     const parsed = signupSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const { email, password, name } = parsed.data;
 
     const exists = await checkEmailExists(email);
     if (exists) {
-      return NextResponse.json({ error: '이미 사용 중인 이메일입니다' }, { status: 409 });
+      return NextResponse.json(
+        { error: { code: 'CONFLICT', message: '이미 사용 중인 이메일입니다' } },
+        { status: 409 },
+      );
     }
 
     await createUserWithCredentials({ email, password, name });
 
     return NextResponse.json({ message: '회원가입이 완료되었습니다' }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+  } catch (error) {
+    return handleServiceError(error, 'Auth signup error');
   }
 }

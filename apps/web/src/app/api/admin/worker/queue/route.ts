@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 
 const DEFAULT_LIMIT = 20;
 
@@ -14,12 +15,12 @@ const querySchema = z.object({
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const parsed = querySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
+    return validationErrorResponse(parsed.error.issues);
   }
 
   const limit = parsed.data.limit ?? DEFAULT_LIMIT;

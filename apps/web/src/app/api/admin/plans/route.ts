@@ -4,12 +4,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { createAdminPlan, getAdminPlans } from '@/services/admin/plans.service';
 
 export async function GET(): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -17,8 +18,7 @@ export async function GET(): Promise<Response> {
 
     return NextResponse.json(plans);
   } catch (error) {
-    console.error('Admin plans fetch error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin plans fetch error');
   }
 }
 
@@ -34,7 +34,7 @@ const createPlanSchema = z.object({
 export async function POST(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -42,17 +42,13 @@ export async function POST(request: NextRequest): Promise<Response> {
     const parsed = createPlanSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const plan = await createAdminPlan(parsed.data);
 
     return NextResponse.json(plan, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Plan name already exists') {
-      return NextResponse.json({ error: '이미 존재하는 플랜 이름입니다' }, { status: 400 });
-    }
-    console.error('Admin plan create error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin plan create error');
   }
 }

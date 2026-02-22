@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
-import { jsonError, jsonResponse } from '@/lib/httpResponse';
+import { handleServiceError, notFoundResponse } from '@/lib/handleServiceError';
+import { jsonResponse } from '@/lib/httpResponse';
 import {
   getAccountAffiliateLinksEnabled,
   setAccountAffiliateLinksEnabled,
@@ -42,13 +43,17 @@ export async function PATCH(req: Request) {
     return parsedBody.response;
   }
 
-  const enabled = await setAccountAffiliateLinksEnabled(requiredUser.userId, parsedBody.data.affiliateLinksEnabled);
-  if (enabled == null) {
-    return jsonError(404, 'User not found');
-  }
+  try {
+    const enabled = await setAccountAffiliateLinksEnabled(requiredUser.userId, parsedBody.data.affiliateLinksEnabled);
+    if (enabled == null) {
+      return notFoundResponse('User not found');
+    }
 
-  return jsonResponse({
-    ok: true,
-    affiliateLinksEnabled: enabled,
-  });
+    return jsonResponse({
+      ok: true,
+      affiliateLinksEnabled: enabled,
+    });
+  } catch (error) {
+    return handleServiceError(error, 'affiliate/settings PATCH');
+  }
 }

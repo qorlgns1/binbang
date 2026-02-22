@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError } from '@/lib/handleServiceError';
+import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { deleteSelector, updateSelector } from '@/services/admin/selectors.service';
 import type { UpdateSelectorPayload } from '@/types/admin';
 
@@ -13,7 +13,7 @@ interface RouteParams {
 export async function PATCH(request: Request, { params }: RouteParams): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { id } = await params;
@@ -36,7 +36,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
 export async function DELETE(_request: Request, { params }: RouteParams): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { id } = await params;

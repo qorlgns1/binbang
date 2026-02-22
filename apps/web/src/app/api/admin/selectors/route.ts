@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError } from '@/lib/handleServiceError';
+import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { createSelector, getSelectors } from '@/services/admin/selectors.service';
 import type { CreateSelectorPayload } from '@/types/admin';
 
@@ -10,7 +10,7 @@ import type { CreateSelectorPayload } from '@/types/admin';
 export async function GET(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { searchParams } = new URL(request.url);
@@ -27,14 +27,14 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const body = (await request.json()) as CreateSelectorPayload;
 
   // 필수 필드 검증
   if (!body.platform || !body.category || !body.name || !body.selector) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    return badRequestResponse('Missing required fields');
   }
 
   try {

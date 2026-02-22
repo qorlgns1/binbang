@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { deletePattern, updatePattern } from '@/services/admin/patterns.service';
 import type { UpdatePatternPayload } from '@/types/admin';
 
@@ -12,7 +13,7 @@ interface RouteParams {
 export async function PATCH(request: Request, { params }: RouteParams): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { id } = await params;
@@ -27,15 +28,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
 
     return NextResponse.json({ pattern });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Pattern not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'No changes detected') {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-    }
-    throw error;
+    return handleServiceError(error, 'Admin pattern update error');
   }
 }
 
@@ -43,7 +36,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
 export async function DELETE(_request: Request, { params }: RouteParams): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { id } = await params;
@@ -56,9 +49,6 @@ export async function DELETE(_request: Request, { params }: RouteParams): Promis
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Pattern not found') {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    throw error;
+    return handleServiceError(error, 'Admin pattern delete error');
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import type { Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
+import { badRequestResponse, unauthorizedResponse } from '@/lib/handleServiceError';
 
 interface TestSelectorPayload {
   url: string;
@@ -20,19 +21,19 @@ function detectPlatform(url: string): Platform | null {
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const body = (await request.json()) as TestSelectorPayload;
   const { url, checkIn, checkOut, adults } = body;
 
   if (!url) {
-    return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+    return badRequestResponse('URL is required');
   }
 
   const platform = detectPlatform(url);
   if (!platform) {
-    return NextResponse.json({ error: 'Unsupported platform' }, { status: 400 });
+    return badRequestResponse('Unsupported platform');
   }
 
   const startTime = Date.now();

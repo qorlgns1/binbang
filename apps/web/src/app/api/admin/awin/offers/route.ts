@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { AwinConfigError, listAwinOffers } from '@/services/admin/awin.service';
 
 const offersSchema = z.object({
@@ -17,7 +18,7 @@ const offersSchema = z.object({
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   let body: unknown = {};
@@ -39,7 +40,6 @@ export async function POST(request: Request): Promise<Response> {
     if (err instanceof AwinConfigError) {
       return NextResponse.json({ ok: false, error: err.message }, { status: 400 });
     }
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ ok: false, error: 'Request failed', detail: message }, { status: 500 });
+    return handleServiceError(err, 'Awin offers error');
   }
 }

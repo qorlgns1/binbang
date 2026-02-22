@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import type { PatternType, Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
+import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { createPattern, getPatterns } from '@/services/admin/patterns.service';
 import type { CreatePatternPayload } from '@/types/admin';
 
@@ -9,7 +10,7 @@ import type { CreatePatternPayload } from '@/types/admin';
 export async function GET(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { searchParams } = new URL(request.url);
@@ -26,14 +27,14 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const body = (await request.json()) as CreatePatternPayload;
 
   // 필수 필드 검증
   if (!body.platform || !body.patternType || !body.pattern) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    return badRequestResponse('Missing required fields');
   }
 
   try {
@@ -44,9 +45,6 @@ export async function POST(request: Request): Promise<Response> {
 
     return NextResponse.json({ pattern });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Pattern already exists') {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    throw error;
+    return handleServiceError(error, 'Admin pattern create error');
   }
 }

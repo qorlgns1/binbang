@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { getUsers } from '@/services/admin/users.service';
 
 const usersParamsSchema = z.object({
@@ -16,7 +17,7 @@ const usersParamsSchema = z.object({
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -24,14 +25,13 @@ export async function GET(request: NextRequest): Promise<Response> {
     const parsed = usersParamsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const response = await getUsers(parsed.data);
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Admin users error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin users error');
   }
 }

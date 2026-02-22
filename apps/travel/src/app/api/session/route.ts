@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { parseJsonBody } from '@/lib/apiRoute';
-import { jsonError } from '@/lib/httpResponse';
+import { badRequestResponse } from '@/lib/handleServiceError';
 import { parseSessionId, TRAVEL_SESSION_COOKIE_NAME, TRAVEL_SESSION_TTL_SECONDS } from '@/lib/session';
 
 const requestSchema = z.object({
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
   const sessionId = parseSessionId(parsedBody.data.sessionId);
   if (!sessionId) {
-    return jsonError(400, 'Invalid sessionId');
+    return badRequestResponse('Invalid sessionId');
   }
 
   const response = NextResponse.json({ success: true }, { status: 200 });

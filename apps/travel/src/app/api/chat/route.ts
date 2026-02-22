@@ -9,6 +9,7 @@ import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { createTravelTools } from '@/lib/ai/tools';
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
+import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { jsonError } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
@@ -61,13 +62,19 @@ export async function POST(req: Request) {
 
   // 스트리밍 전에 대화 소유권 검증 (다른 유저/게스트 대화에 메시지 추가 방지)
   if (normalizedConversationId) {
-    const conversation = await getConversation(normalizedConversationId);
-    if (conversation) {
-      const isOwner =
-        conversation.userId != null ? session?.user?.id === conversation.userId : conversation.sessionId === sessionId;
-      if (!isOwner) {
-        return jsonError(403, 'Unauthorized', { requestId });
+    try {
+      const conversation = await getConversation(normalizedConversationId);
+      if (conversation) {
+        const isOwner =
+          conversation.userId != null
+            ? session?.user?.id === conversation.userId
+            : conversation.sessionId === sessionId;
+        if (!isOwner) {
+          return unauthorizedResponse('Unauthorized');
+        }
       }
+    } catch (error) {
+      return handleServiceError(error, 'chat conversation ownership check');
     }
   }
 
@@ -79,7 +86,7 @@ export async function POST(req: Request) {
       .join('') ?? '';
 
   if (!lastUserText.trim()) {
-    return jsonError(400, 'No user message found', { requestId });
+    return badRequestResponse('No user message found');
   }
 
   // Rate limiting 확인

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
 import { getFormSubmissionById } from '@/services/intake.service';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -14,12 +15,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const submission = await getFormSubmissionById(id);
 
     if (!submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+      return notFoundResponse('Submission not found');
     }
 
     return NextResponse.json({ submission });
   } catch (error) {
-    console.error('Admin submission detail error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin submission detail error');
   }
 }

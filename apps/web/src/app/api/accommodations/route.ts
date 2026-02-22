@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { checkUserQuota, createAccommodation, getAccommodationsByUserId } from '@/services/accommodations.service';
 
 const createAccommodationSchema = z
@@ -34,7 +35,7 @@ export async function GET(): Promise<Response> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const accommodations = await getAccommodationsByUserId(session.user.id);
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -57,9 +58,11 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (!quota.allowed) {
       return NextResponse.json(
         {
-          error: 'quota_exceeded',
-          message: `숙소 등록 한도(${quota.max}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
-          quota: { max: quota.max, current: quota.current },
+          error: {
+            code: 'QUOTA_EXCEEDED',
+            message: `숙소 등록 한도(${quota.max}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
+            details: { max: quota.max, current: quota.current },
+          },
         },
         { status: 403 },
       );
@@ -89,10 +92,9 @@ export async function POST(request: NextRequest): Promise<Response> {
     return NextResponse.json(accommodation, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 });
+      return validationErrorResponse(error.issues);
     }
 
-    console.error('숙소 생성 오류:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, '숙소 생성 오류');
   }
 }
