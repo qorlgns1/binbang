@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 
+import { withSentryConfig } from '@sentry/nextjs';
 import bundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
 import path from 'node:path';
@@ -43,4 +44,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(withNextIntl(nextConfig));
+export default withSentryConfig(withBundleAnalyzer(withNextIntl(nextConfig)), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  tunnelRoute: '/monitoring',
+  silent: !process.env.CI,
+  errorHandler: (err) => {
+    console.warn('[Sentry] 소스맵 업로드 실패:', err.message);
+  },
+});
