@@ -16,6 +16,7 @@
     "invalidate-cache": "tsx src/scripts/invalidateCache.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.39.0",
     "@ai-sdk/google": "^3.0.29",
     "@ai-sdk/react": "^3.0.88",
     "@date-fns/tz": "^1.4.1",
