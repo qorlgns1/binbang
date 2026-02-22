@@ -5,4 +5,4 @@ ALTER TABLE "affiliate_preference_audit_logs" ALTER COLUMN "actorUserId" DROP NO
 ALTER TABLE "affiliate_preference_audit_logs" DROP CONSTRAINT "affiliate_preference_audit_logs_actorUserId_fkey";
 
 -- AddForeignKey (SetNull: 사용자 삭제 시 actorUserId를 NULL로 설정)
-ALTER TABLE "affiliate_preference_audit_logs" ADD CONSTRAINT "affiliate_preference_audit_logs_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "affiliate_preference_audit_logs" ADD CONSTRAINT "affiliate_preference_audit_logs_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
