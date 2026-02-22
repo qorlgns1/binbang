@@ -17,6 +17,7 @@ import { useConversationRestore } from '@/hooks/useConversationRestore';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useRateLimitLoginPrompt } from '@/hooks/useRateLimitLoginPrompt';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
+import { ApiError, getUserMessage } from '@/lib/apiError';
 import { isRestoreAutoEnabled } from '@/lib/featureFlags';
 import { useChatSessionStore } from '@/stores/useChatSessionStore';
 import { usePlaceStore } from '@/stores/usePlaceStore';
@@ -58,8 +59,14 @@ export function ChatPanel() {
   });
 
   const isLoading = status !== 'ready';
-  const errorMessage = typeof error?.message === 'string' ? error.message : null;
-  const isRateLimitError = errorMessage != null && isRateLimitErrorMessage(errorMessage);
+  const rawErrorMessage = typeof error?.message === 'string' ? error.message : null;
+  const userErrorMessage = error instanceof Error ? getUserMessage(error) : null;
+  const isRateLimitError =
+    error instanceof ApiError
+      ? error.code === 'RATE_LIMITED'
+      : rawErrorMessage != null && isRateLimitErrorMessage(rawErrorMessage);
+  const rateLimitPromptKey =
+    error instanceof ApiError ? `${error.code}:${String(error.status ?? '')}` : rawErrorMessage;
 
   const { getChatRequestBody, handleSubmit, handleExampleClick } = useChatComposer({
     authStatus,
@@ -73,7 +80,7 @@ export function ChatPanel() {
 
   useRateLimitLoginPrompt({
     authStatus,
-    errorMessage,
+    errorKey: rateLimitPromptKey,
     isRateLimitError,
     onPromptLogin: openLoginModalForRateLimit,
   });
@@ -113,6 +120,7 @@ export function ChatPanel() {
       {error && (
         <ChatPanelErrorBanner
           isRateLimitError={isRateLimitError}
+          message={userErrorMessage}
           showLoginAction={authStatus !== 'authenticated' && isRateLimitError}
           onLogin={openLoginModalForRateLimit}
           onRetry={() => regenerate({ body: getChatRequestBody() })}

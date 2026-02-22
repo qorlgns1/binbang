@@ -4,22 +4,22 @@ import { useEffect, useRef } from 'react';
 
 interface UseRateLimitLoginPromptOptions {
   authStatus: 'authenticated' | 'unauthenticated' | 'loading';
-  errorMessage: string | null;
+  errorKey: string | null;
   isRateLimitError: boolean;
   onPromptLogin: () => void;
 }
 
 export function useRateLimitLoginPrompt({
   authStatus,
-  errorMessage,
+  errorKey,
   isRateLimitError,
   onPromptLogin,
 }: UseRateLimitLoginPromptOptions) {
-  const promptedErrorMessageRef = useRef<string | null>(null);
+  const promptedErrorKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!errorMessage) {
-      promptedErrorMessageRef.current = null;
+    if (!errorKey) {
+      promptedErrorKeyRef.current = null;
       return;
     }
 
@@ -28,11 +28,11 @@ export function useRateLimitLoginPrompt({
       return;
     }
 
-    if (promptedErrorMessageRef.current === errorMessage) {
+    if (promptedErrorKeyRef.current === errorKey) {
       return;
     }
 
     onPromptLogin();
-    promptedErrorMessageRef.current = errorMessage;
-  }, [authStatus, errorMessage, isRateLimitError, onPromptLogin]);
+    promptedErrorKeyRef.current = errorKey;
+  }, [authStatus, errorKey, isRateLimitError, onPromptLogin]);
 }
