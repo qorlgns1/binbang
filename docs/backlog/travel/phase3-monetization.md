@@ -105,51 +105,51 @@ Travel AI Tool (searchAccommodation / searchEsim / ...)
 ### Stage A (지금 바로 진행)
 
 **Awin 기반 제휴 링크 생성**
-- [ ] 카테고리별 광고주 조회 서비스 구현 (`listActiveAdvertisersByCategory(category)`)
-- [ ] Awin Link Builder 클라이언트 구현 (travel 앱용 → `apps/travel/src/lib/api/awin-link-builder.ts`)
+- [x] 카테고리별 광고주 조회 서비스 구현 (`getFirstAdvertiserByCategory(category)`)
+- [x] Awin Link Builder 클라이언트 구현 (travel 앱용 → `apps/travel/src/lib/api/awinLinkBuilder.ts`)
   - `clickref` = `{conversationId}:{productId}` 형식
   - `shorten` 옵션 선택적 지원
-- [ ] 광고주 없는 카테고리에 대한 "준비중" fallback 처리
+- [x] 광고주 없는 카테고리에 대한 "준비중" fallback 처리
 
 **AI Tools (travel)**
-- [ ] `searchAccommodation` 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
+- [x] `searchAccommodation` 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
   - Stage A: `searchPlaces` 호텔 타입 shim + Awin Link Builder 연동
   - 광고주 없으면 `awin_pending:accommodation` provider로 기록
-- [ ] `searchEsim` 도구 추가 (esim 카테고리 광고주 연동)
-- [ ] 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가 (숙소→`searchAccommodation`, eSIM→`searchEsim`)
+- [x] `searchEsim` 도구 추가 (esim 카테고리 광고주 연동)
+- [x] 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가 (숙소→`searchAccommodation`, eSIM→`searchEsim`)
 
 **UI 컴포넌트**
-- [ ] `AccommodationCard` 컴포넌트 생성 (평점, 이미지, "예약하기" CTA)
+- [x] `AccommodationCard` 컴포넌트 생성 (평점, 이미지, "예약하기" CTA)
   - CTA 활성/비활성 이분 처리 (광고주 유무 기준)
   - 가격 필드: Stage A 비노출 + "가격은 제휴 연동 후 제공" 문구
   - "광고/제휴" 라벨 기본 표시
-- [ ] CTA 비활성 시 토스트 + 안내 모달 노출
-- [ ] 제휴 고지 문구 + 비제휴 대안 카드 2개 동시 노출
-- [ ] 비제휴 대안 랭킹 규칙 구현 (rating DESC, reviewCount DESC)
-- [ ] 비제휴 대안 fallback 규칙 구현 (데이터 없는 항목 후순위, 부족분 원본 순서)
-- [ ] `searchPlaces` 호텔 타입 결과를 `AccommodationCard` 데이터로 매핑
+- [x] CTA 비활성 시 토스트 + 안내 모달 노출
+- [x] 제휴 고지 문구 + 비제휴 대안 카드 2개 동시 노출
+- [x] 비제휴 대안 랭킹 규칙 구현 (rating DESC, reviewCount DESC)
+- [x] 비제휴 대안 fallback 규칙 구현 (데이터 없는 항목 후순위, 부족분 원본 순서)
+- [x] `searchPlaces` 호텔 타입 결과를 `AccommodationCard` 데이터로 매핑
 
 **트래킹**
-- [ ] 트래킹 DB/API 구축 (`impression`, `outbound_click`, `cta_attempt` 이벤트)
+- [x] 트래킹 DB/API 구축 (`impression`, `outbound_click`, `cta_attempt` 이벤트)
   - provider 필드: `awin:{advertiserId}` 또는 `awin_pending:{category}`
   - reasonCode: 비활성 시 `no_advertiser_for_category`
-- [ ] 이벤트에 `userTimezone` 저장 (프로필 IANA 우선, 미설정 시 브라우저)
-- [ ] `impression` dedupe (`conversationId + productId + local_day`, 하루 1회)
+- [x] 이벤트에 `userTimezone` 저장 (프로필 IANA 우선, 미설정 시 브라우저)
+- [x] `impression` dedupe (`conversationId + productId + local_day`, 하루 1회)
 
 **캐싱**
-- [ ] Places/Weather/Exchange 캐시 핵심 구축 (Redis + SWR + stale-if-error)
-- [ ] 환율 인기 통화쌍 워밍업 (USD/KRW, USD/JPY, USD/EUR)
+- [x] Places/Weather/Exchange 캐시 핵심 구축 (Redis + SWR + stale-if-error)
+- [x] 환율 인기 통화쌍 워밍업 (USD/KRW, USD/JPY, USD/EUR)
 
 ### Stage B (Agoda 직접 API 수령 후 진행)
 
-- [ ] Agoda API 클라이언트 연결 (`apps/travel/src/lib/api/agoda.ts`)
-- [ ] `searchAccommodation`에서 Agoda provider로 전환 (실시간 가격/가용성)
-- [ ] 가격/통화 실데이터 노출
-- [ ] 제휴 링크 설정 반영 (계정 기본 토글 + 대화별 오버라이드)
-- [ ] `ConversationPreference` 테이블에 대화별 설정 영구 저장
-- [ ] 대화 소유자만 오버라이드 변경 가능하도록 권한 체크
-- [ ] 오버라이드 변경 감사 로그 저장
-- [ ] 관리자 대시보드에 전환율/수익 리포트 연결
+- [x] Agoda API 클라이언트 연결 (`apps/travel/src/lib/api/agoda.ts`)
+- [x] `searchAccommodation`에서 Agoda provider로 전환 (실시간 가격/가용성)
+- [x] 가격/통화 실데이터 노출
+- [x] 제휴 링크 설정 반영 (계정 기본 토글 + 대화별 오버라이드)
+- [x] `ConversationPreference` 테이블에 대화별 설정 영구 저장
+- [x] 대화 소유자만 오버라이드 변경 가능하도록 권한 체크
+- [x] 오버라이드 변경 감사 로그 저장
+- [x] 관리자 대시보드에 전환율/수익 리포트 연결
 
 ## Revenue Model
 
@@ -198,34 +198,34 @@ Awin 트랜잭션 API로 전환 확인 → 레퍼럴 수수료 수익
 
 ### P3-1: Awin 기반 제휴 링크 연동
 
-- [ ] P3-1-T0: 카테고리별 광고주 조회 서비스 구현
+- [x] P3-1-T0: 카테고리별 광고주 조회 서비스 구현
   - `apps/travel/src/services/affiliate-advertiser.service.ts`
-  - `listActiveAdvertisersByCategory(category: AffiliateAdvertiserCategory)`
-  - web API 경유 또는 shared DB 직접 조회
-- [ ] P3-1-T1: Awin Link Builder travel 클라이언트 구현
-  - `apps/travel/src/lib/api/awin-link-builder.ts`
+  - `getFirstAdvertiserByCategory(category: AffiliateAdvertiserCategory)`
+  - shared DB 직접 조회 (prisma)
+- [x] P3-1-T1: Awin Link Builder travel 클라이언트 구현
+  - `apps/travel/src/lib/api/awinLinkBuilder.ts`
   - `generateAffiliateLink({ advertiserId, destinationUrl, clickref, shorten? })`
   - `clickref` = `{conversationId}:{productId}`
   - 실패 시 `null` 반환 (fallback → "준비중" 상태)
-- [ ] P3-1-T2: `searchAccommodation` AI 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
+- [x] P3-1-T2: `searchAccommodation` AI 도구 추가 (`apps/travel/src/lib/ai/tools.ts`)
   - Stage A: `searchPlaces` 호텔 타입 shim → Awin Link Builder 연동
   - 광고주 없으면 `{ provider: 'awin_pending:accommodation', ctaEnabled: false }` 반환
-- [ ] P3-1-T3: `searchEsim` AI 도구 추가 (esim 카테고리 광고주 연동)
-- [ ] P3-1-T4: 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가
-- [ ] P3-1-T5: `AccommodationCard` 컴포넌트 생성
-  - props: `{ hotel, affiliateLink, ctaEnabled, advertiserName }`
+- [x] P3-1-T3: `searchEsim` AI 도구 추가 (esim 카테고리 광고주 연동)
+- [x] P3-1-T4: 시스템 프롬프트에 카테고리별 도구 사용 규칙 추가
+- [x] P3-1-T5: `AccommodationCard` 컴포넌트 생성
+  - props: `{ accommodation, ctaEnabled }`
   - CTA 활성 시: 실링크 연결 + "예약하기" 버튼
   - CTA 비활성 시: 비활성 버튼 + 클릭 시 토스트 + 안내 모달
   - 가격 필드: Stage A 비노출 + "가격은 제휴 연동 후 제공" 문구
   - "광고/제휴" 라벨 기본 표시
-- [ ] P3-1-T5-A: Stage A UI 정책 반영 (가격 비노출 + 준비중 문구 + 토스트/안내 모달)
-- [ ] P3-1-T5-B: Stage B UI 정책 반영 (Agoda 가격/통화 실데이터 노출)
-- [ ] P3-1-T6: Stage A 임시 숙소 소스 구현 (`searchPlaces` 호텔 타입 결과 재사용)
-- [ ] P3-1-T7: 비제휴 대안 2개 병기 구현 (rating DESC, reviewCount DESC, fallback: 원본 순서)
+- [x] P3-1-T5-A: Stage A UI 정책 반영 (가격 비노출 + 준비중 문구 + 토스트/안내 모달)
+- [x] P3-1-T5-B: Stage B UI 정책 반영 (Agoda 가격/통화 실데이터 노출)
+- [x] P3-1-T6: Stage A 임시 숙소 소스 구현 (`searchPlaces` 호텔 타입 결과 재사용)
+- [x] P3-1-T7: 비제휴 대안 2개 병기 구현 (rating DESC, reviewCount DESC, fallback: 원본 순서)
 
 ### P3-2: 레퍼럴 트래킹
 
-- [ ] P3-2-T1: 제휴 이벤트 트래킹 DB 모델 추가
+- [x] P3-2-T1: 제휴 이벤트 트래킹 DB 모델 추가
 
 ```prisma
 model AffiliateEvent {
@@ -250,86 +250,86 @@ model AffiliateEvent {
 }
 ```
 
-- [ ] P3-2-T2: 이벤트 트래킹 API endpoint (`POST /api/affiliate/event`)
-- [ ] P3-2-T3: Stage A 퍼널 지표 정의 (impression → outbound_click 비율, 카테고리별)
-- [ ] P3-2-T4: 관리자 대시보드 - 노출/시도/클릭 기본 통계 (5분 집계 캐시, 카테고리별 필터)
-- [ ] P3-2-T5: Awin Transactions API 연동으로 전환/수익 확인
-- [ ] P3-2-T6: `cta_attempt` 발생 시 `reasonCode=no_advertiser_for_category` 저장 검증
-- [ ] P3-2-T7: `impression` dedupe 구현 (사용자 로컬 day 기준 `conversationId + productId + local_day`)
-- [ ] P3-2-T8: `userTimezone` 파이프라인 검증 (프로필 → 브라우저 fallback → API → DB 저장)
-- [ ] P3-2-T9: `userTimezone` 미수집 fallback 검증 (UTC day 기준 dedupe/집계)
-- [ ] P3-2-T10: 대시보드 시간 표시 로직 검증 (저장 UTC, 렌더링 브라우저 로컬)
-- [ ] P3-2-T11: 타임존 source 우선순위 검증 (프로필 값이 있으면 브라우저 값보다 우선)
-- [ ] P3-2-T12: 대시보드 집계 캐시 TTL 검증 (300초, 만료 후 재집계)
-- [ ] P3-2-T13: Stage A 캐시 무효화 정책 검증 (TTL 만료 기반만, 이벤트 즉시 무효화 없음)
+- [x] P3-2-T2: 이벤트 트래킹 API endpoint (`POST /api/affiliate/event`)
+- [x] P3-2-T3: Stage A 퍼널 지표 정의 (impression → outbound_click 비율, 카테고리별)
+- [x] P3-2-T4: 관리자 대시보드 - 노출/시도/클릭 기본 통계 (5분 집계 캐시, 카테고리별 필터)
+- [x] P3-2-T5: Awin Transactions API 연동으로 전환/수익 확인
+- [x] P3-2-T6: `cta_attempt` 발생 시 `reasonCode=no_advertiser_for_category` 저장 검증
+- [x] P3-2-T7: `impression` dedupe 구현 (사용자 로컬 day 기준 `conversationId + productId + local_day`)
+- [x] P3-2-T8: `userTimezone` 파이프라인 검증 (프로필 → 브라우저 fallback → API → DB 저장)
+- [x] P3-2-T9: `userTimezone` 미수집 fallback 검증 (UTC day 기준 dedupe/집계)
+- [x] P3-2-T10: 대시보드 시간 표시 로직 검증 (저장 UTC, 렌더링 브라우저 로컬)
+- [x] P3-2-T11: 타임존 source 우선순위 검증 (프로필 값이 있으면 브라우저 값보다 우선)
+- [x] P3-2-T12: 대시보드 집계 캐시 TTL 검증 (300초, 만료 후 재집계)
+- [x] P3-2-T13: Stage A 캐시 무효화 정책 검증 (TTL 만료 기반만, 이벤트 즉시 무효화 없음)
 
 ### P3-3: 자연스러운 제휴 링크 삽입
 
-- [ ] P3-3-T1: AI 응답에서 카테고리별 추천 시 Awin 추적 링크가 자연스럽게 표시되도록 프롬프트 조정
-- [ ] P3-3-T2: 제휴 고지 문구 표시 (카드/CTA 인접, "예약/구매 시 제휴 수수료를 받을 수 있음")
-- [ ] P3-3-T3: 제휴 링크 설정 옵션 구현 (Stage B)
+- [x] P3-3-T1: AI 응답에서 카테고리별 추천 시 Awin 추적 링크가 자연스럽게 표시되도록 프롬프트 조정
+- [x] P3-3-T2: 제휴 고지 문구 표시 (카드/CTA 인접, "예약/구매 시 제휴 수수료를 받을 수 있음")
+- [x] P3-3-T3: 제휴 링크 설정 옵션 구현 (Stage B)
   - 계정 기본 토글 (`affiliate_links_enabled`)
   - 대화별 오버라이드 (`conversation_affiliate_override`)
-- [ ] P3-3-T3-A: 대화 설정 저장소 분리 (`ConversationPreference` 테이블)
+- [x] P3-3-T3-A: 대화 설정 저장소 분리 (`ConversationPreference` 테이블)
   - `conversationId` (unique)
   - `affiliateOverride` (`inherit` | `enabled` | `disabled`)
   - `updatedAt`
-- [ ] P3-3-T4: 제휴 링크 없는 일반 검색 결과도 함께 표시 (기본 2개 병기)
-- [ ] P3-3-T5: 비제휴 대안 정렬 기준 고정 (rating DESC, reviewCount DESC)
-- [ ] P3-3-T6: 비제휴 대안 fallback 규칙 적용 (rating/reviewCount 누락 시 원본 순서 보충)
-- [ ] P3-3-T7: Stage A `cta_attempt` UX 표준화 (토스트 + 짧은 안내 모달)
-- [ ] P3-3-T8: 설정 우선순위 규칙 고정 (대화별 오버라이드 > 계정 기본값)
-- [ ] P3-3-T9: 대화별 오버라이드 영속성 검증 (명시 변경 전까지 유지)
-- [ ] P3-3-T10: `ConversationPreference` 조회/업서트 경로 검증 (읽기/쓰기/초기값 `inherit`)
-- [ ] P3-3-T11: 오버라이드 변경 권한 검증 (대화 owner 허용, 비소유자 403)
-- [ ] P3-3-T12: 오버라이드 변경 감사 로그 저장 검증 (`actorUserId`, `changedAt`, `fromValue`, `toValue`, `conversationId`)
-- [ ] P3-3-T13: 감사 로그 보관 정책 적용 (365일 초과 데이터 대상 DB cron 일 1회 hard delete)
-- [ ] P3-3-T14: 정리 배치 검증 (cron 실행 성공/삭제 건수 로깅)
-- [ ] P3-3-T15: 정리 배치 실패 재시도 구현 (최대 3회, exponential backoff)
-- [ ] P3-3-T16: 3회 재시도 실패 시 운영 알림 연동 (Telegram Bot API, `critical/warning` 라우팅)
-- [ ] P3-3-T17: 알림 dedupe 구현 (동일 failure cause 24시간 1회)
-- [ ] P3-3-T18: 복구 알림 구현 (실패 상태 해소 시 1회 발송, 필드: `jobName/failedAt/recoveredAt/retryCount/lastErrorCode`)
-- [ ] P3-3-T19: 복구 알림 payload 스키마 검증 (필수 필드 누락 시 전송 차단 + 로그)
-- [ ] P3-3-T20: Telegram 알림 Markdown 템플릿 구현 (실패/복구 공통 스타일)
-- [ ] P3-3-T21: Markdown 특수문자 이스케이프 처리 검증 (알림 렌더링 깨짐 방지)
-- [ ] P3-3-T22: Telegram 발송 범위 제한 구현 (critical/warning 라우팅)
-- [ ] P3-3-T23: cron 미실행 감지 구현 (마지막 `run_started` 기준으로 `AFFILIATE_AUDIT_PURGE_CRON_MISS_THRESHOLD_MINUTES` 초과 시 알림)
-- [ ] P3-3-T24: `run_started` 타임스탬프 Redis + DB 동시 기록(dual write)
-- [ ] P3-3-T25: `cron_missed` 판단 조회 우선순위 구현 (Redis 우선, 미스 시 DB fallback)
-- [ ] P3-3-T26: `run_started` 저장 성공 조건 구현 (DB 성공 기준, Redis 실패 시 `warning` + Telegram 운영 알림)
-- [ ] P3-3-T27: 알림 심각도 매핑 검증 (`redis_write_failed=warning`)
-- [ ] P3-3-T28: Telegram 채널/스레드 라우팅 검증 (`critical` vs `warning`)
+- [x] P3-3-T4: 제휴 링크 없는 일반 검색 결과도 함께 표시 (기본 2개 병기)
+- [x] P3-3-T5: 비제휴 대안 정렬 기준 고정 (rating DESC, reviewCount DESC)
+- [x] P3-3-T6: 비제휴 대안 fallback 규칙 적용 (rating/reviewCount 누락 시 원본 순서 보충)
+- [x] P3-3-T7: Stage A `cta_attempt` UX 표준화 (토스트 + 짧은 안내 모달)
+- [x] P3-3-T8: 설정 우선순위 규칙 고정 (대화별 오버라이드 > 계정 기본값)
+- [x] P3-3-T9: 대화별 오버라이드 영속성 검증 (명시 변경 전까지 유지)
+- [x] P3-3-T10: `ConversationPreference` 조회/업서트 경로 검증 (읽기/쓰기/초기값 `inherit`)
+- [x] P3-3-T11: 오버라이드 변경 권한 검증 (대화 owner 허용, 비소유자 403)
+- [x] P3-3-T12: 오버라이드 변경 감사 로그 저장 검증 (`actorUserId`, `changedAt`, `fromValue`, `toValue`, `conversationId`)
+- [x] P3-3-T13: 감사 로그 보관 정책 적용 (365일 초과 데이터 대상 DB cron 일 1회 hard delete)
+- [x] P3-3-T14: 정리 배치 검증 (cron 실행 성공/삭제 건수 로깅)
+- [x] P3-3-T15: 정리 배치 실패 재시도 구현 (최대 3회, exponential backoff)
+- [x] P3-3-T16: 3회 재시도 실패 시 운영 알림 연동 (Telegram Bot API, `critical/warning` 라우팅)
+- [x] P3-3-T17: 알림 dedupe 구현 (동일 failure cause 24시간 1회)
+- [x] P3-3-T18: 복구 알림 구현 (실패 상태 해소 시 1회 발송, 필드: `jobName/failedAt/recoveredAt/retryCount/lastErrorCode`)
+- [x] P3-3-T19: 복구 알림 payload 스키마 검증 (필수 필드 누락 시 전송 차단 + 로그)
+- [x] P3-3-T20: Telegram 알림 Markdown 템플릿 구현 (실패/복구 공통 스타일)
+- [x] P3-3-T21: Markdown 특수문자 이스케이프 처리 검증 (알림 렌더링 깨짐 방지)
+- [x] P3-3-T22: Telegram 발송 범위 제한 구현 (critical/warning 라우팅)
+- [x] P3-3-T23: cron 미실행 감지 구현 (마지막 `run_started` 기준으로 `AFFILIATE_AUDIT_PURGE_CRON_MISS_THRESHOLD_MINUTES` 초과 시 알림)
+- [x] P3-3-T24: `run_started` 타임스탬프 Redis + DB 동시 기록(dual write)
+- [x] P3-3-T25: `cron_missed` 판단 조회 우선순위 구현 (Redis 우선, 미스 시 DB fallback)
+- [x] P3-3-T26: `run_started` 저장 성공 조건 구현 (DB 성공 기준, Redis 실패 시 `warning` + Telegram 운영 알림)
+- [x] P3-3-T27: 알림 심각도 매핑 검증 (`redis_write_failed=warning`)
+- [x] P3-3-T28: Telegram 채널/스레드 라우팅 검증 (`critical` vs `warning`)
 
 ### P3-4: Google Places API 캐싱
 
 **현재 파일**: `apps/travel/src/lib/api/places.ts`
 
-- [ ] P3-4-T1: Places API 응답 캐시 레이어 구현 (Cache-Aside + SWR)
+- [x] P3-4-T1: Places API 응답 캐시 레이어 구현 (Cache-Aside + SWR)
   - 캐시 키: `places:{normalized_query_hash}`
   - TTL: 24시간 + TTL jitter(±10%)
-- [ ] P3-4-T2: 캐시 저장소 Redis 단일 운영으로 고정 (docker-compose redis 재사용)
-- [ ] P3-4-T3: 캐시 히트/미스/스테일 반환 로깅
-- [ ] P3-4-T4: Stampede 방지 lock (동일 key 재계산 단일화)
-- [ ] P3-4-T5: stale-if-error 정책 (외부 API 실패 시 최근 stale 데이터 반환)
-- [ ] P3-4-T6: 캐시 무효화 전략 (수동 + TTL 기반)
+- [x] P3-4-T2: 캐시 저장소 Redis 단일 운영으로 고정 (docker-compose redis 재사용)
+- [x] P3-4-T3: 캐시 히트/미스/스테일 반환 로깅
+- [x] P3-4-T4: Stampede 방지 lock (동일 key 재계산 단일화)
+- [x] P3-4-T5: stale-if-error 정책 (외부 API 실패 시 최근 stale 데이터 반환)
+- [x] P3-4-T6: 캐시 무효화 전략 (수동 + TTL 기반)
 
 ### P3-5: 날씨/환율 데이터 캐싱
 
 **현재 파일**: `apps/travel/src/lib/api/weather.ts`, `exchangeRate.ts`
 
-- [ ] P3-5-T1: 환율 데이터 캐싱 (TTL: 1시간)
-- [ ] P3-5-T2: 날씨 히스토리 데이터 캐싱 (TTL: 7일)
-- [ ] P3-5-T3: SWR + stale-if-error 공통 정책 적용 (백엔드 캐시 레이어 공용)
-- [ ] P3-5-T4: 캐시 워밍업 - 인기 통화쌍 사전 로딩 (USD/KRW, USD/JPY, USD/EUR)
+- [x] P3-5-T1: 환율 데이터 캐싱 (TTL: 1시간)
+- [x] P3-5-T2: 날씨 히스토리 데이터 캐싱 (TTL: 7일)
+- [x] P3-5-T3: SWR + stale-if-error 공통 정책 적용 (백엔드 캐시 레이어 공용)
+- [x] P3-5-T4: 캐시 워밍업 - 인기 통화쌍 사전 로딩 (USD/KRW, USD/JPY, USD/EUR)
 
 ### P3-6: 인기 여행지 사전 캐싱 (Stage B 이후)
 
-- [ ] P3-6-T1: 인기 여행지 목록 정의 (Tokyo, Seoul, Bangkok, Paris 등 Top 30)
-- [ ] P3-6-T2: Cron job으로 인기 여행지 데이터 주기적 사전 로딩
+- [x] P3-6-T1: 인기 여행지 목록 정의 (Tokyo, Seoul, Bangkok, Paris 등 Top 30)
+- [x] P3-6-T2: Cron job으로 인기 여행지 데이터 주기적 사전 로딩
   - Places: 주요 관광지, 호텔, 식당
   - 날씨: 월별 히스토리
   - 환율: 해당 국가 통화
-- [ ] P3-6-T3: 사전 캐시된 데이터가 있으면 API 호출 스킵 로직
+- [x] P3-6-T3: 사전 캐시된 데이터가 있으면 API 호출 스킵 로직
 
 ## Cost Impact Analysis
 
@@ -345,41 +345,41 @@ model AffiliateEvent {
 
 ### Stage A
 
-- [ ] 숙소 관련 질문 시 `AccommodationCard` 표시
+- [x] 숙소 관련 질문 시 `AccommodationCard` 표시
   - DB에 accommodation 광고주 존재 시: CTA 활성 + Awin 추적 링크 연결
   - DB에 광고주 없을 시: CTA 비활성 + "제휴 링크 준비중" 안내 + "광고/제휴" 라벨
-- [ ] eSIM 관련 질문 시 DB에서 esim 카테고리 광고주 조회 후 Awin 링크 생성
-- [ ] 카드 데이터가 `searchPlaces` 호텔 타입 결과에서 안정적으로 매핑되어 표시
-- [ ] 가격 필드는 숨김 처리 + "가격은 제휴 연동 후 제공" 문구 노출
-- [ ] 제휴 고지 문구와 비제휴 대안 카드/링크 2개가 함께 노출
-- [ ] 비제휴 대안 2개가 평점/리뷰 수 기준 상위 결과로 선택되어 노출
-- [ ] 평점/리뷰 데이터 부족 시 fallback 규칙으로 비제휴 대안 2개가 유지됨
-- [ ] 비활성 CTA 클릭 시 토스트 + 안내 모달 노출 + `cta_attempt` 이벤트 기록
-- [ ] `impression`, `cta_attempt`, `outbound_click` 이벤트가 DB에 정상 기록
+- [x] eSIM 관련 질문 시 DB에서 esim 카테고리 광고주 조회 후 Awin 링크 생성
+- [x] 카드 데이터가 `searchPlaces` 호텔 타입 결과에서 안정적으로 매핑되어 표시
+- [x] 가격 필드는 숨김 처리 + "가격은 제휴 연동 후 제공" 문구 노출
+- [x] 제휴 고지 문구와 비제휴 대안 카드/링크 2개가 함께 노출
+- [x] 비제휴 대안 2개가 평점/리뷰 수 기준 상위 결과로 선택되어 노출
+- [x] 평점/리뷰 데이터 부족 시 fallback 규칙으로 비제휴 대안 2개가 유지됨
+- [x] 비활성 CTA 클릭 시 토스트 + 안내 모달 노출 + `cta_attempt` 이벤트 기록
+- [x] `impression`, `cta_attempt`, `outbound_click` 이벤트가 DB에 정상 기록
   - 활성 CTA: `provider=awin:{advertiserId}`
   - 비활성 CTA: `provider=awin_pending:{category}`
-- [ ] 동일 `conversationId + productId`의 `impression`이 로컬 날짜 기준 하루 1회만 기록
-- [ ] `cta_attempt` 이벤트에 `reasonCode=no_advertiser_for_category`가 저장됨
-- [ ] 이벤트별 `userTimezone`가 DB에 저장됨 (프로필 우선, 미설정 시 브라우저 fallback)
-- [ ] `userTimezone` 미수집 이벤트는 UTC day 기준으로 dedupe/집계됨
-- [ ] 대시보드 통계가 5분 캐시 기준으로 제공되고 만료 시 재집계됨
-- [ ] 동일 Places 검색 시 두 번째부터 캐시 응답
-- [ ] 환율/날씨 캐시 정상 동작 및 TTL 만료 후 갱신
+- [x] 동일 `conversationId + productId`의 `impression`이 로컬 날짜 기준 하루 1회만 기록
+- [x] `cta_attempt` 이벤트에 `reasonCode=no_advertiser_for_category`가 저장됨
+- [x] 이벤트별 `userTimezone`가 DB에 저장됨 (프로필 우선, 미설정 시 브라우저 fallback)
+- [x] `userTimezone` 미수집 이벤트는 UTC day 기준으로 dedupe/집계됨
+- [x] 대시보드 통계가 5분 캐시 기준으로 제공되고 만료 시 재집계됨
+- [x] 동일 Places 검색 시 두 번째부터 캐시 응답
+- [x] 환율/날씨 캐시 정상 동작 및 TTL 만료 후 갱신
 
 ### Stage B
 
-- [ ] 숙소 관련 질문 시 Agoda 제휴 링크가 포함된 카드 표시
-- [ ] 숙소 카드에 Agoda 가격/통화 정보가 정확히 표시
-- [ ] 제휴 고지 문구가 링크 인접 위치에 표시되고 비제휴 대안 2개 함께 제공
-- [ ] 계정 기본 토글 + 대화별 오버라이드 설정이 동작하고 대화별 설정이 우선 적용됨
-- [ ] 대화별 오버라이드 값이 대화 단위로 영구 유지되고 명시 변경 시에만 갱신됨
-- [ ] 대화 소유자만 오버라이드를 변경할 수 있고, 비소유자 요청은 403으로 차단됨
-- [ ] 오버라이드 변경 시 기본 감사 로그가 누락 없이 저장됨
-- [ ] 감사 로그가 1년 보관 정책을 따르고 365일 초과 데이터가 DB cron으로 hard delete됨
-- [ ] 정리 배치 실패 시 즉시 3회 재시도되고 최종 실패 시 Telegram 알림 발송됨
-- [ ] 동일 원인 실패 알림은 24시간 내 1회로 제한되고 복구 시 1회 알림 발송됨
-- [ ] Telegram 알림이 Markdown 템플릿으로 가독성 있게 렌더링됨
-- [ ] Agoda provider 기준 전환 리포트가 대시보드에서 조회 가능
+- [x] 숙소 관련 질문 시 Agoda 제휴 링크가 포함된 카드 표시
+- [x] 숙소 카드에 Agoda 가격/통화 정보가 정확히 표시
+- [x] 제휴 고지 문구가 링크 인접 위치에 표시되고 비제휴 대안 2개 함께 제공
+- [x] 계정 기본 토글 + 대화별 오버라이드 설정이 동작하고 대화별 설정이 우선 적용됨
+- [x] 대화별 오버라이드 값이 대화 단위로 영구 유지되고 명시 변경 시에만 갱신됨
+- [x] 대화 소유자만 오버라이드를 변경할 수 있고, 비소유자 요청은 403으로 차단됨
+- [x] 오버라이드 변경 시 기본 감사 로그가 누락 없이 저장됨
+- [x] 감사 로그가 1년 보관 정책을 따르고 365일 초과 데이터가 DB cron으로 hard delete됨
+- [x] 정리 배치 실패 시 즉시 3회 재시도되고 최종 실패 시 Telegram 알림 발송됨
+- [x] 동일 원인 실패 알림은 24시간 내 1회로 제한되고 복구 시 1회 알림 발송됨
+- [x] Telegram 알림이 Markdown 템플릿으로 가독성 있게 렌더링됨
+- [x] Agoda provider 기준 전환 리포트가 대시보드에서 조회 가능
 
 ## Environment Variables (New)
 
@@ -394,6 +394,7 @@ AWIN_LINK_BUILDER_SHORTEN=false  # true면 단축 URL 포함
 # Agoda (Stage B)
 AGODA_AFFILIATE_API_KEY=your-key
 AGODA_AFFILIATE_SITE_ID=your-site-id
+AGODA_AFFILIATE_API_URL=https://affiliateapi7643.agoda.com/affiliateservice/lt_v1
 
 # Cache
 CACHE_PROVIDER=redis
@@ -404,6 +405,7 @@ AFFILIATE_LINK_DEFAULT_ENABLED=true
 # Audit Log (Stage B)
 AFFILIATE_AUDIT_RETENTION_DAYS=365
 AFFILIATE_AUDIT_PURGE_CRON="10 3 * * *"
+AFFILIATE_AUDIT_PURGE_CRON_WATCHDOG="*/15 * * * *"
 AFFILIATE_AUDIT_PURGE_RETRY_MAX=3
 AFFILIATE_AUDIT_PURGE_RETRY_BACKOFF_SECONDS=10
 AFFILIATE_AUDIT_ALERT_TELEGRAM_BOT_TOKEN=your-bot-token
@@ -415,6 +417,10 @@ AFFILIATE_AUDIT_ALERT_DEDUPE_WINDOW_SECONDS=86400
 AFFILIATE_AUDIT_ALERT_RECOVERY_ENABLED=true
 AFFILIATE_AUDIT_PURGE_CRON_MISS_THRESHOLD_MINUTES=90
 AFFILIATE_RUN_STARTED_REDIS_KEY_PREFIX=affiliate:audit:run_started
+TRAVEL_INTERNAL_URL=http://localhost:3300
+TRAVEL_INTERNAL_CRON_TOKEN=replace-with-random-secret
+TRAVEL_CACHE_PREWARM_CRON="20 */6 * * *"
+TRAVEL_CACHE_PREWARM_TIMEOUT_MS=120000
 ```
 
 ## Technical Notes

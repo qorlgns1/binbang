@@ -18,9 +18,7 @@ function createFallbackUuid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
     crypto.getRandomValues(bytes);
   } else {
-    for (let i = 0; i < bytes.length; i += 1) {
-      bytes[i] = Math.floor(Math.random() * 256);
-    }
+    throw new Error('Secure random (crypto.getRandomValues) is required for session ID');
   }
 
   // RFC 4122 v4 variant bits

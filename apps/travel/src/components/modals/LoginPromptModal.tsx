@@ -10,7 +10,7 @@ interface LoginPromptModalProps {
   trigger: 'save' | 'history' | 'bookmark' | 'limit';
 }
 
-const TRIGGER_MESSAGES = {
+export const TRIGGER_MESSAGES = {
   save: {
     title: '로그인하고 대화를 저장하세요',
     description: '대화 내역을 저장하고 언제든 다시 보려면 로그인이 필요해요.',

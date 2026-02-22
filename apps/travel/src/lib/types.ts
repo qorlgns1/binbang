@@ -43,3 +43,60 @@ export interface MapEntity {
   type: 'place' | 'restaurant' | 'accommodation' | 'attraction';
   photoUrl?: string;
 }
+
+export interface AccommodationEntity {
+  placeId: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  rating?: number;
+  userRatingsTotal?: number;
+  types: string[];
+  photoUrl?: string;
+  /** Awin 추적 링크. 광고주 미등록 또는 링크 생성 실패 시 undefined */
+  affiliateLink?: string;
+  /** true = 광고/제휴 배지 표시 대상 */
+  isAffiliate: boolean;
+  /** 실시간 가격 (Stage B: Agoda API) */
+  priceAmount?: number;
+  /** 실시간 가격 통화 코드 (예: KRW, USD) */
+  priceCurrency?: string;
+  /** 실시간 가용성 */
+  isAvailable?: boolean;
+  /** 제휴 제공자 이름 (isAffiliate=true 일 때만 존재) */
+  advertiserName?: string;
+}
+
+export interface SearchAccommodationResult {
+  /** 제휴 카드 1개. 검색 결과가 없으면 null */
+  affiliate: AccommodationEntity | null;
+  /** 비제휴 대안 (최대 2개, rating DESC 정렬) */
+  alternatives: AccommodationEntity[];
+  /** true = affiliateLink가 정상 생성됨 */
+  ctaEnabled: boolean;
+  /** "agoda_direct" | "agoda_pending:accommodation" | "agoda_disabled:accommodation" */
+  provider: string;
+}
+
+export interface EsimEntity {
+  productId: string;
+  name: string;
+  description: string;
+  coverage: string;
+  /** Awin 추적 링크. 광고주 미등록 또는 링크 생성 실패 시 undefined */
+  affiliateLink?: string;
+  /** true = 광고/제휴 배지 표시 대상 */
+  isAffiliate: boolean;
+  /** Awin 광고주 이름 (isAffiliate=true 일 때만 존재) */
+  advertiserName?: string;
+}
+
+export interface SearchEsimResult {
+  /** eSIM 제휴 카드 1개 */
+  primary: EsimEntity | null;
+  /** true = affiliateLink가 정상 생성됨 */
+  ctaEnabled: boolean;
+  /** "awin:{advertiserId}" | "awin_pending:esim" */
+  provider: string;
+}

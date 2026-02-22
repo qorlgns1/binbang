@@ -6,8 +6,11 @@ import { z } from 'zod';
 import { applyContextWindow } from '@/lib/ai/contextWindow';
 import { geminiFlashLite } from '@/lib/ai/model';
 import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
-import { travelTools } from '@/lib/ai/tools';
+import { createTravelTools } from '@/lib/ai/tools';
+import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
+import { jsonError } from '@/lib/httpResponse';
+import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { getConversation, saveConversationMessages } from '@/services/conversation.service';
 import {
@@ -29,22 +32,10 @@ const postBodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const parsed = postBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten() }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const requestId = resolveRequestId(req);
+  const parsedBody = await parseJsonBody(req, postBodySchema, { errorExtra: { requestId } });
+  if ('response' in parsedBody) {
+    return parsedBody.response;
   }
 
   const {
@@ -52,7 +43,7 @@ export async function POST(req: Request) {
     sessionId: clientSessionId,
     conversationId: clientConversationId,
     id: chatId,
-  } = parsed.data as {
+  } = parsedBody.data as {
     messages: UIMessage[];
     sessionId?: string;
     conversationId?: string;
@@ -75,10 +66,7 @@ export async function POST(req: Request) {
       const isOwner =
         conversation.userId != null ? session?.user?.id === conversation.userId : conversation.sessionId === sessionId;
       if (!isOwner) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 403,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return jsonError(403, 'Unauthorized', { requestId });
       }
     }
   }
@@ -91,10 +79,7 @@ export async function POST(req: Request) {
       .join('') ?? '';
 
   if (!lastUserText.trim()) {
-    return new Response(JSON.stringify({ error: 'No user message found' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(400, 'No user message found', { requestId });
   }
 
   // Rate limiting 확인
@@ -109,27 +94,30 @@ export async function POST(req: Request) {
     try {
       rateCheck = await checkGuestRateLimitPersistent(sessionId, limits, normalizedConversationId);
     } catch (error) {
-      console.error('Guest persistent rate-limit check failed; falling back to in-memory check:', error);
+      console.error('Guest persistent rate-limit check failed; falling back to in-memory check', {
+        requestId,
+        sessionId,
+        conversationId: normalizedConversationId,
+        error,
+      });
       rateCheck = await checkRateLimit(rateLimitKey, limits, normalizedConversationId);
     }
   }
 
   if (!rateCheck.allowed) {
-    return new Response(JSON.stringify({ error: 'Rate limit exceeded', reason: rateCheck.reason }), {
-      status: 429,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonError(429, 'Rate limit exceeded', { reason: rateCheck.reason, requestId });
   }
 
   const rawModelMessages = await convertToModelMessages(messages);
   const windowSize = Number.parseInt(process.env.CONTEXT_WINDOW_SIZE ?? '10', 10);
   const modelMessages = applyContextWindow(rawModelMessages, windowSize);
+  const tools = createTravelTools({ conversationId: normalizedConversationId, userId: session?.user?.id });
 
   const result = streamText({
     model: geminiFlashLite,
     system: TRAVEL_SYSTEM_PROMPT,
     messages: modelMessages,
-    tools: travelTools,
+    tools,
     stopWhen: stepCountIs(5),
     onFinish: async ({ text, toolCalls, toolResults }) => {
       try {
@@ -148,7 +136,13 @@ export async function POST(req: Request) {
           incrementCount(rateLimitKey, result.conversationId, result.isNewConversation);
         }
       } catch (error) {
-        console.error('Failed to save conversation:', error);
+        console.error('Failed to save conversation', {
+          requestId,
+          sessionId,
+          conversationId: normalizedConversationId,
+          userId: session?.user?.id,
+          error,
+        });
       }
     },
   });
