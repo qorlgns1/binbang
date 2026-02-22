@@ -66,7 +66,11 @@ async function main() {
 
   const key = readArg(args, '--key');
   const pattern = readArg(args, '--pattern');
+  const hasTargetFlag = args.some((arg) => arg === '--target' || arg.startsWith('--target='));
   const targetArg = readArg(args, '--target');
+  if (hasTargetFlag && targetArg === null) {
+    throw new Error('--target requires a value: all|places|weather|exchange');
+  }
   const targetInput = (targetArg ?? 'all').toLowerCase();
 
   const modeCount = Number(Boolean(key)) + Number(Boolean(pattern)) + Number(targetArg != null);

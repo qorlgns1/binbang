@@ -898,13 +898,13 @@ model ConversationPreference {
 model AffiliatePreferenceAuditLog {
   id             String                      @id @default(cuid())
   conversationId String
-  actorUserId    String
+  actorUserId    String?
   fromValue      ConversationAffiliateOverride
   toValue        ConversationAffiliateOverride
   changedAt      DateTime                    @default(now())
 
   conversation TravelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  actorUser    User               @relation("AffiliatePreferenceAuditLogActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  actorUser    User?              @relation("AffiliatePreferenceAuditLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([conversationId, changedAt])
   @@index([changedAt])

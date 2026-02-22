@@ -9,9 +9,11 @@ async function resolvePublisherId(token: string): Promise<number | null> {
   // AWIN_PUBLISHER_ID 환경변수 우선 사용
   const envId = process.env.AWIN_PUBLISHER_ID?.trim();
   if (envId) {
-    const parsed = Number.parseInt(envId, 10);
-    cachedPublisherId = Number.isNaN(parsed) ? null : parsed;
-    return cachedPublisherId;
+    if (/^\d+$/.test(envId)) {
+      cachedPublisherId = Number(envId);
+      return cachedPublisherId;
+    }
+    // 형식이 잘못된 경우에는 캐시하지 않고 /accounts 조회로 진행
   }
 
   // 없으면 /accounts API로 동적 조회

@@ -51,14 +51,15 @@ export function HistoryConversationItem({
         }
       }}
       onKeyDown={(e) => {
+        if (isEditing) {
+          return;
+        }
         if (e.key !== 'Enter' && e.key !== ' ') {
           return;
         }
 
         e.preventDefault();
-        if (!isEditing) {
-          onSelect(conversation.id);
-        }
+        onSelect(conversation.id);
       }}
     >
       <div className='flex items-start justify-between gap-2'>

@@ -134,11 +134,10 @@ function mapCandidateToAccommodation(item: unknown, siteId: string): AgodaAccomm
     'lowestPrice',
   ]);
   const priceCurrency = firstString(item, ['currency', 'currencyCode', 'price.currency', 'pricing.currency']);
+  const statusStr = firstString(item, ['status']);
   const availability =
     firstBoolean(item, ['isAvailable', 'available', 'status', 'availability.status']) ??
-    !String(firstString(item, ['status']) ?? '')
-      .toLowerCase()
-      .includes('sold');
+    (statusStr != null ? !statusStr.toLowerCase().includes('sold') : false);
 
   return {
     hotelId,
