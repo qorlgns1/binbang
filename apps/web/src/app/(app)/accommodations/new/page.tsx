@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QuotaExceededError, useCreateAccommodation } from '@/hooks/useCreateAccommodation';
+import { useCreateAccommodation } from '@/hooks/useCreateAccommodation';
+import { ApiError, getUserMessage } from '@/lib/apiError';
 import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
@@ -131,10 +132,14 @@ export default function NewAccommodationPage(): React.ReactElement {
         <CardContent>
           {(createMutation.error || dateError) && (
             <Alert variant='destructive' className='mb-6'>
-              <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
+              <AlertTitle>
+                {createMutation.error instanceof ApiError && createMutation.error.code === 'QUOTA_EXCEEDED'
+                  ? '숙소 한도 초과'
+                  : '오류'}
+              </AlertTitle>
               <AlertDescription>
-                <p>{dateError || createMutation.error?.message}</p>
-                {createMutation.error instanceof QuotaExceededError && (
+                <p>{dateError || (createMutation.error ? getUserMessage(createMutation.error) : '')}</p>
+                {createMutation.error instanceof ApiError && createMutation.error.code === 'QUOTA_EXCEEDED' && (
                   <Button asChild variant='outline' size='sm' className='mt-3'>
                     <Link href='/pricing'>플랜 업그레이드</Link>
                   </Button>

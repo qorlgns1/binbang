@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import type { Platform } from '@workspace/db/enums';
 import { useInvalidateSelectorCache } from '@/hooks/useSelectors';
+import { getUserMessage } from '@/lib/apiError';
 
 import { PatternList } from './PatternList';
 import { SelectorHistory } from './SelectorHistory';
@@ -30,7 +31,7 @@ export function SelectorManager() {
         alert(`캐시 무효화 완료\n${apiMsg}\n${workerMsg}`);
       },
       onError: (error) => {
-        alert(`캐시 무효화 실패: ${error.message}`);
+        alert(`캐시 무효화 실패: ${getUserMessage(error)}`);
       },
     });
   };

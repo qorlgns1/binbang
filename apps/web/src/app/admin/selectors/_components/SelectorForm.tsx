@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { useCreateSelector, useUpdateSelector } from '@/hooks/useSelectors';
+import { getUserMessage } from '@/lib/apiError';
 import type { PlatformSelectorItem } from '@/types/admin';
 
 interface SelectorFormProps {
@@ -50,7 +51,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(error.message),
+          onError: (error) => alert(getUserMessage(error)),
         },
       );
     } else {
@@ -66,7 +67,7 @@ export function SelectorForm({ platform, selector, onClose }: SelectorFormProps)
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(error.message),
+          onError: (error) => alert(getUserMessage(error)),
         },
       );
     }

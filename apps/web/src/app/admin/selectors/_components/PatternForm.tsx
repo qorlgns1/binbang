@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import type { PatternType, Platform } from '@workspace/db/enums';
 import { useCreatePattern, useUpdatePattern } from '@/hooks/usePatterns';
+import { getUserMessage } from '@/lib/apiError';
 import type { PlatformPatternItem } from '@/types/admin';
 
 interface PatternFormProps {
@@ -40,7 +41,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(error.message),
+          onError: (error) => alert(getUserMessage(error)),
         },
       );
     } else {
@@ -54,7 +55,7 @@ export function PatternForm({ platform, pattern, onClose }: PatternFormProps) {
         },
         {
           onSuccess: () => onClose(),
-          onError: (error) => alert(error.message),
+          onError: (error) => alert(getUserMessage(error)),
         },
       );
     }

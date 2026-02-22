@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccommodation } from '@/hooks/useAccommodation';
 import { useUpdateAccommodation } from '@/hooks/useUpdateAccommodation';
+import { getUserMessage } from '@/lib/apiError';
 import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
@@ -106,7 +107,11 @@ export default function EditAccommodationPage(): React.ReactElement {
     );
   }
 
-  const errorMessage = dateError || fetchError?.message || updateMutation.error?.message || '';
+  const errorMessage =
+    dateError ||
+    (fetchError ? getUserMessage(fetchError) : null) ||
+    (updateMutation.error ? getUserMessage(updateMutation.error) : null) ||
+    '';
 
   if (fetching) {
     return (

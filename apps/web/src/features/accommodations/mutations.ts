@@ -14,16 +14,6 @@ import type { Accommodation, CreateAccommodationInput, UpdateAccommodationInput 
 // Types
 // ============================================================================
 
-export class QuotaExceededError extends Error {
-  quota: { max: number; current: number };
-
-  constructor(message: string, quota: { max: number; current: number }) {
-    super(message);
-    this.name = 'QuotaExceededError';
-    this.quota = quota;
-  }
-}
-
 interface UpdateAccommodationVariables {
   id: string;
   data: UpdateAccommodationInput;
@@ -54,12 +44,7 @@ async function createAccommodation(input: CreateAccommodationInput): Promise<Acc
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const apiError = await parseApiError(res, '숙소 추가에 실패했습니다');
-    if (apiError.code === 'QUOTA_EXCEEDED') {
-      const details = apiError.details as { max: number; current: number } | undefined;
-      throw new QuotaExceededError(apiError.message, details ?? { max: 0, current: 0 });
-    }
-    throw apiError;
+    throw await parseApiError(res, '숙소 추가에 실패했습니다');
   }
   return res.json();
 }

@@ -3,6 +3,25 @@ import type { ErrorResponseBody } from '@workspace/shared/errors';
 
 export { ApiError } from '@workspace/shared/errors';
 
+const ERROR_MESSAGES: Record<string, string> = {
+  UNAUTHORIZED: '로그인이 필요합니다',
+  FORBIDDEN: '접근 권한이 없습니다',
+  NOT_FOUND: '요청한 항목을 찾을 수 없습니다',
+  CONFLICT: '이미 존재하는 항목입니다',
+  QUOTA_EXCEEDED: '플랜 한도에 도달했습니다',
+  RATE_LIMITED: '잠시 후 다시 시도해 주세요',
+  VALIDATION_ERROR: '입력값을 확인해 주세요',
+  BAD_REQUEST: '잘못된 요청입니다',
+  INTERNAL_SERVER_ERROR: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요',
+};
+
+export function getUserMessage(error: Error): string {
+  if (error instanceof ApiError) {
+    return ERROR_MESSAGES[error.code] ?? '오류가 발생했습니다';
+  }
+  return '오류가 발생했습니다';
+}
+
 /**
  * `!res.ok` 응답을 `ApiError`로 파싱합니다.
  *

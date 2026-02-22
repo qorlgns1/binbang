@@ -17,6 +17,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirmPaymentMutation } from '@/features/admin/cases';
+import { getUserMessage } from '@/lib/apiError';
 
 import { formatDateTime } from './formatDateTime';
 
@@ -86,7 +87,7 @@ export function PaymentConfirmButton({ caseId, currentStatus, paymentConfirmedAt
           />
         </div>
 
-        {mutation.isError && <p className='text-sm text-destructive'>{mutation.error.message}</p>}
+        {mutation.isError && <p className='text-sm text-destructive'>{getUserMessage(mutation.error)}</p>}
 
         <DialogFooter>
           <Button variant='outline' onClick={() => setOpen(false)}>

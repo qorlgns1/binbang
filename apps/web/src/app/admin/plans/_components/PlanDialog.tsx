@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { QuotaKey } from '@workspace/db/enums';
 import { type AdminPlanInfo, useCreatePlan, useUpdatePlan } from '@/hooks/useAdminPlans';
+import { getUserMessage } from '@/lib/apiError';
 
 interface Props {
   open: boolean;
@@ -104,7 +105,7 @@ export function PlanDialog({ open, onOpenChange, plan }: Props) {
         <form onSubmit={handleSubmit} className='space-y-4'>
           {error && (
             <Alert variant='destructive'>
-              <AlertDescription>{error.message}</AlertDescription>
+              <AlertDescription>{getUserMessage(error)}</AlertDescription>
             </Alert>
           )}
 

@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import type { AffiliateCategoryFilter } from '@/types/admin';
 
+import { getUserMessage } from '@/lib/apiError';
 import { useAffiliateFunnelQuery } from './_hooks/useAffiliateFunnelQuery';
 import { ClickKpiCards } from './_components/ClickKpiCards';
 import { ConversionMatrix } from './_components/ConversionMatrix';
@@ -29,10 +30,10 @@ export default function FunnelPage() {
   const affiliateQuery = useAffiliateFunnelQuery({ ...filter, category: affiliateCategory });
   const isPending = query.isPending || clickQuery.isPending || growthQuery.isPending || affiliateQuery.isPending;
   const errorMessages = [
-    query.isError ? query.error.message : null,
-    clickQuery.isError ? clickQuery.error.message : null,
-    growthQuery.isError ? growthQuery.error.message : null,
-    affiliateQuery.isError ? affiliateQuery.error.message : null,
+    query.isError ? getUserMessage(query.error) : null,
+    clickQuery.isError ? getUserMessage(clickQuery.error) : null,
+    growthQuery.isError ? getUserMessage(growthQuery.error) : null,
+    affiliateQuery.isError ? getUserMessage(affiliateQuery.error) : null,
   ].filter((value): value is string => Boolean(value));
   const errorMessage = errorMessages.length > 0 ? errorMessages.join('; ') : null;
 

@@ -17,7 +17,6 @@ export {
 } from '@/features/accommodations/queries';
 
 export {
-  QuotaExceededError,
   useCreateAccommodationMutation,
   useCreateAccommodationMutation as useCreateAccommodation,
   useDeleteAccommodationMutation,
