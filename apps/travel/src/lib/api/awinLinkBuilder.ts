@@ -22,6 +22,10 @@ async function resolvePublisherId(token: string): Promise<number | null> {
       next: { revalidate: 0 },
     });
     if (!res.ok) {
+      if (res.status >= 500) {
+        // 일시적 서버 오류는 캐시하지 않음 - 다음 요청에서 재시도 가능
+        return null;
+      }
       cachedPublisherId = null;
       return null;
     }
@@ -30,7 +34,7 @@ async function resolvePublisherId(token: string): Promise<number | null> {
     cachedPublisherId = publisher?.accountId ?? null;
     return cachedPublisherId;
   } catch {
-    cachedPublisherId = null;
+    // 네트워크 오류는 캐시하지 않음 - 다음 요청에서 재시도 가능
     return null;
   }
 }

@@ -3,11 +3,11 @@ import { getRedisClient } from '@/lib/redis';
 export type RedisClient = NonNullable<ReturnType<typeof getRedisClient>>;
 
 export async function ensureRedisConnected(redis: RedisClient): Promise<boolean> {
-  if (redis.status === 'ready' || redis.status === 'connect') {
+  if (redis.status === 'ready') {
     return true;
   }
 
-  if (redis.status === 'connecting' || redis.status === 'reconnecting') {
+  if (redis.status === 'connect' || redis.status === 'connecting' || redis.status === 'reconnecting') {
     return new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => {
         off();
@@ -18,6 +18,7 @@ export async function ensureRedisConnected(redis: RedisClient): Promise<boolean>
         redis.off('ready', onReady);
         redis.off('error', onFail);
         redis.off('close', onFail);
+        redis.off('end', onFail);
       };
       const onReady = () => {
         off();
@@ -30,6 +31,7 @@ export async function ensureRedisConnected(redis: RedisClient): Promise<boolean>
       redis.once('ready', onReady);
       redis.once('error', onFail);
       redis.once('close', onFail);
+      redis.once('end', onFail);
     });
   }
 
@@ -64,7 +66,9 @@ export async function scanKeysByPattern(
   do {
     const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', String(scanCount));
     cursor = nextCursor;
-    if (batch.length > 0) keys.push(...batch);
+    const remaining = maxKeys - keys.length;
+    if (remaining <= 0) break;
+    if (batch.length > 0) keys.push(...batch.slice(0, remaining));
     if (keys.length >= maxKeys) break;
   } while (cursor !== '0');
 

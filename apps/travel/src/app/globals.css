@@ -158,7 +158,13 @@
 
   /* 메시지 블록 구분 (mindtrip 스타일) */
   .message-block {
-    @apply flex flex-col gap-3 not-first:mt-6 not-first:pt-6 not-first:border-t border-border/60 not-last:pb-6 not-last:mb-6 not-last:border-b;
+    @apply flex flex-col gap-3 border-border/60;
+  }
+  .message-block:not(:first-child) {
+    @apply mt-6 pt-6 border-t;
+  }
+  .message-block:not(:last-child) {
+    @apply pb-6 mb-6 border-b;
   }
 
   /* 등대 빛 회전 애니메이션 */

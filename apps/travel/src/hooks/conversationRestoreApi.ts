@@ -20,7 +20,19 @@ export async function fetchConversationDetail(
   let response: Response | null = null;
 
   for (let attempt = 0; attempt <= retryCount; attempt += 1) {
-    response = await fetch(`/api/conversations/${conversationId}`);
+    try {
+      response = await fetch(`/api/conversations/${conversationId}`);
+    } catch (error) {
+      if (attempt < retryCount) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, 400 * (attempt + 1));
+        });
+        continue;
+      }
+      console.error('Failed to fetch conversation detail:', error);
+      return null;
+    }
+
     if (response.ok) {
       break;
     }

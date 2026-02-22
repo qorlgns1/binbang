@@ -70,7 +70,8 @@ export function HistoryConversationItem({
               onChange={(e) => setEditingTitle(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                e.stopPropagation();
+                if (e.key === 'Enter' && !hasPendingDelete) {
                   void onSaveTitle(conversation.id);
                 }
                 if (e.key === 'Escape') {
