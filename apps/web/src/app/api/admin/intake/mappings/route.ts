@@ -63,7 +63,7 @@ export async function POST(request: Request): Promise<Response> {
     const parsed = createMappingSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
     }
 
     const mapping = await createFormQuestionMapping(parsed.data);

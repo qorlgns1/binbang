@@ -28,7 +28,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
   }
   if (parsed.data.category === undefined && parsed.data.notes === undefined) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

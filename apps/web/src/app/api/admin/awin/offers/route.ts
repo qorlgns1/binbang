@@ -29,7 +29,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const parsed = offersSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
   }
 
   try {

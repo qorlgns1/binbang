@@ -12,7 +12,7 @@ import { createFormSubmission } from '@/services/intake.service';
 
 const googleFormWebhookSchema = z.object({
   responseId: z.string().min(1, 'responseId is required'),
-  rawPayload: z.record(z.unknown()).refine((val) => Object.keys(val).length > 0, {
+  rawPayload: z.record(z.string(), z.unknown()).refine((val) => Object.keys(val).length > 0, {
     message: 'rawPayload must not be empty',
   }),
 });
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const parsed = googleFormWebhookSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
     }
 
     const sourceIp =
