@@ -6,34 +6,27 @@
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-
     "with-env": "dotenv -e .env.${APP_ENV:-local}.local -e .env.${APP_ENV:-local} --",
-
     "dev": "pnpm with-env turbo run dev",
     "dev:web": "pnpm with-env turbo run dev --filter=@workspace/web",
     "dev:worker": "pnpm with-env turbo run dev --filter=@workspace/worker",
     "dev:travel": "pnpm with-env turbo run dev --filter=@workspace/travel",
-
     "build": "pnpm with-env turbo run build",
     "build:web": "pnpm with-env turbo run build --filter=@workspace/web",
     "build:worker": "pnpm with-env turbo run build --filter=@workspace/worker",
     "build:development": "APP_ENV=development pnpm with-env turbo run build",
     "build:production": "APP_ENV=production pnpm with-env turbo run build",
-
     "start": "pnpm with-env turbo run start",
     "start:development": "APP_ENV=development pnpm with-env turbo run start",
     "start:production": "APP_ENV=production pnpm with-env turbo run start",
-
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --write",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "test": "pnpm with-env turbo run test",
     "typecheck": "pnpm with-env turbo run typecheck",
-
     "naming:check": "node scripts/naming/check.mjs",
     "ci:check": "pnpm naming:check && pnpm with-env turbo run lint typecheck test build && pnpm format:check",
-
     "db:generate": "pnpm with-env turbo run db:generate --filter=@workspace/db",
     "db:push:forbidden": "echo \"Forbidden by rules.md: use db:migrate instead\" && exit 1",
     "db:migrate": "pnpm with-env pnpm --filter @workspace/db db:migrate",
@@ -41,7 +34,6 @@
     "db:seed": "pnpm with-env pnpm --filter @workspace/db db:seed",
     "db:seed:base": "pnpm with-env pnpm --filter @workspace/db exec tsx prisma/seed-base.ts",
     "db:studio": "pnpm with-env pnpm --filter @workspace/db db:studio",
-
     "clean": "turbo run clean && rm -rf node_modules",
     "local:docker": "docker compose -f docker/docker-compose.local.yml",
     "update:ai-context": "node scripts/update-ai-context.mjs",
@@ -52,7 +44,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.0",
     "dotenv-cli": "^11.0.0",
-    "turbo": "^2.8.9",
+    "turbo": "^2.8.10",
     "typescript": "^5.7.2",
     "vitest": "^4.0.18"
   },
