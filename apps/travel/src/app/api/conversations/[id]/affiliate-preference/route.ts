@@ -2,7 +2,7 @@ import { ConversationAffiliateOverride } from '@workspace/db';
 import { z } from 'zod';
 
 import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
-import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
+import { forbiddenResponse, handleServiceError, notFoundResponse } from '@/lib/handleServiceError';
 import { jsonResponse } from '@/lib/httpResponse';
 import {
   getConversationAffiliatePreference,
@@ -55,7 +55,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     });
 
     if (!updated) {
-      return unauthorizedResponse('Forbidden');
+      return forbiddenResponse();
     }
 
     return jsonResponse(updated);

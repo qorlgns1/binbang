@@ -4,7 +4,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { createAdminPlan, getAdminPlans } from '@/services/admin/plans.service';
 
 export async function GET(): Promise<Response> {
@@ -38,7 +43,12 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   try {
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return badRequestResponse('Invalid JSON');
+    }
     const parsed = createPlanSchema.safeParse(body);
 
     if (!parsed.success) {

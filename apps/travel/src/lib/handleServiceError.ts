@@ -48,6 +48,10 @@ export function unauthorizedResponse(message = 'Unauthorized'): Response {
   return errorJsonResponse({ error: { code: 'UNAUTHORIZED', message } }, 401);
 }
 
+export function forbiddenResponse(message = 'Forbidden'): Response {
+  return errorJsonResponse({ error: { code: 'FORBIDDEN', message } }, 403);
+}
+
 export function badRequestResponse(message: string, details?: unknown): Response {
   const body: ErrorResponseBody = { error: { code: 'BAD_REQUEST', message } };
   if (details !== undefined) body.error.details = details;

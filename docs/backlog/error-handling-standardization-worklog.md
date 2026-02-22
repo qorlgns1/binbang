@@ -246,6 +246,29 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 ---
 
+## Phase 9 — PR 코멘트 후속 반영 ✅
+
+**커밋**: (이번 작업 커밋)
+
+### 반영 내용
+
+- 401/403 의미 불일치 정리
+  - `apps/travel/src/lib/handleServiceError.ts`: `forbiddenResponse` 추가
+  - `apps/travel/src/app/api/conversations/[id]/affiliate-preference/route.ts`: `unauthorizedResponse('Forbidden')` → `forbiddenResponse()`
+- malformed JSON 요청을 400으로 매핑
+  - `apps/web/src/app/api/admin/plans/route.ts`
+  - `request.json()` 파싱 실패 시 `badRequestResponse('Invalid JSON')` 반환
+
+### 검증
+
+- `pnpm --filter @workspace/web lint`
+- `pnpm --filter @workspace/web typecheck`
+- `pnpm --filter @workspace/travel lint`
+- `pnpm --filter @workspace/travel typecheck`
+- `pnpm format:check`
+
+---
+
 ## 현재 남은 갭 (코드 스캔 기준)
 
 - 현재 범위 기준 잔여 갭 없음 (TODO-1~5 완료)
