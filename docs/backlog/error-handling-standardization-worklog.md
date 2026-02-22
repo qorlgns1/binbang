@@ -221,7 +221,7 @@ Route Handler에서 에러 응답 패턴이 혼재:
 
 ## Phase 8 — `parseApiError` shared 승격 ✅
 
-**커밋**: (이번 작업 커밋)
+**커밋**: `41a690f`
 
 ### 반영 내용
 
