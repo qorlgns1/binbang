@@ -50,9 +50,9 @@
     "i18n:ci": "pnpm i18n:typegen && pnpm i18n:check"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.0",
+    "@biomejs/biome": "2.4.4",
     "dotenv-cli": "^11.0.0",
-    "turbo": "^2.8.9",
+    "turbo": "^2.8.10",
     "typescript": "^5.7.2",
     "vitest": "^4.0.18"
   },
