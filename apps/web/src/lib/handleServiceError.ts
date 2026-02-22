@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { AppError, type ValidationError } from '@workspace/shared/errors';
+import { AppError, ValidationError } from '@workspace/shared/errors';
 
 /** API 에러 응답 본문 형식. `handleServiceError`가 반환하는 JSON 구조와 일치합니다. */
 export interface ErrorResponseBody {
@@ -27,8 +27,8 @@ export function handleServiceError(error: unknown, logPrefix?: string): NextResp
       },
     };
 
-    if ('details' in error && Array.isArray((error as ValidationError).details)) {
-      body.error.details = (error as ValidationError).details;
+    if (error instanceof ValidationError) {
+      body.error.details = error.details;
     }
 
     return NextResponse.json(body, { status: error.statusCode });

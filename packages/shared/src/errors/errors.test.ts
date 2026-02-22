@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { AppError } from './base';
 import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError } from './resource';
+import { InternalServerError } from './system';
 import { BadRequestError, ValidationError } from './validation';
 
 describe('AppError hierarchy', () => {
@@ -13,6 +14,7 @@ describe('AppError hierarchy', () => {
     expect(error.statusCode).toBe(418);
     expect(error.code).toBe('TEAPOT');
     expect(error.name).toBe('AppError');
+    expect(error.stack).toContain('test message');
   });
 
   it('NotFoundError defaults to 404', () => {
@@ -73,6 +75,21 @@ describe('AppError hierarchy', () => {
     expect(error.message).toBe('Validation failed');
   });
 
+  it('InternalServerError defaults to 500', () => {
+    const error = new InternalServerError();
+    expect(error).toBeInstanceOf(AppError);
+    expect(error.statusCode).toBe(500);
+    expect(error.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(error.message).toBe('Internal server error');
+    expect(error.name).toBe('InternalServerError');
+  });
+
+  it('uses class names for subclasses without manual override', () => {
+    expect(new ConflictError().name).toBe('ConflictError');
+    expect(new ValidationError().name).toBe('ValidationError');
+    expect(new InternalServerError().name).toBe('InternalServerError');
+  });
+
   it('all errors are catchable as Error', () => {
     const errors = [
       new NotFoundError(),
@@ -81,6 +98,7 @@ describe('AppError hierarchy', () => {
       new UnauthorizedError(),
       new BadRequestError(),
       new ValidationError(),
+      new InternalServerError(),
     ];
 
     for (const error of errors) {
