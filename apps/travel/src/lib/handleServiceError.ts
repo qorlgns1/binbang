@@ -1,15 +1,7 @@
 import { AppError, ValidationError } from '@workspace/shared/errors';
+import type { ErrorResponseBody } from '@workspace/shared/errors';
 
 import { jsonResponse } from '@/lib/httpResponse';
-
-/** API 에러 응답 본문 형식 */
-interface ErrorResponseBody {
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
 
 function errorJsonResponse(body: ErrorResponseBody, status: number): Response {
   return jsonResponse(body, { status });

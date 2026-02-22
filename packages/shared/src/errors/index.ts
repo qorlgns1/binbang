@@ -3,3 +3,5 @@ export { NotFoundError, ConflictError, ForbiddenError, UnauthorizedError } from 
 export { ValidationError, BadRequestError } from './validation';
 export { InternalServerError } from './system';
 export type { ValidationDetail } from './validation';
+export { ApiError } from './apiError';
+export type { ErrorResponseBody } from './apiError';
