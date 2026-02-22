@@ -22,8 +22,8 @@ async function resolvePublisherId(token: string): Promise<number | null> {
       next: { revalidate: 0 },
     });
     if (!res.ok) {
-      if (res.status >= 500) {
-        // 일시적 서버 오류는 캐시하지 않음 - 다음 요청에서 재시도 가능
+      if (res.status >= 500 || res.status === 429) {
+        // 일시적 오류(5xx, Rate Limit)는 캐시하지 않음 - 다음 요청에서 재시도 가능
         return null;
       }
       cachedPublisherId = null;
