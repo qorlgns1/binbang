@@ -85,6 +85,16 @@ function buildImpressionIdempotencyKey(
   return `impression:${conversationId ?? 'guest'}:${productId}:${localOrUtcDay}`;
 }
 
+function buildClickIdempotencyKey(
+  eventType: string,
+  conversationId: string | undefined,
+  productId: string,
+  occurredAt: Date,
+): string {
+  const minuteSlot = occurredAt.toISOString().slice(0, 16);
+  return `${eventType}:${conversationId ?? 'guest'}:${productId}:${minuteSlot}`;
+}
+
 export async function createAffiliateEvent(input: CreateAffiliateEventInput): Promise<CreateAffiliateEventResult> {
   const occurredAt = input.occurredAt ?? new Date();
   const resolvedTimezone = await resolveUserTimezone(input.userId, input.userTimezone);
@@ -94,7 +104,9 @@ export async function createAffiliateEvent(input: CreateAffiliateEventInput): Pr
   const idempotencyKey =
     input.eventType === 'impression'
       ? buildImpressionIdempotencyKey(input.conversationId, input.productId, localOrUtcDay)
-      : null;
+      : input.eventType === 'cta_attempt' || input.eventType === 'outbound_click'
+        ? buildClickIdempotencyKey(input.eventType, input.conversationId, input.productId, occurredAt)
+        : null;
 
   try {
     const created = await prisma.affiliateEvent.create({

@@ -52,7 +52,12 @@ export async function resolveConnectedRedis(): Promise<RedisClient | null> {
   return redis;
 }
 
-export async function scanKeysByPattern(redis: RedisClient, pattern: string, scanCount: number): Promise<string[]> {
+export async function scanKeysByPattern(
+  redis: RedisClient,
+  pattern: string,
+  scanCount: number,
+  maxKeys = 10_000,
+): Promise<string[]> {
   const keys: string[] = [];
   let cursor = '0';
 
@@ -60,6 +65,7 @@ export async function scanKeysByPattern(redis: RedisClient, pattern: string, sca
     const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', String(scanCount));
     cursor = nextCursor;
     if (batch.length > 0) keys.push(...batch);
+    if (keys.length >= maxKeys) break;
   } while (cursor !== '0');
 
   return keys;

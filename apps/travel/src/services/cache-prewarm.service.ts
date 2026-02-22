@@ -6,7 +6,8 @@ import { generateCacheKey, getCacheEntryState } from '@/services/cache.service';
 
 const PLACE_TYPES = ['tourist_attraction', 'restaurant', 'hotel'] as const;
 const POPULAR_CURRENCY_PAIRS = [{ base: 'USD', targets: ['KRW', 'JPY', 'EUR'] }] as const;
-const PREWARM_CONCURRENCY = Math.max(1, Number.parseInt(process.env.CACHE_PREWARM_CONCURRENCY ?? '5', 10));
+const _rawConcurrency = Number.parseInt(process.env.CACHE_PREWARM_CONCURRENCY ?? '', 10);
+const PREWARM_CONCURRENCY = Number.isFinite(_rawConcurrency) && _rawConcurrency > 0 ? _rawConcurrency : 5;
 
 interface PlacePrewarmTarget {
   destination: string;
@@ -54,7 +55,7 @@ function createMetrics(targets: number): CachePrewarmMetrics {
 
 function placesCacheKey(destination: string, placeType: string): string {
   return generateCacheKey('places', {
-    query: placeType.replace('_', ' '),
+    query: placeType.replaceAll('_', ' '),
     location: destination,
     type: placeType,
   });
@@ -119,7 +120,7 @@ async function runPlacesPrewarm(metrics: CachePrewarmMetrics): Promise<void> {
     keyOf: (target) => placesCacheKey(target.destination, target.placeType),
     fetch: async (target) =>
       searchGooglePlaces({
-        query: target.placeType.replace('_', ' '),
+        query: target.placeType.replaceAll('_', ' '),
         location: target.destination,
         type: target.placeType,
       }),

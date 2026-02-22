@@ -30,8 +30,18 @@ export async function POST(req: Request): Promise<Response> {
   const providedToken = getProvidedToken(req);
   const tokenMatch =
     providedToken != null &&
-    providedToken.length === expectedToken.length &&
-    timingSafeEqual(Buffer.from(providedToken), Buffer.from(expectedToken));
+    (() => {
+      try {
+        const maxLen = Math.max(providedToken.length, expectedToken.length);
+        const a = Buffer.alloc(maxLen);
+        const b = Buffer.alloc(maxLen);
+        Buffer.from(providedToken).copy(a);
+        Buffer.from(expectedToken).copy(b);
+        return timingSafeEqual(a, b);
+      } catch {
+        return false;
+      }
+    })();
   if (!tokenMatch) {
     return Response.json(
       {

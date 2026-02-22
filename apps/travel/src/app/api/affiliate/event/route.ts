@@ -39,6 +39,10 @@ export async function POST(req: Request) {
     generateIfMissing: false,
   });
 
+  if (!body.conversationId && !session?.user?.id && !sessionId) {
+    return jsonError(401, 'Unauthorized', { requestId });
+  }
+
   if (body.conversationId) {
     const conversation = await getConversationOwnership(body.conversationId);
     if (!conversation) {
