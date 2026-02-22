@@ -11,8 +11,10 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   return (
     <html lang='ko'>
       <body className='flex min-h-screen flex-col items-center justify-center gap-4 px-4'>
-        <p className='text-center font-medium text-foreground'>문제가 발생했어요</p>
-        <p className='text-center text-sm text-muted-foreground'>잠시 후 다시 시도해 주세요.</p>
+        <div role='alert' aria-live='assertive' aria-atomic='true' className='flex flex-col items-center gap-1'>
+          <p className='text-center font-medium text-foreground'>문제가 발생했어요</p>
+          <p className='text-center text-sm text-muted-foreground'>잠시 후 다시 시도해 주세요.</p>
+        </div>
         <button
           type='button'
           onClick={reset}

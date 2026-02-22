@@ -44,7 +44,7 @@ Sentry를 도입해 클라이언트·서버·엣지 런타임의 에러와 퍼�
 
 `apps/travel/package.json` dependencies에 추가:
 ```json
-"@sentry/nextjs": "^8.0.0"
+"@sentry/nextjs": "^10.39.0"
 ```
 
 이후 `pnpm install` 실행.
@@ -64,7 +64,7 @@ Sentry.init({
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
   // Session Replay
-  replaysSessionSampleRate: 0.05,   // 5% 일반 세션
+  replaysSessionSampleRate: 0.1,    // 10% 일반 세션
   replaysOnErrorSampleRate: 1.0,    // 에러 발생 세션 100%
 
   integrations: [Sentry.replayIntegration()],
