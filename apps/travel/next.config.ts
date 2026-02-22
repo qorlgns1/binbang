@@ -48,6 +48,9 @@ export default withSentryConfig(nextConfig, {
   // /monitoring 경로로 Sentry 요청을 프록시 (광고 차단기 우회)
   tunnelRoute: '/monitoring',
 
+  // production에서만 .map 파일 삭제 — development 배포 환경에서는 소스맵을 남겨 DevTools 디버깅 허용
+  sourcemaps: { deleteSourcemapsAfterUpload: process.env.SENTRY_ENVIRONMENT === 'production' },
+
   // CI가 아닌 로컬 빌드 시 소스맵 업로드 로그 억제
   silent: !process.env.CI,
 
