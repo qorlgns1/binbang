@@ -4,7 +4,12 @@ import { z } from 'zod';
 
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
-import { forbiddenResponse, handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
+import {
+  forbiddenResponse,
+  handleServiceError,
+  notFoundResponse,
+  unauthorizedResponse,
+} from '@/lib/handleServiceError';
 import { jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
