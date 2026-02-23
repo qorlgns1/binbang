@@ -9,7 +9,7 @@ import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
 import { createTravelTools } from '@/lib/ai/tools';
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
-import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import { badRequestResponse, forbiddenResponse, handleServiceError } from '@/lib/handleServiceError';
 import { jsonError } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
             ? session?.user?.id === conversation.userId
             : conversation.sessionId === sessionId;
         if (!isOwner) {
-          return unauthorizedResponse('Unauthorized');
+          return forbiddenResponse('Unauthorized');
         }
       }
     } catch (error) {

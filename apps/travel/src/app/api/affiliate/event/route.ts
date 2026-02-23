@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
-import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
+import { forbiddenResponse, handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
 import { jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       : sessionId != null && conversation.sessionId === sessionId;
 
     if (!isOwner) {
-      return unauthorizedResponse('Unauthorized');
+      return forbiddenResponse('Unauthorized');
     }
   }
 

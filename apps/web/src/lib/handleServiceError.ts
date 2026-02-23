@@ -59,6 +59,10 @@ export function validationErrorResponse(details: unknown): NextResponse<ErrorRes
   );
 }
 
+export function forbiddenResponse(message = 'Forbidden'): NextResponse<ErrorResponseBody> {
+  return NextResponse.json({ error: { code: 'FORBIDDEN', message } }, { status: 403 });
+}
+
 export function notFoundResponse(message = 'Not found'): NextResponse<ErrorResponseBody> {
   return NextResponse.json({ error: { code: 'NOT_FOUND', message } }, { status: 404 });
 }

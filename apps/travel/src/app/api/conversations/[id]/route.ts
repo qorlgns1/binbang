@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
-import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
+import { forbiddenResponse, handleServiceError, notFoundResponse } from '@/lib/handleServiceError';
 import { jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { getConversation, updateConversationTitle } from '@/services/conversation.service';
@@ -33,7 +33,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     // 소유권 확인
     if (conversation.userId !== userId) {
-      return unauthorizedResponse('Unauthorized');
+      return forbiddenResponse('Unauthorized');
     }
 
     return jsonResponse({ conversation });
