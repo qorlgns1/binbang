@@ -1,8 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { AppError, ConflictError, NotFoundError, ValidationError } from '@workspace/shared/errors';
+import { AppError, ConflictError, InternalServerError, NotFoundError, ValidationError } from '@workspace/shared/errors';
 
-import { handleServiceError } from './handleServiceError';
+import {
+  badRequestResponse,
+  handleServiceError,
+  notFoundResponse,
+  serviceUnavailableResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from './handleServiceError';
 
 describe('handleServiceError', () => {
   it('maps NotFoundError to 404', async () => {
@@ -40,6 +47,15 @@ describe('handleServiceError', () => {
     expect(body.error.code).toBe('RATE_LIMITED');
   });
 
+  it('maps InternalServerError to 500 with expected code', async () => {
+    const res = handleServiceError(new InternalServerError());
+    expect(res.status).toBe(500);
+
+    const body = await res.json();
+    expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(body.error.message).toBe('Internal server error');
+  });
+
   it('maps unknown Error to 500 and logs', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((): void => {});
 
@@ -67,5 +83,85 @@ describe('handleServiceError', () => {
     const res = handleServiceError(new NotFoundError('missing'));
     const body = await res.json();
     expect(body.error.details).toBeUndefined();
+  });
+});
+
+describe('unauthorizedResponse', () => {
+  it('returns 401 with UNAUTHORIZED code and default message', async () => {
+    const res = unauthorizedResponse();
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(body.error.message).toBe('Unauthorized');
+  });
+
+  it('returns 401 with custom message', async () => {
+    const res = unauthorizedResponse('Custom unauthorized');
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error.message).toBe('Custom unauthorized');
+  });
+});
+
+describe('badRequestResponse', () => {
+  it('returns 400 with BAD_REQUEST code', async () => {
+    const res = badRequestResponse('Invalid input');
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('BAD_REQUEST');
+    expect(body.error.message).toBe('Invalid input');
+    expect(body.error.details).toBeUndefined();
+  });
+
+  it('includes details when provided', async () => {
+    const details = { field: 'name' };
+    const res = badRequestResponse('Bad request', details);
+    const body = await res.json();
+    expect(body.error.details).toEqual(details);
+  });
+});
+
+describe('validationErrorResponse', () => {
+  it('returns 400 with VALIDATION_ERROR code and details', async () => {
+    const details = [{ path: 'email', message: 'Required' }];
+    const res = validationErrorResponse(details);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.message).toBe('Validation failed');
+    expect(body.error.details).toEqual(details);
+  });
+});
+
+describe('notFoundResponse', () => {
+  it('returns 404 with NOT_FOUND code and default message', async () => {
+    const res = notFoundResponse();
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error.code).toBe('NOT_FOUND');
+    expect(body.error.message).toBe('Not found');
+  });
+
+  it('returns 404 with custom message', async () => {
+    const res = notFoundResponse('User not found');
+    const body = await res.json();
+    expect(body.error.message).toBe('User not found');
+  });
+});
+
+describe('serviceUnavailableResponse', () => {
+  it('returns 503 with SERVICE_UNAVAILABLE code', async () => {
+    const res = serviceUnavailableResponse('Worker unavailable');
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
+    expect(body.error.message).toBe('Worker unavailable');
+  });
+
+  it('includes details when provided', async () => {
+    const details = { source: 'worker', timeoutMs: 7000 };
+    const res = serviceUnavailableResponse('Timeout', details);
+    const body = await res.json();
+    expect(body.error.details).toEqual(details);
   });
 });

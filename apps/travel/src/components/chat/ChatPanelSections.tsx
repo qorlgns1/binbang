@@ -80,6 +80,7 @@ export function ChatPanelEmptyState({ queries, onExampleClick }: ChatPanelEmptyS
 
 interface ChatPanelErrorBannerProps {
   isRateLimitError: boolean;
+  message: string | null;
   showLoginAction: boolean;
   onLogin: () => void;
   onRetry: () => void;
@@ -88,6 +89,7 @@ interface ChatPanelErrorBannerProps {
 
 export function ChatPanelErrorBanner({
   isRateLimitError,
+  message,
   showLoginAction,
   onLogin,
   onRetry,
@@ -96,9 +98,10 @@ export function ChatPanelErrorBanner({
   return (
     <div className='border-t border-border/60 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3'>
       <p className='text-sm text-destructive font-medium flex-1'>
-        {isRateLimitError
-          ? '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
-          : '답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.'}
+        {message ??
+          (isRateLimitError
+            ? '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
+            : '답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.')}
       </p>
       <div className='flex items-center gap-2 shrink-0'>
         {showLoginAction && (

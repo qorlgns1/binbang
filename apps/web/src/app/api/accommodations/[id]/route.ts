@@ -5,6 +5,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
+import {
+  handleServiceError,
+  notFoundResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { deleteAccommodation, getAccommodationById, updateAccommodation } from '@/services/accommodations.service';
 import type { RouteParams } from '@/types/api';
 
@@ -43,13 +49,13 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
   const { id } = await params;
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const accommodation = await getAccommodationById(id, session.user.id);
 
   if (!accommodation) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return notFoundResponse();
   }
 
   return NextResponse.json(accommodation);
@@ -61,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
   const { id } = await params;
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -78,17 +84,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
     });
 
     if (!accommodation) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return notFoundResponse();
     }
 
     return NextResponse.json(accommodation);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 });
+      return validationErrorResponse(error.issues);
     }
 
-    console.error('숙소 수정 오류:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, '숙소 수정 오류');
   }
 }
 
@@ -98,13 +103,13 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams): Pr
   const { id } = await params;
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const deleted = await deleteAccommodation(id, session.user.id);
 
   if (!deleted) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return notFoundResponse();
   }
 
   return NextResponse.json({ success: true });

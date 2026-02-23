@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { LANDING_EVENT_NAMES } from '@/lib/analytics/clickEventNames';
+import { badRequestResponse, handleServiceError } from '@/lib/handleServiceError';
 import { createLandingEvent } from '@/services/analytics-click.service';
 
 const utcIsoSchema = z
@@ -22,53 +23,12 @@ const bodySchema = z.object({
   occurredAt: utcIsoSchema.optional(),
 });
 
-type ErrorCode = 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR';
-
-function makeEntropy(): string {
-  if (typeof globalThis.crypto !== 'undefined') {
-    if (typeof globalThis.crypto.randomUUID === 'function') {
-      return globalThis.crypto.randomUUID().slice(0, 8);
-    }
-
-    if (typeof globalThis.crypto.getRandomValues === 'function') {
-      const bytes = new Uint8Array(4);
-      globalThis.crypto.getRandomValues(bytes);
-      return Array.from(bytes, (value): string => value.toString(16).padStart(2, '0')).join('');
-    }
-  }
-
-  return Date.now().toString(16).slice(-8).padStart(8, '0');
-}
-
-function makeRequestId(): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:.TZ]/g, '')
-    .slice(0, 14);
-  return `req_${timestamp}_${makeEntropy()}`;
-}
-
-function errorResponse(status: number, code: ErrorCode, message: string, requestId: string): NextResponse {
-  return NextResponse.json(
-    {
-      error: {
-        code,
-        message,
-        requestId,
-      },
-    },
-    { status },
-  );
-}
-
 export async function POST(request: NextRequest): Promise<Response> {
-  const requestId = makeRequestId();
-
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return errorResponse(400, 'BAD_REQUEST', 'Invalid request payload', requestId);
+    return badRequestResponse('Invalid request payload');
   }
 
   const parsed = bodySchema.safeParse(body);
@@ -76,7 +36,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const message = parsed.error.issues.some((issue): boolean => issue.path[0] === 'eventName')
       ? 'eventName is required'
       : 'Invalid request payload';
-    return errorResponse(400, 'BAD_REQUEST', message, requestId);
+    return badRequestResponse(message);
   }
 
   try {
@@ -97,7 +57,6 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
 
     console.info('[analytics/click] success', {
-      requestId,
       eventName: data.eventName,
       referrer: referrer ?? null,
       userAgent: userAgent ? userAgent.slice(0, 128) : null,
@@ -111,7 +70,6 @@ export async function POST(request: NextRequest): Promise<Response> {
       { status: 201 },
     );
   } catch (error) {
-    console.error('[analytics/click] error', { requestId, error });
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Internal server error', requestId);
+    return handleServiceError(error, '[analytics/click]');
   }
 }

@@ -3,6 +3,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { AwinConfigError, getAwinProgrammeDetails } from '@/services/admin/awin.service';
 
 const detailsSchema = z.object({
@@ -14,7 +20,7 @@ const detailsSchema = z.object({
 export async function GET(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { searchParams } = new URL(request.url);
@@ -24,7 +30,7 @@ export async function GET(request: Request): Promise<Response> {
     relationship: searchParams.get('relationship') || undefined,
   });
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
+    return validationErrorResponse(parsed.error.issues);
   }
 
   try {
@@ -32,9 +38,8 @@ export async function GET(request: Request): Promise<Response> {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof AwinConfigError) {
-      return NextResponse.json({ ok: false, error: err.message }, { status: 400 });
+      return badRequestResponse(err.message);
     }
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ ok: false, error: 'Request failed', detail: message }, { status: 500 });
+    return handleServiceError(err, 'Awin programme details error');
   }
 }

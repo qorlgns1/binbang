@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
-import { jsonError, jsonResponse } from '@/lib/httpResponse';
+import { forbiddenResponse, handleServiceError, notFoundResponse } from '@/lib/handleServiceError';
+import { jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { getConversation, updateConversationTitle } from '@/services/conversation.service';
 
@@ -27,12 +28,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const conversation = await getConversation(conversationId);
 
     if (!conversation) {
-      return jsonError(404, 'Conversation not found', { requestId });
+      return notFoundResponse('Conversation not found');
     }
 
     // 소유권 확인
     if (conversation.userId !== userId) {
-      return jsonError(403, 'Unauthorized', { requestId });
+      return forbiddenResponse('Unauthorized');
     }
 
     return jsonResponse({ conversation });
@@ -42,7 +43,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       userId,
       error,
     });
-    return jsonError(500, 'Failed to fetch conversation', { requestId });
+    return handleServiceError(error, 'conversations/:id GET');
   }
 }
 
@@ -69,7 +70,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const updated = await updateConversationTitle(conversationId, userId, parsedBody.data.title);
 
     if (!updated) {
-      return jsonError(404, 'Not found or unauthorized', { requestId });
+      return notFoundResponse('Not found or unauthorized');
     }
 
     return jsonResponse({
@@ -84,6 +85,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       userId,
       error,
     });
-    return jsonError(500, 'Failed to update conversation title', { requestId });
+    return handleServiceError(error, 'conversations/:id PATCH');
   }
 }

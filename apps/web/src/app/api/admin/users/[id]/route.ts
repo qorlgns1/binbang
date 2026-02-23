@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
 import { getUserDetail } from '@/services/admin/users.service';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -15,7 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const result = await getUserDetail(id);
 
     if (!result) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다' }, { status: 404 });
+      return notFoundResponse('사용자를 찾을 수 없습니다');
     }
 
     return NextResponse.json({
@@ -29,7 +30,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       _count: result.user._count,
     });
   } catch (error) {
-    console.error('Admin user detail fetch error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin user detail fetch error');
   }
 }

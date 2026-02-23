@@ -1,4 +1,5 @@
 import { QuotaKey, prisma } from '@workspace/db';
+import { ConflictError, NotFoundError } from '@workspace/shared/errors';
 
 // ============================================================================
 // Types
@@ -65,7 +66,7 @@ export async function createAdminPlan(input: CreatePlanInput): Promise<AdminPlan
 
   const existing = await prisma.plan.findUnique({ where: { name }, select: { id: true } });
   if (existing) {
-    throw new Error('Plan name already exists');
+    throw new ConflictError('Plan name already exists');
   }
 
   const plan = await prisma.plan.create({
@@ -100,13 +101,13 @@ export async function updateAdminPlan(id: string, input: UpdatePlanInput): Promi
 
   const existing = await prisma.plan.findUnique({ where: { id }, select: { id: true, name: true } });
   if (!existing) {
-    throw new Error('Plan not found');
+    throw new NotFoundError('Plan not found');
   }
 
   if (name && name !== existing.name) {
     const duplicate = await prisma.plan.findUnique({ where: { name }, select: { id: true } });
     if (duplicate) {
-      throw new Error('Plan name already exists');
+      throw new ConflictError('Plan name already exists');
     }
   }
 
@@ -162,11 +163,11 @@ export async function deleteAdminPlan(id: string): Promise<void> {
   });
 
   if (!plan) {
-    throw new Error('Plan not found');
+    throw new NotFoundError('Plan not found');
   }
 
   if (plan._count.users > 0) {
-    throw new Error(`Cannot delete plan with ${plan._count.users} active users`);
+    throw new ConflictError(`Cannot delete plan with ${plan._count.users} active users`);
   }
 
   await prisma.plan.delete({ where: { id }, select: { id: true } });

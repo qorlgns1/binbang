@@ -121,7 +121,7 @@ export function getUserMessagePreview(messages: UIMessage[]): string {
 }
 
 export function isRateLimitErrorMessage(message: string): boolean {
-  return message.includes('429') || /rate\s*limit|too\s*many/i.test(message);
+  return message.includes('429') || message.includes('RATE_LIMITED') || /rate\s*limit|too\s*many/i.test(message);
 }
 
 export function mapConversationMessagesToUiMessages(messages: ConversationMessagePayload[]): UIMessage[] {

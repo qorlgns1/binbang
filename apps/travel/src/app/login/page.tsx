@@ -8,15 +8,20 @@ const ERROR_MESSAGES: Record<string, string> = {
   OAuthCallback: 'OAuth 콜백 처리에 실패했어요. 다시 로그인해 주세요.',
   OAuthSignin: '소셜 로그인 시작에 실패했어요. 다시 시도해 주세요.',
   OAuthCreateAccount: '소셜 계정 생성에 실패했어요. 잠시 후 다시 시도해 주세요.',
+  OAuthAccountNotLinked: '같은 이메일의 다른 로그인 방식이 이미 연결되어 있어요.',
+  SessionRequired: '로그인이 필요한 작업이에요. 다시 로그인해 주세요.',
   AccessDenied: '로그인이 거부되었습니다.',
+  Configuration: '로그인 설정 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
 };
+
+const DEFAULT_LOGIN_ERROR_MESSAGE = '로그인 처리 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const rawCallback = searchParams.get('callbackUrl') || '/';
   const callbackUrl = rawCallback.startsWith('/') ? rawCallback : '/';
   const error = searchParams.get('error');
-  const errorMessage = error ? (ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`) : null;
+  const errorMessage = error ? (ERROR_MESSAGES[error] ?? DEFAULT_LOGIN_ERROR_MESSAGE) : null;
 
   const handleGoogleLogin = () => {
     void signIn('google', { callbackUrl });

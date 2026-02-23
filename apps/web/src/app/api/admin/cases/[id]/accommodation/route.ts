@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { linkAccommodation } from '@/services/cases.service';
 
 const accommodationSchema = z.object({
@@ -12,7 +13,7 @@ const accommodationSchema = z.object({
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -21,7 +22,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const parsed = accommodationSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const result = await linkAccommodation({
@@ -32,17 +33,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ case: result });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-
-    if (message === 'Case not found' || message === 'Accommodation not found') {
-      return NextResponse.json({ error: message }, { status: 404 });
-    }
-
-    if (message.startsWith('Accommodation link requires')) {
-      return NextResponse.json({ error: message }, { status: 400 });
-    }
-
-    console.error('Admin accommodation link error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin accommodation link error');
   }
 }

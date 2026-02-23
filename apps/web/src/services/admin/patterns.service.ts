@@ -1,4 +1,5 @@
 import { type PatternType, type Platform, prisma } from '@workspace/db';
+import { BadRequestError, ConflictError, NotFoundError } from '@workspace/shared/errors';
 import type {
   CreatePatternPayload,
   PlatformPatternItem,
@@ -110,7 +111,7 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
   });
 
   if (existing) {
-    throw new Error('Pattern already exists');
+    throw new ConflictError('Pattern already exists');
   }
 
   // 생성
@@ -186,7 +187,7 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
   });
 
   if (!existing) {
-    throw new Error('Pattern not found');
+    throw new NotFoundError('Pattern not found');
   }
 
   // 변경된 필드 추적
@@ -206,7 +207,7 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
   }
 
   if (changes.length === 0) {
-    throw new Error('No changes detected');
+    throw new BadRequestError('No changes detected');
   }
 
   // 업데이트
@@ -279,7 +280,7 @@ export async function deletePattern(input: DeletePatternInput): Promise<void> {
   });
 
   if (!existing) {
-    throw new Error('Pattern not found');
+    throw new NotFoundError('Pattern not found');
   }
 
   await prisma.$transaction(async (tx): Promise<void> => {

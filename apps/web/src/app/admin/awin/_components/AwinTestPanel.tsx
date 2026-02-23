@@ -24,6 +24,65 @@ type TestResult = {
 type AccountBody = { accountId: number; accountName: string; accountType: string; userRole: string };
 type AccountsBody = { userId?: number; accounts?: AccountBody[] };
 
+function extractErrorMessage(payload: unknown, fallback: string): string {
+  if (typeof payload !== 'object' || payload === null) return fallback;
+
+  const data = payload as { error?: unknown; message?: unknown };
+  if (typeof data.error === 'string') return data.error;
+
+  if (typeof data.error === 'object' && data.error !== null) {
+    const nested = data.error as { message?: unknown };
+    if (typeof nested.message === 'string') return nested.message;
+  }
+
+  if (typeof data.message === 'string') return data.message;
+  return fallback;
+}
+
+function extractErrorCode(payload: unknown): string | undefined {
+  if (typeof payload !== 'object' || payload === null) return undefined;
+
+  const data = payload as { error?: unknown };
+  if (typeof data.error === 'object' && data.error !== null) {
+    const nested = data.error as { code?: unknown };
+    if (typeof nested.code === 'string') return nested.code;
+  }
+
+  return undefined;
+}
+
+async function parseTestResultResponse(res: Response): Promise<TestResult> {
+  const payload = (await res.json().catch((): null => null)) as unknown;
+
+  if (!res.ok) {
+    const message = extractErrorMessage(payload, `요청 실패 (HTTP ${res.status})`);
+    const code = extractErrorCode(payload);
+    return {
+      ok: false,
+      status: res.status,
+      error: message,
+      detail: code ? `code: ${code}` : undefined,
+      body: payload ?? undefined,
+    };
+  }
+
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'ok' in payload &&
+    typeof (payload as { ok?: unknown }).ok === 'boolean'
+  ) {
+    return { status: res.status, ...(payload as TestResult) };
+  }
+
+  return {
+    ok: true,
+    status: res.status,
+    message: '요청이 처리되었습니다.',
+    body: payload ?? undefined,
+  };
+}
+
 function ConnectionResultAlert({ result }: { result: TestResult }) {
   const body = result.body as AccountsBody | undefined;
   const hasIds = result.ok && body?.userId != null && Array.isArray(body.accounts) && body.accounts.length > 0;
@@ -200,7 +259,7 @@ export function AwinTestPanel() {
     setConnResult(null);
     try {
       const res = await fetch('/api/admin/awin/test');
-      const data = (await res.json()) as TestResult;
+      const data = await parseTestResultResponse(res);
       setConnResult(data);
     } catch (err) {
       setConnResult({
@@ -232,7 +291,7 @@ export function AwinTestPanel() {
           ...(lbShorten ? { shorten: true } : {}),
         }),
       });
-      const data = (await res.json()) as TestResult & { body?: { url?: string; shortUrl?: string } };
+      const data = await parseTestResultResponse(res);
       setLbResult(data);
     } catch (err) {
       setLbResult({
@@ -250,7 +309,7 @@ export function AwinTestPanel() {
     setProgResult(null);
     try {
       const res = await fetch(`/api/admin/awin/programmes?relationship=${encodeURIComponent(progRelationship)}`);
-      const data = (await res.json()) as TestResult;
+      const data = await parseTestResultResponse(res);
       setProgResult(data);
     } catch (err) {
       setProgResult({
@@ -278,7 +337,7 @@ export function AwinTestPanel() {
           status: offersStatus,
         }),
       });
-      const data = (await res.json()) as TestResult;
+      const data = await parseTestResultResponse(res);
       setOffersResult(data);
     } catch (err) {
       setOffersResult({
@@ -313,7 +372,7 @@ export function AwinTestPanel() {
         ...(txStatus ? { status: txStatus } : {}),
       });
       const res = await fetch(`/api/admin/awin/transactions?${params}`);
-      const data = (await res.json()) as TestResult;
+      const data = await parseTestResultResponse(res);
       setTxResult(data);
     } catch (err) {
       setTxResult({
@@ -336,7 +395,7 @@ export function AwinTestPanel() {
         region: rptRegion,
       });
       const res = await fetch(`/api/admin/awin/reports/advertiser?${params}`);
-      const data = (await res.json()) as TestResult;
+      const data = await parseTestResultResponse(res);
       setRptResult(data);
     } catch (err) {
       setRptResult({
@@ -360,7 +419,7 @@ export function AwinTestPanel() {
     setPdResult(null);
     try {
       const res = await fetch(`/api/admin/awin/programmedetails?advertiserId=${encodeURIComponent(aid)}`);
-      const data = (await res.json()) as TestResult;
+      const data = await parseTestResultResponse(res);
       setPdResult(data);
     } catch (err) {
       setPdResult({

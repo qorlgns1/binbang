@@ -13,6 +13,7 @@ describe('ChatPanel rate limit copy (P2-UI-009)', () => {
     const html = renderToStaticMarkup(
       <ChatPanelErrorBanner
         isRateLimitError={true}
+        message={null}
         showLoginAction={false}
         onLogin={() => {}}
         onRetry={() => {}}
@@ -26,6 +27,7 @@ describe('ChatPanel rate limit copy (P2-UI-009)', () => {
     const html = renderToStaticMarkup(
       <ChatPanelErrorBanner
         isRateLimitError={false}
+        message={null}
         showLoginAction={false}
         onLogin={() => {}}
         onRetry={() => {}}

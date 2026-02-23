@@ -27,6 +27,21 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: '기타',
 };
 
+function getErrorMessage(payload: unknown, fallback: string): string {
+  if (typeof payload !== 'object' || payload === null) return fallback;
+
+  const data = payload as { error?: unknown; message?: unknown };
+  if (typeof data.error === 'string') return data.error;
+
+  if (typeof data.error === 'object' && data.error !== null) {
+    const nested = data.error as { message?: unknown };
+    if (typeof nested.message === 'string') return nested.message;
+  }
+
+  if (typeof data.message === 'string') return data.message;
+  return fallback;
+}
+
 export function AffiliateAdvertiserManager() {
   const [list, setList] = useState<AdvertiserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +57,7 @@ export function AffiliateAdvertiserManager() {
       const res = await fetch(`/api/admin/awin/advertisers${params}`);
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? `목록 조회 실패 (HTTP ${res.status})`);
+        throw new Error(getErrorMessage(data, `목록 조회 실패 (HTTP ${res.status})`));
       }
       const data = await res.json();
       if (Array.isArray(data)) setList(data);
@@ -64,8 +79,8 @@ export function AffiliateAdvertiserManager() {
     try {
       const res = await fetch('/api/admin/awin/advertisers/sync', { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? `동기화 실패 (HTTP ${res.status})`);
-      if (data.error) throw new Error(data.error);
+      if (!res.ok) throw new Error(getErrorMessage(data, `동기화 실패 (HTTP ${res.status})`));
+      if (data.error) throw new Error(getErrorMessage(data, '동기화 실패'));
       await fetchList();
     } catch (err) {
       alert(err instanceof Error ? err.message : String(err));
@@ -97,7 +112,7 @@ export function AffiliateAdvertiserManager() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? `저장 실패 (HTTP ${res.status})`);
+        throw new Error(getErrorMessage(data, `저장 실패 (HTTP ${res.status})`));
       }
       setEditing((prev) => {
         const next = { ...prev };

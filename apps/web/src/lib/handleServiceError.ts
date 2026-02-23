@@ -1,15 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { AppError, type ValidationError } from '@workspace/shared/errors';
+import { AppError, ValidationError } from '@workspace/shared/errors';
+import type { ErrorResponseBody } from '@workspace/shared/errors';
 
-/** API 에러 응답 본문 형식. `handleServiceError`가 반환하는 JSON 구조와 일치합니다. */
-export interface ErrorResponseBody {
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
+export type { ErrorResponseBody };
 
 /**
  * Maps a service-layer error to a typed `NextResponse`.
@@ -27,8 +21,8 @@ export function handleServiceError(error: unknown, logPrefix?: string): NextResp
       },
     };
 
-    if ('details' in error && Array.isArray((error as ValidationError).details)) {
-      body.error.details = (error as ValidationError).details;
+    if (error instanceof ValidationError) {
+      body.error.details = error.details;
     }
 
     return NextResponse.json(body, { status: error.statusCode });
@@ -46,4 +40,38 @@ export function handleServiceError(error: unknown, logPrefix?: string): NextResp
     },
     { status: 500 },
   );
+}
+
+export function unauthorizedResponse(message = 'Unauthorized'): NextResponse<ErrorResponseBody> {
+  return NextResponse.json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+}
+
+export function badRequestResponse(message: string, details?: unknown): NextResponse<ErrorResponseBody> {
+  const body: ErrorResponseBody = { error: { code: 'BAD_REQUEST', message } };
+  if (details !== undefined) body.error.details = details;
+  return NextResponse.json(body, { status: 400 });
+}
+
+export function validationErrorResponse(details: unknown): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(
+    { error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details } },
+    { status: 400 },
+  );
+}
+
+export function forbiddenResponse(message = 'Forbidden'): NextResponse<ErrorResponseBody> {
+  return NextResponse.json({ error: { code: 'FORBIDDEN', message } }, { status: 403 });
+}
+
+export function notFoundResponse(message = 'Not found'): NextResponse<ErrorResponseBody> {
+  return NextResponse.json({ error: { code: 'NOT_FOUND', message } }, { status: 404 });
+}
+
+export function serviceUnavailableResponse(
+  message = 'Service unavailable',
+  details?: unknown,
+): NextResponse<ErrorResponseBody> {
+  const body: ErrorResponseBody = { error: { code: 'SERVICE_UNAVAILABLE', message } };
+  if (details !== undefined) body.error.details = details;
+  return NextResponse.json(body, { status: 503 });
 }

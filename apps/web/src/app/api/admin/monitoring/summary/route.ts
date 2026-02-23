@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { getMonitoringSummary } from '@/services/admin/monitoring.service';
 
 export async function GET(): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -14,7 +15,6 @@ export async function GET(): Promise<Response> {
 
     return NextResponse.json(summary);
   } catch (error) {
-    console.error('Monitoring summary error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Monitoring summary error');
   }
 }

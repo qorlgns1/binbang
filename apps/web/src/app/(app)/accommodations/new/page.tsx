@@ -13,9 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QuotaExceededError, useCreateAccommodation } from '@/hooks/useCreateAccommodation';
+import { useCreateAccommodation } from '@/hooks/useCreateAccommodation';
+import { ApiError, getUserMessage, getValidationFieldErrors } from '@/lib/apiError';
 import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
+
+type AccommodationFormField = 'url' | 'name' | 'checkIn' | 'checkOut' | 'adults';
 
 export default function NewAccommodationPage(): React.ReactElement {
   const t = useTranslations('common');
@@ -30,6 +33,7 @@ export default function NewAccommodationPage(): React.ReactElement {
   const [checkOut, setCheckOut] = useState('');
   const [adults, setAdults] = useState(2);
   const [dateError, setDateError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<AccommodationFormField, string>>>({});
 
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -58,6 +62,25 @@ export default function NewAccommodationPage(): React.ReactElement {
 
     return () => clearTimeout(timer);
   }, [url]);
+
+  useEffect(() => {
+    if (!createMutation.error) {
+      return;
+    }
+
+    const errors = getValidationFieldErrors(createMutation.error);
+    if (!errors) {
+      return;
+    }
+
+    setFieldErrors({
+      url: errors.url,
+      name: errors.name,
+      checkIn: errors.checkIn,
+      checkOut: errors.checkOut,
+      adults: errors.adults,
+    });
+  }, [createMutation.error]);
 
   // "파싱된 정보로 채우기" 버튼
   function applyParsedInfo(): void {
@@ -131,10 +154,14 @@ export default function NewAccommodationPage(): React.ReactElement {
         <CardContent>
           {(createMutation.error || dateError) && (
             <Alert variant='destructive' className='mb-6'>
-              <AlertTitle>{createMutation.error instanceof QuotaExceededError ? '숙소 한도 초과' : '오류'}</AlertTitle>
+              <AlertTitle>
+                {createMutation.error instanceof ApiError && createMutation.error.code === 'QUOTA_EXCEEDED'
+                  ? '숙소 한도 초과'
+                  : '오류'}
+              </AlertTitle>
               <AlertDescription>
-                <p>{dateError || createMutation.error?.message}</p>
-                {createMutation.error instanceof QuotaExceededError && (
+                <p>{dateError || (createMutation.error ? getUserMessage(createMutation.error) : '')}</p>
+                {createMutation.error instanceof ApiError && createMutation.error.code === 'QUOTA_EXCEEDED' && (
                   <Button asChild variant='outline' size='sm' className='mt-3'>
                     <Link href='/pricing'>플랜 업그레이드</Link>
                   </Button>
@@ -148,6 +175,7 @@ export default function NewAccommodationPage(): React.ReactElement {
             onChange={() => {
               createMutation.reset();
               setDateError('');
+              setFieldErrors({});
             }}
             className='space-y-6'
           >
@@ -165,6 +193,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 className='bg-background/80 transition-all focus:bg-background'
               />
               <p className='text-xs text-muted-foreground'>Airbnb 또는 Agoda 숙소 페이지 URL을 붙여넣으세요</p>
+              {fieldErrors.url && <p className='text-xs text-destructive'>{fieldErrors.url}</p>}
 
               {/* 파싱 결과 표시 */}
               {parsedInfo?.platform && (
@@ -207,6 +236,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 placeholder='예: 그린델발트 샬레'
                 className='bg-background/80 transition-all focus:bg-background'
               />
+              {fieldErrors.name && <p className='text-xs text-destructive'>{fieldErrors.name}</p>}
             </div>
 
             {/* 날짜 선택 */}
@@ -223,6 +253,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                   onChange={(e) => setCheckIn(e.target.value)}
                   className='bg-background/80 transition-all focus:bg-background'
                 />
+                {fieldErrors.checkIn && <p className='text-xs text-destructive'>{fieldErrors.checkIn}</p>}
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='checkOut'>체크아웃 *</Label>
@@ -235,6 +266,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                   onChange={(e) => setCheckOut(e.target.value)}
                   className='bg-background/80 transition-all focus:bg-background'
                 />
+                {fieldErrors.checkOut && <p className='text-xs text-destructive'>{fieldErrors.checkOut}</p>}
               </div>
             </div>
 
@@ -251,6 +283,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 onChange={(e) => setAdults(parseInt(e.target.value, 10) || 2)}
                 className='bg-background/80 transition-all focus:bg-background'
               />
+              {fieldErrors.adults && <p className='text-xs text-destructive'>{fieldErrors.adults}</p>}
             </div>
 
             {/* 버튼 */}

@@ -4,7 +4,8 @@ import { z } from 'zod';
 
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
-import { jsonError, jsonResponse } from '@/lib/httpResponse';
+import { forbiddenResponse, handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
+import { jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
 import { createAffiliateEvent } from '@/services/affiliate-event.service';
@@ -40,13 +41,13 @@ export async function POST(req: Request) {
   });
 
   if (!body.conversationId && !session?.user?.id && !sessionId) {
-    return jsonError(401, 'Unauthorized', { requestId });
+    return unauthorizedResponse();
   }
 
   if (body.conversationId) {
     const conversation = await getConversationOwnership(body.conversationId);
     if (!conversation) {
-      return jsonError(404, 'Conversation not found', { requestId });
+      return notFoundResponse('Conversation not found');
     }
 
     const isOwner = conversation.userId
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       : sessionId != null && conversation.sessionId === sessionId;
 
     if (!isOwner) {
-      return jsonError(403, 'Unauthorized', { requestId });
+      return forbiddenResponse('Unauthorized');
     }
   }
 
@@ -89,6 +90,6 @@ export async function POST(req: Request) {
       provider: body.provider,
       error,
     });
-    return jsonError(500, 'Failed to create affiliate event', { requestId });
+    return handleServiceError(error, 'affiliate/event POST');
   }
 }

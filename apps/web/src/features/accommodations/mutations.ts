@@ -6,22 +6,13 @@
 
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { parseApiError } from '@/lib/apiError';
 import { accommodationKeys, userKeys } from '@/lib/queryKeys';
 import type { Accommodation, CreateAccommodationInput, UpdateAccommodationInput } from '@/types/accommodation';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export class QuotaExceededError extends Error {
-  quota: { max: number; current: number };
-
-  constructor(message: string, quota: { max: number; current: number }) {
-    super(message);
-    this.name = 'QuotaExceededError';
-    this.quota = quota;
-  }
-}
 
 interface UpdateAccommodationVariables {
   id: string;
@@ -53,11 +44,7 @@ async function createAccommodation(input: CreateAccommodationInput): Promise<Acc
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json();
-    if (err.error === 'quota_exceeded') {
-      throw new QuotaExceededError(err.message, err.quota);
-    }
-    throw new Error(err.message || err.error || '숙소 추가에 실패했습니다');
+    throw await parseApiError(res, '숙소 추가에 실패했습니다');
   }
   return res.json();
 }
@@ -69,8 +56,7 @@ async function updateAccommodation({ id, data }: UpdateAccommodationVariables): 
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '숙소 수정에 실패했습니다');
+    throw await parseApiError(res, '숙소 수정에 실패했습니다');
   }
   return res.json();
 }
@@ -80,7 +66,7 @@ async function deleteAccommodation(id: string): Promise<void> {
     method: 'DELETE',
   });
   if (!res.ok) {
-    throw new Error('숙소 삭제에 실패했습니다');
+    throw await parseApiError(res, '숙소 삭제에 실패했습니다');
   }
 }
 
@@ -91,7 +77,7 @@ async function toggleActive({ id, isActive }: ToggleActiveVariables): Promise<Ac
     body: JSON.stringify({ isActive }),
   });
   if (!res.ok) {
-    throw new Error('상태 변경에 실패했습니다');
+    throw await parseApiError(res, '상태 변경에 실패했습니다');
   }
   return res.json();
 }

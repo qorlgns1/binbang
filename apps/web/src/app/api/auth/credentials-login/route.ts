@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
+import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { createSessionForUser, verifyCredentials } from '@/services/auth.service';
 
 const loginSchema = z.object({
@@ -17,14 +18,14 @@ export async function POST(request: Request): Promise<Response> {
     const parsed = loginSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: ERROR_MSG }, { status: 401 });
+      return unauthorizedResponse(ERROR_MSG);
     }
 
     const { email, password } = parsed.data;
 
     const user = await verifyCredentials({ email, password });
     if (!user) {
-      return NextResponse.json({ error: ERROR_MSG }, { status: 401 });
+      return unauthorizedResponse(ERROR_MSG);
     }
 
     const { sessionToken, expires } = await createSessionForUser(user.id);
@@ -42,7 +43,7 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     return response;
-  } catch {
-    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+  } catch (error) {
+    return handleServiceError(error, 'Auth credentials login error');
   }
 }

@@ -2,7 +2,8 @@ import { ConversationAffiliateOverride } from '@workspace/db';
 import { z } from 'zod';
 
 import { parseJsonBody, requireUserId } from '@/lib/apiRoute';
-import { jsonError, jsonResponse } from '@/lib/httpResponse';
+import { forbiddenResponse, handleServiceError, notFoundResponse } from '@/lib/handleServiceError';
+import { jsonResponse } from '@/lib/httpResponse';
 import {
   getConversationAffiliatePreference,
   upsertConversationAffiliatePreference,
@@ -19,13 +20,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id: conversationId } = await params;
-  const preference = await getConversationAffiliatePreference(conversationId, requiredUser.userId);
 
-  if (!preference) {
-    return jsonError(404, 'Not found or unauthorized');
+  try {
+    const preference = await getConversationAffiliatePreference(conversationId, requiredUser.userId);
+
+    if (!preference) {
+      return notFoundResponse('Not found or unauthorized');
+    }
+
+    return jsonResponse(preference);
+  } catch (error) {
+    return handleServiceError(error, 'conversations/:id/affiliate-preference GET');
   }
-
-  return jsonResponse(preference);
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,15 +47,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { id: conversationId } = await params;
 
-  const updated = await upsertConversationAffiliatePreference({
-    conversationId,
-    actorUserId: requiredUser.userId,
-    nextOverride: parsedBody.data.affiliateOverride,
-  });
+  try {
+    const updated = await upsertConversationAffiliatePreference({
+      conversationId,
+      actorUserId: requiredUser.userId,
+      nextOverride: parsedBody.data.affiliateOverride,
+    });
 
-  if (!updated) {
-    return jsonError(403, 'Forbidden');
+    if (!updated) {
+      return forbiddenResponse();
+    }
+
+    return jsonResponse(updated);
+  } catch (error) {
+    return handleServiceError(error, 'conversations/:id/affiliate-preference PATCH');
   }
-
-  return jsonResponse(updated);
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { handleServiceError } from '@/lib/handleServiceError';
 import { getPublicPlans } from '@/services/plans.service';
 
 export async function GET(): Promise<Response> {
@@ -8,7 +9,6 @@ export async function GET(): Promise<Response> {
 
     return NextResponse.json(plans);
   } catch (error) {
-    console.error('Plans fetch error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Plans fetch error');
   }
 }

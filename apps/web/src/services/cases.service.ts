@@ -1,4 +1,5 @@
 import { type CaseStatus, type Prisma, prisma } from '@workspace/db';
+import { BadRequestError, ConflictError, NotFoundError } from '@workspace/shared/errors';
 
 import { type AmbiguityResult, analyzeCondition } from './condition-parser.service';
 
@@ -428,19 +429,19 @@ export async function createCase(input: CreateCaseInput): Promise<CaseDetailOutp
     });
 
     if (!submission) {
-      throw new Error('Submission not found');
+      throw new NotFoundError('Submission not found');
     }
 
     if (submission.status === 'REJECTED') {
-      throw new Error('Cannot create case from rejected submission');
+      throw new ConflictError('Cannot create case from rejected submission');
     }
 
     if (submission.status === 'PROCESSED') {
-      throw new Error('Submission already processed');
+      throw new ConflictError('Submission already processed');
     }
 
     if (!submission.extractedFields) {
-      throw new Error('Submission has no extracted fields');
+      throw new BadRequestError('Submission has no extracted fields');
     }
 
     const extracted = submission.extractedFields as Record<string, unknown>;
@@ -498,35 +499,35 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
     });
 
     if (!current) {
-      throw new Error('Case not found');
+      throw new NotFoundError('Case not found');
     }
 
     if (!isValidTransition(current.status, input.toStatus)) {
-      throw new Error(`Invalid transition: ${current.status} → ${input.toStatus}`);
+      throw new BadRequestError(`Invalid transition: ${current.status} → ${input.toStatus}`);
     }
 
     // Guard: REVIEWING → WAITING_PAYMENT requires resolved ambiguity
     if (current.status === 'REVIEWING' && input.toStatus === 'WAITING_PAYMENT') {
       const ambiguity = current.ambiguityResult as AmbiguityResult | null;
       if (ambiguity && ambiguity.severity !== 'GREEN' && !current.clarificationResolvedAt) {
-        throw new Error('Ambiguity must be resolved before payment');
+        throw new BadRequestError('Ambiguity must be resolved before payment');
       }
     }
 
     // Guard: WAITING_PAYMENT → ACTIVE_MONITORING requires payment confirmation + accommodation link
     if (current.status === 'WAITING_PAYMENT' && input.toStatus === 'ACTIVE_MONITORING') {
       if (!current.paymentConfirmedAt) {
-        throw new Error('Payment must be confirmed before monitoring start');
+        throw new BadRequestError('Payment must be confirmed before monitoring start');
       }
       if (!current.accommodationId) {
-        throw new Error('Accommodation must be linked before monitoring start');
+        throw new BadRequestError('Accommodation must be linked before monitoring start');
       }
     }
 
     // Guard: ACTIVE_MONITORING → CONDITION_MET requires at least one evidence
     if (current.status === 'ACTIVE_MONITORING' && input.toStatus === 'CONDITION_MET') {
       if (current._count.conditionMetEvents === 0) {
-        throw new Error('At least one condition met evidence is required');
+        throw new BadRequestError('At least one condition met evidence is required');
       }
     }
 
@@ -575,15 +576,15 @@ export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDe
     });
 
     if (!current) {
-      throw new Error('Case not found');
+      throw new NotFoundError('Case not found');
     }
 
     if (current.status !== 'WAITING_PAYMENT') {
-      throw new Error(`Payment confirmation requires WAITING_PAYMENT status, current: ${current.status}`);
+      throw new BadRequestError(`Payment confirmation requires WAITING_PAYMENT status, current: ${current.status}`);
     }
 
     if (current.paymentConfirmedAt) {
-      throw new Error('Payment already confirmed');
+      throw new ConflictError('Payment already confirmed');
     }
 
     await tx.case.update({
@@ -623,11 +624,11 @@ export async function linkAccommodation(input: LinkAccommodationInput): Promise<
     });
 
     if (!current) {
-      throw new Error('Case not found');
+      throw new NotFoundError('Case not found');
     }
 
     if (current.status !== 'WAITING_PAYMENT') {
-      throw new Error(`Accommodation link requires WAITING_PAYMENT status, current: ${current.status}`);
+      throw new BadRequestError(`Accommodation link requires WAITING_PAYMENT status, current: ${current.status}`);
     }
 
     const accommodation = await tx.accommodation.findUnique({
@@ -636,7 +637,7 @@ export async function linkAccommodation(input: LinkAccommodationInput): Promise<
     });
 
     if (!accommodation) {
-      throw new Error('Accommodation not found');
+      throw new NotFoundError('Accommodation not found');
     }
 
     await tx.case.update({
