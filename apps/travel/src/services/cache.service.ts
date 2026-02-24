@@ -1,18 +1,26 @@
 import crypto from 'node:crypto';
-import { getRedisClient } from '@/lib/redis';
 
-export interface CacheOptions {
-  ttl?: number; // Time to live in seconds
-  prefix?: string;
-}
+import {
+  CACHE_INVALIDATION_PREFIX_BY_TARGET,
+  DEFAULT_INVALIDATE_SCAN_COUNT,
+  DEFAULT_STALE_TTL,
+  DEFAULT_TTL,
+  INVALIDATE_DELETE_BATCH_SIZE,
+} from '@/lib/cache/cacheConfig';
+import { applyTtlJitter, normalizeTtlSeconds, readCacheEnvelope, writeCacheEnvelope } from '@/lib/cache/cacheEnvelope';
+import { refreshWithLock, triggerBackgroundRevalidation } from '@/lib/cache/cacheStrategies';
+import { resolveConnectedRedis, scanKeysByPattern } from '@/lib/cache/redisClient';
+import type { CachedFetchOptions, CacheEntryState, CacheOptions } from '@/lib/cache/cacheTypes';
+import type { CacheInvalidationTarget } from '@/lib/cache/cacheConfig';
 
-const DEFAULT_TTL = Number.parseInt(process.env.CACHE_DEFAULT_TTL_SECONDS ?? '86400', 10); // 24 hours
+export type { CacheOptions, CachedFetchOptions, CacheEntryState };
+export type { CacheInvalidationTarget };
+export { CACHE_INVALIDATION_PREFIX_BY_TARGET };
 
 /**
  * Generate a stable cache key from parameters
  */
 export function generateCacheKey(prefix: string, params: unknown): string {
-  // Sort keys for consistent hashing if it's an object
   let normalizedParams: unknown = params;
 
   if (params && typeof params === 'object' && !Array.isArray(params)) {
@@ -35,61 +43,58 @@ export function generateCacheKey(prefix: string, params: unknown): string {
 }
 
 /**
- * Get cached data
+ * Get cached data. Returns fresh or stale value if present.
  */
 export async function getCachedData<T>(key: string): Promise<T | null> {
-  const redis = getRedisClient();
-  if (!redis) {
-    return null; // Cache disabled
-  }
-
-  try {
-    await redis.connect();
-    const cached = await redis.get(key);
-    if (!cached) {
-      console.log(`[Cache] MISS: ${key}`);
-      return null;
-    }
-
-    console.log(`[Cache] HIT: ${key}`);
-    return JSON.parse(cached) as T;
-  } catch (error) {
-    console.error(`[Cache] Error getting key ${key}:`, error);
-    return null;
-  }
+  const result = await readCacheEnvelope<T>(key, { label: 'generic' });
+  if (result.status === 'miss') return null;
+  return result.value;
 }
 
 /**
- * Set cached data with TTL
+ * Read cache envelope state without triggering upstream fetch.
+ * Useful for prewarm/skip decisions.
+ */
+export async function getCacheEntryState(key: string, label = 'generic'): Promise<CacheEntryState> {
+  const result = await readCacheEnvelope<unknown>(key, { label, log: false });
+  return result.status;
+}
+
+/**
+ * Set cached data with TTL (no stale window).
  */
 export async function setCachedData<T>(key: string, data: T, options: CacheOptions = {}): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) {
-    return; // Cache disabled
+  const ttl = normalizeTtlSeconds(options.ttl ?? DEFAULT_TTL);
+  await writeCacheEnvelope(key, data, ttl, 0, 'generic');
+}
+
+/**
+ * Cache-aside + SWR + stale-if-error helper.
+ */
+export async function getCachedOrFetch<T>(options: CachedFetchOptions<T>): Promise<T> {
+  const label = options.logLabel ?? 'generic';
+  const baseFreshTtl = normalizeTtlSeconds(options.freshTtlSeconds ?? DEFAULT_TTL);
+  const freshTtlSeconds = applyTtlJitter(baseFreshTtl, options.jitterRatio ?? 0);
+  const staleTtlSeconds = Math.max(0, Math.round(options.staleTtlSeconds ?? DEFAULT_STALE_TTL));
+
+  const cached = await readCacheEnvelope<T>(options.key, { label });
+  if (cached.status === 'fresh') return cached.value;
+  if (cached.status === 'stale') {
+    triggerBackgroundRevalidation(options, { label, freshTtlSeconds, staleTtlSeconds });
+    return cached.value;
   }
 
-  const ttl = options.ttl ?? DEFAULT_TTL;
-
-  try {
-    await redis.connect();
-    await redis.setex(key, ttl, JSON.stringify(data));
-    console.log(`[Cache] SET: ${key} (TTL: ${ttl}s)`);
-  } catch (error) {
-    console.error(`[Cache] Error setting key ${key}:`, error);
-  }
+  return refreshWithLock(options, { label, freshTtlSeconds, staleTtlSeconds });
 }
 
 /**
  * Delete cached data
  */
 export async function deleteCachedData(key: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) {
-    return;
-  }
+  const redis = await resolveConnectedRedis();
+  if (!redis) return;
 
   try {
-    await redis.connect();
     await redis.del(key);
     console.log(`[Cache] DELETE: ${key}`);
   } catch (error) {
@@ -101,23 +106,36 @@ export async function deleteCachedData(key: string): Promise<void> {
  * Delete all keys matching a pattern
  */
 export async function invalidateCachePattern(pattern: string): Promise<number> {
-  const redis = getRedisClient();
-  if (!redis) {
-    return 0;
-  }
+  const redis = await resolveConnectedRedis();
+  if (!redis) return 0;
 
   try {
-    await redis.connect();
-    const keys = await redis.keys(pattern);
-    if (keys.length === 0) {
-      return 0;
+    const scanCount = Number.isFinite(DEFAULT_INVALIDATE_SCAN_COUNT)
+      ? Math.max(10, DEFAULT_INVALIDATE_SCAN_COUNT)
+      : 200;
+    const keys = await scanKeysByPattern(redis, pattern, scanCount);
+    if (keys.length === 0) return 0;
+
+    let deletedCount = 0;
+    for (let i = 0; i < keys.length; i += INVALIDATE_DELETE_BATCH_SIZE) {
+      const batch = keys.slice(i, i + INVALIDATE_DELETE_BATCH_SIZE);
+      await redis.del(...batch);
+      deletedCount += batch.length;
     }
 
-    await redis.del(...keys);
     console.log(`[Cache] INVALIDATE PATTERN: ${pattern} (${keys.length} keys)`);
-    return keys.length;
+    return deletedCount;
   } catch (error) {
     console.error(`[Cache] Error invalidating pattern ${pattern}:`, error);
     return 0;
   }
+}
+
+export function getCacheInvalidationPattern(target: CacheInvalidationTarget): string {
+  return `${CACHE_INVALIDATION_PREFIX_BY_TARGET[target]}:*`;
+}
+
+export async function invalidateCacheTarget(target: CacheInvalidationTarget): Promise<number> {
+  const pattern = getCacheInvalidationPattern(target);
+  return invalidateCachePattern(pattern);
 }

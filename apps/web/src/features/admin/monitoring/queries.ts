@@ -26,6 +26,21 @@ interface LogsFilterParams {
   to?: string;
 }
 
+function extractErrorMessage(payload: unknown, fallback: string): string {
+  if (typeof payload !== 'object' || payload === null) return fallback;
+
+  const data = payload as { error?: unknown; message?: unknown };
+  if (typeof data.error === 'string') return data.error;
+
+  if (typeof data.error === 'object' && data.error !== null) {
+    const nested = data.error as { message?: unknown };
+    if (typeof nested.message === 'string') return nested.message;
+  }
+
+  if (typeof data.message === 'string') return data.message;
+  return fallback;
+}
+
 export type UseMonitoringSummaryQueryResult = UseQueryResult<MonitoringSummary, Error>;
 export type UseMonitoringLogsInfiniteQueryResult = UseInfiniteQueryResult<InfiniteData<MonitoringLogsResponse>, Error>;
 export type UseWorkerQueueQueryResult = UseQueryResult<QueueSnapshotResponse, Error>;
@@ -60,12 +75,8 @@ async function fetchWorkerQueue(limit: number): Promise<QueueSnapshotResponse> {
 
   const res = await fetch(`/api/admin/worker/queue?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    const message =
-      typeof (errorData as { error?: string }).error === 'string'
-        ? (errorData as { error: string }).error
-        : '워커 큐 스냅샷을 가져오지 못했습니다.';
-    throw new Error(message);
+    const errorData = await res.json().catch((): null => null);
+    throw new Error(extractErrorMessage(errorData, '워커 큐 스냅샷을 가져오지 못했습니다.'));
   }
   return res.json();
 }

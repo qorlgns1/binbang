@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTransitionCaseStatusMutation } from '@/features/admin/cases';
+import { getUserMessage } from '@/lib/apiError';
 
 interface AmbiguityResult {
   severity: 'GREEN' | 'AMBER' | 'RED';
@@ -155,7 +156,9 @@ export function ClarificationPanel({ caseId, currentStatus, ambiguityResult, cla
           </div>
         )}
 
-        {transitionMutation.isError && <p className='text-sm text-destructive'>{transitionMutation.error.message}</p>}
+        {transitionMutation.isError && (
+          <p className='text-sm text-destructive'>{getUserMessage(transitionMutation.error)}</p>
+        )}
       </CardContent>
     </Card>
   );

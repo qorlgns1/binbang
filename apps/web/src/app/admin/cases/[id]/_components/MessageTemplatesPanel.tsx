@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type CaseMessageItem, useCreateCaseMessageMutation } from '@/features/admin/cases';
+import { getUserMessage } from '@/lib/apiError';
 
 import { formatDateTime } from './formatDateTime';
 
@@ -239,7 +240,9 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
             </Button>
 
             {copyError && <p className='text-sm text-destructive'>{copyError}</p>}
-            {messageMutation.isError && <p className='text-sm text-destructive'>{messageMutation.error.message}</p>}
+            {messageMutation.isError && (
+              <p className='text-sm text-destructive'>{getUserMessage(messageMutation.error)}</p>
+            )}
           </div>
         )}
 

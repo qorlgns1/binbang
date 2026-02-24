@@ -1,131 +1,48 @@
 'use client';
 
-import { Compass, Map as MapIcon, MessageSquare } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { HomeMobileTabBar } from '@/components/home/HomeMobileTabBar';
+import { HomeSidebar } from '@/components/home/HomeSidebar';
+import { HomeTopBar } from '@/components/home/HomeTopBar';
 import { MapPanel } from '@/components/map/MapPanel';
-import { OnlineStatus } from '@/components/OnlineStatus';
-import type { MapEntity, PlaceEntity } from '@/lib/types';
+import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
+import { useModalStore } from '@/stores/useModalStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 export default function HomePage() {
-  const t = useTranslations();
-  const [entities, setEntities] = useState<MapEntity[]>([]);
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
-  const [hoveredPlaceId, setHoveredPlaceId] = useState<string | undefined>();
-  const [showMap, setShowMap] = useState(true);
-
-  const handleEntitiesUpdate = useCallback((newEntities: MapEntity[]) => {
-    setEntities(newEntities);
-  }, []);
-
-  const handlePlaceSelect = useCallback((place: PlaceEntity) => {
-    setSelectedPlaceId(place.placeId);
-  }, []);
-
-  const handleMapEntitySelect = useCallback((entityId: string) => {
-    setSelectedPlaceId(entityId);
-  }, []);
-
-  const handleMapAlertClick = useCallback(
-    (_entityId: string) => {
-      toast.info(t('chat.alertFeatureComingSoon'));
-    },
-    [t],
-  );
-
-  const handleCloseMapInfo = useCallback(() => {
-    setSelectedPlaceId(undefined);
-  }, []);
-
-  const handlePlaceHover = useCallback((placeId: string | undefined) => {
-    setHoveredPlaceId(placeId);
-  }, []);
+  const { status: authStatus } = useSession();
+  const showMap = usePlaceStore((s) => s.showMap);
+  const showLoginModal = useModalStore((s) => s.showLoginModal);
+  const loginModalTrigger = useModalStore((s) => s.loginModalTrigger);
+  const closeLoginModal = useModalStore((s) => s.closeLoginModal);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
   return (
-    <div className='flex h-screen flex-col'>
-      {/* Header: compact on mobile */}
-      <header className='flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-3 py-2 md:px-4 md:py-3'>
-        <div className='flex min-w-0 items-center gap-2'>
-          <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary md:h-8 md:w-8'>
-            <Compass className='h-4 w-4 text-primary-foreground md:h-5 md:w-5' />
-          </div>
-          <h1 className='truncate text-base font-bold md:text-lg'>{t('common.appName')}</h1>
-        </div>
-        <div className='flex shrink-0 items-center gap-2'>
-          <LanguageSwitcher />
-          <OnlineStatus />
-          {entities.length > 0 && (
-            <span className='text-xs text-muted-foreground bg-muted hidden rounded-full px-2 py-1 sm:inline-flex'>
-              {t('common.placesCount', { count: entities.length })}
-            </span>
-          )}
-        </div>
-      </header>
+    <div className='flex h-screen overflow-hidden bg-background'>
+      <HomeSidebar authStatus={authStatus} />
 
-      {/* Main Content: Chat + Map split (desktop) / single view + bottom tabs (mobile) */}
-      <div className='flex flex-1 flex-col overflow-hidden'>
+      <div className='flex min-w-0 flex-1 flex-col overflow-hidden'>
+        <HomeTopBar authStatus={authStatus} />
+
         <div className='flex flex-1 overflow-hidden'>
-          {/* Chat Panel */}
           <div
-            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 flex-col border-r border-border md:w-[42%] lg:max-w-2xl`}
+            className={`${showMap ? 'hidden md:flex' : 'flex'} flex-1 flex-col border-r border-border/60 bg-card/30 md:w-[42%] lg:max-w-2xl`}
           >
-            <ChatPanel
-              onEntitiesUpdate={handleEntitiesUpdate}
-              onPlaceSelect={handlePlaceSelect}
-              onPlaceHover={handlePlaceHover}
-              selectedPlaceId={selectedPlaceId}
-            />
+            <ChatPanel />
           </div>
 
-          {/* Map Panel */}
           <div className={`${showMap ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
-            <MapPanel
-              entities={entities}
-              selectedEntityId={selectedPlaceId}
-              hoveredEntityId={hoveredPlaceId}
-              onEntitySelect={handleMapEntitySelect}
-              onAlertClick={handleMapAlertClick}
-              onCloseInfoWindow={handleCloseMapInfo}
-              apiKey={apiKey}
-            />
+            <MapPanel apiKey={apiKey} />
           </div>
         </div>
 
-        {/* Mobile: bottom tab bar (Chat / Map) */}
-        <nav
-          className='md:hidden flex shrink-0 items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm py-3'
-          aria-label={t('common.switchBetweenChatAndMap')}
-        >
-          <button
-            type='button'
-            onClick={() => setShowMap(false)}
-            className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-              !showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
-            }`}
-            aria-current={!showMap ? 'page' : undefined}
-          >
-            <MessageSquare className='h-5 w-5' aria-hidden />
-            {t('common.chatTab')}
-          </button>
-          <button
-            type='button'
-            onClick={() => setShowMap(true)}
-            className={`touch-target flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-              showMap ? 'text-primary border-t-2 border-primary -mt-px' : 'text-muted-foreground'
-            }`}
-            aria-current={showMap ? 'page' : undefined}
-          >
-            <MapIcon className='h-5 w-5' aria-hidden />
-            {t('common.mapTab')}
-          </button>
-        </nav>
+        <HomeMobileTabBar />
       </div>
+
+      <LoginPromptModal open={showLoginModal} onClose={closeLoginModal} trigger={loginModalTrigger} />
     </div>
   );
 }

@@ -17,7 +17,6 @@ export class ValidationError extends AppError {
 
   constructor(message = 'Validation failed', details: ValidationDetail[] = []) {
     super(message, 400, 'VALIDATION_ERROR');
-    this.name = 'ValidationError';
     this.details = details;
   }
 }
@@ -27,6 +26,5 @@ export class BadRequestError extends AppError {
   /** @param message - 에러 메시지 (기본: 'Bad request') */
   constructor(message = 'Bad request') {
     super(message, 400, 'BAD_REQUEST');
-    this.name = 'BadRequestError';
   }
 }

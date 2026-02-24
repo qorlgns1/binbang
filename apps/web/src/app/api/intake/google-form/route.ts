@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { createFormSubmission } from '@/services/intake.service';
 
 // ============================================================================
@@ -12,7 +13,7 @@ import { createFormSubmission } from '@/services/intake.service';
 
 const googleFormWebhookSchema = z.object({
   responseId: z.string().min(1, 'responseId is required'),
-  rawPayload: z.record(z.unknown()).refine((val) => Object.keys(val).length > 0, {
+  rawPayload: z.record(z.string(), z.unknown()).refine((val) => Object.keys(val).length > 0, {
     message: 'rawPayload must not be empty',
   }),
 });
@@ -53,7 +54,7 @@ function verifyWebhookSecret(request: NextRequest): boolean {
 
 export async function POST(request: NextRequest): Promise<Response> {
   if (!verifyWebhookSecret(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const parsed = googleFormWebhookSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: parsed.error.errors }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const sourceIp =
@@ -79,7 +80,6 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     return NextResponse.json({ submission: result.submission, duplicate: true }, { status: 200 });
   } catch (error) {
-    console.error('Google Form webhook error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Google Form webhook error');
   }
 }

@@ -200,8 +200,26 @@ Required exceptions:
 - `packages/db/prisma/migrations/**` directory names are immutable and exempt.
 - Tooling contract filenames may retain upstream naming (e.g., `next-auth.d.ts`).
 - `apps/web/src/components/ui/**` may keep kebab-case component filenames for shadcn compatibility.
-- Service-layer files under `apps/web/src/services/**` must use kebab-case with `.service` suffix (e.g., `accommodations.service.ts`).
-- Service tests under `apps/web/src/services/**` must use kebab-case with `.service.test` suffix (e.g., `funnel-clicks.service.test.ts`).
+- Service-layer files under `apps/web/src/services/**` and `apps/travel/src/services/**` must use kebab-case with `.service` suffix (e.g., `accommodations.service.ts`, `affiliate-funnel.service.ts`).
+- Service tests under `apps/web/src/services/**` and `apps/travel/src/services/**` must use kebab-case with `.service.test` suffix (e.g., `funnel-clicks.service.test.ts`).
+
+---
+
+## `lib/` Internal Module Access
+
+### Index-based modules
+
+If a `lib/` subdirectory has an `index.ts`, that is the sole public entry point.
+
+- ✅ `import { createTravelTools } from '@/lib/ai/tools'`
+- ❌ `import { createSearchAccommodationTool } from '@/lib/ai/tools/searchAccommodation'`
+
+### Service-facade modules
+
+If a `lib/` subdirectory has no `index.ts` but is split into internal helpers, only a designated `services/**` facade may import from it. Route Handlers and other consumers must not import those internal files directly.
+
+- ✅ `services/cache.service.ts` importing `@/lib/cache/cacheEnvelope`
+- ❌ A Route Handler importing `@/lib/cache/cacheEnvelope` directly
 
 ---
 

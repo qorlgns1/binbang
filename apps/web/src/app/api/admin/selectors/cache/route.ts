@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import type { Platform } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
+import { unauthorizedResponse } from '@/lib/handleServiceError';
 import { invalidateSelectorCache } from '@/services/selectors.service';
 
 interface InvalidateCachePayload {
@@ -12,7 +13,7 @@ interface InvalidateCachePayload {
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const body = (await request.json()) as InvalidateCachePayload;

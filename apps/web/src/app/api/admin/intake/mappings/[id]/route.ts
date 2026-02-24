@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { deleteFormQuestionMapping, updateFormQuestionMapping } from '@/services/admin/form-question-mappings.service';
 
 const FORM_QUESTION_FIELDS = [
@@ -27,7 +28,7 @@ const updateMappingSchema = z.object({
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -35,7 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const parsed = updateMappingSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const { id } = await params;
@@ -46,28 +47,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json({ mapping });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.startsWith('expectedAnswer is required') || error.message.includes('questionTitle is required'))
-    ) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    if (error instanceof Error && error.message === 'Mapping not found') {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (error instanceof Error && error.message === 'Mapping already exists for formKey and field') {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-
-    console.error('Admin intake mappings PATCH error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin intake mappings PATCH error');
   }
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -76,11 +63,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Mapping not found') {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-
-    console.error('Admin intake mappings DELETE error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin intake mappings DELETE error');
   }
 }

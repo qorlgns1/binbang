@@ -1,16 +1,32 @@
 import { NextResponse } from 'next/server';
 
+import { z } from 'zod';
+
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError } from '@/lib/handleServiceError';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { createSelector, getSelectors } from '@/services/admin/selectors.service';
-import type { CreateSelectorPayload } from '@/types/admin';
+
+const createSelectorSchema = z.object({
+  platform: z.enum(['AIRBNB', 'AGODA']),
+  category: z.enum(['PRICE', 'AVAILABILITY', 'METADATA', 'PLATFORM_ID']),
+  name: z.string().min(1, '이름을 입력해주세요'),
+  selector: z.string().min(1, 'CSS 셀렉터를 입력해주세요'),
+  extractorCode: z.string().optional(),
+  priority: z.number().int().optional(),
+  description: z.string().optional(),
+});
 
 // GET /api/admin/selectors
 export async function GET(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const { searchParams } = new URL(request.url);
@@ -27,19 +43,25 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
-  const body = (await request.json()) as CreateSelectorPayload;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequestResponse('Invalid JSON');
+  }
 
-  // 필수 필드 검증
-  if (!body.platform || !body.category || !body.name || !body.selector) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  const parsed = createSelectorSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.issues);
   }
 
   try {
     const selector = await createSelector({
-      ...body,
+      ...parsed.data,
       createdById: session.user.id,
     });
 

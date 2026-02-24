@@ -1,8 +1,10 @@
 'use client';
 
-import { Bell, DollarSign, MapPin, Star } from 'lucide-react';
+import { Bell, DollarSign, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+
+import { StarRating } from '@/components/ui/StarRating';
 
 import type { PlaceEntity } from '@/lib/types';
 
@@ -13,15 +15,21 @@ interface PlaceCardProps {
   onAlertClick?: (place: PlaceEntity) => void;
 }
 
+function isAccommodationPlace(place: PlaceEntity): boolean {
+  const types = place.types ?? [];
+  return types.some((t) => t === 'lodging' || t === 'hotel');
+}
+
 export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCardProps) {
   const t = useTranslations('place');
+  const showAlertButton = isAccommodationPlace(place);
   return (
     <div
-      className={`flex flex-col w-full rounded-xl border transition-all duration-300 ease-out overflow-hidden ${
+      className={`flex flex-col w-full rounded-2xl border transition-all duration-200 overflow-hidden ${
         isSelected
-          ? 'border-primary ring-2 ring-primary/30 shadow-2xl scale-[1.02]'
-          : 'border-border hover:border-primary/40 hover:shadow-lg'
-      } bg-card`}
+          ? 'border-primary ring-2 ring-primary/25 shadow-lg scale-[1.02]'
+          : 'border-border/80 bg-card/90 hover:border-primary/30 hover:shadow-md'
+      }`}
     >
       <button
         type='button'
@@ -45,25 +53,13 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
             <span className='text-muted-foreground text-xs'>{t('noImage')}</span>
           </div>
         )}
-        <div className='p-3 h-[110px] flex flex-col justify-between'>
+        <div className='p-3.5 flex flex-col gap-2'>
           {/* 상단: 이름 + 별점 */}
           <div className='space-y-1'>
             <h4 className='font-semibold text-sm text-card-foreground line-clamp-1'>{place.name}</h4>
             {place.rating != null && (
               <div className='flex items-center gap-1'>
-                <div className='flex gap-0.5' aria-hidden>
-                  {[1, 2, 3, 4, 5].map((i) => {
-                    const r = place.rating ?? 0;
-                    return (
-                      <Star
-                        key={i}
-                        className={`h-3.5 w-3.5 shrink-0 ${
-                          i <= Math.round(r) ? 'fill-brand-amber text-brand-amber' : 'text-muted/60'
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
+                <StarRating rating={place.rating ?? 0} />
                 <span className='text-xs font-medium text-card-foreground'>{place.rating}</span>
                 {place.userRatingsTotal != null && (
                   <span className='text-[10px] text-muted-foreground'>({place.userRatingsTotal.toLocaleString()})</span>
@@ -90,20 +86,22 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
           </div>
         </div>
       </button>
-      <div className='px-3 pb-3 pt-0'>
-        <button
-          type='button'
-          onClick={(e) => {
-            e.stopPropagation();
-            onAlertClick?.(place);
-          }}
-          className='w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2.5 transition-all duration-150 shadow-sm hover:shadow-md'
-          aria-label={t('setAlertFor', { name: place.name })}
-        >
-          <Bell className='h-4 w-4' aria-hidden />
-          {t('setAlert')}
-        </button>
-      </div>
+      {showAlertButton && (
+        <div className='px-3 pb-3 pt-0'>
+          <button
+            type='button'
+            onClick={(e) => {
+              e.stopPropagation();
+              onAlertClick?.(place);
+            }}
+            className='w-full flex items-center justify-center gap-2 rounded-full bg-brand-amber hover:bg-brand-amber/90 active:scale-[0.98] text-white text-sm font-medium py-2.5 transition-all duration-200 shadow-sm hover:shadow'
+            aria-label={t('setAlertFor', { name: place.name })}
+          >
+            <Bell className='h-4 w-4' aria-hidden />
+            {t('setAlert')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { type Prisma, prisma } from '@workspace/db';
+import { BadRequestError, NotFoundError } from '@workspace/shared/errors';
 
 export const PRICING_POLICY_VERSION = 'v1';
 export const ROUNDING_UNIT_KRW = 1000;
@@ -223,7 +224,7 @@ export async function previewCasePriceQuote(input: PreviewCasePriceQuoteInput): 
   });
 
   if (!caseRecord) {
-    throw new Error('Case not found');
+    throw new NotFoundError('Case not found');
   }
 
   return {
@@ -235,7 +236,7 @@ export async function previewCasePriceQuote(input: PreviewCasePriceQuoteInput): 
 export async function saveCasePriceQuote(input: SaveCasePriceQuoteInput): Promise<SaveCasePriceQuoteOutput> {
   const changeReason = input.changeReason.trim();
   if (changeReason.length === 0) {
-    throw new Error('`changeReason` is required');
+    throw new BadRequestError('`changeReason` is required');
   }
 
   const computed = computePriceQuote(input.inputsSnapshot);
@@ -247,7 +248,7 @@ export async function saveCasePriceQuote(input: SaveCasePriceQuoteInput): Promis
     });
 
     if (!caseRecord) {
-      throw new Error('Case not found');
+      throw new NotFoundError('Case not found');
     }
 
     await tx.priceQuote.updateMany({
@@ -299,7 +300,7 @@ export async function getCasePriceQuoteHistory(caseId: string, limit = 50): Prom
   });
 
   if (!caseRecord) {
-    throw new Error('Case not found');
+    throw new NotFoundError('Case not found');
   }
 
   const rows = await prisma.priceQuote.findMany({

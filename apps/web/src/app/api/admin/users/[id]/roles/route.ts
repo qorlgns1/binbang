@@ -4,6 +4,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import {
+  badRequestResponse,
+  handleServiceError,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/handleServiceError';
 import { updateUserRoles } from '@/services/admin/users.service';
 
 const rolesUpdateSchema = z.object({
@@ -13,21 +19,21 @@ const rolesUpdateSchema = z.object({
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
     const { id } = await params;
 
     if (session.user.id === id) {
-      return NextResponse.json({ error: '자기 자신의 역할은 변경할 수 없습니다' }, { status: 400 });
+      return badRequestResponse('자기 자신의 역할은 변경할 수 없습니다');
     }
 
     const body = await request.json();
     const parsed = rolesUpdateSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const result = await updateUserRoles({
@@ -38,10 +44,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof Error && error.message === 'User not found') {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다' }, { status: 404 });
-    }
-    console.error('Admin roles update error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin roles update error');
   }
 }

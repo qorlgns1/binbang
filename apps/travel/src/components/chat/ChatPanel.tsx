@@ -1,339 +1,139 @@
 'use client';
 
-import type { UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { Bot, History, Landmark, RefreshCw, Save } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
+import { ChatPanelHeader } from '@/components/chat/ChatPanelHeader';
 import { ChatInput } from '@/components/chat/ChatInput';
-import { ChatMessage } from '@/components/chat/ChatMessage';
+import { ChatMessageList } from '@/components/chat/ChatMessageList';
+import { ChatPanelErrorBanner, ChatPanelRestoreBanner } from '@/components/chat/ChatPanelSections';
+import { extractMapEntitiesFromMessages, isRateLimitErrorMessage } from '@/components/chat/chatPanelUtils';
 import { HistorySidebar } from '@/components/history/HistorySidebar';
-import { LoginPromptModal } from '@/components/modals/LoginPromptModal';
+import { useChatComposer } from '@/hooks/useChatComposer';
+import { useChatViewport } from '@/hooks/useChatViewport';
+import { useChatLoginGate } from '@/hooks/useChatLoginGate';
+import { useConversationRestore } from '@/hooks/useConversationRestore';
 import { useGuestSession } from '@/hooks/useGuestSession';
+import { useRateLimitLoginPrompt } from '@/hooks/useRateLimitLoginPrompt';
 import { useSessionMerge } from '@/hooks/useSessionMerge';
-import type { MapEntity, PlaceEntity } from '@/lib/types';
+import { ApiError, getUserMessage } from '@/lib/apiError';
+import { isRestoreAutoEnabled } from '@/lib/featureFlags';
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
-interface ChatPanelProps {
-  onEntitiesUpdate: (entities: MapEntity[]) => void;
-  onPlaceSelect: (place: PlaceEntity) => void;
-  onPlaceHover?: (placeId: string | undefined) => void;
-  selectedPlaceId?: string;
-}
-
-export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selectedPlaceId }: ChatPanelProps) {
+export function ChatPanel() {
   const t = useTranslations('chat');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginModalTrigger, setLoginModalTrigger] = useState<'save' | 'history' | 'bookmark'>('save');
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
-  const { sessionId } = useGuestSession();
-  useSessionMerge();
   const { status: authStatus } = useSession();
+  const restoreAutoEnabled = isRestoreAutoEnabled();
 
-  const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat({
-    body: { sessionId, conversationId: currentConversationId },
-  } as Parameters<typeof useChat>[0]);
+  const { sessionId, currentConversationId } = useChatSessionStore();
+  const { selectedPlaceId, setEntities } = usePlaceStore();
+
+  // 세션 초기화 (store에 sessionId/mergeStatus 기록)
+  useGuestSession();
+  useSessionMerge();
+
+  const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat();
+
+  const { restoreStatus, handleNewConversation, handleRetryRestore, handleSelectConversation } = useConversationRestore(
+    {
+      messages,
+      restoreAutoEnabled,
+      setMessages,
+    },
+  );
+
+  const { openLoginModalForRateLimit, handleHistoryClick, handleSaveClick } = useChatLoginGate({
+    authStatus,
+    messagesCount: messages.length,
+    onOpenHistory: () => setShowHistory(true),
+  });
 
   const isLoading = status !== 'ready';
+  const rawErrorMessage = typeof error?.message === 'string' ? error.message : null;
+  const userErrorMessage = error instanceof Error ? getUserMessage(error) : null;
+  const isRateLimitError =
+    error instanceof ApiError
+      ? error.code === 'RATE_LIMITED'
+      : rawErrorMessage != null && isRateLimitErrorMessage(rawErrorMessage);
+  const rateLimitPromptKey =
+    error instanceof ApiError ? `${error.code}:${String(error.status ?? '')}` : rawErrorMessage;
 
-  const extractEntities = useCallback(
-    (msgs: UIMessage[]) => {
-      const entities: MapEntity[] = [];
-      for (const msg of msgs) {
-        for (const part of msg.parts) {
-          const partAny = part as unknown as { type: string; state?: string; output?: unknown; toolName?: string };
-          if (!partAny.type.startsWith('tool-') && partAny.type !== 'dynamic-tool') continue;
-          if (partAny.state !== 'output-available') continue;
+  const { getChatRequestBody, handleSubmit, handleExampleClick } = useChatComposer({
+    authStatus,
+    currentConversationId,
+    input,
+    isLoading,
+    sendMessage,
+    sessionId: sessionId ?? undefined,
+    setInput,
+  });
 
-          let toolName: string;
-          if (partAny.type === 'dynamic-tool') {
-            toolName = partAny.toolName ?? '';
-          } else {
-            toolName = partAny.type.slice(5);
-          }
+  useRateLimitLoginPrompt({
+    authStatus,
+    errorKey: rateLimitPromptKey,
+    isRateLimitError,
+    onPromptLogin: openLoginModalForRateLimit,
+  });
 
-          if (toolName === 'searchPlaces' && partAny.output) {
-            const data = partAny.output as { places: PlaceEntity[] };
-            if (data.places) {
-              for (const place of data.places) {
-                if (place.latitude != null && place.longitude != null) {
-                  entities.push({
-                    id: place.placeId,
-                    name: place.name,
-                    latitude: place.latitude,
-                    longitude: place.longitude,
-                    type: inferType(place.types),
-                    photoUrl: place.photoUrl,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-      onEntitiesUpdate(entities);
-    },
-    [onEntitiesUpdate],
-  );
+  const { messagesEndRef, scrollAreaRef } = useChatViewport({
+    messagesLength: messages.length,
+    selectedPlaceId,
+  });
 
   useEffect(() => {
-    extractEntities(messages);
-  }, [messages, extractEntities]);
+    setEntities(extractMapEntitiesFromMessages(messages));
+  }, [messages, setEntities]);
 
-  const messagesLength = messages.length;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally scroll on message count change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messagesLength]);
-
-  useEffect(() => {
-    if (!selectedPlaceId || !scrollAreaRef.current) return;
-    const el = scrollAreaRef.current.querySelector(`[data-place-id="${selectedPlaceId}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [selectedPlaceId]);
-
-  const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
-      e?.preventDefault?.();
-      if (!input.trim() || isLoading) return;
-      const text = input.trim();
-      setInput('');
-      sendMessage({ text });
-    },
-    [input, isLoading, sendMessage],
-  );
-
-  const handleExampleClick = (query: string) => {
-    setInput('');
-    sendMessage({ text: query });
-  };
-
-  const handleAlertClick = useCallback(
-    (_place: PlaceEntity) => {
-      toast.info(t('alertFeatureComingSoon'));
-    },
-    [t],
-  );
-
-  const handleSaveClick = useCallback(() => {
-    if (authStatus === 'authenticated') {
-      toast.success(t('conversationSaved'));
-    } else {
-      setLoginModalTrigger('save');
-      setShowLoginModal(true);
-    }
-  }, [authStatus, t]);
-
-  const handleHistoryClick = useCallback(() => {
-    if (authStatus === 'authenticated') {
-      setShowHistory(true);
-    } else {
-      setLoginModalTrigger('history');
-      setShowLoginModal(true);
-    }
-  }, [authStatus]);
-
-  const handleSelectConversation = useCallback(
-    async (conversationId: string) => {
-      try {
-        const res = await fetch(`/api/conversations/${conversationId}`);
-        if (!res.ok) throw new Error('Failed to load conversation');
-
-        const data = (await res.json()) as {
-          conversation: {
-            id: string;
-            messages: Array<{ role: string; content: string }>;
-            entities: Array<{
-              id: string;
-              type: string;
-              name: string;
-              latitude: number;
-              longitude: number;
-              metadata: unknown;
-            }>;
-          };
-        };
-
-        // Convert messages to UIMessage format
-        const uiMessages: UIMessage[] = data.conversation.messages.map((msg) => ({
-          id: crypto.randomUUID(),
-          role: msg.role as 'user' | 'assistant',
-          parts: [{ type: 'text' as const, text: msg.content }],
-        }));
-
-        setMessages(uiMessages);
-        setCurrentConversationId(conversationId);
-
-        // Extract and update entities
-        const mapEntities: MapEntity[] = data.conversation.entities
-          .filter((e) => e.latitude != null && e.longitude != null)
-          .map((e) => ({
-            id: e.id,
-            name: e.name,
-            latitude: e.latitude,
-            longitude: e.longitude,
-            type: e.type as MapEntity['type'],
-            photoUrl: (e.metadata as { photoUrl?: string })?.photoUrl,
-          }));
-
-        onEntitiesUpdate(mapEntities);
-        toast.success(t('conversationLoaded'));
-      } catch (err) {
-        console.error('Failed to load conversation:', err);
-        toast.error(t('conversationLoadFailed'));
-      }
-    },
-    [setMessages, onEntitiesUpdate, t],
-  );
-
-  const handleNewConversation = useCallback(() => {
-    setMessages([]);
-    setCurrentConversationId(null);
-    onEntitiesUpdate([]);
-  }, [setMessages, onEntitiesUpdate]);
+  const exampleQueries = [
+    t('exampleQuestions.question1'),
+    t('exampleQuestions.question2'),
+    t('exampleQuestions.question3'),
+  ];
 
   return (
     <div className='flex h-full flex-col'>
-      {/* Header with actions */}
-      {messages.length > 0 && (
-        <div className='border-b border-border bg-background/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
-            <button
-              type='button'
-              onClick={handleNewConversation}
-              className='text-sm text-muted-foreground hover:text-foreground transition-colors'
-              aria-label={t('newConversation')}
-            >
-              {t('newConversation')}
-            </button>
-          </div>
-          <div className='flex items-center gap-2'>
-            <button
-              type='button'
-              onClick={handleSaveClick}
-              className='p-2 rounded-lg hover:bg-muted transition-colors'
-              aria-label={t('saveConversation')}
-              title={t('saveConversation')}
-            >
-              <Save className='h-4 w-4' />
-            </button>
-            <button
-              type='button'
-              onClick={handleHistoryClick}
-              className='p-2 rounded-lg hover:bg-muted transition-colors'
-              aria-label={t('conversationHistory')}
-              title={t('conversationHistory')}
-            >
-              <History className='h-4 w-4' />
-            </button>
-          </div>
-        </div>
+      <ChatPanelHeader
+        onNewConversation={handleNewConversation}
+        onSaveClick={handleSaveClick}
+        onHistoryClick={handleHistoryClick}
+      />
+
+      <ChatPanelRestoreBanner
+        restoreStatus={restoreStatus}
+        onRetryRestore={() => void handleRetryRestore()}
+        onOpenHistory={() => setShowHistory(true)}
+      />
+
+      <ChatMessageList
+        messages={messages}
+        status={status}
+        exampleQueries={exampleQueries}
+        scrollAreaRef={scrollAreaRef}
+        messagesEndRef={messagesEndRef}
+        onExampleClick={handleExampleClick}
+      />
+
+      {error && (
+        <ChatPanelErrorBanner
+          isRateLimitError={isRateLimitError}
+          message={userErrorMessage}
+          showLoginAction={authStatus !== 'authenticated' && isRateLimitError}
+          onLogin={openLoginModalForRateLimit}
+          onRetry={() => regenerate({ body: getChatRequestBody() })}
+          onDismiss={clearError}
+        />
       )}
 
-      <div ref={scrollAreaRef} className='flex-1 overflow-y-auto scrollbar-hide px-4 py-4 space-y-6'>
-        {messages.length === 0 ? (
-          <div className='flex flex-col items-center justify-center min-h-[60vh] text-center px-4'>
-            <div className='flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-amber-light dark:bg-brand-amber-dark/30 mb-6 ring-2 ring-brand-amber/20 dark:ring-brand-amber/50'>
-              <Landmark className='h-10 w-10 text-brand-amber dark:text-brand-amber' aria-hidden />
-            </div>
-            <h2 className='text-2xl font-bold mb-2 text-foreground'>{t('welcomeTitle')}</h2>
-            <p className='text-muted-foreground mb-8 max-w-md leading-loose text-[0.9375rem] sm:text-base'>
-              {t('welcomeMessage')}
-            </p>
-            <p className='text-xs text-muted-foreground mb-3'>{t('exampleQuestions.title')}</p>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg'>
-              {(['question1', 'question2', 'question3'] as const).map((key) => {
-                const query = t(`exampleQuestions.${key}`);
-                return (
-                  <button
-                    key={key}
-                    type='button'
-                    onClick={() => handleExampleClick(query)}
-                    className='rounded-xl border border-border bg-card px-4 py-3 text-left text-sm hover:bg-accent hover:border-brand-amber/50 active:scale-[0.98] transition-all duration-150 shadow-sm hover:shadow-md'
-                    aria-label={t('exampleQuestion', { query })}
-                  >
-                    {query}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className='space-y-0'>
-            {messages.map((message, idx) => {
-              const isLast = idx === messages.length - 1;
-              const isStreamingAssistant = status === 'streaming' && isLast && message.role === 'assistant';
-              return (
-                <div key={message.id} className='py-4 border-b border-border/40 last:border-0 last:pb-2'>
-                  <ChatMessage
-                    message={message}
-                    onPlaceSelect={onPlaceSelect}
-                    onPlaceHover={onPlaceHover}
-                    onAlertClick={handleAlertClick}
-                    selectedPlaceId={selectedPlaceId}
-                    isStreaming={isStreamingAssistant}
-                  />
-                </div>
-              );
-            })}
-            {status === 'streaming' && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
-              <div className='flex gap-3 py-4' aria-live='polite' aria-busy='true'>
-                <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border/50'>
-                  <Bot className='h-4 w-4' aria-hidden />
-                </div>
-                <div className='flex flex-1 items-center gap-1 rounded-2xl rounded-tl-sm bg-muted/50 dark:bg-muted/30 border border-border/50 px-4 py-3 w-fit'>
-                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]' />
-                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]' />
-                  <span className='h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]' />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-      {error && (
-        <div className='border-t border-border bg-destructive/10 px-4 py-3 flex items-center justify-between gap-3'>
-          <p className='text-sm text-destructive font-medium flex-1'>
-            {typeof error?.message === 'string' &&
-            (error.message.includes('429') || /rate\s*limit|too\s*many/i.test(error.message))
-              ? t('rateLimitError')
-              : t('networkError')}
-          </p>
-          <div className='flex items-center gap-2 shrink-0'>
-            <button
-              type='button'
-              onClick={() => regenerate()}
-              className='inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
-              aria-label={t('retryLastMessage')}
-            >
-              <RefreshCw className='h-4 w-4' aria-hidden />
-              {t('retry')}
-            </button>
-            <button
-              type='button'
-              onClick={() => clearError()}
-              className='text-sm text-muted-foreground hover:text-foreground transition-colors'
-              aria-label={t('closeError')}
-            >
-              {t('close')}
-            </button>
-          </div>
-        </div>
-      )}
-      <div className='border-t border-border bg-background/80 backdrop-blur-sm p-4 pb-keyboard'>
+      <div className='border-t border-border/60 bg-background/95 backdrop-blur-md p-4 md:p-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]'>
         <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
       </div>
 
-      {/* Modals and Sidebars */}
-      <LoginPromptModal open={showLoginModal} onClose={() => setShowLoginModal(false)} trigger={loginModalTrigger} />
       <HistorySidebar
         open={showHistory}
         onClose={() => setShowHistory(false)}
@@ -342,11 +142,4 @@ export function ChatPanel({ onEntitiesUpdate, onPlaceSelect, onPlaceHover, selec
       />
     </div>
   );
-}
-
-function inferType(types: string[]): MapEntity['type'] {
-  if (types.includes('lodging') || types.includes('hotel')) return 'accommodation';
-  if (types.includes('restaurant') || types.includes('food')) return 'restaurant';
-  if (types.includes('tourist_attraction') || types.includes('museum')) return 'attraction';
-  return 'place';
 }

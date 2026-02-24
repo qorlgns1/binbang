@@ -1,5 +1,6 @@
 import { prisma } from '@workspace/db';
 import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
+import { BadRequestError } from '@workspace/shared/errors';
 
 export type FunnelRangePreset = 'today' | '7d' | '30d' | 'all';
 
@@ -53,7 +54,7 @@ const DEFAULT_RANGE: FunnelRangePreset = '30d';
 function parseIsoDate(value: string, label: 'from' | 'to'): Date {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`Invalid \`${label}\` datetime`);
+    throw new BadRequestError(`Invalid \`${label}\` datetime`);
   }
 
   return parsed;
@@ -67,7 +68,7 @@ function assertValidRangePreset(range: FunnelRangePreset): FunnelRangePreset {
     case 'all':
       return range;
     default:
-      throw new Error(`Invalid range preset: ${String(range)}`);
+      throw new BadRequestError(`Invalid range preset: ${String(range)}`);
   }
 }
 
@@ -144,7 +145,7 @@ async function resolveRange(
     const to = endOfUtcDay(parseIsoDate(toIso, 'to'));
 
     if (from.getTime() > to.getTime()) {
-      throw new Error('`from` must be less than or equal to `to`');
+      throw new BadRequestError('`from` must be less than or equal to `to`');
     }
 
     return { from, to };
@@ -164,7 +165,7 @@ async function resolveRange(
       return { from, to };
     }
     default:
-      throw new Error(`Invalid range preset: ${String(validatedRange)}`);
+      throw new BadRequestError(`Invalid range preset: ${String(validatedRange)}`);
   }
 }
 

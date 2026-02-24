@@ -2,13 +2,14 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
 import { checkUserExists, getUserActivity } from '@/services/admin/users.service';
 import type { ActivityType } from '@/types/activity';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const userExists = await checkUserExists(userId);
     if (!userExists) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다' }, { status: 404 });
+      return notFoundResponse('사용자를 찾을 수 없습니다');
     }
 
     const response = await getUserActivity({
@@ -32,7 +33,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Admin user activity fetch error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Admin user activity fetch error');
   }
 }

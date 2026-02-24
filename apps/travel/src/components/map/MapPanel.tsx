@@ -1,68 +1,32 @@
 'use client';
 
-import {
-  APIProvider,
-  AdvancedMarker,
-  InfoWindow,
-  Map as GoogleMap,
-  Pin,
-  useMap,
-  useApiIsLoaded,
-} from '@vis.gl/react-google-maps';
+import { APIProvider, Map as GoogleMap, useMap, useApiIsLoaded } from '@vis.gl/react-google-maps';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { Bell, MapPin, RefreshCw } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { MapEntity } from '@/lib/types';
+import { MapEntityMarker } from '@/components/map/MapEntityMarker';
+import {
+  CLUSTER_THRESHOLD,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  MAP_LOAD_TIMEOUT_MS,
+} from '@/components/map/mapPanelConstants';
+import { MapSelectedInfoWindow } from '@/components/map/MapSelectedInfoWindow';
 import { LighthouseSpinner } from '@/components/ui/LighthouseSpinner';
-
-const CLUSTER_THRESHOLD = 12;
-
-const MAP_LOAD_TIMEOUT_MS = 15000;
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface MapPanelProps {
-  entities: MapEntity[];
-  selectedEntityId?: string;
-  hoveredEntityId?: string;
-  onEntitySelect?: (entityId: string) => void;
-  onAlertClick?: (entityId: string) => void;
-  onCloseInfoWindow?: () => void;
   apiKey: string;
 }
 
-const DEFAULT_CENTER = { lat: 20, lng: 100 };
-const DEFAULT_ZOOM = 3;
-
-const TYPE_COLORS: Record<string, { background: string; glyph: string }> = {
-  place: { background: '#2563eb', glyph: '#ffffff' },
-  restaurant: { background: '#f97316', glyph: '#ffffff' },
-  accommodation: { background: '#8b5cf6', glyph: '#ffffff' },
-  attraction: { background: '#10b981', glyph: '#ffffff' },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  place: '장소',
-  restaurant: '음식점',
-  accommodation: '숙소',
-  attraction: '관광지',
-};
-
-export function MapPanel({
-  entities,
-  selectedEntityId,
-  hoveredEntityId,
-  onEntitySelect,
-  onAlertClick,
-  onCloseInfoWindow,
-  apiKey,
-}: MapPanelProps) {
+export function MapPanel({ apiKey }: MapPanelProps) {
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   if (!apiKey) {
     return (
-      <div className='flex h-full items-center justify-center bg-muted/30'>
+      <div className='flex h-full items-center justify-center bg-muted/30' data-testid='map-unavailable'>
         <div className='text-center text-muted-foreground'>
           <p className='text-lg font-medium'>Map Unavailable</p>
           <p className='text-sm mt-1'>Google Maps API key is not configured</p>
@@ -73,7 +37,10 @@ export function MapPanel({
 
   if (loadError) {
     return (
-      <div className='flex h-full flex-col items-center justify-center gap-4 bg-muted/30 px-4'>
+      <div
+        className='flex h-full flex-col items-center justify-center gap-4 bg-muted/30 px-4'
+        data-testid='map-load-error'
+      >
         <div className='flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10'>
           <MapPin className='h-7 w-7 text-destructive' aria-hidden />
         </div>
@@ -85,7 +52,7 @@ export function MapPanel({
             setLoadError(false);
             setRetryKey((k: number) => k + 1);
           }}
-          className='flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
+          className='flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 active:scale-95 transition-all duration-150'
           aria-label='지도 다시 불러오기'
         >
           <RefreshCw className='h-4 w-4' aria-hidden />
@@ -97,7 +64,7 @@ export function MapPanel({
 
   return (
     <APIProvider apiKey={apiKey} key={retryKey}>
-      <div className='relative h-full w-full'>
+      <div className='relative h-full w-full' data-testid='map-panel' data-map-provider='google'>
         <GoogleMap
           defaultCenter={DEFAULT_CENTER}
           defaultZoom={DEFAULT_ZOOM}
@@ -106,15 +73,7 @@ export function MapPanel({
           disableDefaultUI={false}
           className='h-full w-full'
         >
-          <MapContent
-            entities={entities}
-            selectedEntityId={selectedEntityId}
-            hoveredEntityId={hoveredEntityId}
-            onEntitySelect={onEntitySelect}
-            onAlertClick={onAlertClick}
-            onCloseInfoWindow={onCloseInfoWindow}
-            onLoadTimeout={() => setLoadError(true)}
-          />
+          <MapContent onLoadTimeout={() => setLoadError(true)} />
         </GoogleMap>
         <MapLoadingOverlay />
       </div>
@@ -130,6 +89,7 @@ function MapLoadingOverlay() {
       className='absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm'
       aria-live='polite'
       aria-busy='true'
+      data-testid='map-loading-overlay'
     >
       <LighthouseSpinner size='lg' />
       <p className='text-sm font-medium text-muted-foreground'>어둠 속에서 길을 찾고 있어요...</p>
@@ -138,30 +98,21 @@ function MapLoadingOverlay() {
 }
 
 interface MapContentProps {
-  entities: MapEntity[];
-  selectedEntityId?: string;
-  hoveredEntityId?: string;
-  onEntitySelect?: (entityId: string) => void;
-  onAlertClick?: (entityId: string) => void;
-  onCloseInfoWindow?: () => void;
   onLoadTimeout?: () => void;
 }
 
-function MapContent({
-  entities,
-  selectedEntityId,
-  hoveredEntityId,
-  onEntitySelect,
-  onAlertClick,
-  onCloseInfoWindow,
-  onLoadTimeout,
-}: MapContentProps) {
+function MapContent({ onLoadTimeout }: MapContentProps) {
+  const { entities, selectedPlaceId, hoveredPlaceId, selectEntity, hoverEntity } = usePlaceStore();
+
   const map = useMap();
   const isLoaded = useApiIsLoaded();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const selectedEntity = selectedEntityId ? entities.find((e) => e.id === selectedEntityId) : undefined;
+  const selectedEntity = selectedPlaceId ? entities.find((e) => e.id === selectedPlaceId) : undefined;
   const markerRefs = useRef<unknown[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
+  const handleMarkerRef = useCallback((index: number, marker: unknown) => {
+    markerRefs.current[index] = marker;
+  }, []);
 
   useEffect(() => {
     if (isLoaded) return;
@@ -220,21 +171,21 @@ function MapContent({
   }, [fitEntities]);
 
   const handleSelectedEntity = useCallback(() => {
-    if (!map || !selectedEntityId) return;
-    const entity = entities.find((e) => e.id === selectedEntityId);
+    if (!map || !selectedPlaceId) return;
+    const entity = entities.find((e) => e.id === selectedPlaceId);
     if (entity) {
       map.panTo({ lat: entity.latitude, lng: entity.longitude });
       map.setZoom(15);
     }
-  }, [map, selectedEntityId, entities]);
+  }, [map, selectedPlaceId, entities]);
 
   useEffect(() => {
     handleSelectedEntity();
   }, [handleSelectedEntity]);
 
   useEffect(() => {
-    if (!map || !onCloseInfoWindow) return;
-    const handler = () => onCloseInfoWindow();
+    if (!map) return;
+    const handler = () => selectEntity(undefined);
     const g = (
       globalThis as unknown as {
         google?: {
@@ -251,68 +202,25 @@ function MapContent({
     return () => {
       if (listener?.remove) listener.remove();
     };
-  }, [map, onCloseInfoWindow]);
+  }, [map, selectEntity]);
 
   return (
     <>
-      {entities.map((entity, index) => {
-        const isSelected = entity.id === selectedEntityId;
-        const isHovered = entity.id === hoveredId || entity.id === hoveredEntityId;
-        const colors = TYPE_COLORS[entity.type] ?? TYPE_COLORS.place;
-        const scale = isSelected || isHovered ? 1.3 : 1;
-
-        return (
-          <AdvancedMarker
-            key={entity.id}
-            ref={(el: unknown) => {
-              markerRefs.current[index] = el;
-            }}
-            position={{ lat: entity.latitude, lng: entity.longitude }}
-            title={entity.name}
-            onClick={() => onEntitySelect?.(entity.id)}
-            onMouseEnter={() => setHoveredId(entity.id)}
-            onMouseLeave={() => setHoveredId(null)}
-          >
-            <Pin background={colors.background} glyphColor={colors.glyph} scale={scale} />
-          </AdvancedMarker>
-        );
-      })}
-      {selectedEntity && (
-        <InfoWindow
-          position={{ lat: selectedEntity.latitude, lng: selectedEntity.longitude }}
-          onCloseClick={() => onCloseInfoWindow?.()}
-        >
-          <div className='min-w-[200px] max-w-[280px] text-left'>
-            {selectedEntity.photoUrl && (
-              <div className='relative aspect-4/3 w-full overflow-hidden rounded-t-lg bg-muted'>
-                <Image
-                  src={selectedEntity.photoUrl}
-                  alt={selectedEntity.name}
-                  fill
-                  sizes='280px'
-                  className='object-cover'
-                  unoptimized
-                />
-              </div>
-            )}
-            <div className='p-2'>
-              <h4 className='font-semibold text-sm text-gray-900 dark:text-gray-100 truncate'>{selectedEntity.name}</h4>
-              <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
-                {TYPE_LABELS[selectedEntity.type] ?? selectedEntity.type}
-              </p>
-              <button
-                type='button'
-                onClick={() => onAlertClick?.(selectedEntity.id)}
-                className='mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-amber hover:bg-brand-amber/90 active:scale-95 text-white text-sm font-medium py-2 px-3 transition-all duration-150'
-                aria-label={`${selectedEntity.name}의 빈방 알림 설정하기`}
-              >
-                <Bell className='h-4 w-4 shrink-0' aria-hidden />
-                빈방 알림 설정하기
-              </button>
-            </div>
-          </div>
-        </InfoWindow>
-      )}
+      {entities.map((entity, index) => (
+        <MapEntityMarker
+          key={entity.id}
+          entity={entity}
+          index={index}
+          selectedEntityId={selectedPlaceId}
+          hoveredEntityId={hoveredPlaceId}
+          localHoveredId={hoveredId}
+          onSetMarkerRef={handleMarkerRef}
+          onSetHoveredId={setHoveredId}
+          onEntitySelect={selectEntity}
+          onEntityHover={hoverEntity}
+        />
+      ))}
+      {selectedEntity && <MapSelectedInfoWindow selectedEntity={selectedEntity} />}
     </>
   );
 }

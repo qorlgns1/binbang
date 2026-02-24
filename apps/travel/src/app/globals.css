@@ -39,6 +39,11 @@
 
 /* 빈방 브랜드: 메인 딥 네이비(#1e3a5f), 포인트 앰버·골드(#e6a23c). 배경은 mindtrip 시각 유사도 위해 밝게 유지 */
 :root {
+  /* Layout structure variables (Mindtrip-style) */
+  --nav-width-collapsed: 3.5rem;
+  --nav-width-expanded: 13rem;
+  --header-height: 3rem;
+
   --background: #ffffff;
   --foreground: #0f172a;
 
@@ -120,6 +125,11 @@
       "liga" 1,
       "calt" 1;
     letter-spacing: 0.01em;
+    /* mindtrip 느낌: 밝고 정돈된 배경 */
+    background-image: radial-gradient(ellipse 120% 80% at 50% -20%, var(--brand-amber-light) 0%, transparent 50%);
+  }
+  .dark body {
+    background-image: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(251, 191, 36, 0.06) 0%, transparent 50%);
   }
 
   /* 모바일에서 더 나은 가독성을 위한 폰트 크기 조정 */
@@ -144,6 +154,17 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* 메시지 블록 구분 (mindtrip 스타일) */
+  .message-block {
+    @apply flex flex-col gap-3 border-border/60;
+  }
+  .message-block:not(:first-child) {
+    @apply mt-6 pt-6 border-t;
+  }
+  .message-block:not(:last-child) {
+    @apply pb-6 mb-6 border-b;
   }
 
   /* 등대 빛 회전 애니메이션 */

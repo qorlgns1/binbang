@@ -6,6 +6,7 @@
 
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { parseApiError } from '@/lib/apiError';
 import { adminKeys } from '@/lib/queryKeys';
 
 import type { AdminPlanInfo } from './queries';
@@ -42,8 +43,7 @@ async function createPlan(input: PlanInput): Promise<AdminPlanInfo> {
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '플랜 생성에 실패했습니다');
+    throw await parseApiError(res, '플랜 생성에 실패했습니다');
   }
   return res.json();
 }
@@ -55,8 +55,7 @@ async function updatePlan({ id, ...input }: UpdatePlanVariables): Promise<AdminP
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '플랜 수정에 실패했습니다');
+    throw await parseApiError(res, '플랜 수정에 실패했습니다');
   }
   return res.json();
 }
@@ -64,8 +63,7 @@ async function updatePlan({ id, ...input }: UpdatePlanVariables): Promise<AdminP
 async function deletePlan(id: string): Promise<void> {
   const res = await fetch(`/api/admin/plans/${id}`, { method: 'DELETE' });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '플랜 삭제에 실패했습니다');
+    throw await parseApiError(res, '플랜 삭제에 실패했습니다');
   }
 }
 

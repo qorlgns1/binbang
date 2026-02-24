@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { getAdminFunnelClicks } from '@/services/admin/funnel-clicks.service';
 import type { FunnelRangePreset } from '@/services/admin/funnel.service';
 
@@ -44,45 +45,18 @@ const paramsSchema = z
     }
   });
 
-type ErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'INTERNAL_SERVER_ERROR';
-
-function makeRequestId(): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:.TZ]/g, '')
-    .slice(0, 14);
-  const entropy = Math.floor(Math.random() * 1000)
-    .toString()
-    .padStart(3, '0');
-  return `req_${timestamp}_${entropy}`;
-}
-
-function errorResponse(status: number, code: ErrorCode, message: string, requestId: string): NextResponse {
-  return NextResponse.json(
-    {
-      error: {
-        code,
-        message,
-        requestId,
-      },
-    },
-    { status },
-  );
-}
-
 export async function GET(request: NextRequest): Promise<Response> {
-  const requestId = makeRequestId();
   const startedAt = Date.now();
 
   const session = await requireAdmin();
   if (!session) {
-    return errorResponse(401, 'UNAUTHORIZED', 'Unauthorized', requestId);
+    return unauthorizedResponse();
   }
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const parsed = paramsSchema.safeParse(params);
   if (!parsed.success) {
-    return errorResponse(400, 'BAD_REQUEST', 'Invalid request payload', requestId);
+    return badRequestResponse('Invalid request payload');
   }
 
   try {
@@ -95,7 +69,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     const latencyMs = Date.now() - startedAt;
 
     console.info('[admin/funnel/clicks] success', {
-      requestId,
       range: range ?? '30d',
       from: parsed.data.from ?? null,
       to: parsed.data.to ?? null,
@@ -108,7 +81,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
   } catch (error) {
     const latencyMs = Date.now() - startedAt;
-    console.error('[admin/funnel/clicks] error', { requestId, latencyMs, error });
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Internal server error', requestId);
+    console.error('[admin/funnel/clicks] error', { latencyMs, error });
+    return handleServiceError(error, '[admin/funnel/clicks]');
   }
 }

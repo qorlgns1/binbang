@@ -6,6 +6,7 @@
 
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { parseApiError } from '@/lib/apiError';
 import { adminKeys } from '@/lib/queryKeys';
 import type { AdminUserInfo } from '@/types/admin';
 
@@ -37,8 +38,7 @@ async function updateUserRoles({ id, roles }: UpdateUserRolesVariables): Promise
     body: JSON.stringify({ roles }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '역할 변경에 실패했습니다');
+    throw await parseApiError(res, '역할 변경에 실패했습니다');
   }
   return res.json();
 }
@@ -50,8 +50,7 @@ async function updateUserPlan({ id, planName }: UpdateUserPlanVariables): Promis
     body: JSON.stringify({ planName }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '플랜 변경에 실패했습니다');
+    throw await parseApiError(res, '플랜 변경에 실패했습니다');
   }
   return res.json();
 }

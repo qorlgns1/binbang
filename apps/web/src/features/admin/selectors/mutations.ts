@@ -7,6 +7,7 @@
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { Platform } from '@workspace/db/enums';
+import { parseApiError } from '@/lib/apiError';
 import { adminKeys } from '@/lib/queryKeys';
 import type { CreateSelectorPayload, PlatformSelectorItem, UpdateSelectorPayload } from '@/types/admin';
 
@@ -59,8 +60,7 @@ async function createSelector(payload: CreateSelectorPayload): Promise<SelectorR
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to create selector');
+    throw await parseApiError(res, 'Failed to create selector');
   }
   return res.json();
 }
@@ -72,8 +72,7 @@ async function updateSelector({ id, payload }: UpdateSelectorVariables): Promise
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to update selector');
+    throw await parseApiError(res, 'Failed to update selector');
   }
   return res.json();
 }
@@ -83,8 +82,7 @@ async function deleteSelector(id: string): Promise<DeleteResponse> {
     method: 'DELETE',
   });
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to delete selector');
+    throw await parseApiError(res, 'Failed to delete selector');
   }
   return res.json();
 }
@@ -96,8 +94,7 @@ async function invalidateCache(platform?: Platform): Promise<InvalidateCacheResu
     body: JSON.stringify({ platform }),
   });
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to invalidate cache');
+    throw await parseApiError(res, 'Failed to invalidate cache');
   }
   return res.json();
 }
@@ -111,7 +108,7 @@ async function updateTestableAttributes(attributes: string[]): Promise<string[]>
     }),
   });
 
-  if (!res.ok) throw new Error('Failed to update settings');
+  if (!res.ok) throw await parseApiError(res, 'Failed to update settings');
   return attributes;
 }
 

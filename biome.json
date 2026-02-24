@@ -21,7 +21,8 @@
       "!*.config.mjs",
       "!next-env.d.ts",
       "!docs",
-      "!pnpm-lock.yaml"
+      "!pnpm-lock.yaml",
+      "!**/test-results"
     ]
   },
   "formatter": {
@@ -115,6 +116,7 @@
         "!**/layout.tsx",
         "!**/loading.tsx",
         "!**/error.tsx",
+        "!**/global-error.tsx",
         "!**/not-found.tsx",
         "!**/template.tsx",
         "!**/default.tsx"

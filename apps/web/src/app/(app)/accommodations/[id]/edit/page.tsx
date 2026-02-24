@@ -13,8 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAccommodation } from '@/hooks/useAccommodation';
 import { useUpdateAccommodation } from '@/hooks/useUpdateAccommodation';
+import { getUserMessage, getValidationFieldErrors } from '@/lib/apiError';
 import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
+
+type AccommodationFormField = 'url' | 'name' | 'checkIn' | 'checkOut' | 'adults';
 
 export default function EditAccommodationPage(): React.ReactElement {
   const t = useTranslations('common');
@@ -34,6 +37,7 @@ export default function EditAccommodationPage(): React.ReactElement {
   const [checkOut, setCheckOut] = useState('');
   const [adults, setAdults] = useState(2);
   const [dateError, setDateError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<AccommodationFormField, string>>>({});
 
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -69,6 +73,25 @@ export default function EditAccommodationPage(): React.ReactElement {
 
     return () => clearTimeout(timer);
   }, [url, originalUrl]);
+
+  useEffect(() => {
+    if (!updateMutation.error) {
+      return;
+    }
+
+    const errors = getValidationFieldErrors(updateMutation.error);
+    if (!errors) {
+      return;
+    }
+
+    setFieldErrors({
+      url: errors.url,
+      name: errors.name,
+      checkIn: errors.checkIn,
+      checkOut: errors.checkOut,
+      adults: errors.adults,
+    });
+  }, [updateMutation.error]);
 
   // "파싱된 정보로 채우기" 버튼
   function applyParsedInfo() {
@@ -106,7 +129,11 @@ export default function EditAccommodationPage(): React.ReactElement {
     );
   }
 
-  const errorMessage = dateError || fetchError?.message || updateMutation.error?.message || '';
+  const errorMessage =
+    dateError ||
+    (fetchError ? getUserMessage(fetchError) : null) ||
+    (updateMutation.error ? getUserMessage(updateMutation.error) : null) ||
+    '';
 
   if (fetching) {
     return (
@@ -147,6 +174,7 @@ export default function EditAccommodationPage(): React.ReactElement {
             onChange={() => {
               updateMutation.reset();
               setDateError('');
+              setFieldErrors({});
             }}
             className='space-y-6'
           >
@@ -163,6 +191,7 @@ export default function EditAccommodationPage(): React.ReactElement {
                 placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
               />
               <p className='text-xs text-muted-foreground'>URL을 변경하면 새 URL에서 정보를 자동으로 파싱합니다.</p>
+              {fieldErrors.url && <p className='text-xs text-destructive'>{fieldErrors.url}</p>}
 
               {/* 파싱 결과 표시 */}
               {parsedInfo?.platform && (
@@ -198,6 +227,7 @@ export default function EditAccommodationPage(): React.ReactElement {
                 onChange={(e) => setName(e.target.value)}
                 placeholder='예: 그린델발트 샬레'
               />
+              {fieldErrors.name && <p className='text-xs text-destructive'>{fieldErrors.name}</p>}
             </div>
 
             {/* 날짜 선택 */}
@@ -213,6 +243,7 @@ export default function EditAccommodationPage(): React.ReactElement {
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                 />
+                {fieldErrors.checkIn && <p className='text-xs text-destructive'>{fieldErrors.checkIn}</p>}
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='checkOut'>체크아웃 *</Label>
@@ -224,6 +255,7 @@ export default function EditAccommodationPage(): React.ReactElement {
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                 />
+                {fieldErrors.checkOut && <p className='text-xs text-destructive'>{fieldErrors.checkOut}</p>}
               </div>
             </div>
 
@@ -239,6 +271,7 @@ export default function EditAccommodationPage(): React.ReactElement {
                 value={adults}
                 onChange={(e) => setAdults(parseInt(e.target.value, 10) || 2)}
               />
+              {fieldErrors.adults && <p className='text-xs text-destructive'>{fieldErrors.adults}</p>}
             </div>
 
             {/* 버튼 */}

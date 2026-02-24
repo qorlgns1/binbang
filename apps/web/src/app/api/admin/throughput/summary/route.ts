@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 import { getThroughputSummary } from '@/services/admin/throughput.service';
 
 const paramsSchema = z.object({
@@ -14,7 +15,7 @@ const paramsSchema = z.object({
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await requireAdmin();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   try {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const parsed = paramsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.errors }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues);
     }
 
     const response = await getThroughputSummary({
@@ -32,7 +33,6 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Throughput summary error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleServiceError(error, 'Throughput summary error');
   }
 }

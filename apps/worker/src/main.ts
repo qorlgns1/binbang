@@ -15,8 +15,10 @@ import {
   createCycleWorker,
   buildQueueSnapshot,
   createRedisConnection,
+  getAffiliateAuditPurgeConfig,
   getPlatformSelectors,
   getSettings,
+  getTravelCachePrewarmConfig,
   invalidateSelectorCache,
   loadPlatformSelectors,
   recordHeartbeatHistory,
@@ -54,13 +56,20 @@ async function main(): Promise<void> {
   const checkQueue = createCheckQueue(queueConnection);
 
   // 4. BullMQ Workers 생성
-  const cycleWorker = createCycleWorker(cycleWorkerConnection, createCycleProcessor(checkQueue), { concurrency: 1 });
+  const cycleWorker = createCycleWorker(cycleWorkerConnection, createCycleProcessor(checkQueue, queueConnection), {
+    concurrency: 1,
+  });
   const checkWorker = createCheckWorker(checkWorkerConnection, processCheck, { concurrency: config.concurrency });
 
   // 5. Repeatable job 설정
+  const affiliateAuditPurgeConfig = getAffiliateAuditPurgeConfig();
+  const travelCachePrewarmConfig = getTravelCachePrewarmConfig();
   await setupRepeatableJobs(cycleQueue, config.schedule, {
     publicAvailabilitySnapshotSchedule: settings.worker.publicAvailabilitySnapshotSchedule,
     publicAvailabilityWindowDays: settings.worker.publicAvailabilitySnapshotWindowDays,
+    affiliateAuditPurgeSchedule: affiliateAuditPurgeConfig.cronSchedule,
+    affiliateAuditCronWatchdogSchedule: affiliateAuditPurgeConfig.cronWatchdogSchedule,
+    travelCachePrewarmSchedule: travelCachePrewarmConfig.cronSchedule,
   });
 
   // 6. 시작 로그
