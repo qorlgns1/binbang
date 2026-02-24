@@ -678,13 +678,21 @@ async function resolveDiffInput(params: {
     return ghResult;
   }
 
-  if (!params.baseRef || !params.headRef) {
-    throw new Error('auto source fallback to git requires --base and --head');
+  const headRef = params.headRef ?? 'HEAD';
+  let baseRef = params.baseRef;
+  if (!baseRef) {
+    const defaultBranchResult = await runCommandWithInput(
+      'git',
+      ['rev-parse', '--abbrev-ref', 'origin/HEAD'],
+      '',
+      5_000,
+    );
+    baseRef = defaultBranchResult.code === 0 ? defaultBranchResult.stdout.trim() : 'origin/main';
   }
   return resolveFromGit({
     prNumber: params.prNumber,
-    baseRef: params.baseRef,
-    headRef: params.headRef,
+    baseRef,
+    headRef,
   });
 }
 

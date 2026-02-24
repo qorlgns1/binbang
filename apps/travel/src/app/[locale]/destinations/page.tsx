@@ -1,3 +1,4 @@
+import type { Destination } from '@workspace/db';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -5,15 +6,14 @@ import { DestinationGrid } from '@/components/destinations/DestinationGrid';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { getPublishedDestinations } from '@/services/destination.service';
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
+
 type Props = {
   params: Promise<{ locale: string }>;
 };
 
 // ISR: 1시간마다 재생성
 export const revalidate = 3600;
-
-// 동적 라우팅 (빌드 시 DB 필요 없음)
-export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DestinationsPage({ params }: Props) {
   const { locale } = await params;
-  const destinations = await getPublishedDestinations();
+  const destinations = await getPublishedDestinations().catch(() => [] as Destination[]);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -50,7 +50,7 @@ export default async function DestinationsPage({ params }: Props) {
       item: {
         '@type': 'TouristDestination',
         name: locale === 'ko' ? dest.nameKo : dest.nameEn,
-        url: `https://binbang.com/${locale}/destinations/${dest.slug}`,
+        url: `${BASE_URL}/${locale}/destinations/${dest.slug}`,
         image: dest.imageUrl,
       },
     })),

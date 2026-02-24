@@ -6,7 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { serializeJsonLd } from '@/lib/jsonLd';
 import { getPublishedDestinations } from '@/services/destination.service';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
 
 export const revalidate = 3600;
 
@@ -30,7 +33,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
     '@type': 'WebApplication',
     name: t('common.appName'),
     description: t('landing.hero.subtitle'),
-    url: `https://binbang.com/${locale}`,
+    url: `${BASE_URL}/${locale}`,
     applicationCategory: 'TravelApplication',
     operatingSystem: 'Web',
     offers: {
@@ -48,8 +51,8 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   return (
     <>
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safe */}
-      <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes </script> and HTML-special chars */}
+      <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <LandingPageClient locale={locale} topDestinations={topDestinations} />
     </>
   );
@@ -170,23 +173,9 @@ function LandingPageClient({ locale, topDestinations }: { locale: string; topDes
       {/* Footer */}
       <footer className='border-t border-border bg-background py-12'>
         <div className='container mx-auto px-4'>
-          <div className='flex flex-col md:flex-row items-center justify-between gap-4'>
-            <p className='text-sm text-muted-foreground'>© 2026 {t('common.appName')}. All rights reserved.</p>
-            <div className='flex gap-6 text-sm'>
-              <Link href='/about' className='text-muted-foreground hover:text-foreground transition-colors'>
-                {t('landing.footer.about')}
-              </Link>
-              <Link href='/contact' className='text-muted-foreground hover:text-foreground transition-colors'>
-                {t('landing.footer.contact')}
-              </Link>
-              <Link href='/privacy' className='text-muted-foreground hover:text-foreground transition-colors'>
-                {t('landing.footer.privacy')}
-              </Link>
-              <Link href='/terms' className='text-muted-foreground hover:text-foreground transition-colors'>
-                {t('landing.footer.terms')}
-              </Link>
-            </div>
-          </div>
+          <p className='text-center text-sm text-muted-foreground'>
+            © 2026 {t('common.appName')}. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
