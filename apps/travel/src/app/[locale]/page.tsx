@@ -174,7 +174,7 @@ function LandingPageClient({ locale, topDestinations }: { locale: string; topDes
       <footer className='border-t border-border bg-background py-12'>
         <div className='container mx-auto px-4'>
           <p className='text-center text-sm text-muted-foreground'>
-            © 2026 {t('common.appName')}. All rights reserved.
+            © {new Date().getFullYear()} {t('common.appName')}. All rights reserved.
           </p>
         </div>
       </footer>

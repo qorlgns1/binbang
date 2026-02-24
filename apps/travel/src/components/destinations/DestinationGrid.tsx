@@ -21,7 +21,10 @@ export function DestinationGrid({ destinations, locale }: DestinationGridProps) 
   const [currentPage, setCurrentPage] = useState(0);
 
   // 국가 목록 추출
-  const countries = ['all', ...Array.from(new Set(destinations.map((d) => d.country)))].sort();
+  const sortedCountries = Array.from(new Set(destinations.map((d) => d.country)))
+    .filter((country) => country !== 'all')
+    .sort((a, b) => a.localeCompare(b, locale));
+  const countries = ['all', ...sortedCountries];
 
   // 필터링된 여행지
   const countryFiltered =

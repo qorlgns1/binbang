@@ -27,7 +27,7 @@ Implementation note: 2026-02-24 — 기술 구현 항목 7개 완료 (데이터 
 | 기본 locale | `en` (영어) | 글로벌 유기적 트래픽 확보 우선; 한국어 사용자는 Accept-Language 감지로 `/ko` 리다이렉트 |
 | URL prefix 정책 | `localePrefix: 'always'` | `/ko/...` `/en/...` 명시적 URL로 hreflang SEO 신호 극대화 |
 | 여행지 페이지 렌더링 | ISR (`revalidate: 86400`) | 빌드 비용 최소화 + 최신 데이터 보장; 핫 여행지는 on-demand revalidation 확장 가능 |
-| 콘텐츠 생성 | Gemini 자동 생성 + 수동 검수 | AI 생성으로 30개 여행지 초기 투입 비용 절감, 품질 게이트는 `published=false` 플래그 |
+| 콘텐츠 생성 | OpenAI(`gpt-4o-mini`) 자동 생성 + 수동 검수 | AI 생성으로 30개 여행지 초기 투입 비용 절감, 품질 게이트는 `published=false` 플래그 |
 | 이미지 소스 | Unsplash API (무료 티어) | Google Places 사진 API 대비 저비용; 추후 Google Places로 보강 가능 |
 | 여행지 데이터 | Prisma `Destination` 모델 | 한/영 JSON 필드로 단일 레코드 다국어 관리 |
 | Sitemap | Next.js `sitemap.ts` (App Router) | 동적 여행지 목록을 DB에서 직접 조회하여 자동 생성 |
@@ -53,7 +53,7 @@ Next.js App Router
 
 콘텐츠 파이프라인
   scripts/generateDestinations.ts
-    → Gemini API (한/영 동시 생성)
+    → OpenAI API (`gpt-4o-mini`, 한/영 동시 생성)
     → Prisma Destination 테이블 (published=false)
     → 검수 후 published=true
     → ISR 페이지 자동 반영
@@ -135,18 +135,18 @@ SEO 크롤링 흐름
 - [x] `DestinationGrid` 컴포넌트
 
 **여행지 콘텐츠 (완료/미완료)**
-- [x] P4-2-T3: `scripts/generateDestinations.ts` — Gemini 기반 한/영 콘텐츠 자동 생성 스크립트
+- [x] P4-2-T3: `scripts/generateDestinations.ts` — OpenAI(`gpt-4o-mini`) 기반 한/영 콘텐츠 자동 생성 스크립트
 - [ ] P4-2-T4: 초기 여행지 30개 데이터 실제 투입 + `published=true` 처리
-  - 아시아 15 (일본 5, 한국 3, 동남아 4, 기타 3)
-  - 유럽 10 (프랑스 2, 영국 2, 이탈리아 2, 기타 4)
-  - 기타 5 (미국 2, 중동 2, 기타 1)
+  - 아시아 16 (일본 3, 한국 3, 동남아 8, 중동/서아시아 2)
+  - 유럽 8 (프랑스 2, 영국 1, 이탈리아 3, 스페인 2)
+  - 미주/오세아니아 6 (미국 3, 호주 2, 뉴질랜드 1)
 - [x] P4-2-T5: 여행지 목록 페이지 검색 기능 (클라이언트 사이드, nameKo/nameEn/country 포함 검색)
 - [x] P4-2-T5: 여행지 목록 페이지 국가별 필터 (기존 유지 + i18n 적용)
 - [x] P4-2-T5: 여행지 목록 페이지 페이지네이션 (12개/페이지)
 
 **SEO 기반 요소 (완료/미완료)**
 - [x] P4-3-T1: `apps/travel/src/app/sitemap.ts` — published 여행지 ko/en URL, 정적 라우트 포함
-- [x] P4-3-T2: `apps/travel/src/app/robots.ts` — `/api/`, `/login` 차단, sitemap URL 명시
+- [x] P4-3-T2: `apps/travel/src/app/robots.ts` — `/api/`, `/login`, `/monitoring` 차단, sitemap URL 명시
 - [ ] P4-3-T5: Google Search Console 도메인 인증 + 사이트맵 제출 (운영 작업)
 - [x] P4-3-T6: Google Analytics 연동 — `NEXT_PUBLIC_GA_MEASUREMENT_ID` 환경 변수 존재 시 조건부 Script 삽입
 
@@ -201,11 +201,11 @@ NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=your-verification-token
 # Unsplash (여행지 이미지)
 UNSPLASH_ACCESS_KEY=your-access-key
 
+# OpenAI (여행지 콘텐츠 생성 스크립트)
+OPENAI_API_KEY=your-openai-api-key
+
 # ISR On-Demand Revalidation (선택)
 REVALIDATION_TOKEN=random-secret-for-revalidate-endpoint
-
-# 콘텐츠 생성 스크립트 (이미 존재: GOOGLE_GENERATIVE_AI_API_KEY 재사용)
-# GOOGLE_GENERATIVE_AI_API_KEY=...  ← 기존 환경 변수 재사용
 ```
 
 ## Acceptance Criteria
@@ -241,7 +241,7 @@ REVALIDATION_TOKEN=random-secret-for-revalidate-endpoint
 | Risk ID | 리스크 | 감지 신호 | 완화 전략 |
 |---------|--------|-----------|-----------|
 | `R-P4-01` | 기존 `/chat` 경로 북마크 깨짐 | 404 증가 | middleware에서 `/chat` → `/en/chat` 리다이렉트 추가 |
-| `R-P4-02` | Gemini 콘텐츠 품질 미달 | `published=false`로 블로킹 | 검수 게이트: 생성 후 수동 확인 + `published=true` 수동 승인 |
+| `R-P4-02` | OpenAI 생성 콘텐츠 품질 미달 | `published=false`로 블로킹 | 검수 게이트: 생성 후 수동 확인 + `published=true` 수동 승인 |
 | `R-P4-03` | ISR 빌드 시 DB 연결 실패 | 빌드 타임아웃 | `dynamicParams=true` + `generateStaticParams` 제거로 빌드 독립성 유지 |
 | `R-P4-04` | hreflang 오류로 SEO 페널티 | Search Console 경고 | 레이아웃·페이지별 alternates 자동 생성, 배포 후 Search Console 검증 필수 |
 | `R-P4-05` | Unsplash API Rate Limit | 이미지 로딩 실패 | 이미지 URL DB 저장 + CDN 캐싱; Rate limit 시 placeholder 폴백 |
@@ -278,7 +278,7 @@ pnpm --filter @workspace/travel generate:destinations
 # DB 직접 업데이트 또는 Admin 패널 활용
 ```
 
-- Gemini를 사용해 각 여행지의 한/영 설명, 하이라이트, 여행 팁 동시 생성
+- OpenAI(`gpt-4o-mini`)를 사용해 각 여행지의 한/영 설명, 하이라이트, 여행 팁 동시 생성
 - `published=false`로 생성 → 검수 후 `published=true`
 - `generateStaticParams` 활성화는 데이터 투입 완료 후 진행
 
@@ -332,17 +332,24 @@ export default async function sitemap() {
 
 ### 초기 여행지 30개 배분
 
-| 지역 | 개수 | 주요 도시 |
+| 국가/권역 | 개수 | 도시 |
 |------|------|-----------|
-| 일본 | 5 | 도쿄, 오사카, 교토, 후쿠오카, 삿포로 |
+| 일본 | 3 | 도쿄, 오사카, 교토 |
 | 한국 | 3 | 서울, 부산, 제주 |
-| 동남아 | 4 | 방콕, 발리, 싱가포르, 다낭 |
-| 아시아 기타 | 3 | 홍콩, 타이베이, 마카오 |
+| 태국 | 3 | 방콕, 푸켓, 치앙마이 |
 | 프랑스 | 2 | 파리, 니스 |
-| 영국 | 2 | 런던, 에든버러 |
-| 이탈리아 | 2 | 로마, 피렌체 |
-| 유럽 기타 | 4 | 바르셀로나, 프라하, 암스테르담, 두바이 |
-| 미주/기타 | 5 | 뉴욕, 하와이, 시드니, 도하, 이스탄불 |
+| 이탈리아 | 3 | 로마, 베네치아, 피렌체 |
+| 영국 | 1 | 런던 |
+| 스페인 | 2 | 바르셀로나, 마드리드 |
+| 미국 | 3 | 뉴욕, 로스앤젤레스, 샌프란시스코 |
+| 싱가포르 | 1 | 싱가포르 |
+| 호주 | 2 | 시드니, 멜버른 |
+| 뉴질랜드 | 1 | 오클랜드 |
+| 베트남 | 2 | 하노이, 호치민 |
+| 말레이시아 | 1 | 쿠알라룸푸르 |
+| 인도네시아 | 1 | 발리 |
+| 아랍에미리트 | 1 | 두바이 |
+| 터키 | 1 | 이스탄불 |
 
 ### Phase 3 연계 포인트
 
@@ -354,7 +361,7 @@ export default async function sitemap() {
 
 | 항목 | 예상 비용 | 비고 |
 |------|-----------|------|
-| Gemini 콘텐츠 생성 (30개) | ~$0.30 | 여행지당 약 $0.01, 1회성 |
+| OpenAI 콘텐츠 생성 (30개) | ~$0.30 | `gpt-4o-mini` 기준, 여행지당 약 $0.01 내외 |
 | Unsplash API | 무료 | 50 req/hour 무료 티어 |
 | ISR 재빌드 (CDN) | 미미 | Vercel/Cloudflare 무료 티어 범위 |
 | Google Analytics | 무료 | |

@@ -530,7 +530,9 @@ async function runCommand(options: CliOptions): Promise<void> {
 
   const hasAgentError = maskedAgentResults.some((agent) => agent.status !== 'success');
   const status: Report['status'] = hasAgentError
-    ? 'degraded'
+    ? mode === 'enforced' && gate.status === 'fail'
+      ? 'fail'
+      : 'degraded'
     : mode === 'enforced' && gate.status === 'fail'
       ? 'fail'
       : 'pass';
@@ -799,7 +801,7 @@ async function resolveFromGit(params: {
 }
 
 function parseRepoFromRemoteUrl(remoteUrl: string): { owner: string; name: string } {
-  const match = remoteUrl.match(/[:/]([^/]+)\/([^/.]+)(?:\.git)?$/);
+  const match = remoteUrl.match(/[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
   if (!match) {
     throw new Error(`Could not parse repository from remote URL: ${remoteUrl}`);
   }
@@ -1337,13 +1339,21 @@ function parseJsonFromText(text: string): unknown {
 
   const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]+?)\s*```$/i);
   if (fencedMatch) {
-    return JSON.parse(fencedMatch[1]);
+    try {
+      return JSON.parse(fencedMatch[1]);
+    } catch {
+      // continue
+    }
   }
 
   const firstBrace = trimmed.indexOf('{');
   const lastBrace = trimmed.lastIndexOf('}');
   if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1));
+    try {
+      return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1));
+    } catch {
+      // continue
+    }
   }
 
   throw new Error('Failed to parse JSON payload');

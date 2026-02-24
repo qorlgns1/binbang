@@ -1,5 +1,6 @@
 import type { Destination } from '@workspace/db';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { DestinationGrid } from '@/components/destinations/DestinationGrid';
@@ -39,6 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DestinationsPage({ params }: Props) {
   const { locale } = await params;
+  const t = await getTranslations({ locale });
   const destinations = await getPublishedDestinations().catch(() => [] as Destination[]);
 
   const jsonLd = {
@@ -72,7 +74,7 @@ export default async function DestinationsPage({ params }: Props) {
               href={`/${locale}/chat`}
               className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
             >
-              Start Planning
+              {t('landing.hero.cta')}
             </Link>
           </div>
         </header>
@@ -80,9 +82,9 @@ export default async function DestinationsPage({ params }: Props) {
         {/* Hero Section */}
         <section className='bg-gradient-to-r from-primary to-brand-amber py-16'>
           <div className='container mx-auto px-4 text-center'>
-            <h1 className='text-4xl md:text-5xl font-bold text-white mb-4'>Discover Your Next Adventure</h1>
+            <h1 className='text-4xl md:text-5xl font-bold text-white mb-4'>{t('destinations.heroTitle')}</h1>
             <p className='text-lg md:text-xl text-white/90 max-w-2xl mx-auto'>
-              Explore {destinations.length} amazing destinations around the world with detailed guides and travel tips
+              {t('destinations.heroSubtitle', { count: destinations.length })}
             </p>
           </div>
         </section>

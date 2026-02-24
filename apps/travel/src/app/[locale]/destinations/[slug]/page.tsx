@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
 import { DestinationDetail } from '@/components/destinations/DestinationDetail';
 import { serializeJsonLd } from '@/lib/jsonLd';
@@ -15,9 +16,11 @@ export const revalidate = 86400;
 // 동적 라우팅 사용 (generateStaticParams는 시드 데이터 투입 후 활성화)
 export const dynamicParams = true;
 
+const getCachedDestination = cache(async (slug: string) => getDestinationBySlug(slug));
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const destination = await getCachedDestination(slug);
 
   if (!destination) {
     return {
@@ -59,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DestinationPage({ params }: Props) {
   const { locale, slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const destination = await getCachedDestination(slug);
 
   if (!destination) {
     notFound();

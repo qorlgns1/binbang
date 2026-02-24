@@ -1,26 +1,27 @@
 'use client';
 
-import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTransition } from 'react';
 
-import type { Locale } from '@/i18n';
+import { usePathname, useRouter } from '@/navigation';
+import { defaultLocale, locales, type Locale } from '@/i18n';
 
 export function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
-  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const currentLocale = params.locale as Locale;
+  const localeParam = params.locale;
+  const normalizedLocale =
+    typeof localeParam === 'string' && locales.includes(localeParam as Locale) ? localeParam : defaultLocale;
+  const currentLocale = normalizedLocale as Locale;
 
   const switchLocale = (newLocale: Locale) => {
     if (newLocale === currentLocale) return;
 
     startTransition(() => {
-      const newPath = pathname.replace(`/${currentLocale}`, `/${newLocale}`);
-      const qs = searchParams.toString();
-      router.push(qs ? `${newPath}?${qs}` : newPath);
+      router.replace(pathname, { locale: newLocale });
     });
   };
 
@@ -30,6 +31,7 @@ export function LanguageSwitcher() {
         type='button'
         onClick={() => switchLocale('ko')}
         disabled={isPending}
+        aria-pressed={currentLocale === 'ko'}
         className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
           currentLocale === 'ko'
             ? 'bg-primary text-primary-foreground'
@@ -43,6 +45,7 @@ export function LanguageSwitcher() {
         type='button'
         onClick={() => switchLocale('en')}
         disabled={isPending}
+        aria-pressed={currentLocale === 'en'}
         className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
           currentLocale === 'en'
             ? 'bg-primary text-primary-foreground'

@@ -79,14 +79,14 @@ export function DestinationDetail({ destination, locale: _locale }: DestinationD
           <div className='lg:col-span-2 space-y-8'>
             {/* 설명 */}
             <section className='bg-card border border-border rounded-xl p-6'>
-              <h2 className='text-2xl font-bold mb-4'>{t('landing.footer.about')}</h2>
+              <h2 className='text-2xl font-bold mb-4'>{t('destinations.about')}</h2>
               <p className='text-muted-foreground leading-relaxed whitespace-pre-line'>{destination.description}</p>
             </section>
 
             {/* 하이라이트 */}
             {destination.highlights.length > 0 && (
               <section className='bg-card border border-border rounded-xl p-6'>
-                <h2 className='text-2xl font-bold mb-4'>Highlights</h2>
+                <h2 className='text-2xl font-bold mb-4'>{t('destinations.highlights')}</h2>
                 <ul className='space-y-3'>
                   {destination.highlights.map((highlight) => (
                     <li key={highlight} className='flex items-start gap-3'>
