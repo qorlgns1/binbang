@@ -10,7 +10,7 @@ Owner: binbang
 - Criticality tier: high
 
 ## 2) Architecture Snapshot
-- Runtime: Node.js `24.x`, pnpm `10.28.0`
+- Runtime: Node.js `24.x`, pnpm `10.30.2`
 - Hosting: OCI VM + Docker Compose + Nginx reverse proxy
 - Components:
   - Web/API: `apps/web` (Next.js 15)
