@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  const topDestinations = await getPublishedDestinations({ limit: 6 });
+  const topDestinations = await getPublishedDestinations({ limit: 6 }).catch(() => [] as Destination[]);
 
   const jsonLd = {
     '@context': 'https://schema.org',

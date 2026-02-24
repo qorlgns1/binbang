@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next';
 
 import { getPublishedDestinations } from '@/services/destination.service';
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
   const locales = ['ko', 'en'];

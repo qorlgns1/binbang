@@ -82,9 +82,7 @@ export function DestinationGrid({ destinations, locale }: DestinationGridProps) 
             </button>
           ))}
         </div>
-        <p className='mt-4 text-sm text-muted-foreground'>
-          {t('resultCount', { count: searchFiltered.length })}
-        </p>
+        <p className='mt-4 text-sm text-muted-foreground'>{t('resultCount', { count: searchFiltered.length })}</p>
       </div>
 
       {/* 여행지 그리드 */}

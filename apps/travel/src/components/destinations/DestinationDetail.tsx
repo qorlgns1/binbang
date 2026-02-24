@@ -96,9 +96,7 @@ export function DestinationDetail({ destination, locale: _locale }: DestinationD
               </div>
               {showMap && (
                 <div className='h-96 rounded-lg overflow-hidden border border-border'>
-                  <MapPanel
-                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}
-                  />
+                  <MapPanel apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''} />
                 </div>
               )}
             </section>
