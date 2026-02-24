@@ -3,9 +3,10 @@
 import { Cloud, DollarSign, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { MapPanel } from '@/components/map/MapPanel';
+import { usePlaceStore } from '@/stores/usePlaceStore';
 
 type DestinationDetailProps = {
   destination: {
@@ -25,6 +26,21 @@ type DestinationDetailProps = {
 export function DestinationDetail({ destination, locale: _locale }: DestinationDetailProps) {
   const t = useTranslations();
   const [showMap, setShowMap] = useState(false);
+  const setEntities = usePlaceStore((s) => s.setEntities);
+
+  useEffect(() => {
+    setEntities([
+      {
+        id: destination.name,
+        name: destination.name,
+        latitude: destination.latitude,
+        longitude: destination.longitude,
+        type: 'attraction',
+        photoUrl: destination.imageUrl,
+      },
+    ]);
+    return () => setEntities([]);
+  }, [destination.name, destination.latitude, destination.longitude, destination.imageUrl, setEntities]);
 
   return (
     <div className='min-h-screen bg-background'>
