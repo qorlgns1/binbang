@@ -2,6 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useSession } from 'next-auth/react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { ChatPanelHeader } from '@/components/chat/ChatPanelHeader';
@@ -22,13 +23,9 @@ import { isRestoreAutoEnabled } from '@/lib/featureFlags';
 import { useChatSessionStore } from '@/stores/useChatSessionStore';
 import { usePlaceStore } from '@/stores/usePlaceStore';
 
-const EXAMPLE_QUERIES = [
-  '파리 에펠탑 근처, 취소분이 자주 나오는 가성비 숙소 찾아줘.',
-  '런던에서 지금 당장 예약 가능한 4성급 호텔 리스트 보여줘.',
-  '특정 숙소의 빈 방 알림을 설정하고 싶어.',
-];
-
 export function ChatPanel() {
+  const t = useTranslations('chat');
+  const locale = useLocale();
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -73,6 +70,7 @@ export function ChatPanel() {
     currentConversationId,
     input,
     isLoading,
+    locale,
     sendMessage,
     sessionId: sessionId ?? undefined,
     setInput,
@@ -94,6 +92,12 @@ export function ChatPanel() {
     setEntities(extractMapEntitiesFromMessages(messages));
   }, [messages, setEntities]);
 
+  const exampleQueries = [
+    t('exampleQuestions.question1'),
+    t('exampleQuestions.question2'),
+    t('exampleQuestions.question3'),
+  ];
+
   return (
     <div className='flex h-full flex-col'>
       <ChatPanelHeader
@@ -111,7 +115,7 @@ export function ChatPanel() {
       <ChatMessageList
         messages={messages}
         status={status}
-        exampleQueries={EXAMPLE_QUERIES}
+        exampleQueries={exampleQueries}
         scrollAreaRef={scrollAreaRef}
         messagesEndRef={messagesEndRef}
         onExampleClick={handleExampleClick}

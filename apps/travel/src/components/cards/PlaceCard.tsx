@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, DollarSign, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 import { StarRating } from '@/components/ui/StarRating';
@@ -20,6 +21,7 @@ function isAccommodationPlace(place: PlaceEntity): boolean {
 }
 
 export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCardProps) {
+  const t = useTranslations('place');
   const showAlertButton = isAccommodationPlace(place);
   return (
     <div
@@ -33,7 +35,7 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
         type='button'
         onClick={() => onSelect?.(place)}
         className='flex-1 w-full text-left hover:opacity-95 transition-opacity'
-        aria-label={`${place.name} 선택하여 지도에서 보기`}
+        aria-label={t('selectToViewOnMap', { name: place.name })}
       >
         {place.photoUrl ? (
           <div className='relative aspect-4/3 w-full overflow-hidden bg-muted'>
@@ -48,7 +50,7 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
           </div>
         ) : (
           <div className='relative aspect-4/3 w-full bg-muted flex items-center justify-center'>
-            <span className='text-muted-foreground text-xs'>이미지 없음</span>
+            <span className='text-muted-foreground text-xs'>{t('noImage')}</span>
           </div>
         )}
         <div className='p-3.5 flex flex-col gap-2'>
@@ -93,10 +95,10 @@ export function PlaceCard({ place, isSelected, onSelect, onAlertClick }: PlaceCa
               onAlertClick?.(place);
             }}
             className='w-full flex items-center justify-center gap-2 rounded-full bg-brand-amber hover:bg-brand-amber/90 active:scale-[0.98] text-white text-sm font-medium py-2.5 transition-all duration-200 shadow-sm hover:shadow'
-            aria-label={`${place.name}의 빈방 알림 설정하기`}
+            aria-label={t('setAlertFor', { name: place.name })}
           >
             <Bell className='h-4 w-4' aria-hidden />
-            빈방 알림 설정하기
+            {t('setAlert')}
           </button>
         </div>
       )}

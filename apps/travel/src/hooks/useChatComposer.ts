@@ -8,6 +8,7 @@ type AuthStatus = 'authenticated' | 'unauthenticated' | 'loading';
 interface ChatRequestBody {
   sessionId?: string;
   conversationId: string;
+  locale?: string;
 }
 
 type SendMessageFn = (message: { text: string }, options?: { body?: ChatRequestBody }) => void;
@@ -17,6 +18,7 @@ interface UseChatComposerOptions {
   currentConversationId: string;
   input: string;
   isLoading: boolean;
+  locale?: string;
   sendMessage: SendMessageFn;
   sessionId?: string;
   setInput: (value: string) => void;
@@ -27,6 +29,7 @@ export function useChatComposer({
   currentConversationId,
   input,
   isLoading,
+  locale,
   sendMessage,
   sessionId,
   setInput,
@@ -35,8 +38,9 @@ export function useChatComposer({
     (): ChatRequestBody => ({
       sessionId,
       conversationId: currentConversationId,
+      locale,
     }),
-    [currentConversationId, sessionId],
+    [currentConversationId, locale, sessionId],
   );
 
   const ensureSessionReady = useCallback(() => {
