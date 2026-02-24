@@ -16,5 +16,5 @@ export default createMiddleware({
 export const config = {
   // Match only internationalized pathnames
   // Skip /api, /_next, and static files
-  matcher: ['/', '/(ko|en)/:path*', '/((?!api|_next|_vercel|login|.*\\..*).*)'],
+  matcher: ['/', '/(ko|en)/:path*', '/((?!api|_next|_vercel|login|monitoring|.*\\..*).*)'],
 };
