@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { DestinationGrid } from '@/components/destinations/DestinationGrid';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { getPublishedDestinations } from '@/services/destination.service';
 
@@ -18,13 +19,14 @@ export const revalidate = 3600;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'destinations' });
 
   return {
-    title: 'Popular Travel Destinations',
-    description: 'Discover amazing travel destinations around the world with detailed guides, photos, and tips.',
+    title: t('pageTitle'),
+    description: t('pageDescription'),
     openGraph: {
-      title: 'Popular Travel Destinations',
-      description: 'Discover amazing travel destinations around the world',
+      title: t('pageTitle'),
+      description: t('pageDescriptionShort'),
       type: 'website',
       locale: locale === 'ko' ? 'ko_KR' : 'en_US',
     },
@@ -68,14 +70,17 @@ export default async function DestinationsPage({ params }: Props) {
         <header className='border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50'>
           <div className='container mx-auto px-4 py-4 flex items-center justify-between'>
             <Link href={`/${locale}`} className='text-xl font-bold hover:text-primary transition-colors'>
-              Binbang
+              {t('common.appName')}
             </Link>
-            <Link
-              href={`/${locale}/chat`}
-              className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
-            >
-              {t('landing.hero.cta')}
-            </Link>
+            <div className='flex items-center gap-3'>
+              <LanguageSwitcher />
+              <Link
+                href={`/${locale}/chat`}
+                className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
+              >
+                {t('landing.hero.cta')}
+              </Link>
+            </div>
           </div>
         </header>
 

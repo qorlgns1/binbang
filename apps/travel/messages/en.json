@@ -130,6 +130,11 @@
     }
   },
   "destinations": {
+    "pageTitle": "Popular Travel Destinations",
+    "pageDescription": "Discover amazing travel destinations around the world with detailed guides, photos, and tips.",
+    "pageDescriptionShort": "Discover amazing travel destinations around the world",
+    "travelGuideTitle": "{name} Travel Guide",
+    "notFound": "Destination Not Found",
     "heroTitle": "Discover Your Next Adventure",
     "heroSubtitle": "Explore {count, plural, =0 {no destinations yet} one {# amazing destination} other {# amazing destinations}} around the world with detailed guides and travel tips",
     "searchPlaceholder": "Search destinations...",

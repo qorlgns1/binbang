@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
@@ -21,10 +22,11 @@ const getCachedDestination = cache(async (slug: string) => getDestinationBySlug(
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const destination = await getCachedDestination(slug);
+  const t = await getTranslations({ locale, namespace: 'destinations' });
 
   if (!destination) {
     return {
-      title: 'Destination Not Found',
+      title: t('notFound'),
     };
   }
 
@@ -33,12 +35,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     typeof destination.description === 'object' && destination.description !== null
       ? ((destination.description as Record<string, string>)[locale] ?? '')
       : '';
+  const title = t('travelGuideTitle', { name });
 
   return {
-    title: `${name} Travel Guide`,
+    title,
     description: description.slice(0, 160),
     openGraph: {
-      title: `${name} Travel Guide`,
+      title,
       description: description.slice(0, 160),
       type: 'website',
       locale: locale === 'ko' ? 'ko_KR' : 'en_US',

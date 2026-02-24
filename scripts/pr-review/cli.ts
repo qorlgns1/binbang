@@ -333,6 +333,9 @@ async function runCommand(options: CliOptions): Promise<void> {
   const timeoutSec = getNumberOption(options, 'timeout-sec', 60);
   const retryMax = getNumberOption(options, 'retry', 1);
   const maxPatchLines = getNumberOption(options, 'max-patch-lines', 400);
+  if (!Number.isInteger(maxPatchLines) || maxPatchLines <= 0) {
+    throw new Error('--max-patch-lines must be a positive integer');
+  }
   const outputRoot = getStringOption(options, 'out', '.codex/reviews');
   const format = getStringOption(options, 'format', 'text') as OutputFormat;
   const failOnDegraded = getBooleanOption(options, 'fail-on-degraded');
@@ -689,7 +692,19 @@ async function resolveDiffInput(params: {
       '',
       5_000,
     );
-    baseRef = defaultBranchResult.code === 0 ? defaultBranchResult.stdout.trim() : 'origin/main';
+    if (defaultBranchResult.code === 0) {
+      baseRef = defaultBranchResult.stdout.trim();
+    } else {
+      // Detect actual default branch instead of assuming 'origin/main'
+      for (const candidate of ['origin/main', 'origin/master']) {
+        const check = await runCommandWithInput('git', ['rev-parse', '--verify', candidate], '', 3_000);
+        if (check.code === 0) {
+          baseRef = candidate;
+          break;
+        }
+      }
+      baseRef = baseRef ?? 'origin/main';
+    }
   }
   return resolveFromGit({
     prNumber: params.prNumber,
@@ -1372,7 +1387,7 @@ function toRel(targetPath: string): string {
 function normalizeTitle(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 }
 
@@ -1415,7 +1430,7 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function isRecord(value: unknown): value is Record<string, any> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -1484,7 +1499,8 @@ async function runCommandWithInput(
 }
 
 function stripAnsi(text: string): string {
-  return text.replace(/\u001B\[[0-?]*[ -/]*[@-~]/g, '');
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: \x1b is the ESC character needed for ANSI escape sequences
+  return text.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '');
 }
 
 function maskSecrets<T>(value: T): T {

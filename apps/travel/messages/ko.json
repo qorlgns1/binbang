@@ -130,6 +130,11 @@
     }
   },
   "destinations": {
+    "pageTitle": "인기 여행지",
+    "pageDescription": "전 세계 여행지를 상세 가이드, 사진, 여행 팁과 함께 탐색해보세요.",
+    "pageDescriptionShort": "전 세계 인기 여행지를 탐색해보세요",
+    "travelGuideTitle": "{name} 여행 가이드",
+    "notFound": "여행지를 찾을 수 없습니다",
     "heroTitle": "다음 모험을 찾아보세요",
     "heroSubtitle": "전 세계 {count}개 여행지를 상세 가이드와 여행 팁으로 탐색해보세요",
     "searchPlaceholder": "여행지 검색...",
