@@ -1,0 +1,38 @@
+{
+  "agentId": "security",
+  "status": "success",
+  "issues": [
+    {
+      "agentIssueId": "security-1",
+      "title": "Stored XSS risk from unescaped JSON-LD in destination detail page",
+      "category": "security",
+      "severity": "medium",
+      "confidence": 0.89,
+      "evidence": {
+        "filePath": "apps/travel/src/app/[locale]/destinations/[slug]/page.tsx",
+        "lineStart": 76,
+        "lineEnd": 96,
+        "snippet": "const jsonLd = {\n  '@context': 'https://schema.org',\n  '@type': 'TouristDestination',\n  name,\n  description,\n  image: destination.imageUrl,\n  ...\n};\n\n<script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />"
+      },
+      "rationale": "`name`, `description`, and `image` come from database content. Injecting `JSON.stringify(jsonLd)` directly into a `<script>` tag via `dangerouslySetInnerHTML` does not escape `</script>` and related characters, so malicious content in destination fields can terminate the script block and execute attacker-controlled HTML/JS.",
+      "recommendation": "Serialize JSON-LD with HTML-safe escaping before injection (at minimum escape `<`, `>`, `&`, U+2028, U+2029), or use a trusted helper that guarantees script-safe JSON serialization. Keep lint guardrails enabled instead of bypassing `noDangerouslySetInnerHtml` for DB-backed data."
+    },
+    {
+      "agentIssueId": "security-2",
+      "title": "Stored XSS risk from unescaped JSON-LD in destinations list page",
+      "category": "security",
+      "severity": "medium",
+      "confidence": 0.87,
+      "evidence": {
+        "filePath": "apps/travel/src/app/[locale]/destinations/page.tsx",
+        "lineStart": 44,
+        "lineEnd": 57,
+        "snippet": "const jsonLd = {\n  '@context': 'https://schema.org',\n  '@type': 'ItemList',\n  itemListElement: destinations.map((dest, index) => ({\n    item: {\n      '@type': 'TouristDestination',\n      name: locale === 'ko' ? dest.nameKo : dest.nameEn,\n      url: `https://binbang.com/${locale}/destinations/${dest.slug}`,\n      image: dest.imageUrl,\n    },\n  })),\n};\n\n<script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />"
+      },
+      "rationale": "This page also embeds DB-derived fields (`nameKo/nameEn`, `slug`, `imageUrl`) into a raw JSON-LD `<script>` via `dangerouslySetInnerHTML`. If any stored value contains script-closing payloads, it can break out of the JSON-LD block and run arbitrary script in visitors’ browsers.",
+      "recommendation": "Apply the same script-safe JSON serialization fix here as well. Prefer a shared utility for JSON-LD emission that always escapes dangerous characters before rendering."
+    }
+  ],
+  "durationMs": 0,
+  "tokenUsage": { "input": 0, "output": 0, "total": 0 }
+}
