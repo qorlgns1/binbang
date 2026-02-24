@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { DestinationGrid } from '@/components/destinations/DestinationGrid';
+import { serializeJsonLd } from '@/lib/jsonLd';
 import { getPublishedDestinations } from '@/services/destination.service';
 
 type Props = {
@@ -57,8 +58,8 @@ export default async function DestinationsPage({ params }: Props) {
 
   return (
     <>
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safe */}
-      <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes </script> and HTML-special chars */}
+      <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
 
       <div className='min-h-screen bg-background'>
         {/* Header */}

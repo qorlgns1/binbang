@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
 
 import type { Locale } from '@/i18n';
@@ -9,6 +9,7 @@ export function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const currentLocale = params.locale as Locale;
@@ -17,9 +18,9 @@ export function LanguageSwitcher() {
     if (newLocale === currentLocale) return;
 
     startTransition(() => {
-      // Replace the locale in the current path
       const newPath = pathname.replace(`/${currentLocale}`, `/${newLocale}`);
-      router.push(newPath);
+      const qs = searchParams.toString();
+      router.push(qs ? `${newPath}?${qs}` : newPath);
     });
   };
 

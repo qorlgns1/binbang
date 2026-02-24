@@ -78,7 +78,7 @@ function LandingPageClient({ locale, topDestinations }: { locale: string; topDes
             {t('landing.hero.subtitle')}
           </p>
           <Link
-            href='/chat'
+            href={`/${locale}/chat`}
             className='inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full text-lg font-semibold hover:bg-primary/90 transition-all duration-150 shadow-lg hover:shadow-xl active:scale-95'
           >
             {t('landing.hero.cta')}

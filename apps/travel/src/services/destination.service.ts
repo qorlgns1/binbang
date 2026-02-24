@@ -29,7 +29,7 @@ export async function getPublishedDestinations(params?: {
     orderBy: {
       createdAt: 'desc',
     },
-    take: params?.limit ?? 30,
+    ...(params?.limit !== undefined && { take: params.limit }),
     skip: params?.offset ?? 0,
   });
 }
