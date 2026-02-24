@@ -1616,3 +1616,6 @@ export const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
 ];
 
 export const SEED_PLATFORM_PATTERNS: SeedPlatformPattern[] = [...SEED_AIRBNB_PATTERNS, ...SEED_AGODA_PATTERNS];
+
+// ── Travel Destinations ──
+export { SEED_DESTINATIONS, type SeedDestination } from './destinations';
