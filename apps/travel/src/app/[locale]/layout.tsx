@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import { Toaster } from 'sonner';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -67,10 +68,19 @@ export default async function LocaleLayout({
 
   // Fetch messages for the locale
   const messages = await getMessages();
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className='min-h-screen overflow-hidden'>
+        {gaId && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy='afterInteractive' />
+            <Script id='gtag-init' strategy='afterInteractive'>
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
+            </Script>
+          </>
+        )}
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <ErrorBoundary>{children}</ErrorBoundary>

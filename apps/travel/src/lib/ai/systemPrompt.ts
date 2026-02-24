@@ -66,9 +66,22 @@ User: "I need an eSIM for my 5-day Tokyo trip"
 REMEMBER: No tool call = No place recommendations. Always search first, then respond.
 For hotel/accommodation queries use searchAccommodation, for eSIM queries use searchEsim.`;
 
-export function buildTravelSystemPrompt(previousConversationSummary?: string): string {
+export function buildTravelSystemPrompt(previousConversationSummary?: string, locale?: string): string {
   const summary = previousConversationSummary?.trim() || 'NONE';
-  return BASE_TRAVEL_SYSTEM_PROMPT.replace(PREVIOUS_CONVERSATION_SUMMARY_SLOT, summary);
+  let prompt = BASE_TRAVEL_SYSTEM_PROMPT.replace(PREVIOUS_CONVERSATION_SUMMARY_SLOT, summary);
+
+  if (locale === 'ko') {
+    prompt = prompt.replace(
+      "Detect the user's language and respond in the SAME language.",
+      'Always respond in Korean (한국어). 반드시 한국어로 답변하세요.',
+    );
+  } else if (locale === 'en') {
+    prompt = prompt.replace(
+      "Detect the user's language and respond in the SAME language.",
+      'Always respond in English.',
+    );
+  }
+  return prompt;
 }
 
 // Phase 2에서는 summary를 아직 생성하지 않으므로 기본값으로 유지

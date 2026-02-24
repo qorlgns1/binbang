@@ -1,9 +1,14 @@
+import type { Destination } from '@workspace/db';
 import { Bot, Cloud, DollarSign, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { getPublishedDestinations } from '@/services/destination.service';
+
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -18,6 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale });
+  const topDestinations = await getPublishedDestinations({ limit: 6 });
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -44,12 +50,12 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
     <>
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data is safe */}
       <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <LandingPageClient />
+      <LandingPageClient locale={locale} topDestinations={topDestinations} />
     </>
   );
 }
 
-function LandingPageClient() {
+function LandingPageClient({ locale, topDestinations }: { locale: string; topDestinations: Destination[] }) {
   const t = useTranslations();
 
   return (
@@ -106,6 +112,60 @@ function LandingPageClient() {
           />
         </div>
       </section>
+
+      {/* Popular Destinations Section */}
+      {topDestinations.length > 0 && (
+        <section className='container mx-auto px-4 py-20'>
+          <div className='max-w-6xl mx-auto'>
+            <div className='text-center mb-12'>
+              <h3 className='text-3xl font-bold mb-4'>{t('landing.destinations.title')}</h3>
+              <p className='text-muted-foreground'>{t('landing.destinations.subtitle')}</p>
+            </div>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+              {topDestinations.map((destination) => {
+                const name = locale === 'ko' ? destination.nameKo : destination.nameEn;
+                return (
+                  <Link
+                    key={destination.id}
+                    href={`/${locale}/destinations/${destination.slug}`}
+                    className='group bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300'
+                  >
+                    <div className='relative aspect-video bg-muted overflow-hidden'>
+                      {destination.imageUrl ? (
+                        <Image
+                          src={destination.imageUrl}
+                          alt={name}
+                          fill
+                          className='object-cover group-hover:scale-105 transition-transform duration-300'
+                          sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                        />
+                      ) : (
+                        <div className='flex items-center justify-center h-full'>
+                          <MapPin className='h-16 w-16 text-muted-foreground/30' />
+                        </div>
+                      )}
+                      <div className='absolute top-3 left-3 bg-background/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium'>
+                        {destination.country}
+                      </div>
+                    </div>
+                    <div className='p-4'>
+                      <h4 className='text-lg font-semibold group-hover:text-primary transition-colors'>{name}</h4>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+            <div className='mt-10 text-center'>
+              <Link
+                href={`/${locale}/destinations`}
+                className='inline-flex items-center gap-2 border border-border px-6 py-3 rounded-full text-sm font-medium hover:bg-muted transition-colors'
+              >
+                {t('landing.destinations.viewAll')}
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className='border-t border-border bg-background py-12'>

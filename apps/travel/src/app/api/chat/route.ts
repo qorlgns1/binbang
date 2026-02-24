@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { applyContextWindow } from '@/lib/ai/contextWindow';
 import { geminiFlashLite } from '@/lib/ai/model';
-import { TRAVEL_SYSTEM_PROMPT } from '@/lib/ai/systemPrompt';
+import { buildTravelSystemPrompt } from '@/lib/ai/systemPrompt';
 import { createTravelTools } from '@/lib/ai/tools';
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
@@ -30,6 +30,7 @@ const postBodySchema = z.object({
   sessionId: z.string().optional(),
   conversationId: z.string().optional(),
   id: z.string().optional(),
+  locale: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -44,11 +45,13 @@ export async function POST(req: Request) {
     sessionId: clientSessionId,
     conversationId: clientConversationId,
     id: chatId,
+    locale,
   } = parsedBody.data as {
     messages: UIMessage[];
     sessionId?: string;
     conversationId?: string;
     id?: string;
+    locale?: string;
   };
   const normalizedConversationId = clientConversationId?.trim() || chatId?.trim() || undefined;
 
@@ -122,7 +125,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: geminiFlashLite,
-    system: TRAVEL_SYSTEM_PROMPT,
+    system: buildTravelSystemPrompt(undefined, locale),
     messages: modelMessages,
     tools,
     stopWhen: stepCountIs(5),

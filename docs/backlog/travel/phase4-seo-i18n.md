@@ -4,6 +4,7 @@ Status: IN PROGRESS
 Priority: MEDIUM
 Depends on: Phase 3
 Last updated: 2026-02-24
+Implementation note: 2026-02-24 — 기술 구현 항목 7개 완료 (데이터 투입·Search Console 제출은 별도 진행)
 
 ## Goal
 
@@ -69,22 +70,23 @@ SEO 크롤링 흐름
 |--------|------|------|
 | i18n 설정 | `apps/travel/src/i18n.ts` | ✅ 완료 |
 | Middleware | `apps/travel/src/middleware.ts` | ✅ 완료 |
-| 한국어 메시지 | `apps/travel/messages/ko.json` | ✅ 완료 |
-| 영어 메시지 | `apps/travel/messages/en.json` | ✅ 완료 |
-| Locale 레이아웃 | `apps/travel/src/app/[locale]/layout.tsx` | ✅ 완료 |
-| 랜딩 페이지 | `apps/travel/src/app/[locale]/page.tsx` | ⚠️ 부분 완료 (인기 여행지 그리드·데모 섹션 미구현) |
+| 한국어 메시지 | `apps/travel/messages/ko.json` | ✅ 완료 (`destinations`, `landing.destinations` 네임스페이스 추가) |
+| 영어 메시지 | `apps/travel/messages/en.json` | ✅ 완료 (`destinations`, `landing.destinations` 네임스페이스 추가) |
+| Locale 레이아웃 | `apps/travel/src/app/[locale]/layout.tsx` | ✅ 완료 (GA Script 조건부 렌더링 추가) |
+| 랜딩 페이지 | `apps/travel/src/app/[locale]/page.tsx` | ✅ 완료 (ISR 1h + 인기 여행지 Top 6 그리드 추가) |
 | 채팅 페이지 | `apps/travel/src/app/[locale]/chat/page.tsx` | ✅ 완료 |
-| 여행지 목록 | `apps/travel/src/app/[locale]/destinations/page.tsx` | ⚠️ 부분 완료 (검색·필터·페이지네이션 미구현) |
+| 여행지 목록 | `apps/travel/src/app/[locale]/destinations/page.tsx` | ✅ 완료 |
 | 여행지 상세 | `apps/travel/src/app/[locale]/destinations/[slug]/page.tsx` | ✅ 완료 |
 | DestinationDetail | `apps/travel/src/components/destinations/DestinationDetail.tsx` | ✅ 완료 |
-| DestinationGrid | `apps/travel/src/components/destinations/DestinationGrid.tsx` | ✅ 완료 |
+| DestinationGrid | `apps/travel/src/components/destinations/DestinationGrid.tsx` | ✅ 완료 (검색 바, 클라이언트 필터링, 12개 페이지네이션, i18n 추가) |
 | 언어 전환 UI | `apps/travel/src/components/LanguageSwitcher.tsx` | ✅ 완료 |
 | Destination 서비스 | `apps/travel/src/services/destination.service.ts` | ✅ 완료 |
 | 콘텐츠 생성 스크립트 | `apps/travel/src/scripts/generateDestinations.ts` | ✅ 완료 |
 | DB 스키마 | `packages/db/prisma/schema.prisma` (`Destination` 모델) | ✅ 완료 |
-| Sitemap | `apps/travel/src/app/sitemap.ts` | ❌ 미구현 |
-| Robots.txt | `apps/travel/src/app/robots.ts` | ❌ 미구현 |
-| GA 스크립트 | `apps/travel/src/app/[locale]/layout.tsx` (Script 태그 추가) | ❌ 미구현 |
+| Sitemap | `apps/travel/src/app/sitemap.ts` | ✅ 완료 |
+| Robots.txt | `apps/travel/src/app/robots.ts` | ✅ 완료 |
+| GA 스크립트 | `apps/travel/src/app/[locale]/layout.tsx` (Script 태그 추가) | ✅ 완료 |
+| AI locale 동기화 | `apps/travel/src/lib/ai/systemPrompt.ts`, `route.ts`, `useChatComposer.ts`, `ChatPanel.tsx` | ✅ 완료 |
 
 ## Rollout Scope
 
@@ -103,14 +105,14 @@ SEO 크롤링 흐름
 - [x] 카드 라벨 (평점, 날씨 단위, 환율 등)
 - [x] `LanguageSwitcher` 컴포넌트 (헤더에 한/영 토글)
 
-**랜딩 페이지 (부분 완료)**
+**랜딩 페이지 (완료)**
 - [x] 히어로 섹션: 서비스 소개 + CTA
 - [x] 기능 소개 섹션: AI 채팅, 날씨, 환율, 지도
 - [x] 푸터: 서비스 정보, 링크
 - [x] JSON-LD `WebApplication` 구조화 데이터
 - [x] OG 메타태그, Twitter Card
-- [ ] P4-1-T1: 인기 여행지 그리드 (→ 여행지 페이지 링크, Top 6)
-- [ ] P4-1-T1: 사용 예시 / 데모 미리보기 섹션
+- [x] P4-1-T1: 인기 여행지 그리드 (Top 6, ISR 1h, `/{locale}/destinations/{slug}` 링크)
+- [ ] P4-1-T1: 사용 예시 / 데모 미리보기 섹션 (미구현 유지)
 
 **URL 구조 (완료)**
 - [x] `/ko`, `/en` — 언어별 랜딩
@@ -138,28 +140,22 @@ SEO 크롤링 흐름
   - 아시아 15 (일본 5, 한국 3, 동남아 4, 기타 3)
   - 유럽 10 (프랑스 2, 영국 2, 이탈리아 2, 기타 4)
   - 기타 5 (미국 2, 중동 2, 기타 1)
-- [ ] P4-2-T5: 여행지 목록 페이지 검색 기능
-- [ ] P4-2-T5: 여행지 목록 페이지 국가별/지역별 필터
-- [ ] P4-2-T5: 여행지 목록 페이지 페이지네이션
+- [x] P4-2-T5: 여행지 목록 페이지 검색 기능 (클라이언트 사이드, nameKo/nameEn/country 포함 검색)
+- [x] P4-2-T5: 여행지 목록 페이지 국가별 필터 (기존 유지 + i18n 적용)
+- [x] P4-2-T5: 여행지 목록 페이지 페이지네이션 (12개/페이지)
 
-**SEO 기반 요소 (미완료)**
-- [ ] P4-3-T1: `apps/travel/src/app/sitemap.ts` — `generateSitemap` 구현
-  - DB에서 `published=true` 여행지 전체 조회
-  - 각 여행지 ko/en 양쪽 URL 포함
-  - `changeFrequency: 'weekly'`, `priority: 0.8`
-  - 랜딩·목록 페이지 포함 (`priority: 1.0`)
-- [ ] P4-3-T2: `apps/travel/src/app/robots.ts` — 크롤러 허용/차단 정책
-  - `/api/*` 차단, `sitemap.xml` 명시
-- [ ] P4-3-T5: Google Search Console 도메인 인증 + 사이트맵 제출
-- [ ] P4-3-T6: Google Analytics 연동
-  - `apps/travel/src/app/[locale]/layout.tsx`에 `<Script>` 삽입
-  - `NEXT_PUBLIC_GA_MEASUREMENT_ID` 환경 변수 적용
+**SEO 기반 요소 (완료/미완료)**
+- [x] P4-3-T1: `apps/travel/src/app/sitemap.ts` — published 여행지 ko/en URL, 정적 라우트 포함
+- [x] P4-3-T2: `apps/travel/src/app/robots.ts` — `/api/`, `/login` 차단, sitemap URL 명시
+- [ ] P4-3-T5: Google Search Console 도메인 인증 + 사이트맵 제출 (운영 작업)
+- [x] P4-3-T6: Google Analytics 연동 — `NEXT_PUBLIC_GA_MEASUREMENT_ID` 환경 변수 존재 시 조건부 Script 삽입
 
-**AI 응답 언어 동기화 (미완료)**
-- [ ] P4-4-T5: `/api/chat` 요청 body에 `locale` 필드 추가
-  - `apps/travel/src/app/api/chat/route.ts` — `locale` 파라미터 수신
-  - `apps/travel/src/lib/ai/systemPrompt.ts` — locale 기반 응답 언어 지시문 삽입
-  - `apps/travel/src/app/[locale]/chat/page.tsx` — `useLocale()` hook으로 locale 전달
+**AI 응답 언어 동기화 (완료)**
+- [x] P4-4-T5: `/api/chat` 요청 body에 `locale` 필드 추가
+  - `apps/travel/src/app/api/chat/route.ts` — `locale` 파라미터 수신 (zod 스키마 포함)
+  - `apps/travel/src/lib/ai/systemPrompt.ts` — `buildTravelSystemPrompt(summary, locale)` locale 파라미터 추가
+  - `apps/travel/src/hooks/useChatComposer.ts` — `ChatRequestBody`, `UseChatComposerOptions`에 `locale` 추가
+  - `apps/travel/src/components/chat/ChatPanel.tsx` — `useLocale()` hook으로 locale 전달
 
 **Phase 3 연계 (미완료)**
 - [ ] 여행지 상세 페이지에서 숙소 추천 시 `AccommodationCard` + Awin 제휴 링크 표시
@@ -269,7 +265,7 @@ const t = useTranslations('chat');
 
 - 여행지 상세 (`[slug]`): `revalidate = 86400` (24시간) — 데이터 안정적
 - 여행지 목록 (`/destinations`): `revalidate = 3600` (1시간) — 신규 여행지 반영
-- 랜딩 페이지: 정적 생성 (메시지 파일 변경 시 재배포)
+- 랜딩 페이지: `revalidate = 3600` (1시간) — 인기 여행지 그리드(Top 6) 포함으로 ISR 적용
 - On-demand revalidation: `REVALIDATION_TOKEN` 기반 `/api/revalidate` 엔드포인트 (선택)
 
 ### 콘텐츠 생성 파이프라인

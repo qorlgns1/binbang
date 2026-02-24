@@ -117,11 +117,25 @@
         "description": "추천 장소를 지도에서 바로 확인하고 탐색하세요."
       }
     },
+    "destinations": {
+      "title": "인기 여행지",
+      "subtitle": "AI와 함께 특별한 여행지를 발견하세요",
+      "viewAll": "모든 여행지 보기"
+    },
     "footer": {
       "about": "빈방 소개",
       "contact": "문의하기",
       "privacy": "개인정보처리방침",
       "terms": "이용약관"
     }
+  },
+  "destinations": {
+    "searchPlaceholder": "여행지 검색...",
+    "filterAll": "전체",
+    "noResults": "검색 결과가 없습니다",
+    "resultCount": "{count}개의 여행지",
+    "prev": "이전",
+    "next": "다음",
+    "pageInfo": "{current} / {total} 페이지"
   }
 }

@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useSession } from 'next-auth/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { ChatPanelHeader } from '@/components/chat/ChatPanelHeader';
@@ -25,6 +25,7 @@ import { usePlaceStore } from '@/stores/usePlaceStore';
 
 export function ChatPanel() {
   const t = useTranslations('chat');
+  const locale = useLocale();
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -69,6 +70,7 @@ export function ChatPanel() {
     currentConversationId,
     input,
     isLoading,
+    locale,
     sendMessage,
     sessionId: sessionId ?? undefined,
     setInput,

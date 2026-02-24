@@ -117,11 +117,25 @@
         "description": "View and explore recommended places directly on the map."
       }
     },
+    "destinations": {
+      "title": "Popular Destinations",
+      "subtitle": "Discover special destinations with AI",
+      "viewAll": "View All Destinations"
+    },
     "footer": {
       "about": "About",
       "contact": "Contact",
       "privacy": "Privacy Policy",
       "terms": "Terms of Service"
     }
+  },
+  "destinations": {
+    "searchPlaceholder": "Search destinations...",
+    "filterAll": "All",
+    "noResults": "No results found",
+    "resultCount": "{count} destinations",
+    "prev": "Prev",
+    "next": "Next",
+    "pageInfo": "Page {current} of {total}"
   }
 }

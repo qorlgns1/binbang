@@ -97,16 +97,6 @@ export function DestinationDetail({ destination, locale: _locale }: DestinationD
               {showMap && (
                 <div className='h-96 rounded-lg overflow-hidden border border-border'>
                   <MapPanel
-                    entities={[
-                      {
-                        id: 'destination',
-                        name: destination.name,
-                        latitude: destination.latitude,
-                        longitude: destination.longitude,
-                        type: 'attraction',
-                        photoUrl: destination.imageUrl,
-                      },
-                    ]}
                     apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}
                   />
                 </div>
