@@ -989,6 +989,6 @@ model AgodaHotel {
   url                 String?               // 아고다 예약 URL
 
   @@index([cityId])
-  @@index([countryCode])
+  @@index([countryCode, cityId])  // countryCode 단독도 leftmost prefix로 커버
   @@map("agoda_hotels")
 }
