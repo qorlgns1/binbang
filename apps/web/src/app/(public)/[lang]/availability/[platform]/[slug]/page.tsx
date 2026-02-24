@@ -7,6 +7,7 @@ import { ChevronRight, ExternalLink, Lightbulb, LineChart, TrendingUp } from 'lu
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
 import { buildAvailabilityPath, buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
+import { serializeJsonLd } from '@/lib/jsonLd';
 import {
   getPublicAvailabilityPageData,
   type PublicAvailabilityPredictionView,
@@ -240,8 +241,8 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
       <AvailabilityPageViewTracker lang={locale} propertyName={data.property.name} platform={data.platform} />
       <script
         type='application/ld+json'
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD from controlled translations and server data
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes script-breaking characters
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqStructuredData) }}
       />
 
       <div className='pointer-events-none absolute inset-0'>

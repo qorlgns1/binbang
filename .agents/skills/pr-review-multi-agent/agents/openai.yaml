@@ -1,0 +1,7 @@
+interface:
+  display_name: "PR Review Multi-Agent"
+  short_description: "Parallel PR review for security and correctness."
+  default_prompt: "Use $pr-review-multi-agent. PR #120 리뷰해."
+
+policy:
+  allow_implicit_invocation: true

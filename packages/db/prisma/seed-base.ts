@@ -16,6 +16,7 @@ import { PrismaClient } from '@/generated/prisma/client';
 import type { QuotaKey } from '@/generated/prisma/enums';
 
 import {
+  SEED_DESTINATIONS,
   SEED_FORM_QUESTION_MAPPINGS,
   SEED_PERMISSIONS,
   SEED_PLANS,
@@ -197,6 +198,41 @@ export async function seedBase() {
     }
   }
   console.log(`   ✓ PlatformPatterns: ${patternCreated} created (${SEED_PLATFORM_PATTERNS.length} total)`);
+
+  // ── Travel Destinations ──
+  let destUpserted = 0;
+  for (const dest of SEED_DESTINATIONS) {
+    await prisma.destination.upsert({
+      where: { slug: dest.slug },
+      update: {
+        nameKo: dest.nameKo,
+        nameEn: dest.nameEn,
+        country: dest.country,
+        countryCode: dest.countryCode,
+        latitude: dest.latitude,
+        longitude: dest.longitude,
+        currency: dest.currency,
+        description: { ko: dest.descriptionKo, en: dest.descriptionEn },
+        highlights: { ko: dest.highlightsKo, en: dest.highlightsEn },
+        published: true,
+      },
+      create: {
+        slug: dest.slug,
+        nameKo: dest.nameKo,
+        nameEn: dest.nameEn,
+        country: dest.country,
+        countryCode: dest.countryCode,
+        latitude: dest.latitude,
+        longitude: dest.longitude,
+        currency: dest.currency,
+        description: { ko: dest.descriptionKo, en: dest.descriptionEn },
+        highlights: { ko: dest.highlightsKo, en: dest.highlightsEn },
+        published: true,
+      },
+    });
+    destUpserted++;
+  }
+  console.log(`   ✓ Destinations: ${destUpserted}`);
 
   console.log('✅ Production seeding completed!');
 }

@@ -6,6 +6,7 @@ import Script from 'next/script';
 import { GoogleAnalytics } from '@/components/analytics';
 import { Providers } from '@/components/Providers';
 import { getLocaleForHtmlLang } from '@/lib/i18n-runtime/server';
+import { serializeJsonLd } from '@/lib/jsonLd';
 import { SUPPORT_EMAIL } from '@/lib/support';
 
 import './globals.css';
@@ -92,8 +93,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* JSON-LD: locale-specific descriptions from common messages */}
         <script
           type='application/ld+json'
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD from i18n messages
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes script-breaking characters
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
         />
         <Script id='theme-init' strategy='beforeInteractive'>{`
           (function() {

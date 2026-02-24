@@ -3,7 +3,7 @@
 ## 요구사항
 
 - Node.js 24+
-- pnpm 10.28.0+
+- pnpm 10.30.2+
 - Docker / Docker Compose
 - PostgreSQL (로컬은 Docker로 실행 가능)
 - Redis 6.2+ (로컬은 Docker로 실행 가능, BullMQ 큐에 필요)

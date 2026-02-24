@@ -2226,7 +2226,7 @@ cache = GitHub Actions (type=gha)
 
 단계:
 1. Checkout
-2. Setup pnpm 10.28.0
+2. Setup pnpm 10.30.2
 3. Setup Node 24
 4. pnpm install --frozen-lockfile
 5. pnpm i18n:ci              — i18n 문자열 검증
