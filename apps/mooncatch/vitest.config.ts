@@ -16,9 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(rootDir, 'src'),
-      '@/generated/*': resolve(rootDir, '../../packages/db/generated/*'),
       '@workspace/db': resolve(rootDir, '../../packages/db/src'),
-      '@workspace/db/enums': resolve(rootDir, '../../packages/db/src/enums.ts'),
       '@workspace/shared': resolve(rootDir, '../../packages/shared/src'),
     },
   },

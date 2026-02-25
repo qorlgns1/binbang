@@ -26,7 +26,9 @@ export default withSentryConfig(nextConfig, {
 
   tunnelRoute: '/monitoring',
 
-  sourcemaps: { deleteSourcemapsAfterUpload: process.env.SENTRY_ENVIRONMENT === 'production' },
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: (process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV) === 'production',
+  },
 
   silent: !process.env.CI,
 
