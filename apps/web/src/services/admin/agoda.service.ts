@@ -41,6 +41,7 @@ export interface AgodaHotelSearchInput {
   hotelIds: number[];
   currency?: string;
   language?: string;
+  discountOnly?: boolean;
   occupancy?: AgodaOccupancy;
 }
 
@@ -149,6 +150,7 @@ export async function agodaHotelSearch(input: AgodaHotelSearchInput): Promise<Ag
       additional: {
         currency: input.currency ?? 'USD',
         language: input.language ?? 'ko-kr',
+        ...(input.discountOnly !== undefined ? { discountOnly: input.discountOnly } : {}),
         occupancy,
       },
     },

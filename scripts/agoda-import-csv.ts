@@ -31,9 +31,7 @@ function parseArg(flag: string, defaultValue: string): string {
   return defaultValue;
 }
 
-const chunkDir = resolve(
-  parseArg('--dir', join(homedir(), 'Downloads', 'agoda-chunks')).replace(/^~/, homedir()),
-);
+const chunkDir = resolve(parseArg('--dir', join(homedir(), 'Downloads', 'agoda-chunks')).replace(/^~/, homedir()));
 const BATCH_SIZE = parseInt(parseArg('--batch', '1000'), 10);
 
 // ============================================================================
