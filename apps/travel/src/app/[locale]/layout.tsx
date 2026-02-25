@@ -67,7 +67,7 @@ export default async function LocaleLayout({
   }
 
   // Fetch messages for the locale
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
