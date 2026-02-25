@@ -1,7 +1,7 @@
 import type { Destination } from '@workspace/db';
 import { Bot, Cloud, DollarSign, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale });
   const topDestinations = await getPublishedDestinations({ limit: 6 }).catch(() => [] as Destination[]);
 
