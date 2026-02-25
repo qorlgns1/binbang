@@ -1,6 +1,6 @@
 import type { Destination } from '@workspace/db';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Link from 'next/link';
 
 import { DestinationGrid } from '@/components/destinations/DestinationGrid';
@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DestinationsPage({ params }: Props) {
   const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale });
   const destinations = await getPublishedDestinations().catch(() => [] as Destination[]);
 

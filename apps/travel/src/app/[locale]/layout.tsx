@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { hasLocale, NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { Toaster } from 'sonner';
@@ -62,12 +62,15 @@ export default async function LocaleLayout({
   const { locale } = await params;
 
   // Validate locale
-  if (!locales.includes(locale as never)) {
+  if (!hasLocale(locales, locale)) {
     notFound();
   }
 
+  // Enable static rendering for this locale
+  setRequestLocale(locale);
+
   // Fetch messages for the locale
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
