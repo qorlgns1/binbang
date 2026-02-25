@@ -23,7 +23,7 @@ variable "DATABASE_URL" {
 }
 
 group "default" {
-  targets = ["web", "worker", "travel"]
+  targets = ["web", "worker", "travel", "mooncatch"]
 }
 
 target "_common" {
@@ -57,5 +57,14 @@ target "travel" {
   args = {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     DATABASE_URL                    = DATABASE_URL
+  }
+}
+
+target "mooncatch" {
+  inherits   = ["_common"]
+  dockerfile = "docker/mooncatch.Dockerfile"
+  tags       = ["kihoonbae/binbang:mooncatch-${TAG}"]
+  args = {
+    DATABASE_URL = DATABASE_URL
   }
 }
