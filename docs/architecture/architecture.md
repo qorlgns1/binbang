@@ -1,10 +1,8 @@
 # Architecture
 
-> Last updated: 2026-02-10
-
 ## 1. 문서 역할
 
-이 문서는 현재 저장소의 **구조 + 경계 정책 + 워크스페이스 책임**을 한 번에 설명하는 기준 문서다.
+이 문서는 저장소의 **현재 구조 + 경계 정책 + 워크스페이스 책임**을 빠르게 파악하기 위한 기준 문서다.
 
 우선순위:
 
@@ -15,18 +13,39 @@
 
 ---
 
-## 2. 모노레포 구조 (현재)
+## 2. 최근 변경에서 확인된 구조 변화
+
+핵심 변화 축:
+
+- `apps/travel`이 실질적인 2번째 Next.js 앱으로 자리잡음 (SEO/i18n/GA/캐시/에러 UX)
+- 에러 처리 표준화: `@workspace/shared/errors` + `ErrorResponseBody` 중심으로 웹/트래블 통일
+- 관측(Observability) 강화: `apps/web`, `apps/travel` 모두 Sentry 런타임/소스맵 설정 반영
+- 데이터 모델 확장: `Destination`, `AgodaHotel` + 검색 인덱스/CSV 스트리밍 임포트 파이프라인 추가
+- CI/배포/툴링 정리: pnpm 10.30.2, deploy workflow 옵션 정리, Codex 다중 에이전트 리뷰 플로우 도입
+
+최근 변경 유형 분포(머지 제외):
+
+- `fix` 24
+- `refactor` 20
+- `feat` 14
+- `chore` 13
+- `docs/test/style/perf/ci` 6
+
+---
+
+## 3. 모노레포 구조 (현재)
 
 ```text
 binbang/
 ├── .github/
 │   └── workflows/
 ├── apps/
-│   ├── web/                        # Next.js (UI + Route Handlers)
+│   ├── web/                        # Next.js 관리/운영 앱
+│   ├── travel/                     # Next.js 여행 AI + SEO/i18n 앱
 │   └── worker/                     # Worker entrypoint + composition
 ├── packages/
 │   ├── db/                         # Prisma schema/migrations + DB client
-│   ├── shared/                     # Universal shared code
+│   ├── shared/                     # Universal shared code (pure)
 │   └── worker-shared/              # Worker-only shared code
 ├── docker/
 ├── docs/
@@ -39,29 +58,31 @@ binbang/
 
 ---
 
-## 3. 워크스페이스 책임과 공개 API
+## 4. 워크스페이스 책임과 공개 API
 
 | Workspace | 역할 | 공개 import 경로 | 핵심 경계 |
 | --- | --- | --- | --- |
-| `apps/web` | UI + App Router + Route Handler | 앱 내부 로컬 import | DB는 `services/**`로만 접근, `@workspace/worker-shared/*` import 금지 |
-| `apps/worker` | 프로세스 엔트리/조립(wiring) | 앱 내부 로컬 import | 재사용 워커 로직은 `packages/worker-shared`로 승격 |
-| `packages/db` | Prisma 단일 소유자 | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | 외부의 `@prisma/client` 직접 import 금지 |
-| `packages/shared` | 웹/워커 공용 순수 코드 | `@workspace/shared`, `@workspace/shared/types`, `@workspace/shared/checkers`, `@workspace/shared/url-parser` | 네트워크/DB/Node built-in/process.env 금지 |
-| `packages/worker-shared` | 워커 전용 공용 로직 | `@workspace/worker-shared/browser`, `@workspace/worker-shared/jobs`, `@workspace/worker-shared/runtime`, `@workspace/worker-shared/observability` | 웹에서 import 금지, deep import 금지 |
+| `apps/web` | 운영 UI + App Router + Route Handler | 앱 내부 로컬 import | DB는 `apps/web/src/services/**`로만 접근, Route Handler 직접 DB 접근 금지 |
+| `apps/travel` | 여행 AI UI + Locale 라우팅 + SEO 페이지 + 제휴 이벤트 | 앱 내부 로컬 import | `apps/web`와 동일 레이어 규칙: DB는 `apps/travel/src/services/**`로만 접근 |
+| `apps/worker` | 프로세스 엔트리/조립(wiring) + 크론성 실행 | 앱 내부 로컬 import | 재사용 가능한 워커 로직은 `packages/worker-shared`로 승격 |
+| `packages/db` | Prisma 단일 소유자 | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | 외부에서 `@prisma/client` 직접 import 금지 |
+| `packages/shared` | 웹/트래블/워커 공용 순수 코드 | `@workspace/shared`, `@workspace/shared/types`, `@workspace/shared/checkers`, `@workspace/shared/url-parser`, `@workspace/shared/urlParser`, `@workspace/shared/i18n`, `@workspace/shared/utils/date`, `@workspace/shared/utils/timeout`, `@workspace/shared/utils/price`, `@workspace/shared/errors` | 네트워크/DB/Node built-in/process.env 금지 |
+| `packages/worker-shared` | 워커 전용 공용 로직 | `@workspace/worker-shared/browser`, `@workspace/worker-shared/jobs`, `@workspace/worker-shared/runtime`, `@workspace/worker-shared/observability` | Next.js 앱(`web`/`travel`)에서 import 금지, deep import 금지 |
 
 ---
 
-## 4. 디렉터리 구조 상세
+## 5. 디렉터리 구조 상세
 
-### 4.1 `apps/web`
+### 5.1 `apps/web`
 
 ```text
 apps/web/src/
-├── app/                            # App Router (public/app/admin/api 포함)
-├── components/                     # UI 및 화면 컴포넌트
-├── features/                       # React Query 훅/뮤테이션
+├── app/                            # App Router (public/app/admin/api)
+├── components/
+├── features/
 ├── hooks/
-├── lib/                            # 웹 전용 유틸/설정
+├── i18n/
+├── lib/
 ├── services/                       # DB 접근 단일 게이트
 └── types/
 ```
@@ -69,11 +90,30 @@ apps/web/src/
 규칙:
 
 - Route Handler(`app/api/**/route.ts`)는 DB 직접 접근 금지
-- Server Component/Server Action도 DB 직접 접근 금지
-- DB가 필요한 경우 `apps/web/src/services/**`로 위임
-- Client Component는 서버 전용 모듈/DB 접근 금지
+- DB가 필요한 경우 `services/**`로 위임
+- API 에러 응답은 `handleServiceError` + `ErrorResponseBody` 형식 유지
 
-### 4.2 `apps/worker`
+### 5.2 `apps/travel`
+
+```text
+apps/travel/src/
+├── app/                            # [locale] 라우트 + API 라우트
+├── components/
+├── hooks/
+├── lib/                            # AI/tool/cache/api 유틸
+├── services/                       # DB 접근 단일 게이트
+├── stores/                         # Zustand client state
+├── scripts/                        # 여행지 콘텐츠 생성 등
+└── types/
+```
+
+규칙:
+
+- `apps/web`와 동일하게 Route Handler의 DB 직접 접근 금지
+- locale 라우팅/middleware 변경 시 `/monitoring` 경로 제외 규칙 유지
+- SEO/여행지 데이터는 `Destination` 모델 + `services/destination.service.ts`를 기준으로 관리
+
+### 5.3 `apps/worker`
 
 현재 주요 파일:
 
@@ -83,21 +123,22 @@ apps/worker/src/
 ├── config.ts
 ├── cycleProcessor.ts
 ├── checkProcessor.ts
-└── statusUtils.ts
+└── publicAvailabilitySnapshotOnce.ts
 ```
 
 원칙:
 
-- 장기적으로 엔트리/조립만 남기고 재사용 가능한 워커 로직은 `packages/worker-shared`로 이동
-- 런타임/브라우저/잡/관측 책임은 `worker-shared` 4개 도메인으로 수렴
+- 엔트리/조립 책임 중심
+- 런타임/브라우저/잡/관측의 재사용 로직은 `packages/worker-shared`로 수렴
 
-### 4.3 `packages/db`
+### 5.4 `packages/db`
 
 ```text
 packages/db/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── migrations/
+│   ├── constants/
 │   └── seed*.ts
 └── src/
     ├── client.ts
@@ -105,34 +146,39 @@ packages/db/
     └── index.ts
 ```
 
-원칙:
+최근 확장 포인트:
 
-- Prisma 스키마/마이그레이션/클라이언트 생성 책임 단일 소유
-- 앱/패키지는 `@workspace/db` 공개 엔트리만 사용
+- `Destination` 모델 + seed-base 데이터 추가 (SEO/i18n 페이지용)
+- `AgodaHotel` 모델 + 검색 인덱스 추가 (대용량 CSV 임포트/검색용)
 
-### 4.4 `packages/shared`
+### 5.5 `packages/shared`
 
 ```text
 packages/shared/src/
 ├── index.ts
 ├── types/
 ├── checkers/
-├── url-parser.ts
-└── url-builder.ts
+├── errors/                         # AppError/ApiError/ErrorResponseBody
+├── i18n/                           # locale resolve + formatter + i18n core
+├── utils/
+├── urlParser.ts
+└── urlBuilder.ts
 ```
 
 원칙:
 
-- 순수 유틸/타입/파서만 배치
+- 순수 유틸/타입/파서/에러 계약만 배치
 - 네트워크 I/O, DB 접근, Node built-in, `process.env` 접근 금지
 
-### 4.5 `packages/worker-shared`
+### 5.6 `packages/worker-shared`
 
 ```text
 packages/worker-shared/src/
 ├── browser/
 ├── jobs/
 ├── runtime/
+│   ├── i18n/
+│   ├── selectors/
 │   └── settings/
 └── observability/
 ```
@@ -148,21 +194,23 @@ packages/worker-shared/src/
 
 - DB 접근은 `runtime/**` 중심으로 제한
 - env 접근은 `runtime/settings/**` 중심으로 제한
-- 도메인 소비자는 `exports` 경로만 사용 (`src/**` deep import 금지)
+- 소비자는 `exports` 경로만 사용 (`src/**` deep import 금지)
 
 ---
 
-## 5. Import 경계 체크리스트
+## 6. Import 경계 체크리스트
 
 - deep import 금지: `packages/**/src/**`
-- `apps/web` -> `@workspace/worker-shared/*` 금지
+- Next.js 앱(`apps/web`, `apps/travel`)에서 `@workspace/worker-shared/*` import 금지
 - `packages/shared` -> DB/worker runtime 의존 금지
 - Prisma 직접 import(`@prisma/client`)는 `packages/db` 외부 금지
-- `apps/web` DB 접근은 `services/**`로 단일화
+- `apps/web` DB 접근은 `apps/web/src/services/**`로 단일화
+- `apps/travel` DB 접근은 `apps/travel/src/services/**`로 단일화
+- Route Handler 에러 응답은 `ErrorResponseBody` 스키마 유지
 
 ---
 
-## 6. 빠른 점검 명령
+## 7. 빠른 점검 명령
 
 ```bash
 # 구조 확인
@@ -171,9 +219,15 @@ find apps packages -maxdepth 3 -type d | sort
 # 워크스페이스 import 확인
 rg -n "from '@workspace/" apps packages
 
-# web DB 접근 위치 점검
-rg -n "prisma\\.|from '@workspace/db'" apps/web/src/app apps/web/src/services
+# Route Handler 직접 DB 접근 위반 점검 (web + travel)
+rg -n "prisma\\.|from '@workspace/db'" apps/web/src/app/api apps/travel/src/app/api
 
-# worker-shared deep import 위반 점검
-rg -n "@workspace/worker-shared/src" apps packages
+# services 레이어 DB 접근 현황 점검
+rg -n "prisma\\.|from '@workspace/db'" apps/web/src/services apps/travel/src/services
+
+# deep import 위반 점검
+rg -n "@workspace/(shared|worker-shared|db)/src" apps packages
+
+# 최근 확장 모델 점검
+rg -n "model (Destination|AgodaHotel)" packages/db/prisma/schema.prisma
 ```
