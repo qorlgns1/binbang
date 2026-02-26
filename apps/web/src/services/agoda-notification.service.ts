@@ -2,6 +2,7 @@ import { prisma } from '@workspace/db';
 
 import { buildAgodaLandingUrl, buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
 import { sendAgodaAlertEmail } from '@/services/agoda-email.service';
+import { sendMoonCatchKakaoNotification } from '@/services/agoda-kakao.service';
 import { buildAgodaUnsubscribeUrl, createAgodaUnsubscribeToken } from '@/services/agoda-unsubscribe.service';
 
 const DEFAULT_DISPATCH_LIMIT = 50;
@@ -270,7 +271,7 @@ export async function dispatchAgodaNotifications(params?: {
           children: true,
           locale: true,
           platformMetadata: true,
-          user: { select: { email: true } },
+          user: { select: { email: true, kakaoAccessToken: true } },
         },
       },
       alertEvent: {
@@ -367,6 +368,24 @@ export async function dispatchAgodaNotifications(params?: {
         text: emailContent.text,
         html: emailContent.html,
       });
+
+      // 카카오 토큰이 있으면 병행 발송 (실패해도 이메일 상태에 영향 없음)
+      if (notification.accommodation.user?.kakaoAccessToken) {
+        await sendMoonCatchKakaoNotification(notification.accommodation.userId, {
+          accommodationId: acc.id,
+          accommodationName: acc.name,
+          alertType: notification.alertEvent.type,
+          checkIn: acc.checkIn,
+          checkOut: acc.checkOut,
+          rawAgodaUrl: rawAgodaUrl,
+          dropRatio: meta.dropRatio ?? null,
+          currency: meta.currency ?? null,
+          afterPrice: meta.afterPrice ?? null,
+          totalInclusive: meta.totalInclusive ?? null,
+          baseUrl,
+        }).catch(() => {});
+      }
+
       outcomes.push({ id: notification.id, kind: 'sent' });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

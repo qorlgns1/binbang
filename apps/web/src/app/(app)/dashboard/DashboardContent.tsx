@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -126,10 +126,9 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
           router.push('/pricing');
           break;
         case 'navigate_kakao':
-          void (async () => {
-            await signOut({ redirect: false });
-            await signIn('kakao', { callbackUrl: '/dashboard' });
-          })();
+          // 현재 세션을 유지한 채 카카오 계정을 연동한다.
+          // allowDangerousEmailAccountLinking 옵션으로 동일 이메일 계정에 자동 연결된다.
+          void signIn('kakao', { callbackUrl: '/dashboard' });
           break;
         case 'switch_tab_problem':
           setActiveTab('problem');
