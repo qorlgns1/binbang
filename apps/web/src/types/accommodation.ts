@@ -16,6 +16,7 @@ export interface Accommodation {
   currency: string;
   locale: string;
   isActive: boolean;
+  priceDropThreshold: number | null;
   lastCheck: string | null;
   lastPolledAt: string | null;
   lastEventAt: string | null;
@@ -75,6 +76,7 @@ export interface UpdateAccommodationInput {
   checkOut?: string;
   adults?: number;
   isActive?: boolean;
+  priceDropThreshold?: number | null;
 }
 
 export interface PriceDataPoint {

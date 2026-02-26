@@ -113,8 +113,9 @@ model Accommodation {
   currency String   @default("KRW") // 통화 코드 (Agoda API 방식)
   locale   String   @default("ko") // 언어 코드 (Agoda API 방식)
 
-  isActive          Boolean            @default(true) // 모니터링 활성화 여부
-  lastPolledAt      DateTime? // 마지막 Agoda API 폴링 시각
+  isActive              Boolean            @default(true) // 모니터링 활성화 여부
+  priceDropThreshold    Decimal?           @db.Decimal(5, 4) // 가격 하락 알림 임계값 (0~1, null이면 전역 설정 사용)
+  lastPolledAt          DateTime? // 마지막 Agoda API 폴링 시각
   lastEventAt       DateTime? // 마지막 가격변동/빈방 이벤트 시각
   lastCheck         DateTime? // 마지막 체크 시간 (스크래핑 방식)
   lastStatus        AvailabilityStatus @default(UNKNOWN) // 마지막 상태

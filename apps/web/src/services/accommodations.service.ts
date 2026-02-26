@@ -34,6 +34,7 @@ export interface UpdateAccommodationInput {
   checkOut?: Date;
   adults?: number;
   isActive?: boolean;
+  priceDropThreshold?: number | null;
 }
 
 export interface AccommodationWithLogs extends Accommodation {
@@ -75,6 +76,7 @@ const ACCOMMODATION_SELECT = {
   currency: true,
   locale: true,
   isActive: true,
+  priceDropThreshold: true,
   lastPolledAt: true,
   lastEventAt: true,
   lastCheck: true,
@@ -231,6 +233,7 @@ export async function updateAccommodation(
       ...(input.checkOut !== undefined && { checkOut: input.checkOut }),
       ...(input.adults !== undefined && { adults: input.adults }),
       ...(input.isActive !== undefined && { isActive: input.isActive }),
+      ...(input.priceDropThreshold !== undefined && { priceDropThreshold: input.priceDropThreshold }),
     },
     select: ACCOMMODATION_SELECT,
   });

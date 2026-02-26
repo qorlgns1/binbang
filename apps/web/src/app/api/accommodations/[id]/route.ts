@@ -28,6 +28,7 @@ const updateAccommodationSchema = z
       .optional(),
     adults: z.number().min(1).max(20).optional(),
     isActive: z.boolean().optional(),
+    priceDropThreshold: z.number().min(0).max(1).nullable().optional(),
   })
   .refine(
     (data) => {
@@ -81,6 +82,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
       checkOut: data.checkOut ? new Date(data.checkOut) : undefined,
       adults: data.adults,
       isActive: data.isActive,
+      priceDropThreshold: data.priceDropThreshold,
     });
 
     if (!accommodation) {

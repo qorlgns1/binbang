@@ -253,6 +253,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       children: true,
       currency: true,
       locale: true,
+      priceDropThreshold: true,
     },
   });
 
@@ -371,7 +372,10 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       accommodationId,
       previousSnapshots,
       currentOffers: normalized.offers,
-      minDropRatio: resolvePriceDropThreshold(),
+      minDropRatio:
+        accommodation.priceDropThreshold != null
+          ? Number(accommodation.priceDropThreshold)
+          : resolvePriceDropThreshold(),
     });
 
     const alertEventIdsToNotify: bigint[] = [];
