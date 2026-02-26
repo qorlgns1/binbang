@@ -26,7 +26,7 @@ export default defineConfig({
   webServer: {
     command: `cd ../.. && pnpm with-env pnpm --filter @workspace/web exec next dev --turbopack --port ${port}`,
     url: baseURL,
-    timeout: 180_000,
+    timeout: 60_000,
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
