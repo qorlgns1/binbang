@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
         hostname: 'img1.kakaocdn.net',
       },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'http', hostname: '*.agoda.net' },
+      { protocol: 'https', hostname: '*.agoda.net' },
     ],
   },
 
