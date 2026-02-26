@@ -60,19 +60,6 @@ services:
         required: false
     restart: unless-stopped
 
-  mooncatch:
-    image: kihoonbae/binbang:mooncatch-${IMAGE_TAG}@${IMAGE_MOONCATCH_DIGEST}
-    ports:
-      - '3400:3000'
-    networks:
-      - shared-network
-    env_file:
-      - ../.env.common
-      - ../.env.production
-      - ../apps/mooncatch/.env.common
-      - path: ../apps/mooncatch/.env.production
-        required: false
-    restart: unless-stopped
 
 networks:
   shared-network:
