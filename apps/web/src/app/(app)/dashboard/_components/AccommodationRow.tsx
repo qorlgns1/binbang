@@ -25,8 +25,12 @@ interface AccommodationRowProps {
  * @returns A React element representing the accommodation row.
  */
 export function AccommodationRow({ accommodation }: AccommodationRowProps): React.ReactElement {
-  const { id, name, platform, checkIn, checkOut, lastCheck, lastStatus, isActive } = accommodation;
+  const { id, name, platform, checkIn, checkOut, lastCheck, lastPolledAt, lastStatus, isActive, platformId } =
+    accommodation;
   const displayStatus: StatusType = !isActive ? 'PAUSED' : lastStatus;
+  // Agoda API 방식 (platformId 있음) → lastPolledAt 사용, 스크래핑 방식 → lastCheck 사용
+  const lastActivity = platformId ? lastPolledAt : lastCheck;
+  const lastActivityLabel = platformId ? '마지막 폴링' : '마지막 체크';
   const hasProblem = lastStatus === 'ERROR' || lastStatus === 'UNKNOWN';
   const today = new Date().toISOString().split('T')[0];
   const isCheckInExpired = checkIn.split('T')[0] < today;
@@ -43,7 +47,9 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
 
       <div className='min-w-0 flex-1'>
         <div className='mb-1 flex flex-wrap items-center gap-2'>
-          <h3 className='truncate text-sm font-medium'>{name}</h3>
+          <h3 className='truncate text-sm font-medium' data-testid='accommodation-row-name'>
+            {name}
+          </h3>
           <Badge variant='outline' className='text-xs'>
             {platform}
           </Badge>
@@ -54,9 +60,9 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
             {isCheckInExpired && <AlertTriangle className='mr-1 inline size-3' />}
             {checkIn.split('T')[0]} ~ {checkOut.split('T')[0]}
           </span>
-          {lastCheck && (
+          {lastActivity && (
             <span>
-              마지막 체크: <LocalDateTime date={lastCheck} />
+              {lastActivityLabel}: <LocalDateTime date={lastActivity} />
             </span>
           )}
         </div>

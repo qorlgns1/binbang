@@ -6,12 +6,19 @@ export interface Accommodation {
   userId: string;
   name: string;
   platform: Platform;
-  url: string;
+  url: string | null;
+  platformId: string | null;
   checkIn: string;
   checkOut: string;
   adults: number;
+  children: number;
+  rooms: number;
+  currency: string;
+  locale: string;
   isActive: boolean;
   lastCheck: string | null;
+  lastPolledAt: string | null;
+  lastEventAt: string | null;
   lastStatus: AvailabilityStatus;
   lastPrice: string | null;
   createdAt: string;
@@ -46,6 +53,19 @@ export interface CreateAccommodationInput {
   checkIn: string;
   checkOut: string;
   adults: number;
+}
+
+export interface CreateAgodaAlertInput {
+  platformId: string;
+  name: string;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  rooms: number;
+  currency: string;
+  locale: string;
+  consentOptIn: true;
 }
 
 export interface UpdateAccommodationInput {
@@ -96,7 +116,7 @@ export interface PriceHistoryResponse {
 export interface AccommodationWithUser {
   id: string;
   name: string;
-  url: string;
+  url: string | null;
   checkIn: Date;
   checkOut: Date;
   adults: number;

@@ -6,16 +6,26 @@ import { z } from 'zod';
 
 import { authOptions } from '@/lib/auth';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
-import { checkUserQuota, createAccommodation, getAccommodationsByUserId } from '@/services/accommodations.service';
+import {
+  checkUserQuota,
+  createAgodaApiAccommodation,
+  getAccommodationsByUserId,
+} from '@/services/accommodations.service';
 
-const createAccommodationSchema = z
+// Agoda API 방식 (일반 사용자): platformId 필수, url 불필요
+// URL 스크래핑 방식은 /api/admin/accommodations (어드민 전용)
+const createAgodaAlertSchema = z
   .object({
-    name: z.string().min(1, '이름을 입력해주세요'),
-    platform: z.enum(['AIRBNB', 'AGODA']),
-    url: z.string().url('올바른 URL을 입력해주세요'),
+    platformId: z.string().min(1, '호텔을 선택해주세요'),
+    name: z.string().min(1, '호텔명을 입력해주세요'),
     checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
     checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
-    adults: z.number().min(1).max(20).default(2),
+    adults: z.number().int().min(1).max(20).default(2),
+    children: z.number().int().min(0).max(10).default(0),
+    rooms: z.number().int().min(1).max(10).default(1),
+    currency: z.string().length(3).default('KRW'),
+    locale: z.string().default('ko'),
+    consentOptIn: z.literal(true, { message: '알림 수신 동의가 필요합니다' }),
   })
   .refine(
     (data) => {
@@ -27,6 +37,15 @@ const createAccommodationSchema = z
     {
       message: '체크인 날짜는 오늘 이후여야 합니다',
       path: ['checkIn'],
+    },
+  )
+  .refine(
+    (data) => {
+      return new Date(data.checkOut) > new Date(data.checkIn);
+    },
+    {
+      message: '체크아웃은 체크인 이후여야 합니다',
+      path: ['checkOut'],
     },
   );
 
@@ -43,7 +62,8 @@ export async function GET(): Promise<Response> {
   return NextResponse.json(accommodations);
 }
 
-// POST: 숙소 생성
+// POST: Agoda API 방식 알림 등록 (일반 사용자)
+// URL 스크래핑 방식은 /api/admin/accommodations (어드민 전용)
 export async function POST(request: NextRequest): Promise<Response> {
   const session = await getServerSession(authOptions);
 
@@ -60,7 +80,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         {
           error: {
             code: 'QUOTA_EXCEEDED',
-            message: `숙소 등록 한도(${quota.max}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
+            message: `알림 등록 한도(${quota.max}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
             details: { max: quota.max, current: quota.current },
           },
         },
@@ -69,24 +89,19 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const body = await request.json();
-    const data = createAccommodationSchema.parse(body);
+    const data = createAgodaAlertSchema.parse(body);
 
-    // URL에서 플랫폼 자동 감지
-    let platform = data.platform;
-    if (data.url.includes('airbnb')) {
-      platform = 'AIRBNB';
-    } else if (data.url.includes('agoda')) {
-      platform = 'AGODA';
-    }
-
-    const accommodation = await createAccommodation({
+    const accommodation = await createAgodaApiAccommodation({
       userId: session.user.id,
+      platformId: data.platformId,
       name: data.name,
-      platform,
-      url: data.url,
       checkIn: new Date(data.checkIn),
       checkOut: new Date(data.checkOut),
       adults: data.adults,
+      children: data.children,
+      rooms: data.rooms,
+      currency: data.currency,
+      locale: data.locale,
     });
 
     return NextResponse.json(accommodation, { status: 201 });
@@ -95,6 +110,6 @@ export async function POST(request: NextRequest): Promise<Response> {
       return validationErrorResponse(error.issues);
     }
 
-    return handleServiceError(error, '숙소 생성 오류');
+    return handleServiceError(error, '알림 등록 오류');
   }
 }

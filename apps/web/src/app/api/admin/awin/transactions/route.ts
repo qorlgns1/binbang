@@ -28,9 +28,9 @@ const transactionsSchema = z
       const start = new Date(data.startDate);
       const end = new Date(data.endDate);
       const days = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-      return days >= 0 && days <= 31;
+      return days >= 0 && days <= 366;
     },
-    { message: 'Date range must be 0-31 days.' },
+    { message: 'Date range must be 0-366 days.' },
   );
 
 /** GET: Awin 트랜잭션(전환) 목록 조회 */

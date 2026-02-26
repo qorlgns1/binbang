@@ -76,6 +76,9 @@ model User {
   timezone            String?
   affiliateLinksEnabled Boolean @default(true)
   affiliatePreferenceAuditLogs AffiliatePreferenceAuditLog[] @relation("AffiliatePreferenceAuditLogActor")
+  mooncatchWatches      MooncatchWatch[]
+  mooncatchConsentLogs  MooncatchConsentLog[]
+  agodaConsentLogs      AgodaConsentLog[]
 
   // 튜토리얼
   tutorialCompletedAt DateTime?
@@ -101,14 +104,19 @@ model Accommodation {
 
   name     String // 숙소 이름 (사용자 지정)
   platform Platform // airbnb, agoda
-  url      String // 숙소 URL
+  url      String? // 숙소 URL (스크래핑 방식에만 필요, Agoda API 방식은 null)
   checkIn  DateTime // 체크인 날짜
   checkOut DateTime // 체크아웃 날짜
   adults   Int      @default(2) // 인원 수
   rooms    Int      @default(1) // 객실 수
+  children Int      @default(0) // 아동 수 (Agoda API 방식)
+  currency String   @default("KRW") // 통화 코드 (Agoda API 방식)
+  locale   String   @default("ko") // 언어 코드 (Agoda API 방식)
 
   isActive          Boolean            @default(true) // 모니터링 활성화 여부
-  lastCheck         DateTime? // 마지막 체크 시간
+  lastPolledAt      DateTime? // 마지막 Agoda API 폴링 시각
+  lastEventAt       DateTime? // 마지막 가격변동/빈방 이벤트 시각
+  lastCheck         DateTime? // 마지막 체크 시간 (스크래핑 방식)
   lastStatus        AvailabilityStatus @default(UNKNOWN) // 마지막 상태
   lastPrice         String? // 마지막 확인된 가격 (raw 문자열)
   lastPriceAmount   Int? // 파싱된 숫자 (최소 단위: 원/센트)
@@ -141,11 +149,19 @@ model Accommodation {
   checkLogs CheckLog[]
   cases     Case[]
 
+  // Agoda API 폴링 관련
+  agodaPollRuns      AgodaPollRun[]
+  agodaRoomSnapshots AgodaRoomSnapshot[]
+  agodaAlertEvents   AgodaAlertEvent[]
+  agodaNotifications AgodaNotification[]
+  agodaConsentLogs   AgodaConsentLog[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([isActive])
+  @@index([platform, isActive])
 }
 
 // 모니터링 사이클
@@ -664,6 +680,255 @@ model LandingEvent {
   @@index([occurredAt])
   @@index([eventName, occurredAt])
   @@index([sessionId])
+}
+
+// ── Agoda API 모니터링 (Sprint 2, apps/web 통합) ──
+
+model AgodaHotel {
+  hotelId             Int     @id // Agoda propertyId
+  hotelName           String
+  hotelTranslatedName String? // 한국어 등 번역명
+  cityId              Int
+  cityName            String?
+  countryName         String?
+  countryCode         String?
+  starRating          Float?
+  ratingAverage       Float?
+  reviewCount         Int?
+  latitude            Float?
+  longitude           Float?
+  photoUrl            String?
+  url                 String? // Agoda 호텔 페이지 URL
+
+  @@index([cityId])
+  @@index([countryCode, cityId])
+  @@index([hotelName(ops: raw("gin_trgm_ops"))], map: "agoda_hotels_hotelName_trgm_idx", type: Gin)
+  @@index([hotelTranslatedName(ops: raw("gin_trgm_ops"))], map: "agoda_hotels_hotelTranslatedName_trgm_idx", type: Gin)
+  @@map("agoda_hotels")
+}
+
+model AgodaPollRun {
+  id              BigInt        @id @default(autoincrement())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  polledAt        DateTime      @default(now())
+  httpStatus      Int?
+  latencyMs       Int?
+  status          String // started | success | failed
+  error           String?
+  createdAt       DateTime      @default(now())
+
+  roomSnapshots AgodaRoomSnapshot[]
+
+  @@index([accommodationId, polledAt])
+  @@map("agoda_poll_runs")
+}
+
+model AgodaRoomSnapshot {
+  id                   BigInt        @id @default(autoincrement())
+  pollRunId            BigInt
+  pollRun              AgodaPollRun  @relation(fields: [pollRunId], references: [id], onDelete: Cascade)
+  accommodationId      String
+  accommodation        Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  propertyId           String // BigInt stored as String
+  roomId               String
+  ratePlanId           String
+  remainingRooms       Int?
+  freeCancellation     Boolean?
+  freeCancellationDate DateTime?
+  totalInclusive       Decimal?      @db.Decimal(12, 2)
+  currency             String?
+  payloadHash          String
+  raw                  Json?
+  createdAt            DateTime      @default(now())
+
+  @@index([accommodationId, createdAt])
+  @@index([propertyId, roomId, ratePlanId, createdAt])
+  @@map("agoda_room_snapshots")
+}
+
+model AgodaAlertEvent {
+  id              BigInt        @id @default(autoincrement())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  type            String // vacancy | price_drop | clickout | vacancy_proxy
+  eventKey        String        @unique
+  offerKey        String?
+  status          String        @default("detected")
+  detectedAt      DateTime      @default(now())
+  beforeHash      String?
+  afterHash       String?
+  meta            Json?
+
+  notifications AgodaNotification[]
+
+  @@index([accommodationId, type, detectedAt])
+  @@index([accommodationId, type, offerKey, detectedAt])
+  @@map("agoda_alert_events")
+}
+
+model AgodaNotification {
+  id              BigInt          @id @default(autoincrement())
+  accommodationId String?
+  accommodation   Accommodation?  @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
+  alertEventId    BigInt
+  alertEvent      AgodaAlertEvent @relation(fields: [alertEventId], references: [id], onDelete: Cascade)
+  channel         String // email
+  status          String // queued | sent | failed | suppressed
+  attempt         Int             @default(0)
+  lastError       String?
+  sentAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([alertEventId])
+  @@index([accommodationId])
+  @@index([status, createdAt])
+  @@map("agoda_notifications")
+}
+
+model AgodaConsentLog {
+  id              BigInt         @id @default(autoincrement())
+  userId          String?
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
+  email           String
+  type            String // opt_in | opt_out
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime       @default(now())
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([accommodationId, createdAt])
+  @@map("agoda_consent_logs")
+}
+
+// ── Mooncatch Sniper Core (Sprint 1) ──
+
+model MooncatchWatch {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email        String?
+  propertyId   BigInt
+  propertyName String?
+  checkIn      DateTime @db.Date
+  checkOut     DateTime @db.Date
+  rooms        Int      @default(1)
+  adults       Int      @default(2)
+  children     Int      @default(0)
+  currency     String   @default("KRW")
+  locale       String   @default("ko")
+  status       String   @default("active")
+  lastPolledAt DateTime?
+  lastEventAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pollRuns      MooncatchPollRun[]
+  roomSnapshots MooncatchRoomSnapshot[]
+  alertEvents   MooncatchAlertEvent[]
+  notifications MooncatchNotification[]
+
+  @@index([propertyId, checkIn, checkOut], map: "watches_property_id_check_in_check_out_idx")
+  @@index([status, updatedAt], map: "watches_status_updated_at_idx")
+  @@index([userId], map: "watches_user_id_idx")
+  @@index([email], map: "watches_email_idx")
+  @@map("watches")
+}
+
+model MooncatchPollRun {
+  id        BigInt         @id @default(autoincrement())
+  watchId   String
+  watch     MooncatchWatch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  polledAt  DateTime       @default(now())
+  httpStatus Int?
+  latencyMs Int?
+  status    String
+  error     String?
+  createdAt DateTime       @default(now())
+
+  roomSnapshots MooncatchRoomSnapshot[]
+
+  @@index([watchId, polledAt], map: "poll_runs_watch_id_polled_at_idx")
+  @@map("poll_runs")
+}
+
+model MooncatchRoomSnapshot {
+  id                   BigInt           @id @default(autoincrement())
+  pollRunId            BigInt
+  pollRun              MooncatchPollRun @relation(fields: [pollRunId], references: [id], onDelete: Cascade)
+  watchId              String
+  watch                MooncatchWatch   @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  propertyId           BigInt
+  roomId               BigInt
+  ratePlanId           BigInt
+  remainingRooms       Int?
+  freeCancellation     Boolean?
+  freeCancellationDate DateTime?
+  totalInclusive       Decimal?         @db.Decimal(12, 2)
+  currency             String?
+  payloadHash          String
+  raw                  Json?
+  createdAt            DateTime         @default(now())
+
+  @@index([watchId, createdAt], map: "room_snapshots_watch_id_created_at_idx")
+  @@index([propertyId, roomId, ratePlanId, createdAt], map: "room_snapshots_offer_lookup_idx")
+  @@map("room_snapshots")
+}
+
+model MooncatchAlertEvent {
+  id         BigInt         @id @default(autoincrement())
+  watchId    String
+  watch      MooncatchWatch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  type       String
+  eventKey   String         @unique
+  status     String         @default("detected")
+  detectedAt DateTime       @default(now())
+  beforeHash String?
+  afterHash  String?
+  meta       Json?
+
+  notifications MooncatchNotification[]
+
+  @@index([watchId, type, detectedAt], map: "alert_events_watch_id_type_detected_at_idx")
+  @@map("alert_events")
+}
+
+model MooncatchNotification {
+  id           BigInt              @id @default(autoincrement())
+  watchId      String?
+  watch        MooncatchWatch?     @relation(fields: [watchId], references: [id], onDelete: SetNull)
+  alertEventId BigInt
+  alertEvent   MooncatchAlertEvent @relation(fields: [alertEventId], references: [id], onDelete: Cascade)
+  channel      String
+  status       String
+  attempt      Int                 @default(0)
+  lastError    String?
+  sentAt       DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([alertEventId], map: "notifications_alert_event_id_idx")
+  @@index([watchId], map: "notifications_watch_id_idx")
+  @@map("notifications")
+}
+
+model MooncatchConsentLog {
+  id        BigInt   @id @default(autoincrement())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String
+  type      String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt], map: "consent_logs_user_id_created_at_idx")
+  @@index([email, createdAt], map: "consent_logs_email_created_at_idx")
+  @@map("consent_logs")
 }
 
 // ── Public SEO Snapshot ──

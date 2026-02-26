@@ -1,0 +1,63 @@
+services:
+  redis-staging:
+    image: redis:7-alpine
+    command: redis-server --maxmemory-policy noeviction
+    networks:
+      - shared-network
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    image: kihoonbae/binbang:web-${IMAGE_TAG:-develop}@${IMAGE_WEB_DIGEST:-}
+    ports:
+      - '3500:3000'
+    networks:
+      - shared-network
+    env_file:
+      - ../.env.common
+      - ../.env.staging
+      - ../apps/web/.env.common
+      - path: ../apps/web/.env.staging
+        required: false
+      - path: ../.env.deploy.staging
+        required: false
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+
+  worker:
+    image: kihoonbae/binbang:worker-${IMAGE_TAG:-develop}@${IMAGE_WORKER_DIGEST:-}
+    networks:
+      - shared-network
+    expose:
+      - '3500'
+    env_file:
+      - ../.env.common
+      - ../.env.staging
+      - ../apps/worker/.env.common
+      - path: ../apps/worker/.env.staging
+        required: false
+      - path: ../.env.deploy.staging
+        required: false
+    environment:
+      NODE_ENV: production
+      REDIS_URL: redis://redis-staging:6379
+    depends_on:
+      redis-staging:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  shared-network:
+    driver: bridge
+    external: true
+    name: binbang_shared_network
+
+volumes:
+  redis-data:

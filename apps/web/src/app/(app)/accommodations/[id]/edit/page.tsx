@@ -50,8 +50,8 @@ export default function EditAccommodationPage(): React.ReactElement {
   useEffect(() => {
     if (data && !initialized) {
       setName(data.name);
-      setUrl(data.url);
-      setOriginalUrl(data.url);
+      setUrl(data.url ?? '');
+      setOriginalUrl(data.url ?? '');
       setCheckIn(data.checkIn.split('T')[0]);
       setCheckOut(data.checkOut.split('T')[0]);
       setAdults(data.adults);

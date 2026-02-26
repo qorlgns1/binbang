@@ -8,7 +8,12 @@ import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/r
 
 import { parseApiError } from '@/lib/apiError';
 import { accommodationKeys, userKeys } from '@/lib/queryKeys';
-import type { Accommodation, CreateAccommodationInput, UpdateAccommodationInput } from '@/types/accommodation';
+import type {
+  Accommodation,
+  CreateAccommodationInput,
+  CreateAgodaAlertInput,
+  UpdateAccommodationInput,
+} from '@/types/accommodation';
 
 // ============================================================================
 // Types
@@ -25,6 +30,7 @@ interface ToggleActiveVariables {
 }
 
 export type UseCreateAccommodationMutationResult = UseMutationResult<Accommodation, Error, CreateAccommodationInput>;
+export type UseCreateAgodaAlertMutationResult = UseMutationResult<Accommodation, Error, CreateAgodaAlertInput>;
 export type UseUpdateAccommodationMutationResult = UseMutationResult<
   Accommodation,
   Error,
@@ -45,6 +51,18 @@ async function createAccommodation(input: CreateAccommodationInput): Promise<Acc
   });
   if (!res.ok) {
     throw await parseApiError(res, '숙소 추가에 실패했습니다');
+  }
+  return res.json();
+}
+
+async function createAgodaAlert(input: CreateAgodaAlertInput): Promise<Accommodation> {
+  const res = await fetch('/api/accommodations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    throw await parseApiError(res, '알림 등록에 실패했습니다');
   }
   return res.json();
 }
@@ -91,6 +109,18 @@ export function useCreateAccommodationMutation(): UseCreateAccommodationMutation
 
   return useMutation({
     mutationFn: createAccommodation,
+    onSuccess: (): void => {
+      queryClient.invalidateQueries({ queryKey: accommodationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.quota() });
+    },
+  });
+}
+
+export function useCreateAgodaAlertMutation(): UseCreateAgodaAlertMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createAgodaAlert,
     onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.quota() });

@@ -14,6 +14,19 @@ export interface CreateAccommodationInput {
   adults: number;
 }
 
+export interface CreateAgodaApiAccommodationInput {
+  userId: string;
+  platformId: string; // Agoda hotelId
+  name: string;
+  checkIn: Date;
+  checkOut: Date;
+  adults: number;
+  children: number;
+  rooms: number;
+  currency: string;
+  locale: string;
+}
+
 export interface UpdateAccommodationInput {
   name?: string;
   url?: string;
@@ -58,7 +71,12 @@ const ACCOMMODATION_SELECT = {
   checkOut: true,
   adults: true,
   rooms: true,
+  children: true,
+  currency: true,
+  locale: true,
   isActive: true,
+  lastPolledAt: true,
+  lastEventAt: true,
   lastCheck: true,
   lastStatus: true,
   lastPrice: true,
@@ -164,6 +182,26 @@ export async function createAccommodation(input: CreateAccommodationInput): Prom
       checkIn: input.checkIn,
       checkOut: input.checkOut,
       adults: input.adults,
+    },
+    select: ACCOMMODATION_SELECT,
+  });
+}
+
+export async function createAgodaApiAccommodation(input: CreateAgodaApiAccommodationInput): Promise<Accommodation> {
+  return prisma.accommodation.create({
+    data: {
+      userId: input.userId,
+      name: input.name,
+      platform: 'AGODA',
+      platformId: input.platformId,
+      url: null, // Agoda API 방식은 URL 불필요
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+      adults: input.adults,
+      children: input.children,
+      rooms: input.rooms,
+      currency: input.currency,
+      locale: input.locale,
     },
     select: ACCOMMODATION_SELECT,
   });

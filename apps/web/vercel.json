@@ -3,5 +3,19 @@
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=@workspace/web",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/internal/accommodations/poll-due",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/internal/accommodations/notifications/dispatch",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/internal/snapshots/cleanup",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

@@ -102,7 +102,7 @@ export function AccommodationBoard({
           <Button asChild size='sm'>
             <Link href='/accommodations/new'>
               <Plus className='mr-1.5 size-4' />
-              숙소 추가
+              알림 등록
             </Link>
           </Button>
         </div>
@@ -119,7 +119,7 @@ export function AccommodationBoard({
           <Button asChild size='sm'>
             <Link href='/accommodations/new'>
               <Plus className='mr-1.5 size-4' />
-              숙소 추가
+              알림 등록
             </Link>
           </Button>
         </div>
@@ -145,7 +145,7 @@ export function AccommodationBoard({
         <Button asChild size='sm'>
           <Link href='/accommodations/new'>
             <Plus className='mr-1.5 size-4' />
-            숙소 추가
+            알림 등록
           </Link>
         </Button>
       </div>
