@@ -125,7 +125,6 @@ function setupBaseAccommodation() {
   });
 
   mockPollRunCreate.mockResolvedValue({ id: 1n, polledAt: new Date() });
-  mockPollRunFindFirst.mockResolvedValue({ id: 0n }); // 이전 pollRun 존재
   mockSnapshotCreateMany.mockResolvedValue({ count: 1 });
   mockTransaction.mockResolvedValue([{}, {}]);
   mockNotificationCreateMany.mockResolvedValue({ count: 1 });
@@ -133,6 +132,8 @@ function setupBaseAccommodation() {
 
 // ============================================================================
 // Tests
+//
+// vacancy 감지 로직: 이전 poll에 결과 없음(sold out) → 현재 poll에 결과 있음
 // ============================================================================
 
 import { pollAccommodationOnce } from '../agoda-polling.service';
@@ -145,19 +146,15 @@ describe('agoda-polling: cooldown 쿨다운', () => {
   it('vacancy 이벤트: 쿨다운 활성 시 알림 큐잉 건너뜀', async () => {
     setupBaseAccommodation();
 
-    const previousSnapshot = {
-      propertyId: '1001',
-      roomId: '2001',
-      ratePlanId: '3001',
-      remainingRooms: 0, // 이전에 방 없음
-      totalInclusive: 100_000,
-      payloadHash: 'hash_before',
-    };
-    mockSnapshotFindMany.mockResolvedValue([previousSnapshot]);
+    // 이전 poll run 존재(hasBaseline=true), 스냅샷 없음(호텔 sold out)
+    mockPollRunFindFirst.mockResolvedValue({ id: 0n });
+    mockSnapshotFindMany.mockResolvedValue([]);
 
-    const currentOffer = makeAgodaOffer({ remainingRooms: 3 }); // 현재 방 있음 → vacancy 후보
+    // 현재 poll: 호텔 등장 → vacancy 후보
+    const currentOffer = makeAgodaOffer();
     const apiPayload = { properties: [] };
     mockSearchAgodaAvailability.mockResolvedValue({ payload: apiPayload, httpStatus: 200 });
+    // main poll + verify 모두 호텔 등장 → confirmed
     mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
 
     // 쿨다운: findFirst가 기존 이벤트 반환 → 쿨다운 활성
@@ -175,23 +172,15 @@ describe('agoda-polling: cooldown 쿨다운', () => {
   it('vacancy 이벤트: 쿨다운 비활성 시 이벤트 생성 및 알림 큐잉', async () => {
     setupBaseAccommodation();
 
-    const previousSnapshot = {
-      propertyId: '1001',
-      roomId: '2001',
-      ratePlanId: '3001',
-      remainingRooms: 0,
-      totalInclusive: 100_000,
-      payloadHash: 'hash_before',
-    };
-    mockSnapshotFindMany.mockResolvedValue([previousSnapshot]);
+    // 이전 poll run 존재(hasBaseline=true), 스냅샷 없음(호텔 sold out)
+    mockPollRunFindFirst.mockResolvedValue({ id: 0n });
+    mockSnapshotFindMany.mockResolvedValue([]);
 
-    const currentOffer = makeAgodaOffer({ remainingRooms: 3 });
+    const currentOffer = makeAgodaOffer();
     const apiPayload = { properties: [] };
-    // 첫 번째 호출: main poll, 두 번째 호출: verify
+    // main poll + verify 모두 호텔 등장 → confirmed
     mockSearchAgodaAvailability.mockResolvedValue({ payload: apiPayload, httpStatus: 200 });
-    mockNormalizeAgodaSearchResponse
-      .mockReturnValueOnce({ offers: [currentOffer] })
-      .mockReturnValueOnce({ offers: [{ ...currentOffer, remainingRooms: 3 }] }); // verify도 방 있음
+    mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
 
     // 쿨다운: findFirst가 null 반환 → 쿨다운 비활성
     mockAlertEventFindFirst.mockResolvedValue(null);
@@ -208,27 +197,26 @@ describe('agoda-polling: cooldown 쿨다운', () => {
   it('price_drop 이벤트: 쿨다운 활성 시 건너뜀', async () => {
     setupBaseAccommodation();
 
+    // 이전 스냅샷 있음(호텔 계속 예약 가능 상태, vacancy 없음)
+    mockPollRunFindFirst.mockResolvedValue({ id: 0n });
     const previousSnapshot = {
       propertyId: '1001',
       roomId: '2001',
       ratePlanId: '3001',
-      remainingRooms: 2,
+      remainingRooms: null,
       totalInclusive: 200_000, // 이전 가격
       payloadHash: 'hash_before',
     };
     mockSnapshotFindMany.mockResolvedValue([previousSnapshot]);
 
     const currentOffer = makeAgodaOffer({
-      remainingRooms: 2,
       totalInclusive: 160_000, // 20% 하락 → price_drop 후보
     });
     const apiPayload = { properties: [] };
     mockSearchAgodaAvailability.mockResolvedValue({ payload: apiPayload, httpStatus: 200 });
     mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
 
-    // 쿨다운: findFirst가 기존 이벤트 반환
-    // vacancy 쿨다운 체크 (remainingRooms가 이미 있으므로 vacancy는 발생 안 함)
-    // price_drop 쿨다운 체크는 { id: 99n } 반환
+    // price_drop 쿨다운 활성
     mockAlertEventFindFirst.mockResolvedValue({ id: 99n });
 
     const result = await pollAccommodationOnce('acc_001');
@@ -241,17 +229,11 @@ describe('agoda-polling: cooldown 쿨다운', () => {
   it('isInCooldown 쿼리는 accommodationId + type + offerKey + status=detected 조건으로 조회', async () => {
     setupBaseAccommodation();
 
-    const previousSnapshot = {
-      propertyId: '1001',
-      roomId: '2001',
-      ratePlanId: '3001',
-      remainingRooms: 0,
-      totalInclusive: 100_000,
-      payloadHash: 'hash_before',
-    };
-    mockSnapshotFindMany.mockResolvedValue([previousSnapshot]);
+    // 이전 poll run 존재(hasBaseline=true), 스냅샷 없음(호텔 sold out)
+    mockPollRunFindFirst.mockResolvedValue({ id: 0n });
+    mockSnapshotFindMany.mockResolvedValue([]);
 
-    const currentOffer = makeAgodaOffer({ remainingRooms: 3 });
+    const currentOffer = makeAgodaOffer();
     const apiPayload = { properties: [] };
     mockSearchAgodaAvailability.mockResolvedValue({ payload: apiPayload, httpStatus: 200 });
     mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
@@ -261,7 +243,7 @@ describe('agoda-polling: cooldown 쿨다운', () => {
 
     await pollAccommodationOnce('acc_001');
 
-    // isInCooldown 쿼리 확인
+    // isInCooldown 쿼리 확인 (vacancy 쿨다운 체크)
     const callArgs = mockAlertEventFindFirst.mock.calls[0][0];
     expect(callArgs.where.accommodationId).toBe('acc_001');
     expect(callArgs.where.type).toBe('vacancy');

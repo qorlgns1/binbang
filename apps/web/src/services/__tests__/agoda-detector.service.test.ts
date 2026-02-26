@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { detectOfferAppearanceEvents, detectPriceDropEvents, detectVacancyEvents } from '../agoda-detector.service';
+import { detectPriceDropEvents, detectVacancyEvents } from '../agoda-detector.service';
 import type { PreviousSnapshotForDetector } from '../agoda-detector.service';
 import type { NormalizedRoomOffer } from '@/lib/agoda/normalize';
 
@@ -40,120 +40,110 @@ const ACCOMMODATION_ID = 'acc_test_001';
 
 // ============================================================================
 // detectVacancyEvents
+//
+// 새 감지 로직: Agoda lt_v1 API는 remainingRooms를 반환하지 않으므로
+// "이전 poll에 결과 없음(sold out) → 현재 poll에 결과 있음" 으로 vacancy를 감지한다.
 // ============================================================================
 
 describe('detectVacancyEvents', () => {
-  it('베이스라인 없으면 이벤트를 생성하지 않는다', () => {
+  it('베이스라인 없으면 이벤트를 생성하지 않는다 (첫 폴링)', () => {
     const events = detectVacancyEvents({
       accommodationId: ACCOMMODATION_ID,
       previousSnapshots: [],
-      currentOffers: [makeOffer({ remainingRooms: 3 })],
+      currentOffers: [makeOffer()],
       hasBaseline: false,
     });
     expect(events).toHaveLength(0);
   });
 
-  it('이전 null → 현재 양수이면 vacancy 이벤트 생성', () => {
+  it('이전 스냅샷 있고 현재도 있으면 이벤트 없음 (호텔이 계속 예약 가능)', () => {
     const events = detectVacancyEvents({
       accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ remainingRooms: null })],
-      currentOffers: [makeOffer({ remainingRooms: 2 })],
+      previousSnapshots: [makeSnapshot()],
+      currentOffers: [makeOffer()],
+      hasBaseline: true,
+    });
+    expect(events).toHaveLength(0);
+  });
+
+  it('이전 스냅샷 있고 현재 결과 없으면 이벤트 없음 (호텔 sold out, 알림 불필요)', () => {
+    const events = detectVacancyEvents({
+      accommodationId: ACCOMMODATION_ID,
+      previousSnapshots: [makeSnapshot()],
+      currentOffers: [],
+      hasBaseline: true,
+    });
+    expect(events).toHaveLength(0);
+  });
+
+  it('이전 스냅샷 없고 현재 결과 없으면 이벤트 없음 (계속 sold out)', () => {
+    const events = detectVacancyEvents({
+      accommodationId: ACCOMMODATION_ID,
+      previousSnapshots: [],
+      currentOffers: [],
+      hasBaseline: true,
+    });
+    expect(events).toHaveLength(0);
+  });
+
+  it('이전 스냅샷 없고(sold out) 현재 결과 있으면 vacancy 이벤트 생성', () => {
+    const events = detectVacancyEvents({
+      accommodationId: ACCOMMODATION_ID,
+      previousSnapshots: [],
+      currentOffers: [makeOffer({ payloadHash: 'appeared_hash' })],
       hasBaseline: true,
     });
     expect(events).toHaveLength(1);
     expect(events[0].type).toBe('vacancy');
-    expect(events[0].beforeRemainingRooms).toBeNull();
-    expect(events[0].afterRemainingRooms).toBe(2);
+    expect(events[0].beforeHash).toBeNull();
+    expect(events[0].afterHash).toBe('appeared_hash');
   });
 
-  it('이전 0 → 현재 양수이면 vacancy 이벤트 생성', () => {
-    const events = detectVacancyEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ remainingRooms: 0 })],
-      currentOffers: [makeOffer({ remainingRooms: 1 })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(1);
-    expect(events[0].beforeRemainingRooms).toBe(0);
-    expect(events[0].afterRemainingRooms).toBe(1);
-  });
-
-  it('이전 양수 → 현재 양수이면 이벤트 없음 (이미 방이 있었음)', () => {
-    const events = detectVacancyEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ remainingRooms: 2 })],
-      currentOffers: [makeOffer({ remainingRooms: 3 })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('현재 null이면 vacancy 이벤트 없음', () => {
-    const events = detectVacancyEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ remainingRooms: null })],
-      currentOffers: [makeOffer({ remainingRooms: null })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('현재 0이면 vacancy 이벤트 없음', () => {
-    const events = detectVacancyEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ remainingRooms: null })],
-      currentOffers: [makeOffer({ remainingRooms: 0 })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('이전 스냅샷에 없는 새 오퍼도 hasBaseline=true면 vacancy 이벤트 생성 (before=null로 처리)', () => {
-    // 이전에 없던 오퍼키 → previous undefined → beforeRemainingRooms=null → hasBaseline=true이면 vacancy 발생
+  it('현재 오퍼가 여러 개면 각각 vacancy 이벤트 생성', () => {
     const events = detectVacancyEvents({
       accommodationId: ACCOMMODATION_ID,
       previousSnapshots: [],
-      currentOffers: [makeOffer({ remainingRooms: 5 })],
+      currentOffers: [
+        makeOffer({ offerKey: 'p:r1:rate1', propertyId: 1n, roomId: 1n, ratePlanId: 1n }),
+        makeOffer({ offerKey: 'p:r2:rate2', propertyId: 1n, roomId: 2n, ratePlanId: 2n }),
+      ],
       hasBaseline: true,
     });
-    // previousByKey에 없으면 before=null, hasBaseline=true, after=5 → vacancy 발생해야 함
-    expect(events).toHaveLength(1);
-    expect(events[0].beforeRemainingRooms).toBeNull();
-    expect(events[0].afterRemainingRooms).toBe(5);
+    expect(events).toHaveLength(2);
+    expect(events.map((e) => e.offerKey)).toEqual(['p:r1:rate1', 'p:r2:rate2']);
   });
 
-  it('eventKey는 accommodationId + offerKey + payloadHash 포함', () => {
-    const offer = makeOffer({ remainingRooms: 1, payloadHash: 'abc123' });
+  it('eventKey는 vacancy 접두사 + accommodationId + offerKey + payloadHash 포함', () => {
+    const offer = makeOffer({ offerKey: '1001:2001:3001', payloadHash: 'abc123' });
     const events = detectVacancyEvents({
       accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ remainingRooms: 0 })],
+      previousSnapshots: [],
       currentOffers: [offer],
       hasBaseline: true,
     });
-    expect(events[0].eventKey).toContain(ACCOMMODATION_ID);
-    expect(events[0].eventKey).toContain(offer.offerKey);
-    expect(events[0].eventKey).toContain('abc123');
+    expect(events[0].eventKey).toBe(`vacancy:${ACCOMMODATION_ID}:1001:2001:3001:abc123`);
   });
 
-  it('여러 오퍼 중 조건 맞는 것만 이벤트 생성', () => {
-    const snapshots = [
-      makeSnapshot({ offerKey: 'p:r1:rate1', remainingRooms: 0 }),
-      makeSnapshot({ offerKey: 'p:r2:rate2', remainingRooms: 2 }), // 이미 방 있음
-      makeSnapshot({ offerKey: 'p:r3:rate3', remainingRooms: null }),
-    ];
-    const offers = [
-      makeOffer({ offerKey: 'p:r1:rate1', propertyId: 1n, roomId: 1n, ratePlanId: 1n, remainingRooms: 3 }),
-      makeOffer({ offerKey: 'p:r2:rate2', propertyId: 1n, roomId: 2n, ratePlanId: 2n, remainingRooms: 2 }),
-      makeOffer({ offerKey: 'p:r3:rate3', propertyId: 1n, roomId: 3n, ratePlanId: 3n, remainingRooms: 0 }),
-    ];
+  it('meta에 propertyId, roomId, ratePlanId, currency, totalInclusive 포함', () => {
+    const offer = makeOffer({
+      propertyId: 1001n,
+      roomId: 2001n,
+      ratePlanId: 3001n,
+      currency: 'KRW',
+      totalInclusive: 150_000,
+    });
     const events = detectVacancyEvents({
       accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: snapshots,
-      currentOffers: offers,
+      previousSnapshots: [],
+      currentOffers: [offer],
       hasBaseline: true,
     });
-    expect(events).toHaveLength(1);
-    expect(events[0].offerKey).toBe('p:r1:rate1');
+    const { meta } = events[0];
+    expect(meta.propertyId).toBe('1001');
+    expect(meta.roomId).toBe('2001');
+    expect(meta.ratePlanId).toBe('3001');
+    expect(meta.currency).toBe('KRW');
+    expect(meta.totalInclusive).toBe(150_000);
   });
 });
 
@@ -266,82 +256,5 @@ describe('detectPriceDropEvents', () => {
     });
     expect(events).toHaveLength(1);
     expect(events[0].offerKey).toBe('p:r1:rate1');
-  });
-});
-
-// ============================================================================
-// detectOfferAppearanceEvents
-// ============================================================================
-
-describe('detectOfferAppearanceEvents', () => {
-  it('베이스라인 없으면 이벤트 없음', () => {
-    const events = detectOfferAppearanceEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [],
-      currentOffers: [makeOffer({ remainingRooms: null })],
-      hasBaseline: false,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('이전 스냅샷에 있는 오퍼는 이벤트 없음', () => {
-    const events = detectOfferAppearanceEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [makeSnapshot({ offerKey: '1001:2001:3001' })],
-      currentOffers: [makeOffer({ offerKey: '1001:2001:3001', remainingRooms: null })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('remainingRooms != null인 신규 오퍼는 vacancy가 처리하므로 이벤트 없음', () => {
-    const events = detectOfferAppearanceEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [],
-      currentOffers: [makeOffer({ remainingRooms: 3 })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('신규 오퍼이고 remainingRooms=null이면 vacancy_proxy 이벤트 생성', () => {
-    const events = detectOfferAppearanceEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [],
-      currentOffers: [makeOffer({ remainingRooms: null, payloadHash: 'new_hash' })],
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('vacancy_proxy');
-    expect(events[0].beforeHash).toBeNull();
-    expect(events[0].afterHash).toBe('new_hash');
-  });
-
-  it('eventKey는 vacancy_proxy 접두사 + accommodationId + offerKey + payloadHash 포함', () => {
-    const offer = makeOffer({ offerKey: '1001:2001:3001', remainingRooms: null, payloadHash: 'proxy_hash' });
-    const events = detectOfferAppearanceEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: [],
-      currentOffers: [offer],
-      hasBaseline: true,
-    });
-    expect(events[0].eventKey).toBe(`vacancy_proxy:${ACCOMMODATION_ID}:1001:2001:3001:proxy_hash`);
-  });
-
-  it('여러 오퍼 혼합 — 기존 오퍼 제외, remainingRooms=null 신규만 이벤트', () => {
-    const snapshots = [makeSnapshot({ offerKey: 'p:r1:rate1' })];
-    const offers = [
-      makeOffer({ offerKey: 'p:r1:rate1', remainingRooms: null }), // 기존 오퍼 → 이벤트 없음
-      makeOffer({ offerKey: 'p:r2:rate2', propertyId: 1n, roomId: 2n, ratePlanId: 2n, remainingRooms: 2 }), // 신규이지만 remainingRooms != null
-      makeOffer({ offerKey: 'p:r3:rate3', propertyId: 1n, roomId: 3n, ratePlanId: 3n, remainingRooms: null }), // 신규 + null → vacancy_proxy
-    ];
-    const events = detectOfferAppearanceEvents({
-      accommodationId: ACCOMMODATION_ID,
-      previousSnapshots: snapshots,
-      currentOffers: offers,
-      hasBaseline: true,
-    });
-    expect(events).toHaveLength(1);
-    expect(events[0].offerKey).toBe('p:r3:rate3');
   });
 });

@@ -6,8 +6,6 @@ export interface VacancyEventCandidate {
   beforeHash: string | null;
   afterHash: string;
   offerKey: string;
-  beforeRemainingRooms: number | null;
-  afterRemainingRooms: number | null;
   meta: {
     propertyId: string;
     roomId: string;
@@ -37,21 +35,6 @@ export interface PriceDropEventCandidate {
   };
 }
 
-export interface VacancyProxyEventCandidate {
-  type: 'vacancy_proxy';
-  eventKey: string;
-  beforeHash: null;
-  afterHash: string;
-  offerKey: string;
-  meta: {
-    propertyId: string;
-    roomId: string;
-    ratePlanId: string;
-    currency: string | null;
-    totalInclusive: number | null;
-  };
-}
-
 export interface PreviousSnapshotForDetector {
   offerKey: string;
   remainingRooms: number | null;
@@ -59,55 +42,39 @@ export interface PreviousSnapshotForDetector {
   payloadHash: string;
 }
 
-function shouldEmitVacancy(before: number | null, after: number | null, hasBaseline: boolean): boolean {
-  if (after == null || after <= 0) return false;
-  if (!hasBaseline) return false;
-  return before == null || before <= 0;
-}
-
+/**
+ * 빈방 감지: 이전 poll에서 결과가 없었고(호텔 sold out), 현재 poll에서 결과가 생겼을 때 발생.
+ *
+ * Agoda lt_v1 API는 remainingRooms를 반환하지 않는다.
+ * 대신 호텔이 결과에 포함되면 예약 가능, 결과에서 사라지면 sold out으로 판단한다.
+ */
 export function detectVacancyEvents(params: {
   accommodationId: string;
   previousSnapshots: PreviousSnapshotForDetector[];
   currentOffers: NormalizedRoomOffer[];
   hasBaseline: boolean;
 }): VacancyEventCandidate[] {
-  const previousByKey = new Map<string, PreviousSnapshotForDetector>();
-  for (const snapshot of params.previousSnapshots) {
-    previousByKey.set(snapshot.offerKey, snapshot);
-  }
+  if (!params.hasBaseline) return [];
+  if (params.previousSnapshots.length > 0) return [];
+  if (params.currentOffers.length === 0) return [];
 
-  const events: VacancyEventCandidate[] = [];
-
-  for (const offer of params.currentOffers) {
-    const previous = previousByKey.get(offer.offerKey);
-    const beforeRemainingRooms = previous?.remainingRooms ?? null;
-    const afterRemainingRooms = offer.remainingRooms;
-
-    if (!shouldEmitVacancy(beforeRemainingRooms, afterRemainingRooms, params.hasBaseline)) {
-      continue;
-    }
-
-    events.push({
-      type: 'vacancy',
-      eventKey: `vacancy:${params.accommodationId}:${offer.offerKey}:${offer.payloadHash}`,
-      beforeHash: previous?.payloadHash ?? null,
-      afterHash: offer.payloadHash,
-      offerKey: offer.offerKey,
-      beforeRemainingRooms,
-      afterRemainingRooms,
-      meta: {
-        propertyId: offer.propertyId.toString(),
-        roomId: offer.roomId.toString(),
-        ratePlanId: offer.ratePlanId.toString(),
-        currency: offer.currency,
-        totalInclusive: offer.totalInclusive,
-        freeCancellation: offer.freeCancellation,
-        freeCancellationDate: offer.freeCancellationDate?.toISOString() ?? null,
-      },
-    });
-  }
-
-  return events;
+  // 이전 poll에 결과 없음(sold out) → 현재 poll에 결과 있음 → vacancy
+  return params.currentOffers.map((offer) => ({
+    type: 'vacancy',
+    eventKey: `vacancy:${params.accommodationId}:${offer.offerKey}:${offer.payloadHash}`,
+    beforeHash: null,
+    afterHash: offer.payloadHash,
+    offerKey: offer.offerKey,
+    meta: {
+      propertyId: offer.propertyId.toString(),
+      roomId: offer.roomId.toString(),
+      ratePlanId: offer.ratePlanId.toString(),
+      currency: offer.currency,
+      totalInclusive: offer.totalInclusive,
+      freeCancellation: offer.freeCancellation,
+      freeCancellationDate: offer.freeCancellationDate?.toISOString() ?? null,
+    },
+  }));
 }
 
 function shouldEmitPriceDrop(
@@ -121,41 +88,6 @@ function shouldEmitPriceDrop(
   const dropRatio = (previousPrice - currentPrice) / previousPrice;
   if (dropRatio >= minDropRatio) return { emit: true, dropRatio };
   return { emit: false, dropRatio };
-}
-
-export function detectOfferAppearanceEvents(params: {
-  accommodationId: string;
-  previousSnapshots: PreviousSnapshotForDetector[];
-  currentOffers: NormalizedRoomOffer[];
-  hasBaseline: boolean;
-}): VacancyProxyEventCandidate[] {
-  if (!params.hasBaseline) return [];
-
-  const previousKeys = new Set(params.previousSnapshots.map((s) => s.offerKey));
-  const events: VacancyProxyEventCandidate[] = [];
-
-  for (const offer of params.currentOffers) {
-    if (previousKeys.has(offer.offerKey)) continue;
-    // remainingRooms != null means vacancy detection already handles it
-    if (offer.remainingRooms != null) continue;
-
-    events.push({
-      type: 'vacancy_proxy',
-      eventKey: `vacancy_proxy:${params.accommodationId}:${offer.offerKey}:${offer.payloadHash}`,
-      beforeHash: null,
-      afterHash: offer.payloadHash,
-      offerKey: offer.offerKey,
-      meta: {
-        propertyId: offer.propertyId.toString(),
-        roomId: offer.roomId.toString(),
-        ratePlanId: offer.ratePlanId.toString(),
-        currency: offer.currency,
-        totalInclusive: offer.totalInclusive,
-      },
-    });
-  }
-
-  return events;
 }
 
 export function detectPriceDropEvents(params: {

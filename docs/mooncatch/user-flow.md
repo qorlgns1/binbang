@@ -24,7 +24,7 @@
     │
     ├── 변화 없음 → 다음 폴링 대기
     │
-    └── 변화 감지 (가격 하락 / 빈방 / vacancy_proxy)
+    └── 변화 감지 (가격 하락 / 빈방 재등장)
             │
             ├── 쿨다운 체크 (동일 오퍼 중복 방지)
             │       ├── 쿨다운 내 → 스킵
@@ -145,7 +145,7 @@
     │
     └── 알림 이력 테이블 (최근 20건)
             ├── 감지 시각
-            ├── 이벤트 유형 (vacancy / price_drop / vacancy_proxy)
+            ├── 이벤트 유형 (vacancy / price_drop)
             ├── 발송 상태 (queued / sent / failed)
             └── 발송 시각
 ```
@@ -174,14 +174,14 @@
   [알림 수신거부]
 ```
 
-이메일 알림 — vacancy_proxy 예시:
+이메일 알림 — vacancy 예시:
 
 ```text
-제목: "[메두푸시 리조트] 새 객실 유형이 감지되었습니다"
+제목: "[메두푸시 리조트] 빈방이 감지되었습니다"
 
 본문:
-  새로운 객실 유형이 나타났습니다. 빈방 가능성이 있습니다.
-  (remainingRooms 정보 없는 신규 오퍼 감지)
+  추적 중인 숙소에서 다시 방이 열렸습니다.
+  매진되기 전에 예약 페이지에서 확인해주세요.
 
   [Agoda에서 확인하기]
 ```
@@ -249,13 +249,10 @@ Vercel Cron (매 30분)
             │       │       ├── 쿨다운 내 → 스킵
             │       │       └── 쿨다운 외 → alert_events (price_drop) 생성
             │       │                         → agoda_notifications (queued) 생성
-            │       ├── 빈방 감지 (remainingRooms 0→양수)
-            │       │       ├── verify re-check
+            │       ├── 빈방 재등장 감지 (이전 poll 결과 없음 → 현재 poll 결과 있음)
+            │       │       ├── verify re-check (API 재호출로 호텔 존재 여부 확인)
             │       │       ├── 쿨다운 체크 (24h)
             │       │       └── 통과 → alert_events (vacancy) 생성
-            │       ├── vacancy_proxy 감지 (신규 offerKey + remainingRooms=null + hasBaseline)
-            │       │       ├── 쿨다운 체크 (24h)
-            │       │       └── 통과 → alert_events (vacancy_proxy) 생성
             │       └── 변화 없음 → 로그만 기록
             │
             └── agoda_poll_runs 기록 (성공/실패, latency)
@@ -355,8 +352,8 @@ Vercel Cron (매일 03:00 UTC)
 | 동일 이벤트 중복 | agoda_alert_events.event_key unique → 중복 무시 |
 | 수신거부 후 알림 시도 | consent_logs opt_out 확인 → 발송 차단 |
 | 호텔이 agoda_hotels DB에 없음 | 검색 결과 0건 안내, 알림 등록 불가 |
-| `remainingRooms` NULL | vacancy 알림 보류, 신규 offerKey면 vacancy_proxy로 처리 |
-| vacancy_proxy 쿨다운 | 동일 offerKey 24시간 내 중복 방지 |
+| Agoda API `remainingRooms` 미제공 | lt_v1 API 특성. 호텔 결과 존재 여부로 vacancy 판단 |
+| vacancy 쿨다운 | 동일 offerKey 24시간 내 중복 방지 |
 | price_drop 쿨다운 | 동일 offerKey 6시간 내 중복 방지 |
 | 이메일 4회 연속 실패 | agoda_notifications.status = failed, 어드민 노출 |
 | 폴링 지연 (Stall) | /admin/ops에 목록 노출, 수동 확인 필요 |

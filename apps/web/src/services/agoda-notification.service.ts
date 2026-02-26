@@ -197,21 +197,19 @@ function buildEmailContent(params: {
     };
   }
 
-  const remainingRooms = params.meta.afterRemainingRooms ?? null;
-
   if (isEnglish) {
     return {
-      subject: `[${hotelName}] Availability detected`,
+      subject: `[${hotelName}] Room availability detected`,
       text: [
         `${heading} - ${hotelName}`,
         '',
-        `Room availability signal detected.`,
-        `Remaining rooms (detected): ${remainingRooms ?? 'unknown'}`,
+        `The hotel you're tracking has become available again.`,
+        `Please check the booking page before it sells out.`,
         '',
         ...(params.agodaUrl ? [`Go to booking page: ${params.agodaUrl}`] : []),
         ...commonFooterText,
       ].join('\n'),
-      html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;"><h2 style="margin:0 0 8px;">${escapeHtml(heading)}</h2><p style="margin:0 0 12px;"><strong>${escapeHtml(hotelName)}</strong></p><p style="margin:0 0 8px;">Room availability signal detected.</p><p style="margin:0 0 16px;">Remaining rooms (detected): <strong>${escapeHtml(String(remainingRooms ?? 'unknown'))}</strong></p>${buttonHtml}${commonFooterHtml}</div>`,
+      html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;"><h2 style="margin:0 0 8px;">${escapeHtml(heading)}</h2><p style="margin:0 0 12px;"><strong>${escapeHtml(hotelName)}</strong></p><p style="margin:0 0 8px;">The hotel you're tracking has become available again.</p><p style="margin:0 0 16px;">Please check the booking page before it sells out.</p>${buttonHtml}${commonFooterHtml}</div>`,
     };
   }
 
@@ -220,13 +218,13 @@ function buildEmailContent(params: {
     text: [
       `${heading} - ${hotelName}`,
       '',
-      `${hotelName}에서 빈방 신호를 감지했습니다.`,
-      `남은 객실(감지 시점): ${remainingRooms ?? 'unknown'}`,
+      `추적 중인 숙소에서 다시 방이 열렸습니다.`,
+      `매진되기 전에 예약 페이지에서 확인해주세요.`,
       '',
       ...(params.agodaUrl ? [`예약 페이지 이동: ${params.agodaUrl}`] : []),
       ...commonFooterText,
     ].join('\n'),
-    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;"><h2 style="margin:0 0 8px;">${escapeHtml(heading)}</h2><p style="margin:0 0 12px;"><strong>${escapeHtml(hotelName)}</strong></p><p style="margin:0 0 8px;">${escapeHtml(hotelName)}에서 빈방 신호를 감지했습니다.</p><p style="margin:0 0 16px;">남은 객실(감지 시점): <strong>${escapeHtml(String(remainingRooms ?? 'unknown'))}</strong></p>${buttonHtml}${commonFooterHtml}</div>`,
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;"><h2 style="margin:0 0 8px;">${escapeHtml(heading)}</h2><p style="margin:0 0 12px;"><strong>${escapeHtml(hotelName)}</strong></p><p style="margin:0 0 8px;">추적 중인 숙소에서 다시 방이 열렸습니다.</p><p style="margin:0 0 16px;">매진되기 전에 예약 페이지에서 확인해주세요.</p>${buttonHtml}${commonFooterHtml}</div>`,
   };
 }
 

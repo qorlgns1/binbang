@@ -23,7 +23,7 @@
 - `MOONCATCH_PRICE_DROP_THRESHOLD` (기본값: `0.10`, 10%)
 
 ### Sprint 3 추가
-- `MOONCATCH_VACANCY_COOLDOWN_HOURS` (기본값: `24`) — vacancy/vacancy_proxy 중복 알림 방지
+- `MOONCATCH_VACANCY_COOLDOWN_HOURS` (기본값: `24`) — vacancy 중복 알림 방지
 - `MOONCATCH_PRICE_DROP_COOLDOWN_HOURS` (기본값: `6`) — price_drop 중복 알림 방지
 - `MOONCATCH_SNAPSHOT_RETENTION_DAYS` (기본값: `30`) — 스냅샷 자동 정리 보존 일수
 
@@ -123,19 +123,14 @@ WHERE status = 'skipped_cooldown'
   AND detected_at >= NOW() - INTERVAL '24 hours'
 ORDER BY detected_at DESC;
 
--- 미탐 후보: 스냅샷에 remaining_rooms > 0 이 있으나 vacancy detected 이벤트가 없는 offer
-SELECT s.property_id, s.room_id, s.rate_plan_id, MIN(s.created_at) AS first_seen
-FROM agoda_room_snapshots s
-LEFT JOIN agoda_alert_events e
-  ON (e.meta->>'offerKey') = CONCAT(s.property_id, ':', s.room_id, ':', s.rate_plan_id)
-  AND e.type = 'vacancy'
+-- 미탐 후보: vacancy 이벤트가 발생했으나 직전 poll에 스냅샷이 있었던 경우 (의도치 않은 감지)
+-- (참고: lt_v1 API는 remainingRooms를 반환하지 않으므로 remaining_rooms 기반 쿼리는 무의미)
+SELECT e.id, e.accommodation_id, e.offer_key, e.detected_at, e.status
+FROM agoda_alert_events e
+WHERE e.type = 'vacancy'
   AND e.status = 'detected'
-  AND e.detected_at >= s.created_at - INTERVAL '5 minutes'
-  AND e.detected_at <= s.created_at + INTERVAL '5 minutes'
-WHERE s.created_at >= NOW() - INTERVAL '24 hours'
-  AND s.remaining_rooms > 0
-  AND e.id IS NULL
-GROUP BY 1,2,3;
+  AND e.detected_at >= NOW() - INTERVAL '24 hours'
+ORDER BY e.detected_at DESC;
 
 -- 스냅샷 보존 현황 (정리 전 확인용)
 SELECT

@@ -3,11 +3,7 @@ import { prisma } from '@workspace/db';
 
 import { normalizeAgodaSearchResponse } from '@/lib/agoda/normalize';
 import { searchAgodaAvailability } from '@/lib/agoda/searchClient';
-import {
-  detectOfferAppearanceEvents,
-  detectPriceDropEvents,
-  detectVacancyEvents,
-} from '@/services/agoda-detector.service';
+import { detectPriceDropEvents, detectVacancyEvents } from '@/services/agoda-detector.service';
 
 const MAX_ERROR_LENGTH = 1000;
 const DEFAULT_DUE_POLL_INTERVAL_MINUTES = 30;
@@ -38,8 +34,6 @@ export interface PollAccommodationResult {
   priceDropEventsDetected: number;
   priceDropEventsInserted: number;
   priceDropEventsSkippedByCooldown: number;
-  vacancyProxyEventsDetected: number;
-  vacancyProxyEventsInserted: number;
   notificationsQueued: number;
 }
 
@@ -220,24 +214,12 @@ async function verifyVacancyCandidates(params: {
   });
 
   const verifyOffers = normalizeAgodaSearchResponse(verifyApiResult.payload).offers;
-  const verifyByOfferKey = new Map<string, number | null>();
-  for (const offer of verifyOffers) {
-    verifyByOfferKey.set(offer.offerKey, offer.remainingRooms);
+
+  // lt_v1 API는 remainingRooms를 반환하지 않으므로, 호텔이 결과에 존재하는지 여부로 판단한다.
+  if (verifyOffers.length > 0) {
+    return { confirmed: params.candidates, rejected: [] };
   }
-
-  const confirmed: ReturnType<typeof detectVacancyEvents> = [];
-  const rejected: ReturnType<typeof detectVacancyEvents> = [];
-
-  for (const candidate of params.candidates) {
-    const verifyRemainingRooms = verifyByOfferKey.get(candidate.offerKey) ?? null;
-    if (verifyRemainingRooms != null && verifyRemainingRooms > 0) {
-      confirmed.push(candidate);
-    } else {
-      rejected.push(candidate);
-    }
-  }
-
-  return { confirmed, rejected };
+  return { confirmed: [], rejected: params.candidates };
 }
 
 async function enqueueNotifications(params: { accommodationId: string; alertEventIds: bigint[] }): Promise<number> {
@@ -363,7 +345,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       accommodationId,
       previousSnapshots,
       currentOffers: normalized.offers,
-      hasBaseline: previousSnapshots.length > 0,
+      hasBaseline: latestSuccessfulRun != null,
     });
 
     let verifyResult: Awaited<ReturnType<typeof verifyVacancyCandidates>>;
@@ -392,19 +374,11 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       minDropRatio: resolvePriceDropThreshold(),
     });
 
-    const vacancyProxyEvents = detectOfferAppearanceEvents({
-      accommodationId,
-      previousSnapshots,
-      currentOffers: normalized.offers,
-      hasBaseline: previousSnapshots.length > 0,
-    });
-
     const alertEventIdsToNotify: bigint[] = [];
     let vacancyEventsInserted = 0;
     let vacancyEventsSkippedByCooldown = 0;
     let priceDropEventsInserted = 0;
     let priceDropEventsSkippedByCooldown = 0;
-    let vacancyProxyEventsInserted = 0;
 
     for (const event of verifyResult.confirmed) {
       if (await isInCooldown({ accommodationId, type: 'vacancy', offerKey: event.offerKey })) {
@@ -420,12 +394,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         status: 'detected',
         beforeHash: event.beforeHash,
         afterHash: event.afterHash,
-        meta: toJsonValue({
-          offerKey: event.offerKey,
-          beforeRemainingRooms: event.beforeRemainingRooms,
-          afterRemainingRooms: event.afterRemainingRooms,
-          ...event.meta,
-        }),
+        meta: toJsonValue(event.meta),
       });
 
       if (insertedId != null) {
@@ -443,12 +412,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         status: 'rejected_verify_failed',
         beforeHash: event.beforeHash,
         afterHash: event.afterHash,
-        meta: toJsonValue({
-          offerKey: event.offerKey,
-          beforeRemainingRooms: event.beforeRemainingRooms,
-          afterRemainingRooms: event.afterRemainingRooms,
-          ...event.meta,
-        }),
+        meta: toJsonValue(event.meta),
       });
     }
 
@@ -477,28 +441,6 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
 
       if (insertedId != null) {
         priceDropEventsInserted += 1;
-        alertEventIdsToNotify.push(insertedId);
-      }
-    }
-
-    for (const event of vacancyProxyEvents) {
-      if (await isInCooldown({ accommodationId, type: 'vacancy_proxy', offerKey: event.offerKey })) {
-        continue;
-      }
-
-      const insertedId = await createAlertEventWithDedupe({
-        accommodationId,
-        type: 'vacancy_proxy',
-        eventKey: event.eventKey,
-        offerKey: event.offerKey,
-        status: 'detected',
-        beforeHash: event.beforeHash,
-        afterHash: event.afterHash,
-        meta: toJsonValue(event.meta),
-      });
-
-      if (insertedId != null) {
-        vacancyProxyEventsInserted += 1;
         alertEventIdsToNotify.push(insertedId);
       }
     }
@@ -549,8 +491,6 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       priceDropEventsDetected: priceDropEvents.length,
       priceDropEventsInserted,
       priceDropEventsSkippedByCooldown,
-      vacancyProxyEventsDetected: vacancyProxyEvents.length,
-      vacancyProxyEventsInserted,
       notificationsQueued,
     };
   } catch (error) {

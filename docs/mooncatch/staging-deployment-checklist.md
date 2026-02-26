@@ -77,7 +77,7 @@
 
 - [ ] End-to-end 알림 1건 성공 (등록 → 폴링 → 이메일)
 - [ ] End-to-end 클릭아웃 1건 성공 (이메일 CTA → `/api/go` → Agoda redirect)
-- [ ] vacancy_proxy 이벤트 감지 확인 (`remainingRooms=null` 오퍼에서 신규 offerKey 등장 시)
+- [ ] vacancy 이벤트 감지 확인 (이전 poll 결과 없음 → 현재 poll 결과 있음 시 발생)
 - [ ] 쿨다운 중복 방지 확인 (동일 오퍼 24시간 내 재발송 없음)
 - [ ] `reports/daily.sql` 결과 캡처 저장
 
