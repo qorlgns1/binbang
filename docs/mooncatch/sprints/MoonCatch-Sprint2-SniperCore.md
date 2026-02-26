@@ -160,9 +160,15 @@ model Accommodation {
 
 Sprint 1 테스트에서 Agoda 기본 응답에 `remainingRooms`가 없음을 확인. Sprint 2 주3에 반드시 해결.
 
-**Option A**: Agoda 계정 매니저에 `rateDetail` extra + `remainingRooms` 반환 조건 확인
-**Option B**: `remainingRooms` 대신 `dailyRate` 변화만으로 price_drop 감지 집중 (현재 동작 중)
-**Option C**: 응답에서 방 자체의 유무(offer 존재/소멸)로 vacancy proxy 감지
+**Option A**: ~~Agoda 계정 매니저에 `rateDetail` extra + `remainingRooms` 반환 조건 확인~~ → lt_v1 API에서 영구적으로 미반환 확인 (Sprint 3, 2026-02-26)
+**Option B**: `remainingRooms` 대신 `dailyRate` 변화만으로 price_drop 감지 집중 — price_drop은 이 방식으로 정상 동작
+**Option C**: ~~응답에서 방 자체의 유무(offer 존재/소멸)로 vacancy proxy 감지~~ → Sprint 3 W5-D3에서 `vacancy_proxy` 타입으로 구현했으나, 안정적 pseudo offerKey로 인해 신규 offerKey 등장이 없어 실제 미발동 확인 → 제거 후 vacancy 로직 자체를 재설계
+
+**최종 결정 (Sprint 3, 2026-02-26)**: Option C 방향을 유지하되 vacancy_proxy 별도 타입 분리 없이 vacancy 감지 로직 자체를 재정의:
+- 이전 poll에 스냅샷 없음(sold out) + 현재 poll에 결과 있음 + hasBaseline → vacancy 이벤트
+- `vacancy_proxy` 타입 완전 제거
+- verify 단계: `remainingRooms > 0` 대신 호텔 결과 존재 여부(`verifyOffers.length > 0`)로 확인
+- 자세한 내용은 Sprint 3 문서의 "사후 변경 이력" 참고
 
 ### 호텔 검색 UI 설계 원칙
 
@@ -197,7 +203,7 @@ Agoda 계약상 "Price Comparison 사이트"로 해석될 수 있는 UI 금지.
 | 우선순위 | 리스크 | 대응책 |
 |----------|--------|--------|
 | P0 | `url` nullable 마이그레이션 시 기존 데이터 영향 | `url`이 있는 레코드는 그대로, 없는 레코드(AGODA API)만 null 허용 |
-| P0 | `remainingRooms` 계속 미반환 | price_drop 감지 중심으로 전환, vacancy는 offer 존재/소멸로 proxy |
+| P0 | `remainingRooms` 계속 미반환 | ~~price_drop 감지 중심으로 전환, vacancy는 offer 존재/소멸로 proxy~~ → **Sprint 3 해결**: 이전 poll 결과 없음 → 현재 poll 결과 있음으로 vacancy 감지. vacancy_proxy 제거. |
 | P0 | Agoda 계약 — "Price Comparison" 해석 | 호텔 검색 UI를 "알림 등록용"으로만 구성, 타사 비교 금지 |
 | P1 | 수신동의 없는 사용자에게 광고성 발송 | 알림 등록 시 opt-in 체크박스 필수, consent_logs 기록 |
 | P1 | 스테이징 배포 지연 | Day 19 전에 env 세팅 완료 |
@@ -231,3 +237,29 @@ Agoda 계약상 "Price Comparison 사이트"로 해석될 수 있는 UI 금지.
 - **카카오 알림톡** 검토 (정보성 알림만 가능)
 - **탐지 고도화**: cooldown + 이벤트 우선순위 (빈방 > 가격)
 - **`apps/travel` 기능 이관** 검토 (AI 채팅, 목적지 가이드)
+
+---
+
+## 사후 변경 이력
+
+### vacancy 감지 로직 재설계 (2026-02-26, Sprint 3)
+
+**배경**: Sprint 2 W3-D5에서 Agoda `lt_v1` API를 직접 호출한 결과, `remainingRooms` 필드가 영구적으로 미반환됨을 확인. Sprint 2에서 예측한 Option A(rateDetail extra로 해결)는 불가능한 것으로 판명.
+
+Sprint 3 W5-D3에서 `vacancy_proxy`(`detectOfferAppearanceEvents`) 타입을 구현했으나, lt_v1 API의 안정적 pseudo offerKey로 인해 신규 offerKey가 등장하지 않아 실제 미발동이 확인됨.
+
+**최종 변경 내용**:
+
+| 항목 | Sprint 2 설계 | 실제 구현 (Sprint 3 이후) |
+|---|---|---|
+| vacancy 감지 조건 | `remainingRooms: 0/null → 양수` | **이전 poll 결과 없음 → 현재 poll 결과 있음** |
+| `vacancy_proxy` 타입 | offer 존재/소멸로 proxy 감지 예정 | **제거** (vacancy로 통합) |
+| `hasBaseline` 계산 | `previousSnapshots.length > 0` | **`latestSuccessfulRun != null`** |
+| verify 단계 | `remainingRooms > 0` 확인 | **verify 결과에 오퍼 존재 여부** |
+
+**영향받은 파일**:
+- `apps/web/src/services/agoda-detector.service.ts`
+- `apps/web/src/services/agoda-polling.service.ts`
+- `apps/web/src/services/agoda-notification.service.ts`
+- `apps/web/src/services/__tests__/agoda-detector.service.test.ts`
+- `apps/web/src/services/__tests__/agoda-polling-cooldown.service.test.ts`

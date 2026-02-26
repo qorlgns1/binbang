@@ -176,6 +176,8 @@ consent_logs: 4 (opt_in 3, opt_out 1)
 
 **Sprint 2 액션**: Agoda 계정 매니저에 `rateDetail` extra + `remainingRooms` 반환 조건 확인 요청.
 
+**최종 해결 (Sprint 3 이후, 2026-02-26)**: `remainingRooms`는 lt_v1 API에서 영구적으로 미반환됨을 확인. 호텔의 결과 포함 여부(presence/absence)로 vacancy를 감지하는 방식으로 로직 전환. 자세한 내용은 Sprint 3 문서의 "사후 변경 이력" 참고.
+
 ---
 
 ## Sprint 2 이월 항목
