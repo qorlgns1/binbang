@@ -28,7 +28,8 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
   const { id, name, platform, checkIn, checkOut, lastCheck, lastPolledAt, lastStatus, isActive, platformId } =
     accommodation;
   const displayStatus: StatusType = !isActive ? 'PAUSED' : lastStatus;
-  // Agoda API 방식 (platformId 있음) → lastPolledAt 사용, 스크래핑 방식 → lastCheck 사용
+  // Agoda API 방식(platformId 존재)은 lastPolledAt을, 스크래핑 방식은 lastCheck를 표시한다.
+  // 동일 컴포넌트에서 두 데이터 소스를 함께 표현해야 하므로 렌더 시점에 통합해서 계산한다.
   const lastActivity = platformId ? lastPolledAt : lastCheck;
   const lastActivityLabel = platformId ? '마지막 폴링' : '마지막 체크';
   const hasProblem = lastStatus === 'ERROR' || lastStatus === 'UNKNOWN';
@@ -37,11 +38,13 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
 
   return (
     <div
+      data-testid='accommodation-row'
       className={cn(
         'flex min-h-[72px] items-center gap-4 px-6 py-4 transition-colors duration-140 ease-out hover:bg-muted/50',
         hasProblem && isActive && 'bg-destructive/5',
       )}
     >
+      {/* row 단위 test id: e2e에서 특정 숙소 행을 안정적으로 찾기 위한 기준점 */}
       {/* 상태 도트 */}
       <div className={cn('size-2.5 shrink-0 rounded-full', STATUS_DOT_STYLES[displayStatus])} />
 
@@ -69,7 +72,8 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
       </div>
       <div className='flex shrink-0 items-center gap-1'>
         <Button asChild variant='ghost' size='sm'>
-          <Link href={`/accommodations/${id}`}>
+          {/* 상세보기 링크 test id: DOM 깊이 의존 locator 대신 직접 선택 */}
+          <Link href={`/accommodations/${id}`} data-testid='accommodation-row-detail-link'>
             <ExternalLink className='size-4' />
             <span className='sr-only md:not-sr-only'>상세보기</span>
           </Link>
