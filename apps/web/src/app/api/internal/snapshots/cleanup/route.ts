@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { prisma } from '@workspace/db';
+import { cleanupExpiredAgodaPollRuns } from '@/services/agoda-snapshot-cleanup.service';
 
 const DEFAULT_RETENTION_DAYS = 30;
 
@@ -50,14 +50,12 @@ export async function POST(req: Request): Promise<Response> {
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
 
   try {
-    const { count } = await prisma.agodaPollRun.deleteMany({
-      where: { polledAt: { lt: cutoff } },
-    });
+    const result = await cleanupExpiredAgodaPollRuns({ cutoff });
 
     return NextResponse.json({
       ok: true,
       result: {
-        deletedPollRuns: count,
+        deletedPollRuns: result.deletedPollRuns,
         retentionDays,
         cutoff: cutoff.toISOString(),
       },

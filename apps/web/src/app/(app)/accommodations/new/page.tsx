@@ -98,7 +98,10 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
 
   if (selectedHotel) {
     return (
-      <div className='flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3' data-testid='selected-hotel-card'>
+      <div
+        className='flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3'
+        data-testid='selected-hotel-card'
+      >
         {selectedHotel.photoUrl && (
           <img
             src={selectedHotel.photoUrl}

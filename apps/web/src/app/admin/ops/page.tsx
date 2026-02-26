@@ -87,9 +87,7 @@ export default async function AdminOpsPage() {
       <Card>
         <CardHeader>
           <CardTitle>스톨 감지</CardTitle>
-          <CardDescription>
-            폴링 주기 2배 이상 미폴링 활성 숙소 (최대 20건)
-          </CardDescription>
+          <CardDescription>폴링 주기 2배 이상 미폴링 활성 숙소 (최대 20건)</CardDescription>
         </CardHeader>
         <CardContent>
           {summary.stalled.count === 0 ? (

@@ -78,10 +78,7 @@ async function fetchStalledAccommodations(now: Date): Promise<StalledAccommodati
       isActive: true,
       platformId: { not: null },
       checkIn: { gte: now },
-      OR: [
-        { lastPolledAt: { lte: stallThreshold } },
-        { lastPolledAt: null, createdAt: { lte: stallThreshold } },
-      ],
+      OR: [{ lastPolledAt: { lte: stallThreshold } }, { lastPolledAt: null, createdAt: { lte: stallThreshold } }],
     },
     orderBy: { lastPolledAt: 'asc' },
     take: STALL_LIMIT,

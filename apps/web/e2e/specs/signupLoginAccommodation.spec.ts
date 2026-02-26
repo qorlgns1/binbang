@@ -87,9 +87,12 @@ async function registerAlertThroughUi(page: Page): Promise<string> {
     await searchInput.fill(query);
 
     const hasResults = await expect
-      .poll(async () => {
-        return await resultButtons.count();
-      }, { timeout: 20_000, intervals: [500, 1000, 1500] })
+      .poll(
+        async () => {
+          return await resultButtons.count();
+        },
+        { timeout: 20_000, intervals: [500, 1000, 1500] },
+      )
       .toBeGreaterThan(0)
       .then(() => true)
       .catch(() => false);
@@ -152,10 +155,7 @@ test.describe('sniper core e2e', () => {
     await test.step('대시보드에 등록 결과 반영 확인', async () => {
       if (!selectedHotelName) throw new Error('등록된 호텔명을 찾지 못했습니다.');
       await expect(
-        page
-          .getByTestId('accommodation-row-name')
-          .filter({ hasText: selectedHotelName })
-          .first(),
+        page.getByTestId('accommodation-row-name').filter({ hasText: selectedHotelName }).first(),
       ).toBeVisible();
     });
   });

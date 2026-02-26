@@ -217,9 +217,7 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
                     </TableCell>
                     <TableCell className='text-xs'>{item.status}</TableCell>
                     <TableCell className='text-xs text-muted-foreground'>
-                      {item.sentAt
-                        ? new Date(item.sentAt).toLocaleString('ko-KR', { hour12: false })
-                        : '-'}
+                      {item.sentAt ? new Date(item.sentAt).toLocaleString('ko-KR', { hour12: false }) : '-'}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -76,20 +76,22 @@ vi.mock('@/lib/agoda/normalize', () => ({
 // Helpers
 // ============================================================================
 
-function makeAgodaOffer(overrides: Partial<{
-  offerKey: string;
-  propertyId: bigint;
-  roomId: bigint;
-  ratePlanId: bigint;
-  remainingRooms: number | null;
-  totalInclusive: number | null;
-  currency: string;
-  payloadHash: string;
-  landingUrl: string | null;
-  freeCancellation: boolean | null;
-  freeCancellationDate: Date | null;
-  raw: unknown;
-}> = {}) {
+function makeAgodaOffer(
+  overrides: Partial<{
+    offerKey: string;
+    propertyId: bigint;
+    roomId: bigint;
+    ratePlanId: bigint;
+    remainingRooms: number | null;
+    totalInclusive: number | null;
+    currency: string;
+    payloadHash: string;
+    landingUrl: string | null;
+    freeCancellation: boolean | null;
+    freeCancellationDate: Date | null;
+    raw: unknown;
+  }> = {},
+) {
   return {
     offerKey: '1001:2001:3001',
     propertyId: 1001n,
