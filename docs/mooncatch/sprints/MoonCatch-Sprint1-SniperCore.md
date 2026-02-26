@@ -2,7 +2,7 @@
 
 > **상태: 백엔드 완료 / apps/web 통합 Sprint 2로 이월**
 > 기간: 2026-02-25 ~ 2026-03-07 (2주)
-> 최종 업데이트: 2026-02-25
+> 최종 업데이트: 2026-02-26
 
 ---
 
@@ -172,9 +172,9 @@ consent_logs: 4 (opt_in 3, opt_out 1)
 
 `roomId`, `ratePlanId`, `remainingRooms` 없음 → ID는 pseudoBigInt로 생성, rooms/price는 null.
 
-**영향**: 빈방 감지(vacancy event)는 `remainingRooms` 의존 → 현재 API 응답으로는 vacancy 이벤트 발생 불가. 가격 감지(price_drop)는 `dailyRate`로 정상 동작.
+**영향(당시)**: 빈방 감지(vacancy event)는 `remainingRooms` 의존 → 당시 API 응답으로는 vacancy 이벤트 발생 불가. 가격 감지(price_drop)는 `dailyRate`로 정상 동작.
 
-**Sprint 2 액션**: Agoda 계정 매니저에 `rateDetail` extra + `remainingRooms` 반환 조건 확인 요청.
+**Sprint 2 액션(당시)**: Agoda 계정 매니저에 `rateDetail` extra + `remainingRooms` 반환 조건 확인 요청.
 
 **최종 해결 (Sprint 3 이후, 2026-02-26)**: `remainingRooms`는 lt_v1 API에서 영구적으로 미반환됨을 확인. 호텔의 결과 포함 여부(presence/absence)로 vacancy를 감지하는 방식으로 로직 전환. 자세한 내용은 Sprint 3 문서의 "사후 변경 이력" 참고.
 
@@ -190,7 +190,7 @@ consent_logs: 4 (opt_in 3, opt_out 1)
 | 인증 연동 (NextAuth, Google/Kakao) | `apps/web` 기존 auth 사용 |
 | URL 등록 → 호텔 검색 등록 전환           | UX 개선                 |
 | 스크래핑 → 어드민 전용 격리               | 아키텍처 결정               |
-| `remainingRooms` 반환 문제 해결      | Agoda 계정 확인 필요        |
+| ~~`remainingRooms` 반환 문제 해결~~      | ~~Agoda 계정 확인 필요~~ → ✅ Sprint 3에서 vacancy 감지 기준 재설계로 해결 완료 |
 | 스테이징 배포                        | `apps/web` 이식 후 진행    |
 | 운영 대시보드 (간단)                   | 배포 이후                 |
 
@@ -206,7 +206,7 @@ consent_logs: 4 (opt_in 3, opt_out 1)
 | ---- | ----------- | ------------------------------------ | ---------------- |
 | P0   | 타깃 스코프      | 신혼여행 + 목적지 3개 + 숙소 50개               | ✅ seed 완료        |
 | P0   | 핵심 데이터 소스   | Agoda Search API                     | ✅ 연동 완료          |
-| P0   | 빈방 감지 기준    | `remainingRooms` 변화                  | ⚠️ API 미반환 이슈 확인 |
+| P0   | 빈방 감지 기준    | ~~`remainingRooms` 변화~~ → 이전 poll 결과 없음 + 현재 poll 결과 있음 (presence/absence) | ✅ Sprint 3 재설계 완료 |
 | P0   | 가격 추적 최소 단위 | `dailyRate` (→ `totalInclusive`로 저장) | ✅ 정상 동작 확인       |
 | P0   | 폴링 단위       | Watch (숙소ID + 체크인/아웃 + 인원)           | ✅                |
 | P0   | 알림 채널       | 이메일                                  | ✅ Resend 연동 완료   |
@@ -223,12 +223,11 @@ consent_logs: 4 (opt_in 3, opt_out 1)
 | 영역     | 테스트                  | 결과                |
 | ------ | -------------------- | ----------------- |
 | API 계약 | Authorization 헤더 포함  | ✅                 |
-| 응답 필드  | `remainingRooms` 수신  | ⚠️ null (API 이슈)  |
+| 응답 필드  | `remainingRooms` 수신  | ⚠️ null (lt_v1 미반환; 감지 로직은 비의존으로 전환 완료)  |
 | 제한 준수  | `propertyIds <= 100` | ✅                 |
 | 타임아웃   | 30초                  | ✅                 |
-| 탐지 로직  | 0→양수 전환 감지           | ✅ (유닛 테스트 통과)     |
+| 탐지 로직  | 이전 poll 결과 없음 → 현재 poll 결과 있음 | ✅ (사후 재설계 반영)     |
 | 중복 방지  | 동일 after_hash 재알림 금지 | ✅                 |
 | 이메일    | 발송 파이프라인             | ✅ (console 모드 확인) |
 | 동의/철회  | opt-in/opt-out 로그    | ✅                 |
-
 
