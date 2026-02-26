@@ -14,7 +14,8 @@ export default defineConfig({
     timeout: 10_000,
   },
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // 인메모리 mock 상태 공유로 인한 테스트 간 간섭을 방지하기 위해 항상 직렬 실행
+  workers: 1,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL,

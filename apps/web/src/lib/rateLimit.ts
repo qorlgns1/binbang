@@ -103,10 +103,14 @@ export function checkRateLimit(ip: string, config: RateLimitConfig): RateLimitRe
   const now = Date.now();
   const windowStart = now - windowMs;
 
-  let entry = store.get(ip);
+  // 경로 티어(limit, windowMs)별로 독립 카운터를 유지한다.
+  // IP만 키로 사용하면 모든 API 경로의 타임스탬프가 공유되어,
+  // 제너럴 API 요청이 signup 같은 낮은 limit 경로를 오차단한다.
+  const storeKey = `${ip}:${limit}:${windowMs}`;
+  let entry = store.get(storeKey);
   if (!entry) {
     entry = { timestamps: [], lastAccess: now };
-    store.set(ip, entry);
+    store.set(storeKey, entry);
   }
 
   entry.timestamps = entry.timestamps.filter((t): boolean => t > windowStart);
