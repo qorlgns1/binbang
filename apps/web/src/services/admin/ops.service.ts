@@ -418,6 +418,8 @@ export async function getAdminOpsAccommodationDiagnostics(
 
   const checks: AdminOpsDiagnosticCheck[] = [];
   const latestPollRun = recentPollRunsRaw[0] ?? null;
+  const createdAgoMs = now.getTime() - accommodation.createdAt.getTime();
+  const noPollGraceMs = STALL_MULTIPLIER * pollIntervalMs;
 
   if (!accommodation.isActive) {
     checks.push({
@@ -447,12 +449,22 @@ export async function getAdminOpsAccommodationDiagnostics(
   }
 
   if (recentPollRunsRaw.length === 0) {
-    checks.push({
-      level: 'error',
-      code: 'no_poll_history',
-      message: 'poll 기록이 없습니다.',
-      detail: 'worker 스케줄/큐 또는 등록 상태를 먼저 확인하세요.',
-    });
+    const createdAgoMinutes = Math.floor(createdAgoMs / 60_000);
+    if (createdAgoMs < noPollGraceMs) {
+      checks.push({
+        level: 'info',
+        code: 'first_poll_pending',
+        message: '첫 poll 실행 대기 중입니다.',
+        detail: `등록 후 약 ${createdAgoMinutes}분 경과했습니다. 설정 주기(약 ${pollIntervalMinutes}분) 기준 다음 스케줄에서 실행될 수 있습니다.`,
+      });
+    } else {
+      checks.push({
+        level: 'warn',
+        code: 'no_poll_history_overdue',
+        message: 'poll 기록이 아직 없습니다.',
+        detail: `등록 후 약 ${createdAgoMinutes}분이 지났습니다. worker 스케줄/큐 또는 내부 API 연결 상태를 확인하세요.`,
+      });
+    }
   } else if (latestPollRun?.status === 'failed') {
     checks.push({
       level: 'warn',
