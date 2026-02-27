@@ -475,6 +475,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         where: { id: accommodationId },
         data: {
           lastPolledAt: now,
+          lastStatus: normalized.offers.length > 0 ? 'AVAILABLE' : 'UNAVAILABLE',
           ...(vacancyEventsInserted > 0 || priceDropEventsInserted > 0 ? { lastEventAt: now } : {}),
           ...(discoveredLandingUrl ? { platformMetadata: toJsonValue({ landingUrl: discoveredLandingUrl }) } : {}),
         },
@@ -513,7 +514,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       }),
       prisma.accommodation.update({
         where: { id: accommodationId },
-        data: { lastPolledAt: failedAt },
+        data: { lastPolledAt: failedAt, lastStatus: 'ERROR' },
       }),
     ]);
 
