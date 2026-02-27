@@ -24,16 +24,30 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }): Promise<boolean> {
-      // 카카오 로그인/연동 시 talk_message 발송용 토큰을 User 레코드에 저장한다.
-      // user.id: NextAuth 어댑터가 찾거나 생성한 User의 ID (기존 이메일 계정 포함)
-      if (account?.provider === 'kakao' && account.access_token && user?.id) {
-        await saveKakaoTokens(user.id, {
-          accessToken: account.access_token,
-          refreshToken: account.refresh_token,
-          expiresAt: account.expires_at,
-        });
+    async signIn({ user, account, profile }): Promise<boolean> {
+      if (account?.provider === 'kakao') {
+        // Kakao는 이메일 검증을 강제하지 않으므로 직접 플래그를 확인한다.
+        // allowDangerousEmailAccountLinking=true 환경에서 미검증 이메일로
+        // 기존 계정에 자동 연동되는 계정 탈취를 방지하기 위한 guard.
+        const kakaoAccount = (profile as Record<string, unknown> | undefined)?.kakao_account as
+          | { is_email_valid?: boolean; is_email_verified?: boolean }
+          | undefined;
+
+        if (!kakaoAccount?.is_email_valid || !kakaoAccount?.is_email_verified) {
+          return false;
+        }
+
+        // 카카오 로그인/연동 시 talk_message 발송용 토큰을 User 레코드에 저장한다.
+        // user.id: NextAuth 어댑터가 찾거나 생성한 User의 ID (기존 이메일 계정 포함)
+        if (account.access_token && user?.id) {
+          await saveKakaoTokens(user.id, {
+            accessToken: account.access_token,
+            refreshToken: account.refresh_token,
+            expiresAt: account.expires_at,
+          });
+        }
       }
+
       return true;
     },
     async session({ session, user }): Promise<Session> {
