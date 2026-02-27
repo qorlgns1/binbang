@@ -217,8 +217,9 @@ GET /api/go?accommodationId={id}&url={agodaUrl}
 GET /api/unsubscribe?token={signedToken}
     │
     ├── 토큰 유효
-    │       → consent_logs에 opt_out 기록
-    │       → accommodation.isActive = false
+    │       → consent_logs에 opt_out 기록 (accommodationId 범위)
+    │       → 폴링은 계속 진행 (isActive 변경 없음)
+    │       → 해당 숙소의 이메일 발송만 차단
     │       → "알림이 중단되었습니다" 페이지
     │
     └── 토큰 무효/만료 → "링크가 만료되었습니다"
@@ -235,8 +236,8 @@ Vercel Cron (매 30분)
             {x-internal-token: ...}
             │
             ▼
-        platform=AGODA, isActive=true, lastPolledAt < 30분 전
-        조건으로 Accommodation 조회 (limit=20)
+        platform=AGODA, isActive=true, checkIn >= 오늘 자정(UTC),
+        lastPolledAt < 30분 전 조건으로 Accommodation 조회 (limit=20)
             │
             ▼
         concurrency=3으로 병렬 처리
@@ -268,9 +269,10 @@ Vercel Cron (매 30분)
 알림 발송 (Vercel Cron 매 5분 — POST /api/internal/accommodations/notifications/dispatch)
     │
     ▼
-agoda_notifications (queued | failed, attempt < 5) 조회
+agoda_notifications 조회 (queued 우선, 남은 슬롯에 failed 추가 — attempt < 5)
+    │   queued를 먼저 limit만큼 채워 새 알림 starvation 방지
     │
-    ├── consent 체크 (agoda_consent_logs opt_in 최신 기록)
+    ├── consent 체크 (agoda_consent_logs opt_in 최신 기록, 숙소 단위 스코핑)
     │       └── opt_in 없음 → suppressed 처리
     │
     ├── isActive 체크
