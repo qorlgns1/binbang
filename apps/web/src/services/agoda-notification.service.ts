@@ -8,6 +8,7 @@ import { buildAgodaUnsubscribeUrl, createAgodaUnsubscribeToken } from '@/service
 const DEFAULT_DISPATCH_LIMIT = 50;
 const DEFAULT_MAX_ATTEMPTS = 5;
 const RETRY_BACKOFF_MINUTES = [1, 5, 30, 120, 360];
+const STALE_PROCESSING_TIMEOUT_MS = 10 * 60 * 1000; // 10분: 워커 충돌 후 복구
 
 export interface DispatchAgodaNotificationsResult {
   now: string;
@@ -231,10 +232,62 @@ function buildEmailContent(params: {
 }
 
 type NotificationOutcome =
-  | { id: bigint; kind: 'skipped_not_due' }
   | { id: bigint; kind: 'suppressed'; reason: string }
   | { id: bigint; kind: 'sent' }
   | { id: bigint; kind: 'failed'; nextAttempt: number; lastError: string };
+
+/**
+ * 알림 ID 배열을 원자적으로 'processing' 상태로 클레임한다.
+ * UPDATE ... RETURNING 을 사용해 이 워커가 실제로 업데이트한 행만 반환한다.
+ * 동시에 두 개의 디스패처가 실행되더라도 각자 다른 행을 클레임하므로 중복 발송이 방지된다.
+ *
+ * BigInt.toString()은 십진수 숫자만 생성하므로 직접 보간해도 SQL 인젝션 위험이 없다.
+ */
+async function claimNotifications(ids: bigint[], fromStatus: string): Promise<bigint[]> {
+  if (ids.length === 0) return [];
+  const idLiterals = ids.map(String).join(',');
+  const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+    `UPDATE agoda_notifications
+     SET status = 'processing', updated_at = NOW()
+     WHERE status = $1 AND id = ANY(ARRAY[${idLiterals}]::bigint[])
+     RETURNING id::text`,
+    fromStatus,
+  );
+  return rows.map((r) => BigInt(r.id));
+}
+
+const notificationSelect = {
+  id: true,
+  status: true,
+  attempt: true,
+  updatedAt: true,
+  accommodation: {
+    select: {
+      id: true,
+      name: true,
+      platformId: true,
+      isActive: true,
+      url: true,
+      userId: true,
+      checkIn: true,
+      checkOut: true,
+      adults: true,
+      rooms: true,
+      children: true,
+      locale: true,
+      platformMetadata: true,
+      user: { select: { email: true, kakaoAccessToken: true } },
+    },
+  },
+  alertEvent: {
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      meta: true,
+    },
+  },
+} as const;
 
 export async function dispatchAgodaNotifications(params?: {
   limit?: number;
@@ -244,71 +297,61 @@ export async function dispatchAgodaNotifications(params?: {
   const maxAttempts = parsePositiveInteger(process.env.BINBANG_NOTIFICATION_MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
   const now = new Date();
 
-  const notificationSelect = {
-    id: true,
-    status: true,
-    attempt: true,
-    updatedAt: true,
-    accommodation: {
-      select: {
-        id: true,
-        name: true,
-        platformId: true,
-        isActive: true,
-        url: true,
-        userId: true,
-        checkIn: true,
-        checkOut: true,
-        adults: true,
-        rooms: true,
-        children: true,
-        locale: true,
-        platformMetadata: true,
-        user: { select: { email: true, kakaoAccessToken: true } },
-      },
+  // 워커 충돌·타임아웃으로 'processing'에 멈춘 알림을 'queued'로 복구한다.
+  await prisma.agodaNotification.updateMany({
+    where: {
+      channel: 'email',
+      status: 'processing',
+      updatedAt: { lte: new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS) },
     },
-    alertEvent: {
-      select: {
-        id: true,
-        type: true,
-        status: true,
-        meta: true,
-      },
-    },
-  } as const;
+    data: { status: 'queued' },
+  });
 
   // queued를 우선 처리하고, 남은 슬롯에만 failed를 채운다.
   // queued + failed를 혼합 조회하면 backoff 중인 failed가 슬롯을 점유해
   // 새로운 queued 알림이 영원히 선택되지 못하는 starvation이 발생한다.
-  const queued = await prisma.agodaNotification.findMany({
+  const queuedIdRows = await prisma.agodaNotification.findMany({
     where: { channel: 'email', status: 'queued', attempt: { lt: maxAttempts } },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     take: limit,
-    select: notificationSelect,
+    select: { id: true },
   });
 
-  const remaining = limit - queued.length;
-  const failedCandidates =
+  const remaining = limit - queuedIdRows.length;
+  const failedIdRows =
     remaining > 0
       ? await prisma.agodaNotification.findMany({
           where: { channel: 'email', status: 'failed', attempt: { lt: maxAttempts } },
           orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
           take: remaining,
-          select: notificationSelect,
+          select: { id: true, updatedAt: true, attempt: true },
         })
       : [];
 
-  const candidates = [...queued, ...failedCandidates];
+  // 백오프 대기 중인 failed 항목은 클레임 전에 필터링한다.
+  const queuedIds = queuedIdRows.map((r) => r.id);
+  const failedDueIds = failedIdRows.filter((r) => isRetryDue(r.updatedAt, r.attempt)).map((r) => r.id);
+  const skippedNotDue = failedIdRows.length - failedDueIds.length;
+
+  // 원자적 클레임: 이 워커가 실제로 업데이트한 행만 반환된다.
+  // 동시 실행 중인 다른 디스패처는 이미 'processing'인 행을 클레임할 수 없다.
+  const claimedQueuedIds = await claimNotifications(queuedIds, 'queued');
+  const claimedFailedIds = await claimNotifications(failedDueIds, 'failed');
+  const claimedIds = [...claimedQueuedIds, ...claimedFailedIds];
+
+  if (claimedIds.length === 0) {
+    return { now: now.toISOString(), picked: 0, sent: 0, failed: 0, suppressed: 0, skippedNotDue };
+  }
+
+  const candidates = await prisma.agodaNotification.findMany({
+    where: { id: { in: claimedIds } },
+    select: notificationSelect,
+  });
 
   const outcomes: NotificationOutcome[] = [];
   const baseUrl = process.env.NEXTAUTH_URL?.trim() || 'http://localhost:3000';
 
   for (const notification of candidates) {
-    if (notification.status === 'failed' && !isRetryDue(notification.updatedAt, notification.attempt)) {
-      outcomes.push({ id: notification.id, kind: 'skipped_not_due' });
-      continue;
-    }
-
     if (!notification.accommodation || !notification.accommodation.isActive) {
       outcomes.push({ id: notification.id, kind: 'suppressed', reason: 'accommodation is missing or inactive' });
       continue;
@@ -402,7 +445,9 @@ export async function dispatchAgodaNotifications(params?: {
           afterPrice: meta.afterPrice ?? null,
           totalInclusive: meta.totalInclusive ?? null,
           baseUrl,
-        }).catch(() => {});
+        }).catch((err: unknown) => {
+          console.error('[kakao] notification failed:', err instanceof Error ? err.message : String(err));
+        });
       }
 
       outcomes.push({ id: notification.id, kind: 'sent' });
@@ -456,10 +501,10 @@ export async function dispatchAgodaNotifications(params?: {
 
   return {
     now: now.toISOString(),
-    picked: candidates.length,
+    picked: claimedIds.length,
     sent: sentIds.length,
     failed: failedList.length,
     suppressed: suppressedList.length,
-    skippedNotDue: outcomes.filter((o) => o.kind === 'skipped_not_due').length,
+    skippedNotDue,
   };
 }

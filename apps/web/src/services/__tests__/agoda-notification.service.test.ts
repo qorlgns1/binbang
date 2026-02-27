@@ -14,6 +14,7 @@ const {
   mockNotificationUpdate,
   mockConsentLogFindFirst,
   mockTransaction,
+  mockQueryRawUnsafe,
   mockSendAgodaAlertEmail,
   mockCreateAgodaUnsubscribeToken,
   mockBuildAgodaUnsubscribeUrl,
@@ -23,6 +24,7 @@ const {
   mockNotificationUpdate: vi.fn(),
   mockConsentLogFindFirst: vi.fn(),
   mockTransaction: vi.fn(),
+  mockQueryRawUnsafe: vi.fn(),
   mockSendAgodaAlertEmail: vi.fn(),
   mockCreateAgodaUnsubscribeToken: vi.fn().mockReturnValue('test_token'),
   mockBuildAgodaUnsubscribeUrl: vi.fn().mockReturnValue('https://example.com/unsubscribe?token=test_token'),
@@ -39,6 +41,7 @@ vi.mock('@workspace/db', () => ({
       findFirst: mockConsentLogFindFirst,
     },
     $transaction: mockTransaction,
+    $queryRawUnsafe: mockQueryRawUnsafe,
   },
 }));
 
@@ -106,28 +109,67 @@ function extractClickoutUrlFromEmail(text: string): URL {
 }
 
 // ============================================================================
+// Mock helpers
+//
+// 새 dispatch 흐름:
+//   1. updateMany  (stale 'processing' 복구)
+//   2. findMany    → queued ID 목록 { id }[]
+//   3. findMany    → failed ID 목록 { id, updatedAt, attempt }[]
+//   4. $queryRawUnsafe → queued 클레임  ← ids.length > 0 일 때만 호출
+//   5. $queryRawUnsafe → failed 클레임  ← ids.length > 0 일 때만 호출
+//   6. findMany    → 클레임된 알림 전체 데이터 (claimedIds.length > 0 일 때만)
+//
+// claimNotifications(ids, ...) 은 ids.length === 0 이면 즉시 [] 반환 (no $queryRawUnsafe call).
+// ============================================================================
+
+/** queued 알림만 있고 모두 이 워커가 클레임한 경우 */
+function mockQueued(rows: ReturnType<typeof makeNotification>[]) {
+  mockNotificationFindMany
+    .mockResolvedValueOnce(rows.map((r) => ({ id: r.id }))) // queued IDs
+    .mockResolvedValueOnce([]) // failed IDs
+    .mockResolvedValueOnce(rows); // full data for claimed
+
+  // failedDueIds = [] 이므로 claimNotifications(failedDueIds, ...) 은 즉시 반환.
+  // $queryRawUnsafe 는 claimNotifications(queuedIds, ...) 에서만 호출된다.
+  mockQueryRawUnsafe.mockResolvedValueOnce(rows.map((r) => ({ id: r.id.toString() }))); // claim queued
+}
+
+/** failed 알림만 있고 아직 재시도 대기 중 (not due) — 클레임 없음 */
+function mockFailed(rows: ReturnType<typeof makeNotification>[]) {
+  // pre-filter 에서 모두 제외되므로 $queryRawUnsafe 호출 없음
+  mockNotificationFindMany
+    .mockResolvedValueOnce([]) // queued IDs
+    .mockResolvedValueOnce(rows.map((r) => ({ id: r.id, updatedAt: r.updatedAt, attempt: r.attempt }))); // failed IDs
+}
+
+/** failed 알림만 있고 재시도 기간 경과 (due) — 클레임 있음 */
+function mockFailedDue(rows: ReturnType<typeof makeNotification>[]) {
+  mockNotificationFindMany
+    .mockResolvedValueOnce([]) // queued IDs
+    .mockResolvedValueOnce(rows.map((r) => ({ id: r.id, updatedAt: r.updatedAt, attempt: r.attempt }))) // failed IDs
+    .mockResolvedValueOnce(rows); // full data for claimed
+
+  // queuedIds = [] 이므로 claimNotifications(queuedIds, ...) 는 즉시 반환.
+  // $queryRawUnsafe 는 claimNotifications(failedDueIds, ...) 에서만 호출된다.
+  mockQueryRawUnsafe.mockResolvedValueOnce(rows.map((r) => ({ id: r.id.toString() }))); // claim failed
+}
+
+// ============================================================================
 // Tests
 // ============================================================================
 
 describe('dispatchAgodaNotifications', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // resetAllMocks: call history + once 큐 + mockReturnValue 구현 모두 초기화
+    vi.resetAllMocks();
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
-    // $transaction mock: 배열을 받아 빈 배열 반환
     mockTransaction.mockResolvedValue([]);
-    mockNotificationUpdateMany.mockResolvedValue({ count: 1 });
+    mockNotificationUpdateMany.mockResolvedValue({ count: 0 });
     mockNotificationUpdate.mockResolvedValue({});
+    mockQueryRawUnsafe.mockResolvedValue([]); // 기본값: 클레임 없음
+    mockCreateAgodaUnsubscribeToken.mockReturnValue('test_token');
+    mockBuildAgodaUnsubscribeUrl.mockReturnValue('https://example.com/unsubscribe?token=test_token');
   });
-
-  // queued/failed 분리 조회로 인해 findMany가 2번 호출됨.
-  // 첫 번째: queued 쿼리, 두 번째: failed 쿼리.
-  function mockQueued(rows: ReturnType<typeof makeNotification>[]) {
-    mockNotificationFindMany.mockResolvedValueOnce(rows).mockResolvedValueOnce([]);
-  }
-
-  function mockFailed(rows: ReturnType<typeof makeNotification>[]) {
-    mockNotificationFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce(rows);
-  }
 
   it('빈 큐이면 모두 0 반환', async () => {
     mockNotificationFindMany.mockResolvedValue([]);
@@ -340,6 +382,35 @@ describe('dispatchAgodaNotifications', () => {
 
     const result = await dispatchAgodaNotifications();
     expect(result.skippedNotDue).toBe(1);
+    expect(result.sent).toBe(0);
+    expect(mockSendAgodaAlertEmail).not.toHaveBeenCalled();
+  });
+
+  it('재시도 기간 경과한 failed 알림 → 클레임 후 전송', async () => {
+    const notification = makeNotification({
+      status: 'failed',
+      attempt: 0,
+      updatedAt: new Date('2025-01-01T00:00:00Z'), // 오래전 실패 → due
+    });
+    mockFailedDue([notification]);
+    mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
+    mockSendAgodaAlertEmail.mockResolvedValue(undefined);
+
+    const result = await dispatchAgodaNotifications();
+    expect(result.picked).toBe(1);
+    expect(result.sent).toBe(1);
+    expect(result.skippedNotDue).toBe(0);
+  });
+
+  it('동시 실행 시 다른 워커가 먼저 클레임하면 picked=0', async () => {
+    // 두 개의 queued ID가 선택됐지만 $queryRawUnsafe가 [] 반환 (다른 워커가 먼저 클레임)
+    mockNotificationFindMany
+      .mockResolvedValueOnce([{ id: 1n }, { id: 2n }]) // queued IDs
+      .mockResolvedValueOnce([]); // failed IDs
+    mockQueryRawUnsafe.mockResolvedValueOnce([]); // claim queued → 0개 클레임
+
+    const result = await dispatchAgodaNotifications();
+    expect(result.picked).toBe(0);
     expect(result.sent).toBe(0);
     expect(mockSendAgodaAlertEmail).not.toHaveBeenCalled();
   });

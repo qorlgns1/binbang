@@ -364,8 +364,16 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         },
         candidates: vacancyEvents,
       });
-    } catch {
-      verifyResult = { confirmed: [], rejected: vacancyEvents };
+    } catch (verifyError) {
+      // verify API 호출 실패 시 후보를 rejected로 처리하지 않고 스킵한다.
+      // rejected로 처리하면 DB에 'rejected_verify_failed' 이벤트가 기록되어
+      // 실제 verify 실패인지 API 오류인지 구분이 어려워진다.
+      // 스킵하면 다음 poll 주기에서 다시 verify를 시도한다.
+      console.warn(
+        '[polling] vacancy verify API failed, skipping candidates:',
+        verifyError instanceof Error ? verifyError.message : String(verifyError),
+      );
+      verifyResult = { confirmed: [], rejected: [] };
     }
 
     const priceDropEvents = detectPriceDropEvents({
@@ -546,7 +554,7 @@ export async function findDueAccommodationIds(limit?: number): Promise<string[]>
       checkIn: { gte: todayStart },
       OR: [{ lastPolledAt: null }, { lastPolledAt: { lte: dueThreshold } }],
     },
-    orderBy: [{ lastPolledAt: 'asc' }, { updatedAt: 'asc' }],
+    orderBy: [{ lastPolledAt: { sort: 'asc', nulls: 'first' } }, { updatedAt: 'asc' }],
     take,
     select: { id: true },
   });

@@ -101,10 +101,21 @@ export function buildAgodaUnsubscribeUrl(token: string): string {
 }
 
 export async function unsubscribeAgodaAccommodation(params: { accommodationId: string; email: string }): Promise<void> {
+  const normalizedEmail = params.email.trim().toLowerCase();
+
+  // userId를 이메일로 조회해 consent log에 기록한다.
+  // 이메일 기반 수신거부는 userId 없이도 동작하지만,
+  // userId가 있으면 hasActiveConsent의 OR 조건에서 더 정확하게 매칭된다.
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true },
+  });
+
   await prisma.agodaConsentLog.create({
     data: {
-      email: params.email.trim().toLowerCase(),
+      email: normalizedEmail,
       type: 'opt_out',
+      userId: user?.id,
       accommodation: { connect: { id: params.accommodationId } },
     },
   });
