@@ -8,7 +8,7 @@ Owner: binbang
 |---|---|---|---|---|---|
 | dev | integration/test on server | `develop` / `develop` image tag | `https://dev-binbang.moodybeard.com` | GitHub Actions `deploy.yml` on push | Compose project: `binbang-dev`, web -> `:3200` |
 | dev-travel | travel app test on server | `develop` / `develop` image tag | `https://dev-travel.moodybeard.com` | GitHub Actions `deploy.yml` on push | Same compose project: `binbang-dev`, travel -> `:3301` |
-| staging | MoonCatch e2e 검증 | `develop` / `develop` image tag | `https://staging.moodybeard.com` | 수동 또는 GitHub Actions `deploy.yml` on push to `develop` | Compose project: `binbang-staging`, web -> `:3500` |
+| staging | Binbang e2e 검증 | `develop` / `develop` image tag | `https://staging.moodybeard.com` | 수동 또는 GitHub Actions `deploy.yml` on push to `develop` | Compose project: `binbang-staging`, web -> `:3500` |
 | production | live traffic | `main` / `main` image tag | `https://binbang.moodybeard.com` | GitHub Actions `deploy.yml` on push | web -> `:4000` |
 | production-travel | travel app live | `main` / `main` image tag | `https://travel.moodybeard.com` | GitHub Actions `deploy.yml` on push | travel -> `:3300` |
 
@@ -102,7 +102,7 @@ Docker Compose는 `--env-file` 순서상 나중 파일이 이기므로 `.env.dep
 ### staging
 - [ ] `https://staging.moodybeard.com/api/health` returns `200`
 - [ ] `docker compose -p binbang-staging -f docker/docker-compose.staging.yml --env-file .env.staging --env-file .env.deploy.staging ps`
-- [ ] MoonCatch e2e smoke: `BASE_URL=https://staging.moodybeard.com INTERNAL_TOKEN=... ./scripts/mooncatch/staging-smoke.sh`
+- [ ] Binbang e2e smoke: `BASE_URL=https://staging.moodybeard.com INTERNAL_TOKEN=... ./scripts/binbang/staging-smoke.sh`
 
 ### production
 - [ ] `https://binbang.moodybeard.com/api/health` returns `200`

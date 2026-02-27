@@ -9,11 +9,11 @@ interface UnsubscribePayload {
 }
 
 function getSecret(): string {
-  const secret = process.env.MOONCATCH_UNSUBSCRIBE_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
+  const secret = process.env.BINBANG_UNSUBSCRIBE_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
   if (secret) return secret;
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('MOONCATCH_UNSUBSCRIBE_SECRET is required in production');
+    throw new Error('BINBANG_UNSUBSCRIBE_SECRET is required in production');
   }
 
   return 'agoda-dev-unsubscribe-secret';

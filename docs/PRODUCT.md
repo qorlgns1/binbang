@@ -17,7 +17,7 @@
 
 | 제품 | 앱 | 상태 | 핵심 가치 |
 |---|---|---|---|
-| 빈방 (MoonCatch) | `apps/web` | ✅ 운영 중 | 내가 원하는 숙소에 빈방이 나면 누구보다 빨리 알려줌 |
+| 빈방 (Binbang) | `apps/web` | ✅ 운영 중 | 내가 원하는 숙소에 빈방이 나면 누구보다 빨리 알려줌 |
 | 여행 AI | `apps/travel` | ✅ 운영 중 | 여행 계획 전 과정을 AI와 대화로 해결 |
 | 백그라운드 워커 | `apps/worker` | ✅ 운영 중 | Playwright 기반 스크래핑 (빈방 감지 지원) |
 
@@ -49,7 +49,7 @@ Agoda 호텔 검색 후 알림 등록
 사용자 → Agoda 예약 페이지 (클릭아웃)
 ```
 
-자세한 플로우: `docs/mooncatch/user-flow.md`
+자세한 플로우: `docs/binbang/user-flow.md`
 
 ### 기능 목록
 

@@ -12,9 +12,9 @@ import {
   refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
   runAffiliateAuditPurge,
-  triggerMooncatchDispatch,
-  triggerMooncatchPollDue,
-  triggerMooncatchSnapshotCleanup,
+  triggerBinbangDispatch,
+  triggerBinbangPollDue,
+  triggerBinbangSnapshotCleanup,
   triggerTravelCachePrewarm,
   updateHeartbeat,
   type ActiveAccommodation,
@@ -58,21 +58,21 @@ export function createCycleProcessor(checkQueue: Queue, redisConnection: RedisLi
       return;
     }
 
-    if (job.name === 'mooncatch-poll-due') {
-      const result = await triggerMooncatchPollDue();
-      console.log(`[mooncatch-poll-due] polled=${result.polled}`);
+    if (job.name === 'binbang-poll-due') {
+      const result = await triggerBinbangPollDue();
+      console.log(`[binbang-poll-due] polled=${result.polled}`);
       return;
     }
 
-    if (job.name === 'mooncatch-dispatch') {
-      const result = await triggerMooncatchDispatch();
-      console.log(`[mooncatch-dispatch] dispatched=${result.dispatched}`);
+    if (job.name === 'binbang-dispatch') {
+      const result = await triggerBinbangDispatch();
+      console.log(`[binbang-dispatch] dispatched=${result.dispatched}`);
       return;
     }
 
-    if (job.name === 'mooncatch-snapshot-cleanup') {
-      const result = await triggerMooncatchSnapshotCleanup();
-      console.log(`[mooncatch-snapshot-cleanup] deleted=${result.deleted}`);
+    if (job.name === 'binbang-snapshot-cleanup') {
+      const result = await triggerBinbangSnapshotCleanup();
+      console.log(`[binbang-snapshot-cleanup] deleted=${result.deleted}`);
       return;
     }
 

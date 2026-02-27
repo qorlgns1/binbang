@@ -384,4 +384,4 @@ BullMQ Repeat Job (매일 03:00 UTC)
 | 폴링 지연 (Stall) | /admin/ops에 목록 노출, 수동 확인 필요 |
 | 카카오 토큰 만료 | refresh token으로 자동 갱신 후 재발송, 갱신 실패 시 무시 |
 | 수신동의 미기록 | agoda_consent_logs opt_in 없으면 dispatch 시 suppressed 처리 |
-| priceDropThreshold 미설정 | 전역 기본값(`MOONCATCH_PRICE_DROP_THRESHOLD`, 기본 10%) 사용 |
+| priceDropThreshold 미설정 | 전역 기본값(`BINBANG_PRICE_DROP_THRESHOLD`, 기본 10%) 사용 |

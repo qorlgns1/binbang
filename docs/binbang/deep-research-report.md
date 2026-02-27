@@ -6,7 +6,7 @@
 
 이 계획은 Agoda Search API를 활용해 특정 날짜·특정 숙소를 **지속 모니터링 → 변화 감지 → 알림**으로 연결하고, 동시에 가격 히스토리를 축적해 "기다릴지/지금 예약할지" 판단을 돕는다.
 
-**플랫폼 결정**: 독립 앱(apps/mooncatch) 대신 **apps/web에 통합**한다. apps/web은 이미 NextAuth 기반 사용자 인증, PostgreSQL DB(`agoda_hotels` 포함), 배포 인프라를 갖추고 있어 중복 투자를 피할 수 있다. apps/mooncatch의 폴링/감지/알림 서비스는 apps/web으로 이식되며, mooncatch는 eventually 제거된다.
+**플랫폼 결정**: 독립 앱(apps/binbang) 대신 **apps/web에 통합**한다. apps/web은 이미 NextAuth 기반 사용자 인증, PostgreSQL DB(`agoda_hotels` 포함), 배포 인프라를 갖추고 있어 중복 투자를 피할 수 있다. apps/binbang의 폴링/감지/알림 서비스는 apps/web으로 이식되며, binbang는 eventually 제거된다.
 
 수익화는 (A) 제휴(레퍼럴) 기반 + (B) 프리미엄(빠른 알림·고급 추적·다중 채널)으로 이원화하며, 12개월 목표는 **월 2.5만 SEO 세션 · 알림등록 12% · 알림등록→예약 3%** 가정으로 월 90건 예약 전환 시 제휴 매출만으로 월 360만원 수준을 노린다.
 
@@ -193,7 +193,7 @@ graph LR
   DB --> ADMIN[관리자 페이지]
 ```
 
-- **BullMQ Repeat Job**: Worker의 scheduler에 등록 → `mooncatch-poll-due`, `mooncatch-dispatch`, `mooncatch-snapshot-cleanup`
+- **BullMQ Repeat Job**: Worker의 scheduler에 등록 → `binbang-poll-due`, `binbang-dispatch`, `binbang-snapshot-cleanup`
 - **apps/worker**: 브라우저 스크래핑 전용 (Agoda 폴링과 무관)
 - **내부 API 인증**: `x-internal-token` 헤더로 외부 호출 차단
 
@@ -308,7 +308,7 @@ sequenceDiagram
 
 | 단계 | 기간 | 핵심 작업 | 상태 |
 |---|---|---|---|
-| Sprint 1 | 2026-02 | 폴링·스냅샷·변화 감지·알림 파이프라인 (mooncatch) | ✅ 완료 |
+| Sprint 1 | 2026-02 | 폴링·스냅샷·변화 감지·알림 파이프라인 (binbang) | ✅ 완료 |
 | Sprint 2 | 2026-03 | apps/web 통합 — 호텔 검색 UI, 알림 등록, 내부 API 이식 | ✅ 완료 |
 | Sprint 3 | 2026-04 | SEO 페이지 템플릿, 가격 히스토리, 수신동의/수신거부, 베타 런칭 | 📋 예정 |
 | Phase 2 | 2026-05+ | 프리미엄 과금, 다중 채널, 취소 확률 예측, 커뮤니티 마케팅 | 📋 예정 |

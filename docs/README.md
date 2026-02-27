@@ -1,5 +1,9 @@
 # Docs Index
 
+## 제품 개요
+
+- **`docs/PRODUCT.md`**: 비즈니스 관점 제품 개요 — 두 앱(빈방/여행AI)이 무엇을 하는지, 기능 상태, 수익화 구조.
+
 ## AI 대화용 컨텍스트
 
 - **`docs/AI_CONTEXT.md`**: ChatGPT, Gemini, Grok 등에 붙여넣을 **프로젝트/역할/구조 요약** 한 파일. `architecture.md`, `ai-context-extra.md`, `brand-identity.md` 수정 후 `pnpm update:ai-context` 실행하면 여기에 반영됨.

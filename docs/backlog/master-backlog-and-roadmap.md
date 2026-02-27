@@ -1995,9 +1995,9 @@ SIGINT/SIGTERM 수신
 |---------|--------|--------|
 | `cycle-trigger` | `settings.worker.cronSchedule` (기본 `*/30 * * * *`) | cycleProcessor |
 | `notification-retry` | `*/2 * * * *` (2분마다) | 알림 재시도 배치 |
-| `mooncatch-poll-due` | `*/30 * * * *` | MoonCatch 숙소 배치 폴링 |
-| `mooncatch-dispatch` | `*/5 * * * *` | MoonCatch 알림 큐 발송 |
-| `mooncatch-snapshot-cleanup` | `0 3 * * *` | MoonCatch 스냅샷 정리 |
+| `binbang-poll-due` | `*/30 * * * *` | Binbang 숙소 배치 폴링 |
+| `binbang-dispatch` | `*/5 * * * *` | Binbang 알림 큐 발송 |
+| `binbang-snapshot-cleanup` | `0 3 * * *` | Binbang 스냅샷 정리 |
 
 #### 사이클 처리 흐름
 

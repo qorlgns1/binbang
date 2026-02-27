@@ -6,13 +6,13 @@ interface SendEmailParams {
 }
 
 function getProvider(): 'console' | 'resend' {
-  const provider = process.env.MOONCATCH_EMAIL_PROVIDER?.trim().toLowerCase();
+  const provider = process.env.BINBANG_EMAIL_PROVIDER?.trim().toLowerCase();
   if (provider === 'resend') return 'resend';
   return 'console';
 }
 
 function getFromEmail(): string {
-  return process.env.MOONCATCH_FROM_EMAIL?.trim() || 'Mooncatch <no-reply@mooncatch.local>';
+  return process.env.BINBANG_FROM_EMAIL?.trim() || 'Binbang <no-reply@binbang.local>';
 }
 
 async function sendByConsole(params: SendEmailParams): Promise<{ provider: string; messageId: string }> {
@@ -27,9 +27,9 @@ async function sendByConsole(params: SendEmailParams): Promise<{ provider: strin
 }
 
 async function sendByResend(params: SendEmailParams): Promise<{ provider: string; messageId: string }> {
-  const apiKey = process.env.MOONCATCH_RESEND_API_KEY?.trim();
+  const apiKey = process.env.BINBANG_RESEND_API_KEY?.trim();
   if (!apiKey) {
-    throw new Error('MOONCATCH_RESEND_API_KEY is required for resend provider');
+    throw new Error('BINBANG_RESEND_API_KEY is required for resend provider');
   }
 
   const response = await fetch('https://api.resend.com/emails', {

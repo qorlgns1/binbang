@@ -91,23 +91,23 @@ function parseCombinedCredential(raw: string | undefined): CredentialCandidates 
 }
 
 function resolveCredentials(): { siteId: string; apiKey: string; endpoint: string } {
-  const combinedRaw = process.env.MOONCATCH_AGODA_AUTH?.trim() || process.env.AGODA_API_KEY?.trim();
+  const combinedRaw = process.env.BINBANG_AGODA_AUTH?.trim() || process.env.AGODA_API_KEY?.trim();
   const parsed = parseCombinedCredential(combinedRaw);
 
   const siteId =
-    process.env.MOONCATCH_AGODA_SITE_ID?.trim() ||
+    process.env.BINBANG_AGODA_SITE_ID?.trim() ||
     process.env.AGODA_SITE_ID?.trim() ||
     process.env.AGODA_AFFILIATE_SITE_ID?.trim() ||
     parsed.siteId;
 
   const apiKey =
-    process.env.MOONCATCH_AGODA_API_KEY?.trim() || process.env.AGODA_AFFILIATE_API_KEY?.trim() || parsed.apiKey;
+    process.env.BINBANG_AGODA_API_KEY?.trim() || process.env.AGODA_AFFILIATE_API_KEY?.trim() || parsed.apiKey;
 
-  const endpoint = process.env.MOONCATCH_AGODA_SEARCH_API_URL?.trim() || DEFAULT_AGODA_SEARCH_API_URL;
+  const endpoint = process.env.BINBANG_AGODA_SEARCH_API_URL?.trim() || DEFAULT_AGODA_SEARCH_API_URL;
 
   if (!siteId || !apiKey) {
     throw new AgodaSearchClientConfigError(
-      'Agoda credentials required (MOONCATCH_AGODA_SITE_ID + MOONCATCH_AGODA_API_KEY or AGODA_API_KEY=siteId:apiKey)',
+      'Agoda credentials required (BINBANG_AGODA_SITE_ID + BINBANG_AGODA_API_KEY or AGODA_API_KEY=siteId:apiKey)',
     );
   }
 

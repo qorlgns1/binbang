@@ -119,8 +119,8 @@ async function isInCooldown(params: {
 }): Promise<boolean> {
   const cooldownHours =
     params.type === 'price_drop'
-      ? parsePositiveInteger(process.env.MOONCATCH_PRICE_DROP_COOLDOWN_HOURS, DEFAULT_PRICE_DROP_COOLDOWN_HOURS)
-      : parsePositiveInteger(process.env.MOONCATCH_VACANCY_COOLDOWN_HOURS, DEFAULT_VACANCY_COOLDOWN_HOURS);
+      ? parsePositiveInteger(process.env.BINBANG_PRICE_DROP_COOLDOWN_HOURS, DEFAULT_PRICE_DROP_COOLDOWN_HOURS)
+      : parsePositiveInteger(process.env.BINBANG_VACANCY_COOLDOWN_HOURS, DEFAULT_VACANCY_COOLDOWN_HOURS);
 
   const cooldownFrom = new Date(Date.now() - cooldownHours * 60 * 60 * 1000);
 
@@ -173,7 +173,7 @@ async function createAlertEventWithDedupe(params: {
 }
 
 function resolvePriceDropThreshold(): number {
-  return parsePositiveRatio(process.env.MOONCATCH_PRICE_DROP_THRESHOLD, DEFAULT_PRICE_DROP_RATIO);
+  return parsePositiveRatio(process.env.BINBANG_PRICE_DROP_THRESHOLD, DEFAULT_PRICE_DROP_RATIO);
 }
 
 async function verifyVacancyCandidates(params: {
@@ -522,14 +522,14 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
 }
 
 function buildDueThreshold(now: Date): Date {
-  const minutes = parsePositiveInteger(process.env.MOONCATCH_POLL_INTERVAL_MINUTES, DEFAULT_DUE_POLL_INTERVAL_MINUTES);
+  const minutes = parsePositiveInteger(process.env.BINBANG_POLL_INTERVAL_MINUTES, DEFAULT_DUE_POLL_INTERVAL_MINUTES);
   return new Date(now.getTime() - minutes * 60 * 1000);
 }
 
 export async function findDueAccommodationIds(limit?: number): Promise<string[]> {
   const now = new Date();
   const dueThreshold = buildDueThreshold(now);
-  const take = limit ?? parsePositiveInteger(process.env.MOONCATCH_DUE_POLL_LIMIT, DEFAULT_DUE_POLL_LIMIT);
+  const take = limit ?? parsePositiveInteger(process.env.BINBANG_DUE_POLL_LIMIT, DEFAULT_DUE_POLL_LIMIT);
 
   // 체크인 당일 자정(UTC)을 기준으로 필터한다.
   // new Date()를 쓰면 당일 오전 1시에 이미 "지난 날"로 판단해 폴링이 멈추는 버그가 생긴다.
@@ -570,7 +570,7 @@ export async function pollDueAccommodationsOnce(params?: {
   const concurrency = Math.max(
     1,
     params?.concurrency ??
-      parsePositiveInteger(process.env.MOONCATCH_DUE_POLL_CONCURRENCY, DEFAULT_DUE_POLL_CONCURRENCY),
+      parsePositiveInteger(process.env.BINBANG_DUE_POLL_CONCURRENCY, DEFAULT_DUE_POLL_CONCURRENCY),
   );
 
   const results: PollAccommodationResult[] = [];

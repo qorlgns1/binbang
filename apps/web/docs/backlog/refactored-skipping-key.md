@@ -1,9 +1,9 @@
-# Plan: MoonCatch BullMQ Repeat Jobs ✅ 완료
+# Plan: Binbang BullMQ Repeat Jobs ✅ 완료
 
 ## Context
 
 `vercel.json`의 `crons` 설정은 Vercel에 배포됐을 때만 동작했다.
-현재 배포 환경은 OCI + Docker Compose이므로 3개의 MoonCatch cron이 실제로 실행되지 않고 있었다 (→ BullMQ Repeat Job으로 이관 완료, `vercel.json` 삭제):
+현재 배포 환경은 OCI + Docker Compose이므로 3개의 Binbang cron이 실제로 실행되지 않고 있었다 (→ BullMQ Repeat Job으로 이관 완료, `vercel.json` 삭제):
 - `POST /api/internal/accommodations/poll-due` (30분)
 - `POST /api/internal/accommodations/notifications/dispatch` (5분)
 - `POST /api/internal/snapshots/cleanup` (매일 03:00)
@@ -16,7 +16,7 @@
 ## 수정 파일 목록
 
 1. `packages/worker-shared/src/runtime/settings/env.ts`
-2. `packages/worker-shared/src/runtime/mooncatchCron.ts` ← 신규
+2. `packages/worker-shared/src/runtime/binbangCron.ts` ← 신규
 3. `packages/worker-shared/src/runtime/index.ts`
 4. `packages/worker-shared/src/runtime/scheduler.ts`
 5. `apps/worker/src/cycleProcessor.ts`
@@ -39,12 +39,12 @@ export interface MooncatchCronConfig {
 
 export function getMooncatchCronConfig(): MooncatchCronConfig {
   return {
-    webInternalUrl: process.env.MOONCATCH_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
-    internalApiToken: readOptionalEnv(process.env.MOONCATCH_INTERNAL_API_TOKEN),
-    pollDueCron: process.env.MOONCATCH_POLL_DUE_CRON?.trim() || '*/30 * * * *',
-    dispatchCron: process.env.MOONCATCH_DISPATCH_CRON?.trim() || '*/5 * * * *',
-    snapshotCleanupCron: process.env.MOONCATCH_SNAPSHOT_CLEANUP_CRON?.trim() || '0 3 * * *',
-    timeoutMs: parsePositiveInt(process.env.MOONCATCH_CRON_TIMEOUT_MS, 120_000),
+    webInternalUrl: process.env.BINBANG_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
+    internalApiToken: readOptionalEnv(process.env.BINBANG_INTERNAL_API_TOKEN),
+    pollDueCron: process.env.BINBANG_POLL_DUE_CRON?.trim() || '*/30 * * * *',
+    dispatchCron: process.env.BINBANG_DISPATCH_CRON?.trim() || '*/5 * * * *',
+    snapshotCleanupCron: process.env.BINBANG_SNAPSHOT_CLEANUP_CRON?.trim() || '0 3 * * *',
+    timeoutMs: parsePositiveInt(process.env.BINBANG_CRON_TIMEOUT_MS, 120_000),
   };
 }
 ```
@@ -53,12 +53,12 @@ export function getMooncatchCronConfig(): MooncatchCronConfig {
 
 ---
 
-### 2. `mooncatchCron.ts` — 신규 파일 (travelCachePrewarm.ts 패턴 동일)
+### 2. `binbangCron.ts` — 신규 파일 (travelCachePrewarm.ts 패턴 동일)
 
 ```ts
 import { getMooncatchCronConfig } from './settings/env';
 
-// 인증 헤더: x-mooncatch-internal-token (poll-due/route.ts 참고)
+// 인증 헤더: x-binbang-internal-token (poll-due/route.ts 참고)
 // 각 함수는 HTTP POST → ok 확인 → 실패 시 throw
 
 export async function triggerMooncatchPollDue(): Promise<{ polled: number }>
@@ -73,7 +73,7 @@ export async function triggerMooncatchSnapshotCleanup(): Promise<{ deleted: numb
 ### 3. `index.ts` — export 추가
 
 ```ts
-export { triggerMooncatchPollDue, triggerMooncatchDispatch, triggerMooncatchSnapshotCleanup } from './mooncatchCron';
+export { triggerMooncatchPollDue, triggerMooncatchDispatch, triggerMooncatchSnapshotCleanup } from './binbangCron';
 export type { MooncatchCronConfig } from './settings/env';
 export { getMooncatchCronConfig } from './settings/env';
 ```
@@ -82,17 +82,17 @@ export { getMooncatchCronConfig } from './settings/env';
 
 ### 4. `scheduler.ts` — scheduler 3개 추가
 
-`SetupRepeatableJobsOptions`에 mooncatch 스케줄 필드 추가:
+`SetupRepeatableJobsOptions`에 binbang 스케줄 필드 추가:
 ```ts
-mooncatchPollDueCron?: string;
-mooncatchDispatchCron?: string;
-mooncatchSnapshotCleanupCron?: string;
+binbangPollDueCron?: string;
+binbangDispatchCron?: string;
+binbangSnapshotCleanupCron?: string;
 ```
 
 `setupRepeatableJobs()` 말미에 `upsertJobScheduler` 3개 추가:
-- `mooncatch-poll-due-scheduler` → job name `mooncatch-poll-due`
-- `mooncatch-dispatch-scheduler` → job name `mooncatch-dispatch`
-- `mooncatch-snapshot-cleanup-scheduler` → job name `mooncatch-snapshot-cleanup`
+- `binbang-poll-due-scheduler` → job name `binbang-poll-due`
+- `binbang-dispatch-scheduler` → job name `binbang-dispatch`
+- `binbang-snapshot-cleanup-scheduler` → job name `binbang-snapshot-cleanup`
 
 `removeRepeatableJobs()`에 3개 `removeJobScheduler` 추가.
 
@@ -101,19 +101,19 @@ mooncatchSnapshotCleanupCron?: string;
 ### 5. `cycleProcessor.ts` — job handler 3개 추가
 
 ```ts
-if (job.name === 'mooncatch-poll-due') {
+if (job.name === 'binbang-poll-due') {
   const result = await triggerMooncatchPollDue();
-  console.log(`[mooncatch-poll-due] polled=${result.polled}`);
+  console.log(`[binbang-poll-due] polled=${result.polled}`);
   return;
 }
-if (job.name === 'mooncatch-dispatch') {
+if (job.name === 'binbang-dispatch') {
   const result = await triggerMooncatchDispatch();
-  console.log(`[mooncatch-dispatch] dispatched=${result.dispatched}`);
+  console.log(`[binbang-dispatch] dispatched=${result.dispatched}`);
   return;
 }
-if (job.name === 'mooncatch-snapshot-cleanup') {
+if (job.name === 'binbang-snapshot-cleanup') {
   const result = await triggerMooncatchSnapshotCleanup();
-  console.log(`[mooncatch-snapshot-cleanup] deleted=${result.deleted}`);
+  console.log(`[binbang-snapshot-cleanup] deleted=${result.deleted}`);
   return;
 }
 ```
@@ -124,12 +124,12 @@ if (job.name === 'mooncatch-snapshot-cleanup') {
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `MOONCATCH_WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
-| `MOONCATCH_INTERNAL_API_TOKEN` | (없으면 토큰 검사 건너뜀) | 이미 apps/web에 사용 중인 토큰 |
-| `MOONCATCH_POLL_DUE_CRON` | `*/30 * * * *` | 선택적 오버라이드 |
-| `MOONCATCH_DISPATCH_CRON` | `*/5 * * * *` | 선택적 오버라이드 |
-| `MOONCATCH_SNAPSHOT_CLEANUP_CRON` | `0 3 * * *` | 선택적 오버라이드 |
-| `MOONCATCH_CRON_TIMEOUT_MS` | `120000` | HTTP 호출 타임아웃 |
+| `BINBANG_WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
+| `BINBANG_INTERNAL_API_TOKEN` | (없으면 토큰 검사 건너뜀) | 이미 apps/web에 사용 중인 토큰 |
+| `BINBANG_POLL_DUE_CRON` | `*/30 * * * *` | 선택적 오버라이드 |
+| `BINBANG_DISPATCH_CRON` | `*/5 * * * *` | 선택적 오버라이드 |
+| `BINBANG_SNAPSHOT_CLEANUP_CRON` | `0 3 * * *` | 선택적 오버라이드 |
+| `BINBANG_CRON_TIMEOUT_MS` | `120000` | HTTP 호출 타임아웃 |
 
 ---
 

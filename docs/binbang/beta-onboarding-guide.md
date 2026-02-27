@@ -1,4 +1,4 @@
-# MoonCatch Beta Onboarding Guide (W4-D5-T1)
+# Binbang Beta Onboarding Guide (W4-D5-T1)
 
 목표:
 - 베타 사용자 10명이 실제로 알림 1개 이상 등록
@@ -40,7 +40,7 @@
 ## 5) 사용자 안내 문구 템플릿
 
 ```
-[MoonCatch 베타 안내]
+[Binbang 베타 안내]
 등록하신 호텔의 가격 하락/가용성 변동을 감지하면 메일로 알려드립니다.
 알림은 실시간 재고 변동에 영향을 받을 수 있으며, 최종 예약 가능 여부는 Agoda 페이지에서 확인해주세요.
 ```

@@ -22,7 +22,7 @@ export default async function AdminOpsPage() {
   return (
     <main className='mx-auto max-w-7xl space-y-6 px-4 py-8'>
       <section className='space-y-2'>
-        <h1 className='text-3xl font-bold text-foreground'>MoonCatch Ops</h1>
+        <h1 className='text-3xl font-bold text-foreground'>Binbang Ops</h1>
         <p className='text-sm text-muted-foreground'>
           집계 범위: 최근 {summary.range.days}일 ({formatDateTime(summary.range.from)} ~{' '}
           {formatDateTime(summary.range.to)})

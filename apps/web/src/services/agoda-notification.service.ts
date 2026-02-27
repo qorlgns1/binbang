@@ -2,7 +2,7 @@ import { prisma } from '@workspace/db';
 
 import { buildAgodaLandingUrl, buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
 import { sendAgodaAlertEmail } from '@/services/agoda-email.service';
-import { sendMoonCatchKakaoNotification } from '@/services/agoda-kakao.service';
+import { sendBinbangKakaoNotification } from '@/services/agoda-kakao.service';
 import { buildAgodaUnsubscribeUrl, createAgodaUnsubscribeToken } from '@/services/agoda-unsubscribe.service';
 
 const DEFAULT_DISPATCH_LIMIT = 50;
@@ -240,8 +240,8 @@ export async function dispatchAgodaNotifications(params?: {
   limit?: number;
 }): Promise<DispatchAgodaNotificationsResult> {
   const limit =
-    params?.limit ?? parsePositiveInteger(process.env.MOONCATCH_NOTIFICATION_DISPATCH_LIMIT, DEFAULT_DISPATCH_LIMIT);
-  const maxAttempts = parsePositiveInteger(process.env.MOONCATCH_NOTIFICATION_MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
+    params?.limit ?? parsePositiveInteger(process.env.BINBANG_NOTIFICATION_DISPATCH_LIMIT, DEFAULT_DISPATCH_LIMIT);
+  const maxAttempts = parsePositiveInteger(process.env.BINBANG_NOTIFICATION_MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
   const now = new Date();
 
   const notificationSelect = {
@@ -390,7 +390,7 @@ export async function dispatchAgodaNotifications(params?: {
 
       // 카카오 토큰이 있으면 병행 발송 (실패해도 이메일 상태에 영향 없음)
       if (notification.accommodation.user?.kakaoAccessToken) {
-        await sendMoonCatchKakaoNotification(notification.accommodation.userId, {
+        await sendBinbangKakaoNotification(notification.accommodation.userId, {
           accommodationId: acc.id,
           accommodationName: acc.name,
           alertType: notification.alertEvent.type,

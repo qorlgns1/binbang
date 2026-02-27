@@ -59,7 +59,7 @@ const NAV_GROUPS: Array<{
     ],
   },
   {
-    label: 'MoonCatch',
+    label: 'Binbang',
     items: [
       { href: '/admin/accommodations', label: 'Accommodations', icon: Bell },
       { href: '/admin/ops', label: 'Ops Dashboard', icon: Activity },

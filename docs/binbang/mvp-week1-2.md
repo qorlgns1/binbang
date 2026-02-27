@@ -2,7 +2,7 @@
 
 > **[역사 문서]** Sprint 1 (2026-01 ~ 2026-02 초) 당시 작성된 기획/완료 기록입니다.
 > 이후 Sprint 2에서 `apps/web`으로 통합, Sprint 3에서 베타 안정화 완료.
-> 현재 시스템 상태는 `docs/mooncatch/sprints/MoonCatch-Sprint3.md` 참조.
+> 현재 시스템 상태는 `docs/binbang/sprints/Binbang-Sprint3.md` 참조.
 
 ---
 
@@ -53,4 +53,4 @@ Sprint 1에서 제시한 "다음 작업"은 이후 Sprint에서 모두 구현되
 |---|---|---|
 | cron/queue로 폴링 주기 실행 | Sprint 2 | Vercel Cron `*/30 * * * *` → `poll-due` + `dispatch` |
 | verify poll cooldown/지연 재확인 | Sprint 2 | verify re-check + Sprint 3에서 쿨다운(24h/6h) 추가 |
-| price-drop 기준 고도화 | Sprint 2 | Snapshot 기반 비교, `MOONCATCH_PRICE_DROP_THRESHOLD` env |
+| price-drop 기준 고도화 | Sprint 2 | Snapshot 기반 비교, `BINBANG_PRICE_DROP_THRESHOLD` env |

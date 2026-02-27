@@ -1,4 +1,4 @@
-import { getMooncatchCronConfig } from './settings/env';
+import { getBinbangCronConfig } from './settings/env';
 
 function joinUrl(baseUrl: string, pathname: string): string {
   const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
@@ -16,15 +16,15 @@ function timeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
-async function callMooncatchInternal(
+async function callBinbangInternal(
   path: string,
 ): Promise<{ ok: boolean; result?: unknown; error?: { message: string } }> {
-  const config = getMooncatchCronConfig();
+  const config = getBinbangCronConfig();
   const endpoint = joinUrl(config.webInternalUrl, path);
 
   const headers = new Headers({ 'Content-Type': 'application/json' });
   if (config.internalApiToken) {
-    headers.set('x-mooncatch-internal-token', config.internalApiToken);
+    headers.set('x-binbang-internal-token', config.internalApiToken);
   }
 
   const response = await fetch(endpoint, {
@@ -41,26 +41,26 @@ async function callMooncatchInternal(
 
   if (!response.ok || !rawBody?.ok) {
     const reason = rawBody?.error?.message || `status=${response.status}`;
-    throw new Error(`mooncatch internal call failed [${path}]: ${reason}`);
+    throw new Error(`binbang internal call failed [${path}]: ${reason}`);
   }
 
   return { ok: true, result: rawBody.result };
 }
 
-export async function triggerMooncatchPollDue(): Promise<{ polled: number }> {
-  const { result } = await callMooncatchInternal('/api/internal/accommodations/poll-due');
+export async function triggerBinbangPollDue(): Promise<{ polled: number }> {
+  const { result } = await callBinbangInternal('/api/internal/accommodations/poll-due');
   const processed = (result as { processedCount?: unknown } | undefined)?.processedCount;
   return { polled: typeof processed === 'number' ? processed : 0 };
 }
 
-export async function triggerMooncatchDispatch(): Promise<{ dispatched: number }> {
-  const { result } = await callMooncatchInternal('/api/internal/accommodations/notifications/dispatch');
+export async function triggerBinbangDispatch(): Promise<{ dispatched: number }> {
+  const { result } = await callBinbangInternal('/api/internal/accommodations/notifications/dispatch');
   const sent = (result as { sent?: unknown } | undefined)?.sent;
   return { dispatched: typeof sent === 'number' ? sent : 0 };
 }
 
-export async function triggerMooncatchSnapshotCleanup(): Promise<{ deleted: number }> {
-  const { result } = await callMooncatchInternal('/api/internal/snapshots/cleanup');
+export async function triggerBinbangSnapshotCleanup(): Promise<{ deleted: number }> {
+  const { result } = await callBinbangInternal('/api/internal/snapshots/cleanup');
   const deletedPollRuns = (result as { deletedPollRuns?: unknown } | undefined)?.deletedPollRuns;
   return { deleted: typeof deletedPollRuns === 'number' ? deletedPollRuns : 0 };
 }

@@ -87,7 +87,7 @@ export async function getValidKakaoAccessToken(userId: string): Promise<string |
 // 메시지 빌더
 // ============================================================================
 
-interface MoonCatchKakaoParams {
+interface BinbangKakaoParams {
   accommodationName: string;
   alertType: string;
   checkIn: string;
@@ -113,7 +113,7 @@ function toDisplayPrice(value: number | null | undefined, currency: string | nul
   }
 }
 
-function buildMoonCatchKakaoTemplate(params: MoonCatchKakaoParams): KakaoMemoTemplate {
+function buildBinbangKakaoTemplate(params: BinbangKakaoParams): KakaoMemoTemplate {
   const { accommodationName, alertType, checkIn, checkOut, agodaUrl, baseUrl } = params;
   const linkUrl = agodaUrl ?? baseUrl;
   const link = { web_url: linkUrl, mobile_web_url: linkUrl };
@@ -144,7 +144,7 @@ function buildMoonCatchKakaoTemplate(params: MoonCatchKakaoParams): KakaoMemoTem
 // 발송
 // ============================================================================
 
-export interface SendMoonCatchKakaoParams {
+export interface SendBinbangKakaoParams {
   accommodationId: string;
   accommodationName: string;
   alertType: string;
@@ -159,14 +159,14 @@ export interface SendMoonCatchKakaoParams {
 }
 
 /**
- * 특정 사용자에게 MoonCatch 빈방/가격 하락 카카오 메시지를 발송한다.
+ * 특정 사용자에게 Binbang 빈방/가격 하락 카카오 메시지를 발송한다.
  *
  * - 카카오 토큰이 없거나 갱신 실패 시 skip (false 반환)
  * - 발송 실패 시 false 반환, 예외 미전파
  */
-export async function sendMoonCatchKakaoNotification(
+export async function sendBinbangKakaoNotification(
   userId: string,
-  params: SendMoonCatchKakaoParams,
+  params: SendBinbangKakaoParams,
 ): Promise<boolean> {
   const accessToken = await getValidKakaoAccessToken(userId);
   if (!accessToken) {
@@ -181,7 +181,7 @@ export async function sendMoonCatchKakaoNotification(
       })
     : null;
 
-  const template = buildMoonCatchKakaoTemplate({
+  const template = buildBinbangKakaoTemplate({
     accommodationName: params.accommodationName,
     alertType: params.alertType,
     checkIn: params.checkIn.toISOString().slice(0, 10),

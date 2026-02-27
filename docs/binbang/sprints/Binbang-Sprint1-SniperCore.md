@@ -1,4 +1,4 @@
-# MoonCatch Sprint 1 — SniperCore
+# Binbang Sprint 1 — SniperCore
 
 > **상태: 백엔드 완료 / apps/web 통합 Sprint 2로 이월**
 > 기간: 2026-02-25 ~ 2026-03-07 (2주)
@@ -10,14 +10,14 @@
 
 Sprint 1의 목표는 "빈방(remainingRooms) 변화 감지 → 알림 발송까지의 전체 경로를 최소 단위로 연결해 정확도 측정이 가능한 MVP를 만드는 것"이었다.
 
-**결과**: 백엔드 파이프라인(Watch 생성 → Agoda API 폴링 → 스냅샷 저장 → 변화 감지 → 이메일 알림)이 `apps/mooncatch`에 구현 완료됐으며, 실제 Agoda API 호출 테스트까지 통과했다.
+**결과**: 백엔드 파이프라인(Watch 생성 → Agoda API 폴링 → 스냅샷 저장 → 변화 감지 → 이메일 알림)이 `apps/binbang`에 구현 완료됐으며, 실제 Agoda API 호출 테스트까지 통과했다.
 
-**아키텍처 결정 (Sprint 1 종료 시점)**: 별도 앱(`apps/mooncatch`)으로 운영하는 대신, `**apps/web`을 메인 서비스로 개선**하는 방향으로 전환한다. 이유:
+**아키텍처 결정 (Sprint 1 종료 시점)**: 별도 앱(`apps/binbang`)으로 운영하는 대신, `**apps/web`을 메인 서비스로 개선**하는 방향으로 전환한다. 이유:
 
 - `apps/web`에 인증(Google/Kakao), RBAC, 유저 관리가 이미 완성돼 있음
 - `agoda_hotels` 테이블이 공유 DB에 존재 → URL 등록 대신 호텔 검색 등록으로 전환
 - 스크래핑 기반 모니터링은 어드민 전용으로 격리
-- `apps/mooncatch`에서 구현한 서비스 로직은 `apps/web`으로 이식
+- `apps/binbang`에서 구현한 서비스 로직은 `apps/web`으로 이식
 
 ---
 
@@ -26,13 +26,13 @@ Sprint 1의 목표는 "빈방(remainingRooms) 변화 감지 → 알림 발송까
 
 | 항목               | 기존 계획                 | 변경 결정                                 |
 | ---------------- | --------------------- | ------------------------------------- |
-| 메인 서비스 앱         | `apps/mooncatch` (신규) | `**apps/web`** (기존 앱 개선)              |
+| 메인 서비스 앱         | `apps/binbang` (신규) | `**apps/web`** (기존 앱 개선)              |
 | 사용자 등록 방식        | 이메일만으로 Watch 생성       | **회원가입 후 호텔 검색 → Watch 등록**           |
 | 호텔 탐색            | propertyId 직접 입력      | `**agoda_hotels` DB 검색**              |
 | 인증               | 미구현 (이메일 기반)          | **기존 web NextAuth 활용** (Google/Kakao) |
 | 스크래핑             | 일반 사용자 기능             | **어드민 전용으로 격리**                       |
 | 알림 채널            | 이메일                   | 이메일 유지 (Kakao 알림톡은 Sprint 3+ 검토)      |
-| `apps/mooncatch` | 메인 앱                  | 서비스 로직 출처 → `apps/web`으로 이식 후 퇴역      |
+| `apps/binbang` | 메인 앱                  | 서비스 로직 출처 → `apps/web`으로 이식 후 퇴역      |
 
 
 ---

@@ -1,4 +1,4 @@
-# MoonCatch Staging Deployment Checklist
+# Binbang Staging Deployment Checklist
 
 > 최종 업데이트: 2026-02-26
 > W5-D1 (Sprint 3)에서 스테이징 인프라 기초 완료
@@ -40,13 +40,13 @@
 - [ ] 스테이징 비밀값 주입 확인
   - `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`
   - OAuth 관련 env (Google, Kakao)
-  - MoonCatch env:
-    - `MOONCATCH_AGODA_SITE_ID`, `MOONCATCH_AGODA_API_KEY`
-    - `MOONCATCH_INTERNAL_API_TOKEN`
-    - `MOONCATCH_UNSUBSCRIBE_SECRET`
-    - `MOONCATCH_EMAIL_PROVIDER`, `MOONCATCH_RESEND_API_KEY`
-    - `MOONCATCH_VACANCY_COOLDOWN_HOURS`, `MOONCATCH_PRICE_DROP_COOLDOWN_HOURS`
-    - `MOONCATCH_SNAPSHOT_RETENTION_DAYS`
+  - Binbang env:
+    - `BINBANG_AGODA_SITE_ID`, `BINBANG_AGODA_API_KEY`
+    - `BINBANG_INTERNAL_API_TOKEN`
+    - `BINBANG_UNSUBSCRIBE_SECRET`
+    - `BINBANG_EMAIL_PROVIDER`, `BINBANG_RESEND_API_KEY`
+    - `BINBANG_VACANCY_COOLDOWN_HOURS`, `BINBANG_PRICE_DROP_COOLDOWN_HOURS`
+    - `BINBANG_SNAPSHOT_RETENTION_DAYS`
 - [ ] 롤백 기준 버전(이미지 digest) 확보
 
 ## 3) 배포 실행 체크
@@ -69,9 +69,9 @@
 - [ ] 알림 이력 확인 (`/accommodations/{id}` → 알림 이력 테이블)
 
 자동 스모크 스크립트:
-- `scripts/mooncatch/staging-smoke.sh`
+- `scripts/binbang/staging-smoke.sh`
   - 실행 예시:
-  - `BASE_URL=https://staging.example.com INTERNAL_TOKEN=*** ./scripts/mooncatch/staging-smoke.sh`
+  - `BASE_URL=https://staging.example.com INTERNAL_TOKEN=*** ./scripts/binbang/staging-smoke.sh`
 
 ## 5) E2E 완료 조건 검증
 

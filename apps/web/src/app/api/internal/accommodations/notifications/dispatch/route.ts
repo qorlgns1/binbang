@@ -3,15 +3,15 @@ import { NextResponse } from 'next/server';
 import { dispatchAgodaNotifications } from '@/services/agoda-notification.service';
 
 function authorizeInternalRequest(req: Request): { ok: boolean; message?: string; status?: number } {
-  const internalToken = process.env.MOONCATCH_INTERNAL_API_TOKEN?.trim();
+  const internalToken = process.env.BINBANG_INTERNAL_API_TOKEN?.trim();
   if (!internalToken) {
     if (process.env.NODE_ENV === 'production') {
-      return { ok: false, status: 503, message: 'MOONCATCH_INTERNAL_API_TOKEN is not configured' };
+      return { ok: false, status: 503, message: 'BINBANG_INTERNAL_API_TOKEN is not configured' };
     }
     return { ok: true };
   }
 
-  const provided = req.headers.get('x-mooncatch-internal-token')?.trim();
+  const provided = req.headers.get('x-binbang-internal-token')?.trim();
   if (!provided || provided !== internalToken) {
     return { ok: false, status: 401, message: 'invalid internal token' };
   }

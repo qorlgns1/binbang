@@ -1,4 +1,4 @@
-# MoonCatch Sprint 4 — 알림 설정 완성 & 공개 전환
+# Binbang Sprint 4 — 알림 설정 완성 & 공개 전환
 
 > **상태: 계획 중**
 > 기간: 2026-04-06 ~ 2026-04-17 (2주, Day 31~40)
@@ -9,13 +9,13 @@
 ## Executive Summary
 
 Sprint 3까지 완성된 폴링 파이프라인(이메일 + 카카오)을 사용자가 **직접 제어**할 수 있도록 하고,
-신규 사용자가 MoonCatch를 발견·가입·유지할 수 있는 **공개 전환 기반**을 만든다.
+신규 사용자가 Binbang를 발견·가입·유지할 수 있는 **공개 전환 기반**을 만든다.
 
 **핵심 과제**:
 - 숙소별 알림 타입(vacancy / price_drop / 둘 다) 선택 기능
 - priceDropThreshold + alertTypes UI (숙소 수정 페이지)
 - 카카오 연동 상태 표시 + 설정 페이지 (`/settings/notifications`)
-- 공개 홈페이지에 MoonCatch 소개 섹션 추가
+- 공개 홈페이지에 Binbang 소개 섹션 추가
 - 온보딩 강화 (카카오 연동 유도, 첫 숙소 등록 가이드)
 - 수익화 진입점 강화 (quota 초과 → upgrade CTA)
 
@@ -29,7 +29,7 @@ Sprint 3까지 완성된 폴링 파이프라인(이메일 + 카카오)을 사용
 | alertTypes 적용 위치 | `agoda-polling.service.ts` — vacancy/price_drop 감지 루프 진입 전 조건 분기 |
 | 카카오 연결 해제 | DB `kakaoAccessToken / kakaoRefreshToken / kakaoTokenExpiry = null` UPDATE (토큰 폐기 API 별도 미호출, MVP) |
 | 온보딩 카카오 스텝 | `FirstUserTutorialDialog` 5단계로 확장 (기존 4단계 + 카카오 연동 유도) |
-| 공개 홈 MoonCatch 섹션 | 기존 `/(public)/[lang]/page.tsx` 내 섹션 추가 (별도 라우트 불필요) |
+| 공개 홈 Binbang 섹션 | 기존 `/(public)/[lang]/page.tsx` 내 섹션 추가 (별도 라우트 불필요) |
 
 ---
 
@@ -38,7 +38,7 @@ Sprint 3까지 완성된 폴링 파이프라인(이메일 + 카카오)을 사용
 - 사용자가 숙소 수정 페이지에서 알림 타입(vacancy / price_drop / 둘 다)을 선택할 수 있다
 - 사용자가 숙소 수정 페이지에서 priceDropThreshold를 입력할 수 있다 (현재는 API만 존재)
 - `/settings/notifications`에서 카카오 연동 상태를 확인하고 연결/해제할 수 있다
-- 공개 홈 페이지(`/ko`, `/en`)에 MoonCatch 기능 소개 섹션이 있다
+- 공개 홈 페이지(`/ko`, `/en`)에 Binbang 기능 소개 섹션이 있다
 - 튜토리얼 완료 후 카카오 연동을 권장하는 스텝이 노출된다
 - quota 초과 시 upgrade 버튼이 노출되고 pricing 페이지로 연결된다
 
@@ -108,20 +108,20 @@ ALTER TABLE "accommodations" ADD COLUMN "alertTypes" TEXT[] NOT NULL DEFAULT ARR
 
 ---
 
-## W8: MoonCatch 공개 전환 (Day 36~40)
+## W8: Binbang 공개 전환 (Day 36~40)
 
-### W8-D1: 공개 홈 MoonCatch 소개 섹션 ⬜
+### W8-D1: 공개 홈 Binbang 소개 섹션 ⬜
 
-**목표**: 비로그인 사용자가 홈에서 MoonCatch 기능을 발견하고 가입 CTA로 유입된다.
+**목표**: 비로그인 사용자가 홈에서 Binbang 기능을 발견하고 가입 CTA로 유입된다.
 
 | Task | 파일 | 내용 |
 |---|---|---|
-| T1 | `(public)/[lang]/page.tsx` | MoonCatch 소개 섹션 추가 (Agoda 호텔 모니터링 + 카카오 실시간 알림 + 가격 하락 감지) |
-| T2 | `messages/ko.json` + `messages/en.json` | `mooncatch` namespace 추가 (hero/features/cta 문자열) |
+| T1 | `(public)/[lang]/page.tsx` | Binbang 소개 섹션 추가 (Agoda 호텔 모니터링 + 카카오 실시간 알림 + 가격 하락 감지) |
+| T2 | `messages/ko.json` + `messages/en.json` | `binbang` namespace 추가 (hero/features/cta 문자열) |
 | T3 | `(public)/[lang]/page.tsx` | Feature 카드 3종: 🏨 빈방 감지 / 💸 가격 하락 감지 / 💬 카카오 즉시 알림 |
 
 **UI 상세**:
-- 기존 홈 섹션 아래에 "MoonCatch" 소개 블록 추가
+- 기존 홈 섹션 아래에 "Binbang" 소개 블록 추가
 - 비로그인: "무료로 시작하기 →" 버튼 (`/ko/signup`)
 - 로그인 상태: "대시보드 바로가기 →" 버튼 (`/dashboard`)
 
@@ -148,7 +148,7 @@ ALTER TABLE "accommodations" ADD COLUMN "alertTypes" TEXT[] NOT NULL DEFAULT ARR
 | Task | 파일 | 내용 |
 |---|---|---|
 | T1 | `dashboard/_lib/actionCardGenerator.ts` | `QUOTA_NEAR_LIMIT` 카드의 CTA를 `navigate_pricing`으로 연결 (현재 상태 확인) |
-| T2 | `(public)/[lang]/pricing/_components/PricingCards.tsx` | MoonCatch 기능(알림 횟수 / 모니터링 숙소 수 / 카카오 알림) 요금제별 명세 추가 |
+| T2 | `(public)/[lang]/pricing/_components/PricingCards.tsx` | Binbang 기능(알림 횟수 / 모니터링 숙소 수 / 카카오 알림) 요금제별 명세 추가 |
 | T3 | `(app)/layout.tsx` 또는 AccommodationBoard | quota 100% 도달 시 인라인 upgrade 배너 표시 |
 
 ---

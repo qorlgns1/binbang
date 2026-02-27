@@ -9,23 +9,23 @@
 ### 필수
 - `DATABASE_URL`
 - Agoda 인증 (둘 중 하나):
-  - `MOONCATCH_AGODA_SITE_ID` + `MOONCATCH_AGODA_API_KEY`
+  - `BINBANG_AGODA_SITE_ID` + `BINBANG_AGODA_API_KEY`
   - `AGODA_API_KEY` (`siteId:apiKey` 결합형)
-- `MOONCATCH_INTERNAL_API_TOKEN`
-- `MOONCATCH_UNSUBSCRIBE_SECRET` (프로덕션 필수)
+- `BINBANG_INTERNAL_API_TOKEN`
+- `BINBANG_UNSUBSCRIBE_SECRET` (프로덕션 필수)
 
 ### 선택
-- `MOONCATCH_EMAIL_PROVIDER` (`console` | `resend`, 기본값: `console`)
-- `MOONCATCH_RESEND_API_KEY`
-- `MOONCATCH_FROM_EMAIL`
-- `MOONCATCH_PUBLIC_BASE_URL`
-- `MOONCATCH_POLL_INTERVAL_MINUTES` (기본값: `30`)
-- `MOONCATCH_PRICE_DROP_THRESHOLD` (기본값: `0.10`, 10%)
+- `BINBANG_EMAIL_PROVIDER` (`console` | `resend`, 기본값: `console`)
+- `BINBANG_RESEND_API_KEY`
+- `BINBANG_FROM_EMAIL`
+- `BINBANG_PUBLIC_BASE_URL`
+- `BINBANG_POLL_INTERVAL_MINUTES` (기본값: `30`)
+- `BINBANG_PRICE_DROP_THRESHOLD` (기본값: `0.10`, 10%)
 
 ### Sprint 3 추가
-- `MOONCATCH_VACANCY_COOLDOWN_HOURS` (기본값: `24`) — vacancy 중복 알림 방지
-- `MOONCATCH_PRICE_DROP_COOLDOWN_HOURS` (기본값: `6`) — price_drop 중복 알림 방지
-- `MOONCATCH_SNAPSHOT_RETENTION_DAYS` (기본값: `30`) — 스냅샷 자동 정리 보존 일수
+- `BINBANG_VACANCY_COOLDOWN_HOURS` (기본값: `24`) — vacancy 중복 알림 방지
+- `BINBANG_PRICE_DROP_COOLDOWN_HOURS` (기본값: `6`) — price_drop 중복 알림 방지
+- `BINBANG_SNAPSHOT_RETENTION_DAYS` (기본값: `30`) — 스냅샷 자동 정리 보존 일수
 
 ---
 
@@ -41,13 +41,13 @@
 ```bash
 # Due 숙소 배치 폴링
 curl -X POST "https://yourdomain.com/api/internal/accommodations/poll-due" \
-  -H "x-mooncatch-internal-token: $MOONCATCH_INTERNAL_API_TOKEN" \
+  -H "x-binbang-internal-token: $BINBANG_INTERNAL_API_TOKEN" \
   -H "content-type: application/json" \
   -d '{"limit":20,"concurrency":3}'
 
 # 스냅샷 수동 정리
 curl -X POST "https://yourdomain.com/api/internal/snapshots/cleanup" \
-  -H "x-mooncatch-internal-token: $MOONCATCH_INTERNAL_API_TOKEN"
+  -H "x-binbang-internal-token: $BINBANG_INTERNAL_API_TOKEN"
 ```
 
 ---
@@ -62,7 +62,7 @@ curl -X POST "https://yourdomain.com/api/internal/snapshots/cleanup" \
 ### 이메일 발송 장애
 - `agoda_notifications.status='failed'` 증가 확인
 - `agoda_notifications.attempt` 백오프 진행 확인
-- provider 설정값/키 점검 (`MOONCATCH_EMAIL_PROVIDER`, `MOONCATCH_RESEND_API_KEY`)
+- provider 설정값/키 점검 (`BINBANG_EMAIL_PROVIDER`, `BINBANG_RESEND_API_KEY`)
 
 ### 스톨(Stall) 감지
 - `/admin/ops` 페이지 > "폴링 지연 숙소" 섹션 확인

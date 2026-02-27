@@ -62,7 +62,7 @@ function toRate(numerator: number, denominator: number): number {
 }
 
 function resolvePollIntervalMs(): number {
-  const raw = process.env.MOONCATCH_POLL_INTERVAL_MINUTES;
+  const raw = process.env.BINBANG_POLL_INTERVAL_MINUTES;
   if (!raw) return DEFAULT_POLL_INTERVAL_MINUTES * 60 * 1000;
   const parsed = Number.parseInt(raw, 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_POLL_INTERVAL_MINUTES * 60 * 1000;
