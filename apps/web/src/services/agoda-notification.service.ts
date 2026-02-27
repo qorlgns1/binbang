@@ -320,7 +320,11 @@ export async function dispatchAgodaNotifications(params?: {
       continue;
     }
 
-    const consented = await hasActiveConsent(notification.accommodation.userId, recipientEmail, notification.accommodation.id);
+    const consented = await hasActiveConsent(
+      notification.accommodation.userId,
+      recipientEmail,
+      notification.accommodation.id,
+    );
     if (!consented) {
       outcomes.push({ id: notification.id, kind: 'suppressed', reason: 'no active consent (opt_in required)' });
       continue;
