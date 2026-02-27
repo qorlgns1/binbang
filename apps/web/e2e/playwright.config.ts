@@ -35,7 +35,7 @@ export default defineConfig({
       ...process.env,
       PORT: String(port),
       // e2e 테스트 시 Agoda 실제 API 대신 mock 라우트 사용
-      MOONCATCH_AGODA_SEARCH_API_URL: `http://localhost:${port}/api/test/agoda-mock`,
+      BINBANG_AGODA_SEARCH_API_URL: `http://localhost:${port}/api/test/agoda-mock`,
     },
   },
   projects: [

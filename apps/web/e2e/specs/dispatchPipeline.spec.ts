@@ -15,8 +15,8 @@ import { applyAgodaMockGuard, applySniperCoreSuiteGuards } from '../helpers/suit
  * vacancy 이벤트로 큐잉된 알림이 dispatch를 통해 실제 sent 상태로 전환됨을 검증한다.
  *
  * 전제:
- * - MOONCATCH_AGODA_SEARCH_API_URL=http://localhost:{port}/api/test/agoda-mock (playwright.config.ts에 설정)
- * - MOONCATCH_EMAIL_PROVIDER 미설정 시 console 프로바이더가 사용되므로 실제 이메일 발송 없이 sent 처리됨
+ * - BINBANG_AGODA_SEARCH_API_URL=http://localhost:{port}/api/test/agoda-mock (playwright.config.ts에 설정)
+ * - BINBANG_EMAIL_PROVIDER 미설정 시 console 프로바이더가 사용되므로 실제 이메일 발송 없이 sent 처리됨
  *
  * 검증 범위:
  * - vacancy 이벤트 큐잉(poll) 이후 dispatch가 picked > 0, sent >= 1을 반환해야 한다.

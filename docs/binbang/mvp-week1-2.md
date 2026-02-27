@@ -35,7 +35,7 @@
 - Watch service + API route + 홈 화면 Watch 생성 폼 추가
 - Agoda Search client scaffold 추가(요청 제약/기본값/타임아웃 반영)
 - Agoda 응답 normalize + vacancy detector 구현 및 테스트 추가
-- `pollMooncatchWatchOnce` 구현(`poll_runs`, `room_snapshots`, `alert_events` 적재)
+- `pollWatchOnce` 구현(`poll_runs`, `room_snapshots`, `alert_events` 적재)
 - 수동 실행용 `POST /api/internal/watches/[id]/poll` 라우트 추가
 - due watch 배치 실행(`findDueWatchIds`, `pollDueWatchesOnce`, `/api/internal/watches/poll-due`)
 - verify poll 기반 vacancy 확정/기각(`rejected_verify_failed` 상태 기록)

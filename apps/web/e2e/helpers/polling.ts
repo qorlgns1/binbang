@@ -127,7 +127,7 @@ export async function getNotificationHistory(page: Page, accommodationId: string
 /**
  * 내부 dispatch API를 호출해 큐잉된 알림을 발송 처리한다.
  *
- * 로컬 dev 환경에서는 `MOONCATCH_EMAIL_PROVIDER`가 미설정이면 console 프로바이더로
+ * 로컬 dev 환경에서는 `BINBANG_EMAIL_PROVIDER`가 미설정이면 console 프로바이더로
  * 동작하므로 실제 이메일 발송 없이도 `sent` 카운트가 증가한다.
  *
  * @param page Playwright page 인스턴스

@@ -9,7 +9,7 @@ import { applyAgodaMockGuard, applySniperCoreSuiteGuards } from '../helpers/suit
  * Vacancy 알림 e2e:
  * 회원가입 → 알림 등록 → 다중 폴링(베이스라인/재등장/쿨다운) → 숙소 상세와 알림 이력 확인
  *
- * 전제: MOONCATCH_AGODA_SEARCH_API_URL=http://localhost:{port}/api/test/agoda-mock
+ * 전제: BINBANG_AGODA_SEARCH_API_URL=http://localhost:{port}/api/test/agoda-mock
  *   → playwright.config.ts webServer.env에 이미 설정됨
  *   → 서버를 직접 실행하는 경우 .env.local에도 동일하게 설정 필요
  */
