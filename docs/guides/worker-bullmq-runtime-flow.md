@@ -467,6 +467,74 @@ SIGINT/SIGTERM 수신 시:
 
 ---
 
+## 12) MoonCatch 폴링 스케줄러 (Repeat Jobs)
+
+Vercel Cron 대신 Worker BullMQ Repeat Job이 MoonCatch 내부 API를 주기적으로 호출한다.
+
+### 12-1. 등록된 스케줄러 3개
+
+| Scheduler ID | Job Name | 기본 주기 | 처리 내용 |
+|---|---|---|---|
+| `mooncatch-poll-due-scheduler` | `mooncatch-poll-due` | `*/30 * * * *` | due 숙소 배치 폴링 |
+| `mooncatch-dispatch-scheduler` | `mooncatch-dispatch` | `*/5 * * * *` | 알림 큐 발송 |
+| `mooncatch-snapshot-cleanup-scheduler` | `mooncatch-snapshot-cleanup` | `0 3 * * *` | 30일 이상 된 스냅샷 정리 |
+
+스케줄은 환경변수(`MOONCATCH_POLL_DUE_CRON`, `MOONCATCH_DISPATCH_CRON`, `MOONCATCH_SNAPSHOT_CLEANUP_CRON`)로 오버라이드 가능하다.
+
+### 12-2. 실행 흐름
+
+```text
+BullMQ Repeat Job 트리거 (cron pattern 도달)
+    │
+    ▼
+cycleProcessor.ts에서 job.name 분기
+    │
+    ├── 'mooncatch-poll-due'
+    │       └── triggerMooncatchPollDue()
+    │               └── POST http://web:3000/api/internal/accommodations/poll-due
+    │                       Header: x-mooncatch-internal-token: <token>
+    │                       Response: { ok: true, result: { processedCount, ... } }
+    │
+    ├── 'mooncatch-dispatch'
+    │       └── triggerMooncatchDispatch()
+    │               └── POST http://web:3000/api/internal/accommodations/notifications/dispatch
+    │                       Header: x-mooncatch-internal-token: <token>
+    │                       Response: { ok: true, result: { sent, failed, ... } }
+    │
+    └── 'mooncatch-snapshot-cleanup'
+            └── triggerMooncatchSnapshotCleanup()
+                    └── POST http://web:3000/api/internal/snapshots/cleanup
+                            Header: x-mooncatch-internal-token: <token>
+                            Response: { ok: true, result: { deletedPollRuns, ... } }
+```
+
+### 12-3. 인증
+
+Worker → apps/web 호출 시 `x-mooncatch-internal-token` 헤더에 `MOONCATCH_INTERNAL_API_TOKEN` 값을 담는다.
+토큰이 없으면 (`MOONCATCH_INTERNAL_API_TOKEN` 미설정):
+- `production` 환경: apps/web이 503 반환
+- 그 외 환경: 토큰 검사 건너뜀 (개발 편의)
+
+### 12-4. 관련 환경변수 (Worker 쪽)
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `MOONCATCH_WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
+| `MOONCATCH_INTERNAL_API_TOKEN` | — | apps/web 인증 토큰 |
+| `MOONCATCH_POLL_DUE_CRON` | `*/30 * * * *` | poll-due 주기 오버라이드 |
+| `MOONCATCH_DISPATCH_CRON` | `*/5 * * * *` | dispatch 주기 오버라이드 |
+| `MOONCATCH_SNAPSHOT_CLEANUP_CRON` | `0 3 * * *` | cleanup 주기 오버라이드 |
+| `MOONCATCH_CRON_TIMEOUT_MS` | `120000` | HTTP 호출 타임아웃(ms) |
+
+### 12-5. 핵심 파일
+
+- `packages/worker-shared/src/runtime/mooncatchCron.ts` — HTTP 호출 함수 3개
+- `packages/worker-shared/src/runtime/scheduler.ts` — `setupRepeatableJobs`에 3개 scheduler 등록
+- `apps/worker/src/cycleProcessor.ts` — job handler 3개
+- `packages/worker-shared/src/runtime/settings/env.ts` — `getMooncatchCronConfig()`
+
+---
+
 ## 결론
 
 현재 staging된 워커는 “한 프로세스 안에서 직접 반복/제한/실행”하던 구조에서, “큐로 분리된 단계형 파이프라인”으로 바뀌었습니다.
