@@ -21,6 +21,8 @@ export interface Accommodation {
   lastPolledAt: string | null;
   lastEventAt: string | null;
   lastStatus: AvailabilityStatus;
+  lastErrorMessage?: string | null;
+  lastErrorAt?: string | null;
   lastPrice: string | null;
   createdAt: string;
   updatedAt: string;

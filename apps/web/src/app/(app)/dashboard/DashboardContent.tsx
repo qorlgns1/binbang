@@ -22,6 +22,7 @@ import { SectionSkeleton } from './_components/SectionSkeleton';
 import { generateActionCards } from './_lib/actionCardGenerator';
 import { PAGE_SUBTITLE, PAGE_TITLE } from './_lib/constants';
 import { trackDashboardViewed } from './_lib/dashboardTracker';
+import { isProblemStatus } from './_lib/status';
 import type { ActionCard, BoardTab, DashboardMetrics } from './_lib/types';
 
 // ============================================================================
@@ -67,7 +68,7 @@ export function DashboardContent({ hasKakaoToken }: DashboardContentProps): Reac
     const totalCount = accommodations.length;
     const activeCount = accommodations.filter((a) => a.isActive).length;
     const pausedCount = accommodations.filter((a) => !a.isActive).length;
-    const problemCount = accommodations.filter((a) => a.lastStatus === 'ERROR' || a.lastStatus === 'UNKNOWN').length;
+    const problemCount = accommodations.filter((a) => isProblemStatus(a)).length;
     const availableCount = accommodations.filter((a) => a.lastStatus === 'AVAILABLE').length;
 
     let quotaRatio: number | null = null;

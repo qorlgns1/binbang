@@ -104,7 +104,13 @@ describe('accommodations.service', (): void => {
           orderBy: { createdAt: 'desc' },
         }),
       );
-      expect(result).toEqual(list);
+      expect(result).toEqual([
+        expect.objectContaining({
+          ...list[0],
+          lastErrorMessage: null,
+          lastErrorAt: null,
+        }),
+      ]);
     });
   });
 

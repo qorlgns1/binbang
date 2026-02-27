@@ -103,6 +103,34 @@ const ACCOMMODATION_SELECT = {
   updatedAt: true,
 } as const;
 
+const ACCOMMODATION_LIST_SELECT = {
+  ...ACCOMMODATION_SELECT,
+  checkLogs: {
+    where: {
+      status: 'ERROR',
+      errorMessage: { not: null },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+    select: {
+      errorMessage: true,
+      createdAt: true,
+    },
+  },
+  agodaPollRuns: {
+    where: {
+      status: 'failed',
+      error: { not: null },
+    },
+    orderBy: { polledAt: 'desc' },
+    take: 1,
+    select: {
+      error: true,
+      polledAt: true,
+    },
+  },
+} as const;
+
 const CHECK_LOG_SELECT = {
   id: true,
   accommodationId: true,
@@ -128,10 +156,34 @@ const CHECK_LOG_SELECT = {
 // ============================================================================
 
 export async function getAccommodationsByUserId(userId: string): Promise<Accommodation[]> {
-  return prisma.accommodation.findMany({
+  const rows = await prisma.accommodation.findMany({
     where: { userId },
-    select: ACCOMMODATION_SELECT,
+    select: ACCOMMODATION_LIST_SELECT,
     orderBy: { createdAt: 'desc' },
+  });
+
+  return rows.map((row) => {
+    const latestCheckError = row.checkLogs?.[0];
+    const latestPollError = row.agodaPollRuns?.[0];
+
+    const latestError =
+      latestCheckError && latestPollError
+        ? latestCheckError.createdAt >= latestPollError.polledAt
+          ? { message: latestCheckError.errorMessage, at: latestCheckError.createdAt }
+          : { message: latestPollError.error, at: latestPollError.polledAt }
+        : latestCheckError
+          ? { message: latestCheckError.errorMessage, at: latestCheckError.createdAt }
+          : latestPollError
+            ? { message: latestPollError.error, at: latestPollError.polledAt }
+            : null;
+
+    const { checkLogs: _checkLogs, agodaPollRuns: _agodaPollRuns, ...base } = row;
+
+    return {
+      ...base,
+      lastErrorMessage: latestError?.message ?? null,
+      lastErrorAt: latestError?.at ?? null,
+    };
   });
 }
 
