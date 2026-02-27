@@ -101,17 +101,11 @@ export function buildAgodaUnsubscribeUrl(token: string): string {
 }
 
 export async function unsubscribeAgodaAccommodation(params: { accommodationId: string; email: string }): Promise<void> {
-  await prisma.$transaction([
-    prisma.agodaConsentLog.create({
-      data: {
-        email: params.email.trim().toLowerCase(),
-        type: 'opt_out',
-        accommodation: { connect: { id: params.accommodationId } },
-      },
-    }),
-    prisma.accommodation.update({
-      where: { id: params.accommodationId },
-      data: { isActive: false },
-    }),
-  ]);
+  await prisma.agodaConsentLog.create({
+    data: {
+      email: params.email.trim().toLowerCase(),
+      type: 'opt_out',
+      accommodation: { connect: { id: params.accommodationId } },
+    },
+  });
 }

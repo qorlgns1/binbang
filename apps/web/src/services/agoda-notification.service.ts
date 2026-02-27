@@ -82,9 +82,10 @@ function parseEventMeta(meta: unknown): {
   };
 }
 
-async function hasActiveConsent(userId: string, email: string): Promise<boolean> {
+async function hasActiveConsent(userId: string, email: string, accommodationId: string): Promise<boolean> {
   const latest = await prisma.agodaConsentLog.findFirst({
     where: {
+      accommodationId,
       OR: [{ userId }, { email: email.trim().toLowerCase() }],
     },
     orderBy: { createdAt: 'desc' },
@@ -305,7 +306,7 @@ export async function dispatchAgodaNotifications(params?: {
       continue;
     }
 
-    const consented = await hasActiveConsent(notification.accommodation.userId, recipientEmail);
+    const consented = await hasActiveConsent(notification.accommodation.userId, recipientEmail, notification.accommodation.id);
     if (!consented) {
       outcomes.push({ id: notification.id, kind: 'suppressed', reason: 'no active consent (opt_in required)' });
       continue;
