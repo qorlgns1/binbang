@@ -22,4 +22,4 @@ CREATE TABLE "agoda_hotels" (
 CREATE INDEX "agoda_hotels_cityId_idx" ON "agoda_hotels"("cityId");
 
 -- CreateIndex
-CREATE INDEX "agoda_hotels_countryCode_cityId_idx" ON "agoda_hotels"("countryCode", "cityId");
+CREATE INDEX "agoda_hotels_countryCode_idx" ON "agoda_hotels"("countryCode");
