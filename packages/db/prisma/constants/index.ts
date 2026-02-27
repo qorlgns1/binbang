@@ -570,7 +570,7 @@ export const SEED_FORM_SUBMISSIONS: SeedFormSubmission[] = (() => {
 
   const s1 = makeSubmissionPayload(
     SEED_ACCOMMODATIONS[0].url,
-    '2인 기준 파리 에어비앤비 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
+    '2인 기준 파리 숙소 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
   );
   const s2 = makeSubmissionPayload(SEED_ACCOMMODATIONS[1].url, '적당한 가격에 파리 숙소 2인 예약 가능하면 알려주세요');
   const s3 = makeSubmissionPayload(

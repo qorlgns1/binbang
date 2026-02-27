@@ -278,7 +278,7 @@ export default function NewAccommodationPage(): React.ReactElement {
           <Bell className='size-8 text-primary' />
         </div>
         <h1 className='mb-3 text-3xl font-semibold text-foreground'>알림 등록</h1>
-        <p className='text-muted-foreground'>빈방 또는 가격 하락 알림을 받을 Agoda 호텔을 검색해 등록하세요.</p>
+        <p className='text-muted-foreground'>빈방 또는 가격 하락 알림을 받을 숙소를 검색해 등록하세요.</p>
       </div>
 
       <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>

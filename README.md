@@ -1,6 +1,6 @@
 # 빈방
 
-> binbang — Airbnb · Agoda 빈방 모니터링 & 알림 서비스
+> binbang — 숙소 빈방 알림 서비스
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-green.svg)](https://nodejs.org/)
@@ -9,7 +9,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![CI](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml)
 
-Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내는 서비스입니다.
+숙소의 **빈방 발생·가격 하락을 주기적으로 모니터링**하고, 조건이 충족되면 **이메일로 알림**을 보내는 서비스입니다.
 
 > 인기 숙소의 취소 건을 잡기 위해 만들었습니다.
 

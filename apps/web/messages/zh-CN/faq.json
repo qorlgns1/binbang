@@ -16,9 +16,9 @@
   },
   "service": {
     "q1": "Binbang是什么服务？",
-    "a1": "Binbang自动监控住宿预订网站（Airbnb、Agoda等）的空房情况，当有空房时通过邮件和KakaoTalk发送提醒通知。",
+    "a1": "Binbang自动监控住宿预订网站的空房情况，当有空房时通过邮件和KakaoTalk发送提醒通知。",
     "q2": "支持哪些预订网站？",
-    "a2": "目前支持Airbnb和Agoda。我们计划未来添加更多平台。"
+    "a2": "目前支持Agoda。我们计划未来添加更多平台。"
   },
   "monitoring": {
     "q1": "多久检查一次空房？",
