@@ -1,7 +1,7 @@
 # User Flow — 신혼여행 빈방·가격 알림 (apps/web)
 
-> 최종 업데이트: 2026-02-26
-> 기준 플랫폼: `apps/web` (Sprint 3 기준)
+> 최종 업데이트: 2026-02-27
+> 기준 플랫폼: `apps/web` (Sprint 3 + W6 기준)
 
 ---
 
@@ -31,7 +31,7 @@
             │       └── 쿨다운 외 → 이벤트 생성
             │
             ▼
-        이메일 알림 발송
+        이메일 알림 발송 (+ 카카오 직접 메시지, 토큰 있는 경우)
             │
             ▼
         사용자 → Agoda 예약 페이지 (클릭아웃)
@@ -79,12 +79,12 @@
     │
     ├── 체크인 / 체크아웃 날짜 선택
     ├── 객실 수, 성인 수, 아동 수
-    ├── 알림 수신 동의 체크박스 ← 필수 (consent_logs 기록)
+    ├── 알림 수신 동의 체크박스 ← 필수
     │
     └── "알림 등록" 버튼
             │
             ▼
-        Accommodation 생성
+        Accommodation 생성 + agoda_consent_logs opt_in 기록 (트랜잭션)
         (platform=AGODA, platformId=호텔ID, url=null)
             │
             ▼
@@ -156,7 +156,9 @@
 
 ---
 
-### 1-5. 이메일 알림 수신
+### 1-5. 알림 수신 (이메일 + 카카오)
+
+알림은 이메일을 기본 채널로 발송하고, 사용자가 카카오 계정을 연동한 경우 카카오 직접 메시지도 병행 발송한다.
 
 ```text
 이메일 알림 — 가격 하락 예시
@@ -185,6 +187,12 @@
 
   [Agoda에서 확인하기]
 ```
+
+**카카오 직접 메시지 발송 조건**:
+
+- 사용자 계정에 `kakaoAccessToken`이 있는 경우 이메일과 병행 발송
+- 카카오 발송 실패는 이메일 발송 상태에 영향 없음 (fire-and-forget)
+- 토큰 만료 시 자동 갱신 후 재발송
 
 **클릭아웃 흐름**:
 
@@ -244,7 +252,7 @@ Vercel Cron (매 30분)
             │       │
             │       ▼
             │   이전 스냅샷과 비교
-            │       ├── 가격 하락 (-10% 이상)
+            │       ├── 가격 하락 (임계값 이상 — 숙소별 priceDropThreshold 우선, 없으면 전역 기본값 10%)
             │       │       ├── 쿨다운 체크 (6h)
             │       │       ├── 쿨다운 내 → 스킵
             │       │       └── 쿨다운 외 → alert_events (price_drop) 생성
@@ -257,14 +265,21 @@ Vercel Cron (매 30분)
             │
             └── agoda_poll_runs 기록 (성공/실패, latency)
 
-이메일 발송 (동일 cron 후처리 또는 별도 cron)
+알림 발송 (Vercel Cron 매 5분 — POST /api/internal/accommodations/notifications/dispatch)
     │
     ▼
-agoda_notifications (queued) 조회
+agoda_notifications (queued | failed, attempt < 5) 조회
+    │
+    ├── consent 체크 (agoda_consent_logs opt_in 최신 기록)
+    │       └── opt_in 없음 → suppressed 처리
+    │
+    ├── isActive 체크
+    │       └── 비활성 숙소 → suppressed 처리
     │
     ├── 이메일 발송 (Resend / console 모드)
-    ├── 성공 → agoda_notifications.status = sent
-    └── 실패 → 지수 백오프 재시도 (최대 4회)
+    │       ├── 카카오 토큰 있으면 병행 발송 (실패 무시)
+    │       ├── 성공 → agoda_notifications.status = sent
+    │       └── 실패 → 지수 백오프 재시도 (1 / 5 / 30 / 120 / 360분, 최대 5회)
 
 Vercel Cron (매일 03:00 UTC)
     │
@@ -315,6 +330,13 @@ Vercel Cron (매일 03:00 UTC)
 
 ## 5. API 엔드포인트 목록
 
+### 인증 API (미인증)
+
+| Method | 경로 | 설명 |
+|---|---|---|
+| `POST` | `/api/auth/signup` | 이메일 회원가입 |
+| `POST` | `/api/auth/credentials-login` | 이메일 로그인 (세션 쿠키 발급) |
+
 ### 사용자 API (인증 필요)
 
 | Method | 경로 | 설명 |
@@ -337,9 +359,10 @@ Vercel Cron (매일 03:00 UTC)
 
 | Method | 경로 | 설명 |
 |---|---|---|
-| `POST` | `/api/internal/accommodations/poll-due` | 폴링 대상 일괄 처리 |
+| `POST` | `/api/internal/accommodations/poll-due` | 폴링 대상 일괄 처리 (Cron 30분) |
 | `POST` | `/api/internal/accommodations/{id}/poll` | 특정 알림 등록 즉시 폴링 |
-| `POST` | `/api/internal/snapshots/cleanup` | 30일 이상 스냅샷 정리 (Cron) |
+| `POST` | `/api/internal/accommodations/notifications/dispatch` | 큐잉된 알림 발송 처리 (Cron 5분) |
+| `POST` | `/api/internal/snapshots/cleanup` | 30일 이상 스냅샷 정리 (Cron 매일 03:00) |
 
 ---
 
@@ -355,5 +378,8 @@ Vercel Cron (매일 03:00 UTC)
 | Agoda API `remainingRooms` 미제공 | lt_v1 API 특성. 호텔 결과 존재 여부로 vacancy 판단 |
 | vacancy 쿨다운 | 동일 offerKey 24시간 내 중복 방지 |
 | price_drop 쿨다운 | 동일 offerKey 6시간 내 중복 방지 |
-| 이메일 4회 연속 실패 | agoda_notifications.status = failed, 어드민 노출 |
+| 이메일 5회 연속 실패 | agoda_notifications.status = failed (attempt=5), 어드민 노출 |
 | 폴링 지연 (Stall) | /admin/ops에 목록 노출, 수동 확인 필요 |
+| 카카오 토큰 만료 | refresh token으로 자동 갱신 후 재발송, 갱신 실패 시 무시 |
+| 수신동의 미기록 | agoda_consent_logs opt_in 없으면 dispatch 시 suppressed 처리 |
+| priceDropThreshold 미설정 | 전역 기본값(`MOONCATCH_PRICE_DROP_THRESHOLD`, 기본 10%) 사용 |
