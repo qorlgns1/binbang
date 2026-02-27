@@ -116,7 +116,7 @@ export async function unsubscribeAgodaAccommodation(params: { accommodationId: s
       email: normalizedEmail,
       type: 'opt_out',
       userId: user?.id,
-      accommodation: { connect: { id: params.accommodationId } },
+      accommodationId: params.accommodationId,
     },
   });
 }
