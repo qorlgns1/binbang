@@ -93,6 +93,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const accommodation = await createAgodaApiAccommodation({
       userId: session.user.id,
+      userEmail: session.user.email ?? '',
       platformId: data.platformId,
       name: data.name,
       checkIn: new Date(data.checkIn),

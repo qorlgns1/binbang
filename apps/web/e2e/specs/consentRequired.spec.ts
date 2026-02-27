@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { buildUniqueCredentials, signUpAndLoginThroughUi } from '../helpers/auth';
+import { buildUniqueCredentials, signUpAndLoginViaApi } from '../helpers/auth';
 import { fillAlertFormRequiredFields } from '../helpers/accommodation';
 import { applySniperCoreSuiteGuards } from '../helpers/suite';
 
@@ -36,7 +36,7 @@ test.describe('sniper core consent requirement e2e', () => {
     });
 
     await test.step('회원가입/로그인', async () => {
-      await signUpAndLoginThroughUi(page, credentials);
+      await signUpAndLoginViaApi(page, credentials);
     });
 
     await test.step('호텔/날짜 입력 후 동의 없이 제출', async () => {

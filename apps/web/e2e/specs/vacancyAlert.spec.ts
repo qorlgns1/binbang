@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import { buildUniqueCredentials, signUpAndLoginThroughUi } from '../helpers/auth';
-import { registerAlertThroughUi } from '../helpers/accommodation';
+import { buildUniqueCredentials, signUpAndLoginViaApi } from '../helpers/auth';
+import { registerAlertViaApi } from '../helpers/accommodation';
 import { getNotificationHistory, pollAccommodationOnceById, setAgodaMockScenario } from '../helpers/polling';
-import { applySniperCoreSuiteGuards } from '../helpers/suite';
+import { applyAgodaMockGuard, applySniperCoreSuiteGuards } from '../helpers/suite';
 
 /**
  * Vacancy 알림 e2e:
@@ -16,6 +16,7 @@ import { applySniperCoreSuiteGuards } from '../helpers/suite';
 
 test.describe('vacancy alert e2e', () => {
   applySniperCoreSuiteGuards();
+  applyAgodaMockGuard();
 
   /**
    * vacancy 회귀 방지 시나리오:
@@ -29,39 +30,16 @@ test.describe('vacancy alert e2e', () => {
   test('vacancy 감지 핵심 회귀(베이스라인/재등장/쿨다운)를 만족한다', async ({ page }) => {
     const credentials = buildUniqueCredentials();
 
-    // 1. 회원가입 / 로그인
+    // 1. 회원가입 / 로그인 (API 직접 호출)
     await test.step('회원가입 / 로그인', async () => {
-      await signUpAndLoginThroughUi(page, credentials);
+      await signUpAndLoginViaApi(page, credentials);
     });
 
-    // 2. 호텔 검색 후 알림 등록
-    let selectedHotelName = '';
-    await test.step('알림 등록', async () => {
-      selectedHotelName = await registerAlertThroughUi(page);
-    });
-
-    // 3. 대시보드에서 숙소 상세 페이지로 이동해 accommodation ID 추출
+    // 2. 알림 등록 (API 직접 호출 — 호텔 검색 UI 생략)
     let accommodationId = '';
-    await test.step('숙소 상세 페이지로 이동', async () => {
-      await expect(
-        page.getByTestId('accommodation-row-name').filter({ hasText: selectedHotelName }).first(),
-      ).toBeVisible();
-
-      // 행 전체를 먼저 특정한 뒤, 행 내부의 detail 링크를 클릭한다.
-      // DOM 계층 상대경로 의존을 제거해 UI 구조 변경에 대한 내성을 높였다.
-      const targetRow = page
-        .getByTestId('accommodation-row')
-        .filter({
-          has: page.getByTestId('accommodation-row-name').filter({ hasText: selectedHotelName }).first(),
-        })
-        .first();
-      await expect(targetRow).toBeVisible();
-      await targetRow.getByTestId('accommodation-row-detail-link').click();
-
-      await page.waitForURL('**/accommodations/**');
-      const urlSegments = page.url().split('/accommodations/');
-      accommodationId = urlSegments[1]?.split('?')[0]?.split('/')[0] ?? '';
-      expect(accommodationId).toBeTruthy();
+    await test.step('알림 등록', async () => {
+      const result = await registerAlertViaApi(page);
+      accommodationId = result.accommodationId;
     });
 
     // 4. 첫 poll이 available이어도 hasBaseline=false 이므로 vacancy를 만들지 않아야 한다.
@@ -127,7 +105,8 @@ test.describe('vacancy alert e2e', () => {
       const vacancyNotifications = history.filter((item) => item.type === 'vacancy');
       expect(vacancyNotifications).toHaveLength(1);
 
-      await page.reload();
+      // UI에서도 알림 이력 섹션이 보이는지 확인
+      await page.goto(`/accommodations/${accommodationId}`);
       await expect(page.getByText('알림 이력')).toBeVisible();
       await expect(page.getByText('vacancy').first()).toBeVisible();
     });

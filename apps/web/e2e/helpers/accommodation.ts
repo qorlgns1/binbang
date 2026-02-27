@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type APIResponse, type Page } from '@playwright/test';
 
 const DEFAULT_HOTEL_QUERY_CANDIDATES = ['서울', '제주', '부산', 'seoul', 'hotel', 'jeju', 'busan'];
 
@@ -134,4 +134,95 @@ export async function registerAlertThroughUi(
   await page.waitForURL('**/dashboard');
 
   return selectedHotelName;
+}
+
+// ============================================================================
+// API 기반 헬퍼 (브라우저 UI 없이 알림 등록 — 폴링/알림 로직 테스트 전용)
+// ============================================================================
+
+interface HotelSearchItem {
+  hotelId: string;
+  name: string;
+}
+
+interface HotelSearchEnvelope {
+  hotels: HotelSearchItem[];
+}
+
+interface AccommodationApiResponse {
+  id: string;
+  name: string;
+}
+
+async function assertApiOk(response: APIResponse, context: string): Promise<void> {
+  if (response.ok()) return;
+  const body = await response.text().catch(() => '');
+  throw new Error(`${context} failed: status=${response.status()} body=${body}`);
+}
+
+/**
+ * API 호출로 알림을 등록하고 accommodation ID와 호텔명을 반환한다.
+ *
+ * UI 대비 차이:
+ * - 브라우저 렌더링 없이 `GET /api/hotels/search` + `POST /api/accommodations` 직접 호출
+ * - 호텔 검색 재시도 루프(최대 20s/후보어)를 제거해 속도를 대폭 개선
+ *
+ * 사용 대상:
+ * - 폴링/알림 로직을 검증하는 스펙 (vacancyAlert, dispatchPipeline)
+ *
+ * @param page Playwright page 인스턴스 (인증 세션이 수립된 상태)
+ * @param checkInOffsetDays 오늘 기준 체크인 날짜 오프셋 (기본 +3일)
+ * @param checkOutOffsetDays 오늘 기준 체크아웃 날짜 오프셋 (기본 +5일)
+ * @returns 생성된 accommodation의 ID와 호텔명
+ */
+export async function registerAlertViaApi(
+  page: Page,
+  checkInOffsetDays = 3,
+  checkOutOffsetDays = 5,
+): Promise<{ accommodationId: string; hotelName: string }> {
+  // 1. DB에서 호텔 검색 (후보어 순서대로 첫 결과 사용)
+  let platformId = '';
+  let hotelName = '';
+
+  for (const query of DEFAULT_HOTEL_QUERY_CANDIDATES) {
+    const searchResp = await page.request.get(`/api/hotels/search?q=${encodeURIComponent(query)}`);
+    if (!searchResp.ok()) continue;
+
+    const body = (await searchResp.json()) as HotelSearchEnvelope;
+    const first = body.hotels?.[0];
+    if (first) {
+      platformId = first.hotelId;
+      hotelName = first.name;
+      break;
+    }
+  }
+
+  if (!platformId) {
+    throw new Error(
+      '검색 가능한 Agoda 호텔이 없습니다. e2e 실행 전 실제 연결된 DB의 agoda_hotels 데이터를 확인해주세요.',
+    );
+  }
+
+  // 2. 알림 등록 (수신동의 포함)
+  const checkIn = formatDateFromToday(checkInOffsetDays);
+  const checkOut = formatDateFromToday(checkOutOffsetDays);
+
+  const createResp = await page.request.post('/api/accommodations', {
+    data: {
+      platformId,
+      name: hotelName,
+      checkIn,
+      checkOut,
+      adults: 2,
+      children: 0,
+      rooms: 1,
+      currency: 'KRW',
+      locale: 'ko',
+      consentOptIn: true,
+    },
+  });
+  await assertApiOk(createResp, 'registerAlertViaApi');
+
+  const created = (await createResp.json()) as AccommodationApiResponse;
+  return { accommodationId: created.id, hotelName: created.name };
 }

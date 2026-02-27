@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 
 import { cleanupSignedInE2eUser } from './auth';
+import { setAgodaMockScenario } from './polling';
 
 const ALLOWED_APP_ENVS = new Set(['local', 'development']);
 
@@ -41,4 +42,23 @@ export function applySniperCoreSuiteGuards(): void {
     !isAllowedSniperCoreAppEnv(process.env.APP_ENV),
     '이 e2e는 local/development 환경에서만 실행하도록 제한합니다.',
   );
+}
+
+/**
+ * Agoda mock을 사용하는 스펙에 추가하는 가드.
+ *
+ * `applySniperCoreSuiteGuards()`와 함께 호출한다.
+ *
+ * 적용 효과:
+ * - 각 테스트 시작 전 mock을 `available`로 초기화해 이전 테스트의 상태 오염을 방지한다.
+ * - 테스트가 중간에 실패해 mock이 `sold_out`으로 남아도 다음 테스트에 영향을 주지 않는다.
+ *
+ * 사용 위치:
+ * - `vacancyAlert`, `dispatchPipeline` 등 `setAgodaMockScenario`를 사용하는 스펙의
+ *   `test.describe(...)` 블록 내부에서 `applySniperCoreSuiteGuards()` 다음에 호출한다.
+ */
+export function applyAgodaMockGuard(): void {
+  test.beforeEach(async ({ page }) => {
+    await setAgodaMockScenario(page, 'available');
+  });
 }

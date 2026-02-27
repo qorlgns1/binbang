@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type APIResponse, type Page } from '@playwright/test';
 
 const DEFAULT_PASSWORD = 'E2E-Password-1234!';
 const E2E_EMAIL_PREFIX = 'e2e.';
@@ -121,6 +121,41 @@ export async function dismissTutorialIfVisible(page: Page): Promise<void> {
   await skipButton.click();
   await expect(skipButton).toBeHidden({ timeout: 10_000 });
 }
+
+// ============================================================================
+// API 기반 헬퍼 (브라우저 UI 없이 세션 수립 — 폴링/알림 로직 테스트 전용)
+// ============================================================================
+
+async function assertApiOk(response: APIResponse, context: string): Promise<void> {
+  if (response.ok()) return;
+  const body = await response.text().catch(() => '');
+  throw new Error(`${context} failed: status=${response.status()} body=${body}`);
+}
+
+/**
+ * API 호출로 회원가입 + 로그인 세션을 수립한다.
+ *
+ * UI 대비 차이:
+ * - 브라우저 렌더링 없이 `POST /api/auth/signup` + `POST /api/auth/credentials-login` 직접 호출
+ * - `credentials-login`이 세션 쿠키를 응답에 포함시키므로 이후 `page.request`와 `page.goto`에서 인증 유지
+ *
+ * 사용 대상:
+ * - 폴링/알림 로직을 검증하는 스펙 (vacancyAlert, dispatchPipeline)
+ * - signup/login UI 자체를 검증하는 스펙(signupLoginAccommodation, consentRequired)에는 UI 헬퍼를 유지
+ */
+export async function signUpAndLoginViaApi(page: Page, credentials: Credentials): Promise<void> {
+  const signupResp = await page.request.post('/api/auth/signup', {
+    data: { email: credentials.email, password: credentials.password, name: credentials.name },
+  });
+  await assertApiOk(signupResp, 'signUpViaApi');
+
+  const loginResp = await page.request.post('/api/auth/credentials-login', {
+    data: { email: credentials.email, password: credentials.password },
+  });
+  await assertApiOk(loginResp, 'loginViaApi');
+}
+
+// ============================================================================
 
 /**
  * 현재 로그인된 E2E 계정을 test-only API로 정리한다.

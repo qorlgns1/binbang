@@ -36,6 +36,18 @@ export interface NotificationHistoryItem {
   detectedAt: string;
 }
 
+/**
+ * dispatch API(`/api/internal/accommodations/notifications/dispatch`) 응답 타입.
+ */
+export interface DispatchMetrics {
+  now: string;
+  picked: number;
+  sent: number;
+  failed: number;
+  suppressed: number;
+  skippedNotDue: number;
+}
+
 interface PollApiEnvelope {
   ok: boolean;
   result: PollVacancyMetrics;
@@ -43,6 +55,11 @@ interface PollApiEnvelope {
 
 interface NotificationHistoryEnvelope {
   notifications: NotificationHistoryItem[];
+}
+
+interface DispatchApiEnvelope {
+  ok: boolean;
+  result: DispatchMetrics;
 }
 
 /**
@@ -105,4 +122,22 @@ export async function getNotificationHistory(page: Page, accommodationId: string
 
   const body = (await response.json()) as NotificationHistoryEnvelope;
   return body.notifications;
+}
+
+/**
+ * 내부 dispatch API를 호출해 큐잉된 알림을 발송 처리한다.
+ *
+ * 로컬 dev 환경에서는 `MOONCATCH_EMAIL_PROVIDER`가 미설정이면 console 프로바이더로
+ * 동작하므로 실제 이메일 발송 없이도 `sent` 카운트가 증가한다.
+ *
+ * @param page Playwright page 인스턴스
+ * @returns dispatch 처리 결과 지표
+ */
+export async function dispatchNotifications(page: Page): Promise<DispatchMetrics> {
+  const response = await page.request.post('/api/internal/accommodations/notifications/dispatch');
+  await assertOkResponse(response, 'dispatchNotifications');
+
+  const body = (await response.json()) as DispatchApiEnvelope;
+  expect(body.ok).toBeTruthy();
+  return body.result;
 }

@@ -16,6 +16,7 @@ export interface CreateAccommodationInput {
 
 export interface CreateAgodaApiAccommodationInput {
   userId: string;
+  userEmail: string;
   platformId: string; // Agoda hotelId
   name: string;
   checkIn: Date;
@@ -190,23 +191,40 @@ export async function createAccommodation(input: CreateAccommodationInput): Prom
 }
 
 export async function createAgodaApiAccommodation(input: CreateAgodaApiAccommodationInput): Promise<Accommodation> {
-  return prisma.accommodation.create({
-    data: {
-      userId: input.userId,
-      name: input.name,
-      platform: 'AGODA',
-      platformId: input.platformId,
-      url: null, // Agoda API 방식은 URL 불필요
-      checkIn: input.checkIn,
-      checkOut: input.checkOut,
-      adults: input.adults,
-      children: input.children,
-      rooms: input.rooms,
-      currency: input.currency,
-      locale: input.locale,
-    },
-    select: ACCOMMODATION_SELECT,
+  const [accommodation] = await prisma.$transaction(async (tx) => {
+    const created = await tx.accommodation.create({
+      data: {
+        userId: input.userId,
+        name: input.name,
+        platform: 'AGODA',
+        platformId: input.platformId,
+        url: null, // Agoda API 방식은 URL 불필요
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        adults: input.adults,
+        children: input.children,
+        rooms: input.rooms,
+        currency: input.currency,
+        locale: input.locale,
+      },
+      select: ACCOMMODATION_SELECT,
+    });
+
+    // 알림 등록 시 수신동의(opt_in)를 consent log에 기록한다.
+    // dispatch 시 hasActiveConsent() 체크에 사용된다.
+    await tx.agodaConsentLog.create({
+      data: {
+        userId: input.userId,
+        accommodationId: created.id,
+        email: input.userEmail.trim().toLowerCase(),
+        type: 'opt_in',
+      },
+    });
+
+    return [created];
   });
+
+  return accommodation;
 }
 
 export async function updateAccommodation(
