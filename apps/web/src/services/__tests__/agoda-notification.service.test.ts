@@ -119,6 +119,16 @@ describe('dispatchAgodaNotifications', () => {
     mockNotificationUpdate.mockResolvedValue({});
   });
 
+  // queued/failed 분리 조회로 인해 findMany가 2번 호출됨.
+  // 첫 번째: queued 쿼리, 두 번째: failed 쿼리.
+  function mockQueued(rows: ReturnType<typeof makeNotification>[]) {
+    mockNotificationFindMany.mockResolvedValueOnce(rows).mockResolvedValueOnce([]);
+  }
+
+  function mockFailed(rows: ReturnType<typeof makeNotification>[]) {
+    mockNotificationFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce(rows);
+  }
+
   it('빈 큐이면 모두 0 반환', async () => {
     mockNotificationFindMany.mockResolvedValue([]);
 
@@ -130,7 +140,7 @@ describe('dispatchAgodaNotifications', () => {
   });
 
   it('동의(opt_in) 있는 사용자 → 이메일 전송 후 sent', async () => {
-    mockNotificationFindMany.mockResolvedValue([makeNotification()]);
+    mockQueued([makeNotification()]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
     mockSendAgodaAlertEmail.mockResolvedValue(undefined);
 
@@ -147,7 +157,7 @@ describe('dispatchAgodaNotifications', () => {
   it('이메일 없는 사용자 → suppressed', async () => {
     const notification = makeNotification();
     (notification.accommodation.user as { email: string | null }).email = null;
-    mockNotificationFindMany.mockResolvedValue([notification]);
+    mockQueued([notification]);
 
     const result = await dispatchAgodaNotifications();
     expect(result.suppressed).toBe(1);
@@ -156,7 +166,7 @@ describe('dispatchAgodaNotifications', () => {
   });
 
   it('동의 없는 사용자 → suppressed', async () => {
-    mockNotificationFindMany.mockResolvedValue([makeNotification()]);
+    mockQueued([makeNotification()]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_out' });
 
     const result = await dispatchAgodaNotifications();
@@ -165,7 +175,7 @@ describe('dispatchAgodaNotifications', () => {
   });
 
   it('동의 기록 자체 없으면 → suppressed', async () => {
-    mockNotificationFindMany.mockResolvedValue([makeNotification()]);
+    mockQueued([makeNotification()]);
     mockConsentLogFindFirst.mockResolvedValue(null);
 
     const result = await dispatchAgodaNotifications();
@@ -175,7 +185,7 @@ describe('dispatchAgodaNotifications', () => {
   it('비활성 숙소 → suppressed', async () => {
     const notification = makeNotification();
     notification.accommodation.isActive = false;
-    mockNotificationFindMany.mockResolvedValue([notification]);
+    mockQueued([notification]);
 
     const result = await dispatchAgodaNotifications();
     expect(result.suppressed).toBe(1);
@@ -183,7 +193,7 @@ describe('dispatchAgodaNotifications', () => {
   });
 
   it('이메일 전송 실패 → failed 카운트 증가', async () => {
-    mockNotificationFindMany.mockResolvedValue([makeNotification()]);
+    mockQueued([makeNotification()]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
     mockSendAgodaAlertEmail.mockRejectedValue(new Error('SMTP 오류'));
 
@@ -208,7 +218,7 @@ describe('dispatchAgodaNotifications', () => {
         },
       },
     });
-    mockNotificationFindMany.mockResolvedValue([priceDropNotification]);
+    mockQueued([priceDropNotification]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
     mockSendAgodaAlertEmail.mockResolvedValue(undefined);
 
@@ -251,7 +261,7 @@ describe('dispatchAgodaNotifications', () => {
         },
       },
     });
-    mockNotificationFindMany.mockResolvedValue([englishNotification]);
+    mockQueued([englishNotification]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
     mockSendAgodaAlertEmail.mockResolvedValue(undefined);
 
@@ -285,7 +295,7 @@ describe('dispatchAgodaNotifications', () => {
       },
     });
 
-    mockNotificationFindMany.mockResolvedValue([notification]);
+    mockQueued([notification]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
     mockSendAgodaAlertEmail.mockResolvedValue(undefined);
 
@@ -300,7 +310,7 @@ describe('dispatchAgodaNotifications', () => {
 
   it('landingUrl가 없으면 platformId 기반 fallback URL을 사용한다', async () => {
     const notification = makeNotification();
-    mockNotificationFindMany.mockResolvedValue([notification]);
+    mockQueued([notification]);
     mockConsentLogFindFirst.mockResolvedValue({ type: 'opt_in' });
     mockSendAgodaAlertEmail.mockResolvedValue(undefined);
 
@@ -326,7 +336,7 @@ describe('dispatchAgodaNotifications', () => {
       attempt: 0,
       updatedAt: new Date(), // 방금 실패
     });
-    mockNotificationFindMany.mockResolvedValue([notification]);
+    mockFailed([notification]);
 
     const result = await dispatchAgodaNotifications();
     expect(result.skippedNotDue).toBe(1);
@@ -376,7 +386,7 @@ describe('dispatchAgodaNotifications', () => {
         },
       }),
     ];
-    mockNotificationFindMany.mockResolvedValue(notifications);
+    mockQueued(notifications);
     // 첫번째: opt_in, 세번째: opt_out
     mockConsentLogFindFirst.mockResolvedValueOnce({ type: 'opt_in' }).mockResolvedValueOnce({ type: 'opt_out' });
     mockSendAgodaAlertEmail.mockResolvedValue(undefined);

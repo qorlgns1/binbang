@@ -244,47 +244,61 @@ export async function dispatchAgodaNotifications(params?: {
   const maxAttempts = parsePositiveInteger(process.env.MOONCATCH_NOTIFICATION_MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
   const now = new Date();
 
-  const candidates = await prisma.agodaNotification.findMany({
-    where: {
-      channel: 'email',
-      OR: [{ status: 'queued' }, { status: 'failed' }],
-      attempt: { lt: maxAttempts },
+  const notificationSelect = {
+    id: true,
+    status: true,
+    attempt: true,
+    updatedAt: true,
+    accommodation: {
+      select: {
+        id: true,
+        name: true,
+        platformId: true,
+        isActive: true,
+        url: true,
+        userId: true,
+        checkIn: true,
+        checkOut: true,
+        adults: true,
+        rooms: true,
+        children: true,
+        locale: true,
+        platformMetadata: true,
+        user: { select: { email: true, kakaoAccessToken: true } },
+      },
     },
+    alertEvent: {
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        meta: true,
+      },
+    },
+  } as const;
+
+  // queued를 우선 처리하고, 남은 슬롯에만 failed를 채운다.
+  // queued + failed를 혼합 조회하면 backoff 중인 failed가 슬롯을 점유해
+  // 새로운 queued 알림이 영원히 선택되지 못하는 starvation이 발생한다.
+  const queued = await prisma.agodaNotification.findMany({
+    where: { channel: 'email', status: 'queued', attempt: { lt: maxAttempts } },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     take: limit,
-    select: {
-      id: true,
-      status: true,
-      attempt: true,
-      updatedAt: true,
-      accommodation: {
-        select: {
-          id: true,
-          name: true,
-          platformId: true,
-          isActive: true,
-          url: true,
-          userId: true,
-          checkIn: true,
-          checkOut: true,
-          adults: true,
-          rooms: true,
-          children: true,
-          locale: true,
-          platformMetadata: true,
-          user: { select: { email: true, kakaoAccessToken: true } },
-        },
-      },
-      alertEvent: {
-        select: {
-          id: true,
-          type: true,
-          status: true,
-          meta: true,
-        },
-      },
-    },
+    select: notificationSelect,
   });
+
+  const remaining = limit - queued.length;
+  const failedCandidates =
+    remaining > 0
+      ? await prisma.agodaNotification.findMany({
+          where: { channel: 'email', status: 'failed', attempt: { lt: maxAttempts } },
+          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+          take: remaining,
+          select: notificationSelect,
+        })
+      : [];
+
+  const candidates = [...queued, ...failedCandidates];
 
   const outcomes: NotificationOutcome[] = [];
   const baseUrl = process.env.NEXTAUTH_URL?.trim() || 'http://localhost:3000';

@@ -531,13 +531,18 @@ export async function findDueAccommodationIds(limit?: number): Promise<string[]>
   const dueThreshold = buildDueThreshold(now);
   const take = limit ?? parsePositiveInteger(process.env.MOONCATCH_DUE_POLL_LIMIT, DEFAULT_DUE_POLL_LIMIT);
 
+  // 체크인 당일 자정(UTC)을 기준으로 필터한다.
+  // new Date()를 쓰면 당일 오전 1시에 이미 "지난 날"로 판단해 폴링이 멈추는 버그가 생긴다.
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
+
   const dueAccommodations = await prisma.accommodation.findMany({
     where: {
       platform: 'AGODA',
       isActive: true,
       platformId: { not: null },
-      // 체크인이 이미 지난 것은 폴링 제외
-      checkIn: { gte: new Date() },
+      // 오늘 자정(UTC) 이후 체크인인 경우만 폴링 대상
+      checkIn: { gte: todayStart },
       OR: [{ lastPolledAt: null }, { lastPolledAt: { lte: dueThreshold } }],
     },
     orderBy: [{ lastPolledAt: 'asc' }, { updatedAt: 'asc' }],
