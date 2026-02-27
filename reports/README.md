@@ -1,4 +1,4 @@
-# MoonCatch Reports
+# Binbang Reports
 
 운영용 SQL 모음.
 

@@ -1,4 +1,4 @@
-# Mooncatch Runbook (Sprint 3 기준)
+# Binbang Runbook (Sprint 3 기준)
 
 > 최종 업데이트: 2026-02-26
 

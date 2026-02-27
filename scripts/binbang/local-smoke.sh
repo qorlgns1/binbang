@@ -6,18 +6,18 @@ set -euo pipefail
 #
 # 사전 조건:
 #   1. pnpm with-env pnpm dev  (또는 docker compose up) 으로 웹 서버 기동
-#   2. MOONCATCH_INTERNAL_API_TOKEN 환경 변수 설정 (apps/web/.env.local)
+#   2. BINBANG_INTERNAL_API_TOKEN 환경 변수 설정 (apps/web/.env.local)
 #   3. DB에 활성 AGODA 숙소가 1건 이상 존재
 #
 # Usage:
-#   ./scripts/mooncatch/local-smoke.sh
+#   ./scripts/binbang/local-smoke.sh
 #
 # 필요한 경우 PORT 또는 TOKEN 오버라이드:
-#   PORT=3000 TOKEN=my-token ./scripts/mooncatch/local-smoke.sh
+#   PORT=3000 TOKEN=my-token ./scripts/binbang/local-smoke.sh
 #
 # 카카오 + priceDropThreshold 까지 테스트하려면:
 #   ACCOMMODATION_ID=acc_xxx SESSION_COOKIE="next-auth.session-token=xxx" \
-#   ./scripts/mooncatch/local-smoke.sh
+#   ./scripts/binbang/local-smoke.sh
 
 PORT="${PORT:-3000}"
 BASE_URL="http://localhost:${PORT}"
@@ -26,19 +26,19 @@ BASE_URL="http://localhost:${PORT}"
 if [[ -z "${TOKEN:-}" ]]; then
   ENV_FILE="apps/web/.env.local"
   if [[ -f "$ENV_FILE" ]]; then
-    TOKEN=$(grep -E '^MOONCATCH_INTERNAL_API_TOKEN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' || true)
+    TOKEN=$(grep -E '^BINBANG_INTERNAL_API_TOKEN=' "$ENV_FILE" | cut -d= -f2- | tr -d '"' || true)
   fi
 fi
 
 if [[ -z "${TOKEN:-}" ]]; then
-  echo "[error] MOONCATCH_INTERNAL_API_TOKEN을 apps/web/.env.local에 설정하거나 TOKEN=xxx로 전달하세요"
+  echo "[error] BINBANG_INTERNAL_API_TOKEN을 apps/web/.env.local에 설정하거나 TOKEN=xxx로 전달하세요"
   exit 1
 fi
 
 ACCOMMODATION_ID="${ACCOMMODATION_ID:-}"
 SESSION_COOKIE="${SESSION_COOKIE:-}"
 
-echo "=== MoonCatch local smoke test ==="
+echo "=== Binbang local smoke test ==="
 echo "  BASE_URL : ${BASE_URL}"
 echo "  TOKEN    : ${TOKEN:0:6}..."
 echo ""
@@ -62,7 +62,7 @@ echo "  - status=${STATUS}"
 # ──────────────────────────────────────────────
 next_step "poll due accommodations"
 POLL_RESP=$(curl -fsS -X POST "${BASE_URL}/api/internal/accommodations/poll-due" \
-  -H "x-mooncatch-internal-token: ${TOKEN}" \
+  -H "x-binbang-internal-token: ${TOKEN}" \
   -H "content-type: application/json" \
   -d '{"limit":5,"concurrency":2}')
 DUE=$(echo "$POLL_RESP" | grep -o '"dueCount":[0-9]*' | head -1 | cut -d: -f2 || echo "?")
@@ -75,7 +75,7 @@ echo "  - due=${DUE}, success=${OK}, failed=${FAIL}"
 # ──────────────────────────────────────────────
 next_step "dispatch notifications"
 DISPATCH_RESP=$(curl -fsS -X POST "${BASE_URL}/api/internal/accommodations/notifications/dispatch" \
-  -H "x-mooncatch-internal-token: ${TOKEN}" \
+  -H "x-binbang-internal-token: ${TOKEN}" \
   -H "content-type: application/json" \
   -d '{"limit":20}')
 DISPATCHED=$(echo "$DISPATCH_RESP" | grep -o '"dispatched":[0-9]*' | head -1 | cut -d: -f2 || echo "?")

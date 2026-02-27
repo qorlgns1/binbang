@@ -1,4 +1,4 @@
--- W4-D5-T2: MoonCatch 일일 운영 리포트 SQL
+-- Binbang 일일 운영 리포트 SQL
 -- 기본 범위: 직전 1일(UTC day boundary 가정)
 
 WITH bounds AS (

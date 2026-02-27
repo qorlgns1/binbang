@@ -28,7 +28,7 @@
 ### 1. `settings/env.ts` — config 함수 추가
 
 ```ts
-export interface MooncatchCronConfig {
+export interface BinbangCronConfig {
   webInternalUrl: string;
   internalApiToken: string | null;
   pollDueCron: string;
@@ -37,7 +37,7 @@ export interface MooncatchCronConfig {
   timeoutMs: number;
 }
 
-export function getMooncatchCronConfig(): MooncatchCronConfig {
+export function getBinbangCronConfig(): BinbangCronConfig {
   return {
     webInternalUrl: process.env.BINBANG_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
     internalApiToken: readOptionalEnv(process.env.BINBANG_INTERNAL_API_TOKEN),
@@ -56,26 +56,26 @@ export function getMooncatchCronConfig(): MooncatchCronConfig {
 ### 2. `binbangCron.ts` — 신규 파일 (travelCachePrewarm.ts 패턴 동일)
 
 ```ts
-import { getMooncatchCronConfig } from './settings/env';
+import { getBinbangCronConfig } from './settings/env';
 
 // 인증 헤더: x-binbang-internal-token (poll-due/route.ts 참고)
 // 각 함수는 HTTP POST → ok 확인 → 실패 시 throw
 
-export async function triggerMooncatchPollDue(): Promise<{ polled: number }>
-export async function triggerMooncatchDispatch(): Promise<{ dispatched: number }>
-export async function triggerMooncatchSnapshotCleanup(): Promise<{ deleted: number }>
+export async function triggerBinbangPollDue(): Promise<{ polled: number }>
+export async function triggerBinbangDispatch(): Promise<{ dispatched: number }>
+export async function triggerBinbangSnapshotCleanup(): Promise<{ deleted: number }>
 ```
 
-공통 helper `callMooncatchInternal(path, config)` 로 중복 제거.
+공통 helper `callBinbangInternal(path)` 로 중복 제거.
 
 ---
 
 ### 3. `index.ts` — export 추가
 
 ```ts
-export { triggerMooncatchPollDue, triggerMooncatchDispatch, triggerMooncatchSnapshotCleanup } from './binbangCron';
-export type { MooncatchCronConfig } from './settings/env';
-export { getMooncatchCronConfig } from './settings/env';
+export { triggerBinbangPollDue, triggerBinbangDispatch, triggerBinbangSnapshotCleanup } from './binbangCron';
+export type { BinbangCronConfig } from './settings/env';
+export { getBinbangCronConfig } from './settings/env';
 ```
 
 ---
@@ -102,17 +102,17 @@ binbangSnapshotCleanupCron?: string;
 
 ```ts
 if (job.name === 'binbang-poll-due') {
-  const result = await triggerMooncatchPollDue();
+  const result = await triggerBinbangPollDue();
   console.log(`[binbang-poll-due] polled=${result.polled}`);
   return;
 }
 if (job.name === 'binbang-dispatch') {
-  const result = await triggerMooncatchDispatch();
+  const result = await triggerBinbangDispatch();
   console.log(`[binbang-dispatch] dispatched=${result.dispatched}`);
   return;
 }
 if (job.name === 'binbang-snapshot-cleanup') {
-  const result = await triggerMooncatchSnapshotCleanup();
+  const result = await triggerBinbangSnapshotCleanup();
   console.log(`[binbang-snapshot-cleanup] deleted=${result.deleted}`);
   return;
 }

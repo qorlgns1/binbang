@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage:
 #   BASE_URL=https://staging.example.com \
 #   INTERNAL_TOKEN=... \
-#   ./scripts/mooncatch/staging-smoke.sh
+#   ./scripts/binbang/staging-smoke.sh
 #
 # Optional:
 #   ACCOMMODATION_ID=acc_xxx          # priceDropThreshold PATCH 테스트 + clickout 테스트에 사용
@@ -46,7 +46,7 @@ echo "  - ok"
 # ──────────────────────────────────────────────
 next_step "poll due accommodations"
 POLL_RESP=$(curl -fsS -X POST "${BASE_URL%/}/api/internal/accommodations/poll-due" \
-  -H "x-mooncatch-internal-token: ${INTERNAL_TOKEN}" \
+  -H "x-binbang-internal-token: ${INTERNAL_TOKEN}" \
   -H "content-type: application/json" \
   -d '{"limit":20,"concurrency":3}')
 POLL_DUE=$(echo "$POLL_RESP" | grep -o '"dueCount":[0-9]*' | head -1 | cut -d: -f2 || echo "?")
@@ -58,7 +58,7 @@ echo "  - dueCount=${POLL_DUE}, successCount=${POLL_SUCCESS}"
 # ──────────────────────────────────────────────
 next_step "dispatch notifications (email + kakao)"
 DISPATCH_RESP=$(curl -fsS -X POST "${BASE_URL%/}/api/internal/accommodations/notifications/dispatch" \
-  -H "x-mooncatch-internal-token: ${INTERNAL_TOKEN}" \
+  -H "x-binbang-internal-token: ${INTERNAL_TOKEN}" \
   -H "content-type: application/json" \
   -d '{"limit":50}')
 DISPATCHED=$(echo "$DISPATCH_RESP" | grep -o '"dispatched":[0-9]*' | head -1 | cut -d: -f2 || echo "?")
