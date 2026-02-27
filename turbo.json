@@ -108,17 +108,6 @@
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 
-    "@workspace/mooncatch#build": {
-      "dependsOn": ["^build", "@workspace/db#db:generate"],
-      "passThroughEnv": ["NEXTAUTH_URL"],
-      "outputs": [".next/**", "!.next/cache/**"]
-    },
-
-    "@workspace/mooncatch#typecheck": {
-      "dependsOn": ["@workspace/mooncatch#build", "@workspace/db#db:generate"],
-      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
-    },
-
     "clean": {
       "cache": false
     }
