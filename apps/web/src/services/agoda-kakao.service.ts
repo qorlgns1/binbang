@@ -164,10 +164,7 @@ export interface SendBinbangKakaoParams {
  * - 카카오 토큰이 없거나 갱신 실패 시 skip (false 반환)
  * - 발송 실패 시 false 반환, 예외 미전파
  */
-export async function sendBinbangKakaoNotification(
-  userId: string,
-  params: SendBinbangKakaoParams,
-): Promise<boolean> {
+export async function sendBinbangKakaoNotification(userId: string, params: SendBinbangKakaoParams): Promise<boolean> {
   const accessToken = await getValidKakaoAccessToken(userId);
   if (!accessToken) {
     return false;

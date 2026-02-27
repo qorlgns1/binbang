@@ -569,8 +569,7 @@ export async function pollDueAccommodationsOnce(params?: {
   const dueIds = await findDueAccommodationIds(params?.limit);
   const concurrency = Math.max(
     1,
-    params?.concurrency ??
-      parsePositiveInteger(process.env.BINBANG_DUE_POLL_CONCURRENCY, DEFAULT_DUE_POLL_CONCURRENCY),
+    params?.concurrency ?? parsePositiveInteger(process.env.BINBANG_DUE_POLL_CONCURRENCY, DEFAULT_DUE_POLL_CONCURRENCY),
   );
 
   const results: PollAccommodationResult[] = [];
