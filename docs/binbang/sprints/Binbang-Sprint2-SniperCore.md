@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Sprint 1에서 `apps/binbang`에 구현된 백엔드 파이프라인(폴링 → 감지 → 알림)을 `**apps/web`으로 이식**하는 것이 Sprint 2의 핵심이다.
+Sprint 1에서 `apps/mooncatch`에 구현된 백엔드 파이프라인(폴링 → 감지 → 알림)을 `**apps/web`으로 이식**하는 것이 Sprint 2의 핵심이다.
 
 **핵심 아키텍처 결정 (2026-02-26)**:
 
@@ -61,7 +61,7 @@ Sprint 1에서 `apps/binbang`에 구현된 백엔드 파이프라인(폴링 → 
 
 | 항목     | Sprint 1 (binbang 독립) | Sprint 2 (web 통합)                              |
 | ------ | ----------------------- | ---------------------------------------------- |
-| 앱 위치   | `apps/binbang`        | `**apps/web`**                                 |
+| 앱 위치   | `apps/mooncatch`      | `**apps/web`**                                 |
 | 인증     | 이메일만 (로그인 없음)           | **NextAuth (Google/Kakao/이메일)**                |
 | 호텔 탐색  | propertyId 직접 입력        | `**agoda_hotels` DB 검색**                       |
 | 사용자 등록 | "Watch 등록"              | **"알림 등록" (기존 대시보드 UX)**                       |
@@ -250,7 +250,7 @@ Agoda 계약상 "Price Comparison 사이트"로 해석될 수 있는 UI 금지.
 
 ## Sprint 3 예상 범위 (참고)
 
-- **apps/binbang 퇴역**: `apps/web`으로 완전 전환, binbang 컨테이너 중단
+- **apps/mooncatch 퇴역**: `apps/web`으로 완전 전환, mooncatch 컨테이너 중단 (Sprint 3에서 완료)
 - **SEO**: 숙소 상세 50개 페이지 + sitemap/robots
 - **Awin 트랜잭션 동기화** (P1 이월)
 - **카카오 알림톡** 검토 (정보성 알림만 가능)

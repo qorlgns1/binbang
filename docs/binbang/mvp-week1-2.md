@@ -1,4 +1,4 @@
-# Mooncatch MVP Week1-2 Scope
+# Binbang MVP Week1-2 Scope (Sprint 1)
 
 > **[역사 문서]** Sprint 1 (2026-01 ~ 2026-02 초) 당시 작성된 기획/완료 기록입니다.
 > 이후 Sprint 2에서 `apps/web`으로 통합, Sprint 3에서 베타 안정화 완료.
@@ -31,7 +31,7 @@
 - 알림 지연: `event.detectedAt -> notification.sentAt`
 
 ## Sprint 1에서 완료한 항목
-- Mooncatch 전용 Prisma 모델 + SQL migration 추가
+- Sprint 1 전용 Prisma 모델 + SQL migration 추가 (Sprint 3에서 전체 제거)
 - Watch service + API route + 홈 화면 Watch 생성 폼 추가
 - Agoda Search client scaffold 추가(요청 제약/기본값/타임아웃 반영)
 - Agoda 응답 normalize + vacancy detector 구현 및 테스트 추가

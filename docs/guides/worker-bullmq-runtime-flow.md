@@ -490,19 +490,19 @@ BullMQ Repeat Job 트리거 (cron pattern 도달)
 cycleProcessor.ts에서 job.name 분기
     │
     ├── 'binbang-poll-due'
-    │       └── triggerMooncatchPollDue()
+    │       └── triggerBinbangPollDue()
     │               └── POST http://web:3000/api/internal/accommodations/poll-due
     │                       Header: x-binbang-internal-token: <token>
     │                       Response: { ok: true, result: { processedCount, ... } }
     │
     ├── 'binbang-dispatch'
-    │       └── triggerMooncatchDispatch()
+    │       └── triggerBinbangDispatch()
     │               └── POST http://web:3000/api/internal/accommodations/notifications/dispatch
     │                       Header: x-binbang-internal-token: <token>
     │                       Response: { ok: true, result: { sent, failed, ... } }
     │
     └── 'binbang-snapshot-cleanup'
-            └── triggerMooncatchSnapshotCleanup()
+            └── triggerBinbangSnapshotCleanup()
                     └── POST http://web:3000/api/internal/snapshots/cleanup
                             Header: x-binbang-internal-token: <token>
                             Response: { ok: true, result: { deletedPollRuns, ... } }
@@ -531,7 +531,7 @@ Worker → apps/web 호출 시 `x-binbang-internal-token` 헤더에 `BINBANG_INT
 - `packages/worker-shared/src/runtime/binbangCron.ts` — HTTP 호출 함수 3개
 - `packages/worker-shared/src/runtime/scheduler.ts` — `setupRepeatableJobs`에 3개 scheduler 등록
 - `apps/worker/src/cycleProcessor.ts` — job handler 3개
-- `packages/worker-shared/src/runtime/settings/env.ts` — `getMooncatchCronConfig()`
+- `packages/worker-shared/src/runtime/settings/env.ts` — `getBinbangCronConfig()`
 
 ---
 
