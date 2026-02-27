@@ -18,6 +18,7 @@ import {
   Heart,
   Hotel,
   LayoutDashboard,
+  Layers,
   Link2,
   ListFilter,
   LogOut,
@@ -63,6 +64,7 @@ const NAV_GROUPS: Array<{
     items: [
       { href: '/admin/accommodations', label: 'Accommodations', icon: Bell },
       { href: '/admin/ops', label: 'Ops Dashboard', icon: Activity },
+      { href: '/admin/bullmq', label: 'BullMQ', icon: Layers },
     ],
   },
   {

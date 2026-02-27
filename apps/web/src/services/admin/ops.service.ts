@@ -1,4 +1,6 @@
 import { prisma } from '@workspace/db';
+import { getHeartbeatStatus } from '../health.service';
+import { ensureRedisConnected, getRedisClient } from '@/lib/redis';
 
 const DEFAULT_LOOKBACK_DAYS = 7;
 const FALSE_POSITIVE_LIMIT = 20;
@@ -50,6 +52,17 @@ export interface AdminOpsSummary {
     count: number;
     items: StalledAccommodation[];
   };
+  schedulerHealth: SchedulerJobStatus[];
+}
+
+export interface SchedulerJobStatus {
+  key: string;
+  displayName: string;
+  status: 'ok' | 'failing';
+  latestFailure: {
+    failedReason: string;
+    failedAt: string;
+  } | null;
 }
 
 export type AdminOpsDiagnosticLevel = 'ok' | 'info' | 'warn' | 'error';
@@ -260,6 +273,8 @@ export async function getAdminOpsAccommodationDiagnostics(
     recentNotificationsRaw,
     oldestQueuedNotification,
     consentRows,
+    workerStatus,
+    pollDueBullmqFailure,
   ] = await Promise.all([
     prisma.agodaPollRun.groupBy({
       by: ['status'],
@@ -357,6 +372,8 @@ export async function getAdminOpsAccommodationDiagnostics(
         createdAt: true,
       },
     }),
+    getHeartbeatStatus(),
+    getLatestBullmqSchedulerFailure('repeat:binbang-poll-due-scheduler:'),
   ]);
 
   const recentPollRunIds = recentPollRunsRaw.map((run) => run.id);
@@ -450,13 +467,29 @@ export async function getAdminOpsAccommodationDiagnostics(
 
   if (recentPollRunsRaw.length === 0) {
     const createdAgoMinutes = Math.floor(createdAgoMs / 60_000);
-    if (createdAgoMs < noPollGraceMs) {
+    if (createdAgoMs < pollIntervalMs) {
       checks.push({
         level: 'info',
         code: 'first_poll_pending',
         message: '첫 poll 실행 대기 중입니다.',
         detail: `등록 후 약 ${createdAgoMinutes}분 경과했습니다. 설정 주기(약 ${pollIntervalMinutes}분) 기준 다음 스케줄에서 실행될 수 있습니다.`,
       });
+    } else if (createdAgoMs < noPollGraceMs) {
+      checks.push({
+        level: 'warn',
+        code: 'first_poll_overdue',
+        message: '첫 poll이 아직 실행되지 않았습니다.',
+        detail: `등록 후 약 ${createdAgoMinutes}분이 경과했습니다(설정 주기 ${pollIntervalMinutes}분 초과). worker 스케줄 또는 큐 상태를 확인하세요.`,
+      });
+      checks.push(buildWorkerStatusCheck(workerStatus));
+      if (pollDueBullmqFailure) {
+        checks.push({
+          level: 'error',
+          code: 'bullmq_poll_due_failed',
+          message: 'BullMQ binbang-poll-due 잡이 실패했습니다.',
+          detail: `${pollDueBullmqFailure.failedReason} (실패 시각: ${pollDueBullmqFailure.failedAt})`,
+        });
+      }
     } else {
       checks.push({
         level: 'warn',
@@ -464,6 +497,15 @@ export async function getAdminOpsAccommodationDiagnostics(
         message: 'poll 기록이 아직 없습니다.',
         detail: `등록 후 약 ${createdAgoMinutes}분이 지났습니다. worker 스케줄/큐 또는 내부 API 연결 상태를 확인하세요.`,
       });
+      checks.push(buildWorkerStatusCheck(workerStatus));
+      if (pollDueBullmqFailure) {
+        checks.push({
+          level: 'error',
+          code: 'bullmq_poll_due_failed',
+          message: 'BullMQ binbang-poll-due 잡이 실패했습니다.',
+          detail: `${pollDueBullmqFailure.failedReason} (실패 시각: ${pollDueBullmqFailure.failedAt})`,
+        });
+      }
     }
   } else if (latestPollRun?.status === 'failed') {
     checks.push({
@@ -659,6 +701,72 @@ async function fetchStalledAccommodations(now: Date): Promise<StalledAccommodati
   }));
 }
 
+const BULLMQ_PREFIX = 'bull';
+const CYCLE_QUEUE = 'accommodation-check-cycle';
+
+const MONITORED_SCHEDULERS: { prefix: string; displayName: string }[] = [
+  { prefix: 'repeat:binbang-poll-due-scheduler:', displayName: 'binbang-poll-due (30분 폴링)' },
+  { prefix: 'repeat:binbang-dispatch-scheduler:', displayName: 'binbang-dispatch (5분 알림 발송)' },
+];
+
+async function getLatestBullmqSchedulerFailure(
+  schedulerPrefix: string,
+): Promise<{ failedReason: string; failedAt: string } | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+  try {
+    const connected = await ensureRedisConnected(redis);
+    if (!connected) return null;
+    const failedSetKey = `${BULLMQ_PREFIX}:${CYCLE_QUEUE}:failed`;
+    const recentIds = await redis.zrevrange(failedSetKey, 0, 29);
+    const matchingId = recentIds.find((id) => id.startsWith(schedulerPrefix));
+    if (!matchingId) return null;
+    const job = await redis.hgetall(`${BULLMQ_PREFIX}:${CYCLE_QUEUE}:${matchingId}`);
+    if (!job.failedReason) return null;
+    return {
+      failedReason: job.failedReason,
+      failedAt: job.finishedOn ? new Date(parseInt(job.finishedOn, 10)).toISOString() : 'unknown',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getSchedulerHealth(): Promise<SchedulerJobStatus[]> {
+  return Promise.all(
+    MONITORED_SCHEDULERS.map(async ({ prefix, displayName }) => {
+      const latestFailure = await getLatestBullmqSchedulerFailure(prefix);
+      return {
+        key: prefix,
+        displayName,
+        status: latestFailure ? ('failing' as const) : ('ok' as const),
+        latestFailure,
+      };
+    }),
+  );
+}
+
+function buildWorkerStatusCheck(workerStatus: Awaited<ReturnType<typeof getHeartbeatStatus>>): AdminOpsDiagnosticCheck {
+  if (workerStatus.workerStatus === 'stopped') {
+    return {
+      level: 'error',
+      code: 'worker_stopped',
+      message: 'Worker가 응답하지 않습니다.',
+      detail: `마지막 하트비트로부터 약 ${Math.floor(workerStatus.minutesSinceLastHeartbeat)}분이 경과했습니다. Worker 프로세스를 확인하세요.`,
+    };
+  }
+  return {
+    level: 'warn',
+    code: 'worker_running_poll_missing',
+    message: 'Worker는 실행 중이나 poll이 발생하지 않았습니다.',
+    detail:
+      `마지막 하트비트 ${Math.floor(workerStatus.minutesSinceLastHeartbeat)}분 전. ` +
+      'BullMQ binbang-poll-due 스케줄러가 Redis에 등록돼 있는지, ' +
+      'BINBANG_WEB_INTERNAL_URL / BINBANG_INTERNAL_API_TOKEN 환경 변수가 올바른지, ' +
+      'Worker 로그에서 [binbang-poll-due] 에러를 확인하세요.',
+  };
+}
+
 function buildFalsePositiveReason(input: { eventStatus: string; notificationStatus: string | null }): string {
   if (input.eventStatus === 'rejected_verify_failed') {
     return 'verify 단계에서 빈방 신호가 기각됨';
@@ -677,64 +785,72 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
   const days = Number.isFinite(lookbackDays) ? Math.max(1, Math.floor(lookbackDays)) : DEFAULT_LOOKBACK_DAYS;
   const from = startOfLookback(now, days);
 
-  const [alertsTotal, alertsActive, alertsRegisteredInRange, notificationGroups, falsePositiveRows, stalledItems] =
-    await Promise.all([
-      prisma.accommodation.count({
-        where: { platform: 'AGODA' },
-      }),
-      prisma.accommodation.count({
-        where: { platform: 'AGODA', isActive: true },
-      }),
-      prisma.accommodation.count({
-        where: { platform: 'AGODA', createdAt: { gte: from } },
-      }),
-      prisma.agodaNotification.groupBy({
-        by: ['status'],
-        where: {
-          createdAt: { gte: from },
-        },
-        _count: {
-          _all: true,
-        },
-      }),
-      prisma.agodaAlertEvent.findMany({
-        where: {
-          detectedAt: { gte: from },
-          OR: [
-            { status: 'rejected_verify_failed' },
-            {
-              status: 'detected',
-              notifications: {
-                some: { status: { in: ['failed', 'suppressed'] } },
-              },
-            },
-          ],
-        },
-        orderBy: { detectedAt: 'desc' },
-        take: FALSE_POSITIVE_LIMIT,
-        select: {
-          id: true,
-          accommodationId: true,
-          detectedAt: true,
-          type: true,
-          status: true,
-          accommodation: {
-            select: {
-              id: true,
-              name: true,
+  const [
+    alertsTotal,
+    alertsActive,
+    alertsRegisteredInRange,
+    notificationGroups,
+    falsePositiveRows,
+    stalledItems,
+    schedulerHealth,
+  ] = await Promise.all([
+    prisma.accommodation.count({
+      where: { platform: 'AGODA' },
+    }),
+    prisma.accommodation.count({
+      where: { platform: 'AGODA', isActive: true },
+    }),
+    prisma.accommodation.count({
+      where: { platform: 'AGODA', createdAt: { gte: from } },
+    }),
+    prisma.agodaNotification.groupBy({
+      by: ['status'],
+      where: {
+        createdAt: { gte: from },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+    prisma.agodaAlertEvent.findMany({
+      where: {
+        detectedAt: { gte: from },
+        OR: [
+          { status: 'rejected_verify_failed' },
+          {
+            status: 'detected',
+            notifications: {
+              some: { status: { in: ['failed', 'suppressed'] } },
             },
           },
-          notifications: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-            select: {
-              status: true,
-            },
+        ],
+      },
+      orderBy: { detectedAt: 'desc' },
+      take: FALSE_POSITIVE_LIMIT,
+      select: {
+        id: true,
+        accommodationId: true,
+        detectedAt: true,
+        type: true,
+        status: true,
+        accommodation: {
+          select: {
+            id: true,
+            name: true,
           },
         },
-      }),
-      fetchStalledAccommodations(now),
-    ]);
+        notifications: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            status: true,
+          },
+        },
+      },
+    }),
+    fetchStalledAccommodations(now),
+    getSchedulerHealth(),
+  ]);
 
   const counts = countByStatus(notificationGroups);
 
@@ -784,5 +900,6 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
       count: stalledItems.length,
       items: stalledItems,
     },
+    schedulerHealth,
   };
 }

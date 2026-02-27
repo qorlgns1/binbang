@@ -7,6 +7,7 @@ import {
   getAdminOpsAccommodationDiagnostics,
   getAdminOpsSummary,
   type AdminOpsDiagnosticLevel,
+  type SchedulerJobStatus,
 } from '@/services/admin/ops.service';
 
 function formatDateTime(value: string): string {
@@ -317,6 +318,8 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
         </CardContent>
       </Card>
 
+      <SchedulerHealthCard jobs={summary.schedulerHealth} />
+
       <section className='grid gap-4 md:grid-cols-3'>
         <Card>
           <CardHeader className='pb-3'>
@@ -452,5 +455,37 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+function SchedulerHealthCard({ jobs }: { jobs: SchedulerJobStatus[] }) {
+  const hasFailure = jobs.some((j) => j.status === 'failing');
+  return (
+    <Card className={hasFailure ? 'border-destructive' : ''}>
+      <CardHeader className='pb-3'>
+        <CardTitle className='text-base'>BullMQ 스케줄러 상태</CardTitle>
+        <CardDescription>주요 반복 잡의 최근 실패 여부를 확인합니다.</CardDescription>
+      </CardHeader>
+      <CardContent className='space-y-3'>
+        {jobs.map((job) => (
+          <div key={job.key} className='space-y-1'>
+            <div className='flex items-center gap-2 text-sm'>
+              <Badge variant={job.status === 'failing' ? 'destructive' : 'default'}>
+                {job.status === 'failing' ? 'FAILING' : 'OK'}
+              </Badge>
+              <span className='font-mono text-xs'>{job.displayName}</span>
+            </div>
+            {job.latestFailure && (
+              <p className='rounded bg-muted px-2 py-1 font-mono text-xs text-destructive'>
+                {job.latestFailure.failedReason}
+                <span className='ml-2 text-muted-foreground'>
+                  ({new Date(job.latestFailure.failedAt).toLocaleString('ko-KR', { hour12: false })})
+                </span>
+              </p>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
