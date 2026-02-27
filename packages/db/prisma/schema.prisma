@@ -1235,26 +1235,3 @@ model AffiliateAuditPurgeRun {
   @@index([status, createdAt])
   @@map("affiliate_audit_purge_runs")
 }
-
-// Agoda 전체 호텔 목록 (CSV 임포트)
-// hotel_name: 영문 원본, hotel_translated_name: 한국어 번역
-model AgodaHotel {
-  hotelId             Int     @id           // hotel_id (Agoda Hotel List Search 연동)
-  hotelName           String                // hotel_name (영문)
-  hotelTranslatedName String?               // hotel_translated_name (한국어)
-  cityId              Int                   // city_id (City Search 연동)
-  cityName            String?               // city
-  countryName         String?               // country
-  countryCode         String?               // countryisocode (ISO 3166-1 alpha-2)
-  starRating          Float?                // star_rating
-  ratingAverage       Float?                // rating_average
-  reviewCount         Int?                  // number_of_reviews
-  latitude            Float?
-  longitude           Float?
-  photoUrl            String?               // photo1 (대표 이미지)
-  url                 String?               // 아고다 예약 URL
-
-  @@index([cityId])
-  @@index([countryCode, cityId])  // countryCode 단독도 leftmost prefix로 커버
-  @@map("agoda_hotels")
-}
