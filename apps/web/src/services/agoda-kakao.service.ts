@@ -126,7 +126,7 @@ function buildMoonCatchKakaoTemplate(params: MoonCatchKakaoParams): KakaoMemoTem
 
     return {
       object_type: 'text',
-      text: `💸 [빈방 알림] 가격 하락 감지\n\n🏨 ${accommodationName}\n📅 ${checkIn} ~ ${checkOut}\n\n${dropLine}현재 가격: ${priceText}\n\n매진 전에 확인하세요!`,
+      text: `💸 [가격 하락 알림] 가격 하락 감지\n\n🏨 ${accommodationName}\n📅 ${checkIn} ~ ${checkOut}\n\n${dropLine}현재 가격: ${priceText}\n\n매진 전에 확인하세요!`,
       link,
       button_title: '예약 페이지 이동',
     };

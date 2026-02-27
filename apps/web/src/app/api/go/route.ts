@@ -7,7 +7,7 @@ const ALLOWED_REDIRECT_HOSTS = new Set(['www.agoda.com', 'agoda.com', 'secure.ag
 function isSafeRedirectUrl(raw: string): boolean {
   try {
     const parsed = new URL(raw);
-    return (parsed.protocol === 'https:' || parsed.protocol === 'http:') && ALLOWED_REDIRECT_HOSTS.has(parsed.hostname);
+    return parsed.protocol === 'https:' && ALLOWED_REDIRECT_HOSTS.has(parsed.hostname);
   } catch {
     return false;
   }
