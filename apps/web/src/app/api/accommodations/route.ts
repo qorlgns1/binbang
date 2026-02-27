@@ -16,7 +16,7 @@ import {
 // URL 스크래핑 방식은 /api/admin/accommodations (어드민 전용)
 const createAgodaAlertSchema = z
   .object({
-    platformId: z.string().min(1, '호텔을 선택해주세요'),
+    platformId: z.string().regex(/^\d+$/, '유효한 호텔 ID가 아닙니다'),
     name: z.string().min(1, '호텔명을 입력해주세요'),
     checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
     checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),

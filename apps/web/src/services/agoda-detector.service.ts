@@ -86,7 +86,7 @@ function shouldEmitPriceDrop(
   if (previousPrice <= 0 || currentPrice <= 0) return { emit: false, dropRatio: 0 };
 
   const dropRatio = (previousPrice - currentPrice) / previousPrice;
-  if (dropRatio >= minDropRatio) return { emit: true, dropRatio };
+  if (dropRatio > 0 && dropRatio >= minDropRatio) return { emit: true, dropRatio };
   return { emit: false, dropRatio };
 }
 
