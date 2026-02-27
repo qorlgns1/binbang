@@ -3,16 +3,6 @@ import { NextResponse } from 'next/server';
 import { pollDueAccommodationsOnce } from '@/services/agoda-polling.service';
 
 function authorizeInternalRequest(req: Request): { ok: boolean; message?: string; status?: number } {
-  // Vercel Cron 인증 (Authorization: Bearer <CRON_SECRET>)
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  if (cronSecret) {
-    const authHeader = req.headers.get('authorization')?.trim();
-    if (authHeader === `Bearer ${cronSecret}`) {
-      return { ok: true };
-    }
-  }
-
-  // 내부 토큰 인증
   const internalToken = process.env.MOONCATCH_INTERNAL_API_TOKEN?.trim();
   if (!internalToken) {
     if (process.env.NODE_ENV === 'production') {

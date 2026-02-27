@@ -142,7 +142,7 @@ model Accommodation {
 | Day 13 | W3-D3-T1 | 호텔 검색 UI                   | 검색창 + 결과 리스트 컴포넌트                                  | 검색어 입력 → 호텔 카드 → "알림 등록" 버튼                       | 5h  |
 | Day 13 | W3-D3-T2 | 대시보드 데이터 통합                | `useAccommodationsQuery` Agoda API 방식 포함           | 대시보드에서 알림 등록 + 스크래핑 항목 함께 표시                      | 3h  |
 | Day 14 | W3-D4-T1 | URL 등록 → 어드민 격리            | 기존 URL 등록 UI를 `/admin/accommodations/new`로 이동      | 일반 사용자 라우트에서 URL 등록 폼 제거                          | 3h  |
-| Day 14 | W3-D4-T2 | Vercel Cron 설정             | `vercel.json` cron 정의                              | 30분마다 `/api/internal/accommodations/poll-due` 호출  | 1h  |
+| Day 14 | W3-D4-T2 | Cron 설정                    | `vercel.json` cron 정의 (→ 이후 BullMQ Repeat Job으로 이관) | 30분마다 `/api/internal/accommodations/poll-due` 호출  | 1h  |
 | Day 15 | W3-D5-T1 | remainingRooms Agoda 계정 확인 | Agoda 계정 매니저 서면 질의 또는 API 실험                       | `rateDetail` extra 포함 시 `remainingRooms` 반환 여부 확인 | 2h  |
 | Day 15 | W3-D5-T2 | 통합 테스트                     | 알림 등록 → 폴링 → 이메일 발송 e2e                            | console 이메일 모드로 end-to-end 1건 성공                  | 3h  |
 

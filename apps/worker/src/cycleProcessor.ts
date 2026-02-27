@@ -12,6 +12,9 @@ import {
   refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
   runAffiliateAuditPurge,
+  triggerMooncatchDispatch,
+  triggerMooncatchPollDue,
+  triggerMooncatchSnapshotCleanup,
   triggerTravelCachePrewarm,
   updateHeartbeat,
   type ActiveAccommodation,
@@ -52,6 +55,24 @@ export function createCycleProcessor(checkQueue: Queue, redisConnection: RedisLi
       console.log(
         `[travel-cache-prewarm] durationMs=${result.durationMs} places(warmed=${result.places.warmed}, skipped=${result.places.skipped}, failed=${result.places.failed}) weather(warmed=${result.weather.warmed}, skipped=${result.weather.skipped}, failed=${result.weather.failed}) exchange(warmed=${result.exchangeRate.warmed}, skipped=${result.exchangeRate.skipped}, failed=${result.exchangeRate.failed})`,
       );
+      return;
+    }
+
+    if (job.name === 'mooncatch-poll-due') {
+      const result = await triggerMooncatchPollDue();
+      console.log(`[mooncatch-poll-due] polled=${result.polled}`);
+      return;
+    }
+
+    if (job.name === 'mooncatch-dispatch') {
+      const result = await triggerMooncatchDispatch();
+      console.log(`[mooncatch-dispatch] dispatched=${result.dispatched}`);
+      return;
+    }
+
+    if (job.name === 'mooncatch-snapshot-cleanup') {
+      const result = await triggerMooncatchSnapshotCleanup();
+      console.log(`[mooncatch-snapshot-cleanup] deleted=${result.deleted}`);
       return;
     }
 

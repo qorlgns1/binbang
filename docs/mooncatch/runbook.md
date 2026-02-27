@@ -35,19 +35,19 @@
 2. 단일 숙소 즉시 폴링: `POST /api/internal/accommodations/{id}/poll`
 3. Due 숙소 배치 폴링: `POST /api/internal/accommodations/poll-due`
 4. 알림 큐 발송: 폴링 cron 내 후처리 또는 별도 dispatch
-5. 스냅샷 정리: `POST /api/internal/snapshots/cleanup` (Vercel Cron 매일 03:00 UTC 자동 실행)
+5. 스냅샷 정리: `POST /api/internal/snapshots/cleanup` (BullMQ Repeat Job 매일 03:00 UTC 자동 실행)
 
 내부 API 토큰 사용 예시:
 ```bash
 # Due 숙소 배치 폴링
 curl -X POST "https://yourdomain.com/api/internal/accommodations/poll-due" \
-  -H "x-internal-token: $MOONCATCH_INTERNAL_API_TOKEN" \
+  -H "x-mooncatch-internal-token: $MOONCATCH_INTERNAL_API_TOKEN" \
   -H "content-type: application/json" \
   -d '{"limit":20,"concurrency":3}'
 
 # 스냅샷 수동 정리
 curl -X POST "https://yourdomain.com/api/internal/snapshots/cleanup" \
-  -H "x-internal-token: $MOONCATCH_INTERNAL_API_TOKEN"
+  -H "x-mooncatch-internal-token: $MOONCATCH_INTERNAL_API_TOKEN"
 ```
 
 ---
@@ -73,7 +73,7 @@ curl -X POST "https://yourdomain.com/api/internal/snapshots/cleanup" \
 
 ## 4) 롤백
 
-1. 스케줄러 호출 중단 (Vercel Cron 비활성화)
+1. 스케줄러 호출 중단 (Worker BullMQ scheduler 제거 또는 Worker 중단)
 2. 내부 API 호출 중단
 3. 웹 앱 이전 안정 버전으로 롤백
 4. DB는 additive migration 기준이므로 데이터 유지

@@ -181,7 +181,7 @@ graph LR
   ACC --> DB[(PostgreSQL)]
 
   subgraph "폴링 파이프라인 (apps/web internal API)"
-    CRON[Vercel Cron<br/>매 30분] --> POLL[POST /api/internal/accommodations/poll-due]
+    CRON[BullMQ Repeat Job<br/>매 30분] --> POLL[POST /api/internal/accommodations/poll-due]
     POLL --> SVC[폴링 서비스]
     SVC --> AGODA[Agoda Search API]
     SVC --> DB
@@ -193,7 +193,7 @@ graph LR
   DB --> ADMIN[관리자 페이지]
 ```
 
-- **Vercel Cron**: `vercel.json`에 cron 정의 → 별도 Redis/BullMQ/Worker 불필요
+- **BullMQ Repeat Job**: Worker의 scheduler에 등록 → `mooncatch-poll-due`, `mooncatch-dispatch`, `mooncatch-snapshot-cleanup`
 - **apps/worker**: 브라우저 스크래핑 전용 (Agoda 폴링과 무관)
 - **내부 API 인증**: `x-internal-token` 헤더로 외부 호출 차단
 
@@ -309,7 +309,7 @@ sequenceDiagram
 | 단계 | 기간 | 핵심 작업 | 상태 |
 |---|---|---|---|
 | Sprint 1 | 2026-02 | 폴링·스냅샷·변화 감지·알림 파이프라인 (mooncatch) | ✅ 완료 |
-| Sprint 2 | 2026-03 | apps/web 통합 — 호텔 검색 UI, 알림 등록, 내부 API 이식, Vercel Cron | 🔄 진행 중 |
+| Sprint 2 | 2026-03 | apps/web 통합 — 호텔 검색 UI, 알림 등록, 내부 API 이식 | ✅ 완료 |
 | Sprint 3 | 2026-04 | SEO 페이지 템플릿, 가격 히스토리, 수신동의/수신거부, 베타 런칭 | 📋 예정 |
 | Phase 2 | 2026-05+ | 프리미엄 과금, 다중 채널, 취소 확률 예측, 커뮤니티 마케팅 | 📋 예정 |
 

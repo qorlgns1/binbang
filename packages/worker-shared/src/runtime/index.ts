@@ -7,12 +7,14 @@ export {
   getEnvNumber,
   getAffiliateAuditPurgeConfig,
   getTravelCachePrewarmConfig,
+  getMooncatchCronConfig,
 } from './settings/env';
 export type { SystemSettingsCache } from './settings';
 export type {
   AffiliateAuditPurgeConfig,
   AffiliateAuditTelegramConfig,
   TravelCachePrewarmConfig,
+  MooncatchCronConfig,
 } from './settings/env';
 
 // Redis & Queue
@@ -51,6 +53,11 @@ export type {
 } from './affiliateAuditPurge';
 export { triggerTravelCachePrewarm } from './travelCachePrewarm';
 export type { TriggerTravelCachePrewarmResult, TravelCachePrewarmMetrics } from './travelCachePrewarm';
+export {
+  triggerMooncatchPollDue,
+  triggerMooncatchDispatch,
+  triggerMooncatchSnapshotCleanup,
+} from './mooncatchCron';
 
 // Heartbeat
 export {

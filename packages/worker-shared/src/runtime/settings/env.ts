@@ -167,3 +167,23 @@ export function getTravelCachePrewarmConfig(): TravelCachePrewarmConfig {
     cronToken: readOptionalEnv(process.env.TRAVEL_INTERNAL_CRON_TOKEN),
   };
 }
+
+export interface MooncatchCronConfig {
+  webInternalUrl: string;
+  internalApiToken: string | null;
+  pollDueCron: string;
+  dispatchCron: string;
+  snapshotCleanupCron: string;
+  timeoutMs: number;
+}
+
+export function getMooncatchCronConfig(): MooncatchCronConfig {
+  return {
+    webInternalUrl: process.env.MOONCATCH_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
+    internalApiToken: readOptionalEnv(process.env.MOONCATCH_INTERNAL_API_TOKEN),
+    pollDueCron: process.env.MOONCATCH_POLL_DUE_CRON?.trim() || '*/30 * * * *',
+    dispatchCron: process.env.MOONCATCH_DISPATCH_CRON?.trim() || '*/5 * * * *',
+    snapshotCleanupCron: process.env.MOONCATCH_SNAPSHOT_CLEANUP_CRON?.trim() || '0 3 * * *',
+    timeoutMs: parsePositiveInt(process.env.MOONCATCH_CRON_TIMEOUT_MS, 120_000),
+  };
+}

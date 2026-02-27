@@ -116,7 +116,7 @@ agodaAlertEvent.findFirst({
 |---|---|---|
 | T1 | `ops.service.ts` — `fetchStalledAccommodations()` + `AdminOpsSummary.stalled` | ✅ |
 | T2 | `admin/ops/page.tsx` — 스톨 섹션 (이름 / 마지막 폴링 / 경과 시간) | ✅ |
-| T3 | `api/internal/snapshots/cleanup/route.ts` + `vercel.json` 크론 (`0 3 * * *`) | ✅ |
+| T3 | `api/internal/snapshots/cleanup/route.ts` + BullMQ Repeat Job (`0 3 * * *`) | ✅ |
 
 **스톨 기준**: `lastPolledAt < (now - 2 × POLL_INTERVAL)` 또는 `lastPolledAt=null AND createdAt < (now - POLL_INTERVAL)`
 

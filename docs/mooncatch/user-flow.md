@@ -227,10 +227,10 @@ GET /api/unsubscribe?token={signedToken}
 
 ---
 
-## 2. 시스템 자동 플로우 (Cron → 폴링 → 알림)
+## 2. 시스템 자동 플로우 (BullMQ Repeat Job → 폴링 → 알림)
 
 ```text
-Vercel Cron (매 30분)
+BullMQ Repeat Job (매 30분)
     │
     └── POST /api/internal/accommodations/poll-due
             {x-internal-token: ...}
@@ -266,7 +266,7 @@ Vercel Cron (매 30분)
             │
             └── agoda_poll_runs 기록 (성공/실패, latency)
 
-알림 발송 (Vercel Cron 매 5분 — POST /api/internal/accommodations/notifications/dispatch)
+알림 발송 (BullMQ Repeat Job 매 5분 — POST /api/internal/accommodations/notifications/dispatch)
     │
     ▼
 agoda_notifications 조회 (queued 우선, 남은 슬롯에 failed 추가 — attempt < 5)
@@ -283,7 +283,7 @@ agoda_notifications 조회 (queued 우선, 남은 슬롯에 failed 추가 — at
     │       ├── 성공 → agoda_notifications.status = sent
     │       └── 실패 → 지수 백오프 재시도 (1 / 5 / 30 / 120 / 360분, 최대 5회)
 
-Vercel Cron (매일 03:00 UTC)
+BullMQ Repeat Job (매일 03:00 UTC)
     │
     └── POST /api/internal/snapshots/cleanup
             │

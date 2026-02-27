@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { removeRepeatableJobs, setupRepeatableJobs } from './scheduler';
 
 describe('runtime/scheduler', (): void => {
-  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup/affiliate/cache-prewarm schedulers', async (): Promise<void> => {
+  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup/affiliate/cache-prewarm/mooncatch schedulers', async (): Promise<void> => {
     const upsertJobScheduler = vi.fn().mockResolvedValue(undefined);
     const queue = {
       upsertJobScheduler,
@@ -11,7 +11,7 @@ describe('runtime/scheduler', (): void => {
 
     await setupRepeatableJobs(queue as never, '*/30 * * * *');
 
-    expect(upsertJobScheduler).toHaveBeenCalledTimes(9);
+    expect(upsertJobScheduler).toHaveBeenCalledTimes(12);
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       1,
       'cycle-scheduler',
@@ -102,6 +102,24 @@ describe('runtime/scheduler', (): void => {
         },
       },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      10,
+      'mooncatch-poll-due-scheduler',
+      { pattern: '*/30 * * * *' },
+      { name: 'mooncatch-poll-due', data: { triggeredAt: expect.any(String) } },
+    );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      11,
+      'mooncatch-dispatch-scheduler',
+      { pattern: '*/5 * * * *' },
+      { name: 'mooncatch-dispatch', data: { triggeredAt: expect.any(String) } },
+    );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      12,
+      'mooncatch-snapshot-cleanup-scheduler',
+      { pattern: '0 3 * * *' },
+      { name: 'mooncatch-snapshot-cleanup', data: { triggeredAt: expect.any(String) } },
+    );
   });
 
   it('uses admin-configured public snapshot schedule and window days when provided', async (): Promise<void> => {
@@ -185,6 +203,24 @@ describe('runtime/scheduler', (): void => {
         },
       },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      10,
+      'mooncatch-poll-due-scheduler',
+      { pattern: '*/30 * * * *' },
+      { name: 'mooncatch-poll-due', data: { triggeredAt: expect.any(String) } },
+    );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      11,
+      'mooncatch-dispatch-scheduler',
+      { pattern: '*/5 * * * *' },
+      { name: 'mooncatch-dispatch', data: { triggeredAt: expect.any(String) } },
+    );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      12,
+      'mooncatch-snapshot-cleanup-scheduler',
+      { pattern: '0 3 * * *' },
+      { name: 'mooncatch-snapshot-cleanup', data: { triggeredAt: expect.any(String) } },
+    );
   });
 
   it('removes all repeatable schedulers', async (): Promise<void> => {
@@ -195,7 +231,7 @@ describe('runtime/scheduler', (): void => {
 
     await removeRepeatableJobs(queue as never);
 
-    expect(removeJobScheduler).toHaveBeenCalledTimes(9);
+    expect(removeJobScheduler).toHaveBeenCalledTimes(12);
     expect(removeJobScheduler).toHaveBeenNthCalledWith(1, 'cycle-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(2, 'notification-retry-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(3, 'landing-event-pii-retention-scheduler');
@@ -205,5 +241,8 @@ describe('runtime/scheduler', (): void => {
     expect(removeJobScheduler).toHaveBeenNthCalledWith(7, 'affiliate-audit-purge-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(8, 'affiliate-audit-cron-watchdog-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(9, 'travel-cache-prewarm-scheduler');
+    expect(removeJobScheduler).toHaveBeenNthCalledWith(10, 'mooncatch-poll-due-scheduler');
+    expect(removeJobScheduler).toHaveBeenNthCalledWith(11, 'mooncatch-dispatch-scheduler');
+    expect(removeJobScheduler).toHaveBeenNthCalledWith(12, 'mooncatch-snapshot-cleanup-scheduler');
   });
 });
