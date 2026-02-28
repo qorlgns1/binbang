@@ -111,6 +111,13 @@ function extractClickoutUrlFromEmail(text: string): URL {
   return new URL(rawUrl as string);
 }
 
+function extractSqlTemplate(callArg: unknown): string {
+  if (Array.isArray(callArg)) {
+    return callArg.map((part) => String(part)).join('?');
+  }
+  return String(callArg);
+}
+
 // ============================================================================
 // Mock helpers
 //
@@ -183,6 +190,17 @@ describe('dispatchAgodaNotifications', () => {
     expect(result.sent).toBe(0);
     expect(result.failed).toBe(0);
     expect(result.suppressed).toBe(0);
+  });
+
+  it('stale processing 복구 시 maxAttempts 도달 항목은 failed로 종료 처리한다', async () => {
+    mockNotificationFindMany.mockResolvedValue([]);
+
+    await dispatchAgodaNotifications();
+
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
+    const sqlTexts = mockExecuteRaw.mock.calls.map((call) => extractSqlTemplate(call[0]));
+    expect(sqlTexts.some((sql) => sql.includes("SET status = 'failed'"))).toBe(true);
+    expect(sqlTexts.some((sql) => sql.includes("SET status = 'queued'"))).toBe(true);
   });
 
   it('동의(opt_in) 있는 사용자 → 이메일 전송 후 sent', async () => {

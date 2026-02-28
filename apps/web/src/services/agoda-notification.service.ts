@@ -290,16 +290,30 @@ export async function dispatchAgodaNotifications(params?: {
   const limit = params?.limit ?? runtimeSettings.notificationDispatchLimit;
   const maxAttempts = runtimeSettings.notificationMaxAttempts;
   const now = new Date();
+  const staleThreshold = new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS);
 
-  // 워커 충돌·타임아웃으로 'processing'에 멈춘 알림을 'queued'로 복구한다.
-  // attempt를 증가시켜 이미 발송된 이메일의 중복 발송 위험을 줄인다.
-  // (워커가 이메일을 보낸 후 크래시한 경우, attempt 증가로 maxAttempts에 도달하면 재발송 방지)
+  // 워커 충돌·타임아웃으로 stale processing 알림을 복구한다.
+  // maxAttempts를 초과/도달하는 항목은 failed로 종료 처리하고,
+  // 나머지만 queued로 되돌려 dead-queued 누적을 방지한다.
+  await prisma.$executeRaw`
+    UPDATE agoda_notifications
+    SET status = 'failed',
+        attempt = ${maxAttempts},
+        "updatedAt" = NOW(),
+        "lastError" = COALESCE("lastError", 'stale processing recovered at max attempts')
+    WHERE channel = 'email'
+      AND status = 'processing'
+      AND "updatedAt" <= ${staleThreshold}
+      AND attempt + 1 >= ${maxAttempts}
+  `;
+
   await prisma.$executeRaw`
     UPDATE agoda_notifications
     SET status = 'queued', attempt = attempt + 1, "updatedAt" = NOW()
     WHERE channel = 'email'
       AND status = 'processing'
-      AND "updatedAt" <= ${new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS)}
+      AND "updatedAt" <= ${staleThreshold}
+      AND attempt + 1 < ${maxAttempts}
   `;
 
   // queued를 우선 처리하고, 남은 슬롯에만 failed를 채운다.
