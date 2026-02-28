@@ -179,7 +179,7 @@ export interface BinbangCronConfig {
 
 export function getBinbangCronConfig(): BinbangCronConfig {
   return {
-    webInternalUrl: process.env.BINBANG_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
+    webInternalUrl: process.env.WEB_INTERNAL_URL?.trim() || 'http://web:3000',
     internalApiToken: readOptionalEnv(process.env.BINBANG_INTERNAL_API_TOKEN),
     pollDueCron: process.env.BINBANG_POLL_DUE_CRON?.trim() || '*/30 * * * *',
     dispatchCron: process.env.BINBANG_DISPATCH_CRON?.trim() || '*/5 * * * *',

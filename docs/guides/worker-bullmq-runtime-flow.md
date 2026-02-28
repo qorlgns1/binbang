@@ -519,7 +519,7 @@ Worker → apps/web 호출 시 `x-binbang-internal-token` 헤더에 `BINBANG_INT
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `BINBANG_WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
+| `WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
 | `BINBANG_INTERNAL_API_TOKEN` | — | apps/web 인증 토큰 |
 | `BINBANG_POLL_DUE_CRON` | `*/30 * * * *` | poll-due 주기 오버라이드 |
 | `BINBANG_DISPATCH_CRON` | `*/5 * * * *` | dispatch 주기 오버라이드 |

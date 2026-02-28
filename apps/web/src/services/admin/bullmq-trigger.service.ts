@@ -9,9 +9,7 @@ const TRIGGERABLE_SCHEDULERS: Readonly<Record<string, string>> = {
 export const TRIGGERABLE_SCHEDULER_IDS: ReadonlySet<string> = new Set(Object.keys(TRIGGERABLE_SCHEDULERS));
 
 function resolveBaseUrl(): string | null {
-  return (
-    process.env.BINBANG_WEB_INTERNAL_URL?.replace(/\/$/, '') ?? process.env.NEXTAUTH_URL?.replace(/\/$/, '') ?? null
-  );
+  return process.env.WEB_INTERNAL_URL?.replace(/\/$/, '') ?? process.env.NEXTAUTH_URL?.replace(/\/$/, '') ?? null;
 }
 
 function resolveInternalToken(): string | null {
@@ -26,7 +24,7 @@ export async function triggerScheduler(schedulerId: string): Promise<{ ok: boole
 
   const baseUrl = resolveBaseUrl();
   if (!baseUrl) {
-    return { ok: false, message: 'BINBANG_WEB_INTERNAL_URL / NEXTAUTH_URL 이 설정되지 않았습니다.' };
+    return { ok: false, message: 'WEB_INTERNAL_URL / NEXTAUTH_URL 이 설정되지 않았습니다.' };
   }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

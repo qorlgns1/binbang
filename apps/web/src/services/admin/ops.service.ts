@@ -749,7 +749,7 @@ function buildWorkerStatusCheck(workerStatus: Awaited<ReturnType<typeof getHeart
     detail:
       `마지막 하트비트 ${Math.floor(workerStatus.minutesSinceLastHeartbeat)}분 전. ` +
       'BullMQ binbang-poll-due 스케줄러가 Redis에 등록돼 있는지, ' +
-      'BINBANG_WEB_INTERNAL_URL / BINBANG_INTERNAL_API_TOKEN 환경 변수가 올바른지, ' +
+      'WEB_INTERNAL_URL / BINBANG_INTERNAL_API_TOKEN 환경 변수가 올바른지, ' +
       'Worker 로그에서 [binbang-poll-due] 에러를 확인하세요.',
   };
 }

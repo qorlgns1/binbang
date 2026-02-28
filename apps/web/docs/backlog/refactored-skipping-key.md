@@ -39,7 +39,7 @@ export interface BinbangCronConfig {
 
 export function getBinbangCronConfig(): BinbangCronConfig {
   return {
-    webInternalUrl: process.env.BINBANG_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
+    webInternalUrl: process.env.WEB_INTERNAL_URL?.trim() || 'http://web:3000',
     internalApiToken: readOptionalEnv(process.env.BINBANG_INTERNAL_API_TOKEN),
     pollDueCron: process.env.BINBANG_POLL_DUE_CRON?.trim() || '*/30 * * * *',
     dispatchCron: process.env.BINBANG_DISPATCH_CRON?.trim() || '*/5 * * * *',
@@ -124,7 +124,7 @@ if (job.name === 'binbang-snapshot-cleanup') {
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `BINBANG_WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
+| `WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
 | `BINBANG_INTERNAL_API_TOKEN` | (없으면 토큰 검사 건너뜀) | 이미 apps/web에 사용 중인 토큰 |
 | `BINBANG_POLL_DUE_CRON` | `*/30 * * * *` | 선택적 오버라이드 |
 | `BINBANG_DISPATCH_CRON` | `*/5 * * * *` | 선택적 오버라이드 |
