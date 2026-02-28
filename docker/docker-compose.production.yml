@@ -25,6 +25,9 @@ services:
       - ../apps/web/.env.common
       - path: ../apps/web/.env.production
         required: false
+    environment:
+      DOCKER_ENV: 'true'
+      WORKER_INTERNAL_URL: http://worker:3500
     restart: unless-stopped
 
   worker:
@@ -41,6 +44,8 @@ services:
         required: false
     environment:
       REDIS_URL: redis://redis-prod:6379
+      BINBANG_WEB_INTERNAL_URL: http://web:3000
+      TRAVEL_INTERNAL_URL: http://travel:3000
     depends_on:
       redis-prod:
         condition: service_healthy
