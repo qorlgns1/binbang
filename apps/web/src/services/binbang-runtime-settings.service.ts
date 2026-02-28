@@ -97,7 +97,7 @@ function buildEnvFallback(): BinbangRuntimeSettings {
       DEFAULTS.notificationMaxAttempts,
     ),
     emailProvider: normalizeEmailProvider(process.env.BINBANG_EMAIL_PROVIDER),
-    fromEmail: process.env.BINBANG_FROM_EMAIL?.trim() || DEFAULTS.fromEmail,
+    fromEmail: process.env.EMAIL_FROM?.trim() || DEFAULTS.fromEmail,
   };
 }
 

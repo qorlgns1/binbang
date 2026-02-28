@@ -14,8 +14,8 @@
 
 ### 선택
 - `BINBANG_EMAIL_PROVIDER` (`console` | `resend`, 기본값: `console`)
-- `BINBANG_RESEND_API_KEY`
-- `BINBANG_FROM_EMAIL`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
 - `BINBANG_PUBLIC_BASE_URL`
 - `BINBANG_POLL_INTERVAL_MINUTES` (기본값: `30`)
 - `BINBANG_PRICE_DROP_THRESHOLD` (기본값: `0.10`, 10%)
@@ -60,7 +60,7 @@ curl -X POST "https://yourdomain.com/api/internal/snapshots/cleanup" \
 ### 이메일 발송 장애
 - `agoda_notifications.status='failed'` 증가 확인
 - `agoda_notifications.attempt` 백오프 진행 확인
-- provider 설정값/키 점검 (`BINBANG_EMAIL_PROVIDER`, `BINBANG_RESEND_API_KEY`)
+- provider 설정값/키 점검 (`BINBANG_EMAIL_PROVIDER`, `RESEND_API_KEY`)
 
 ### 스톨(Stall) 감지
 - `/admin/ops` 페이지 > "폴링 지연 숙소" 섹션 확인

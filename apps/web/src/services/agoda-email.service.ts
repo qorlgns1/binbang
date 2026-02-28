@@ -22,9 +22,9 @@ async function sendByResend(
   params: SendEmailParams,
   fromEmail: string,
 ): Promise<{ provider: string; messageId: string }> {
-  const apiKey = process.env.BINBANG_RESEND_API_KEY?.trim();
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    throw new Error('BINBANG_RESEND_API_KEY is required for resend provider');
+    throw new Error('RESEND_API_KEY is required for resend provider');
   }
 
   const response = await fetch('https://api.resend.com/emails', {
