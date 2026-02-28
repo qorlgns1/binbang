@@ -8,9 +8,7 @@
 
 ### 필수
 - `DATABASE_URL`
-- Agoda 인증 (둘 중 하나):
-  - `BINBANG_AGODA_SITE_ID` + `BINBANG_AGODA_API_KEY`
-  - `AGODA_API_KEY` (`siteId:apiKey` 결합형)
+- Agoda 인증: `AGODA_AFFILIATE_SITE_ID` + `AGODA_AFFILIATE_API_KEY`
 - `BINBANG_INTERNAL_API_TOKEN`
 - `BINBANG_UNSUBSCRIBE_SECRET` (프로덕션 필수)
 

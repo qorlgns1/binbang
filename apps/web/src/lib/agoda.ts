@@ -2,8 +2,11 @@ export const AGODA_API_BASE = 'http://affiliateapi7643.agoda.com/affiliateservic
 
 /**
  * Authorization 헤더 값을 반환한다.
- * AGODA_API_KEY 형식: {siteid}:{apikey}
+ * 형식: {siteid}:{apikey}
  */
 export function getAgodaAuthHeader(): string | null {
-  return process.env.AGODA_API_KEY ?? null;
+  const siteId = process.env.AGODA_AFFILIATE_SITE_ID?.trim();
+  const apiKey = process.env.AGODA_AFFILIATE_API_KEY?.trim();
+  if (!siteId || !apiKey) return null;
+  return `${siteId}:${apiKey}`;
 }

@@ -69,45 +69,14 @@ export class AgodaSearchRequestError extends Error {
   }
 }
 
-interface CredentialCandidates {
-  siteId?: string;
-  apiKey?: string;
-}
-
-function parseCombinedCredential(raw: string | undefined): CredentialCandidates {
-  if (!raw) return {};
-  const normalized = raw.trim();
-  if (!normalized) return {};
-
-  const index = normalized.indexOf(':');
-  if (index <= 0 || index >= normalized.length - 1) {
-    return { apiKey: normalized };
-  }
-
-  return {
-    siteId: normalized.slice(0, index),
-    apiKey: normalized.slice(index + 1),
-  };
-}
-
 function resolveCredentials(): { siteId: string; apiKey: string; endpoint: string } {
-  const combinedRaw = process.env.BINBANG_AGODA_AUTH?.trim() || process.env.AGODA_API_KEY?.trim();
-  const parsed = parseCombinedCredential(combinedRaw);
-
-  const siteId =
-    process.env.BINBANG_AGODA_SITE_ID?.trim() ||
-    process.env.AGODA_SITE_ID?.trim() ||
-    process.env.AGODA_AFFILIATE_SITE_ID?.trim() ||
-    parsed.siteId;
-
-  const apiKey =
-    process.env.BINBANG_AGODA_API_KEY?.trim() || process.env.AGODA_AFFILIATE_API_KEY?.trim() || parsed.apiKey;
-
+  const siteId = process.env.AGODA_AFFILIATE_SITE_ID?.trim();
+  const apiKey = process.env.AGODA_AFFILIATE_API_KEY?.trim();
   const endpoint = process.env.BINBANG_AGODA_SEARCH_API_URL?.trim() || DEFAULT_AGODA_SEARCH_API_URL;
 
   if (!siteId || !apiKey) {
     throw new AgodaSearchClientConfigError(
-      'Agoda credentials required (BINBANG_AGODA_SITE_ID + BINBANG_AGODA_API_KEY or AGODA_API_KEY=siteId:apiKey)',
+      'Agoda credentials required (AGODA_AFFILIATE_SITE_ID + AGODA_AFFILIATE_API_KEY)',
     );
   }
 

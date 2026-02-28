@@ -18,7 +18,7 @@ export async function POST(req: Request): Promise<Response> {
         {
           ok: false,
           error: err.message,
-          hint: '.env.local에 AGODA_API_KEY를 설정하세요. 형식: {siteid}:{apikey}',
+          hint: '.env.local에 AGODA_AFFILIATE_SITE_ID, AGODA_AFFILIATE_API_KEY를 설정하세요.',
         },
         { status: 400 },
       );
