@@ -1,5 +1,7 @@
 import { prisma } from '@workspace/db';
 
+import { loadWebSettings } from '@/services/web-settings.service';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -85,12 +87,13 @@ export async function getHeartbeatStatus(): Promise<HeartbeatResponse> {
     };
   }
 
+  const settings = await loadWebSettings();
   const now = new Date();
   const timeSinceLastHeartbeat = now.getTime() - new Date(heartbeat.lastHeartbeatAt).getTime();
   const minutesSinceLastHeartbeat = timeSinceLastHeartbeat / (1000 * 60);
-  const intervalMs = parseInt(process.env.HEARTBEAT_INTERVAL_MS || '60000', 10);
+  const intervalMs = settings.heartbeat.intervalMs;
   const missedBeats = Math.floor(timeSinceLastHeartbeat / intervalMs);
-  const missedThreshold = parseInt(process.env.HEARTBEAT_MISSED_THRESHOLD || '1', 10);
+  const missedThreshold = settings.heartbeat.missedThreshold;
 
   const isHealthy = missedBeats < missedThreshold;
   const alerts: string[] = [];
