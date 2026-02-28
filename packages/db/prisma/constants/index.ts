@@ -734,7 +734,7 @@ export const SEED_CASES: SeedCase[] = [
 ];
 
 export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
-  // Case 1: RECEIVED only
+  // Case 1: RECEIVED
   {
     id: 'seed_cslog_1_1',
     caseId: 'seed_case_1',
@@ -744,7 +744,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: '케이스 생성',
     createdAt: addMinutes(SEED_NOW, -6 * 24 * 60),
   },
-  // Case 2: RECEIVED → REVIEWING → NEEDS_CLARIFICATION
+  // Case 2: → NEEDS_CLARIFICATION
   {
     id: 'seed_cslog_2_1',
     caseId: 'seed_case_2',
@@ -755,15 +755,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
   },
   {
-    id: 'seed_cslog_2_2',
-    caseId: 'seed_case_2',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 60),
-  },
-  {
     id: 'seed_cslog_2_3',
     caseId: 'seed_case_2',
     fromStatus: CaseStatus.REVIEWING,
@@ -772,7 +763,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: 'AMBER: 모호 표현 감지 — 명확화 요청',
     createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
   },
-  // Case 3: RECEIVED → REVIEWING → WAITING_PAYMENT
+  // Case 3: → WAITING_PAYMENT
   {
     id: 'seed_cslog_3_1',
     caseId: 'seed_case_3',
@@ -783,15 +774,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
   },
   {
-    id: 'seed_cslog_3_2',
-    caseId: 'seed_case_3',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 60),
-  },
-  {
     id: 'seed_cslog_3_3',
     caseId: 'seed_case_3',
     fromStatus: CaseStatus.REVIEWING,
@@ -800,7 +782,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: null,
     createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 120),
   },
-  // Case 4: RECEIVED → REVIEWING → WAITING_PAYMENT → payment → ACTIVE_MONITORING
+  // Case 4: → ACTIVE_MONITORING
   {
     id: 'seed_cslog_4_1',
     caseId: 'seed_case_4',
@@ -811,33 +793,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
   },
   {
-    id: 'seed_cslog_4_2',
-    caseId: 'seed_case_4',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 60),
-  },
-  {
-    id: 'seed_cslog_4_3',
-    caseId: 'seed_case_4',
-    fromStatus: CaseStatus.REVIEWING,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
-  },
-  {
-    id: 'seed_cslog_4_4',
-    caseId: 'seed_case_4',
-    fromStatus: CaseStatus.WAITING_PAYMENT,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: '결제 확인',
-    createdAt: addMinutes(SEED_NOW, -3 * 24 * 60),
-  },
-  {
     id: 'seed_cslog_4_5',
     caseId: 'seed_case_4',
     fromStatus: CaseStatus.WAITING_PAYMENT,
@@ -846,7 +801,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: null,
     createdAt: addMinutes(SEED_NOW, -3 * 24 * 60 + 60),
   },
-  // Case 5: RECEIVED → REVIEWING → WAITING_PAYMENT → payment → ACTIVE_MONITORING → CONDITION_MET
+  // Case 5: → CONDITION_MET
   {
     id: 'seed_cslog_5_1',
     caseId: 'seed_case_5',
@@ -855,42 +810,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     changedByKey: 'admin',
     reason: '케이스 생성',
     createdAt: addMinutes(SEED_NOW, -7 * 24 * 60),
-  },
-  {
-    id: 'seed_cslog_5_2',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60 + 60),
-  },
-  {
-    id: 'seed_cslog_5_3',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.REVIEWING,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60 + 120),
-  },
-  {
-    id: 'seed_cslog_5_4',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.WAITING_PAYMENT,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: '결제 확인',
-    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
-  },
-  {
-    id: 'seed_cslog_5_5',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.WAITING_PAYMENT,
-    toStatus: CaseStatus.ACTIVE_MONITORING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 60),
   },
   {
     id: 'seed_cslog_5_6',
@@ -1412,7 +1331,7 @@ export interface SeedPlatformPattern {
   priority: number;
 }
 
-export const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
+const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
   // 가격 추출
   {
     platform: Platform.AIRBNB,
@@ -1479,7 +1398,7 @@ export const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
   },
 ];
 
-export const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
+const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
   // 가격 추출
   {
     platform: Platform.AGODA,
@@ -1584,7 +1503,7 @@ export const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
 
 export const SEED_PLATFORM_SELECTORS: SeedPlatformSelector[] = [...SEED_AIRBNB_SELECTORS, ...SEED_AGODA_SELECTORS];
 
-export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
+const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
   // 예약 가능
   { platform: Platform.AIRBNB, patternType: PatternType.AVAILABLE, pattern: '예약하기', locale: 'ko', priority: 10 },
   { platform: Platform.AIRBNB, patternType: PatternType.AVAILABLE, pattern: 'Reserve', locale: 'en', priority: 5 },
@@ -1641,7 +1560,7 @@ export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
   },
 ];
 
-export const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
+const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
   // 예약 가능
   {
     platform: Platform.AGODA,
