@@ -33,6 +33,7 @@
 ```
 apps/
   web/            # Next.js (UI + Server Components + Route Handlers)
+  travel/         # Next.js 여행 앱 (AI planner); apps/web과 동일 레이어 규칙 (DB는 services/** 만)
   worker/         # 워커 엔트리포인트 + wiring만 (로직은 packages 쪽으로)
 
 packages/
@@ -42,9 +43,10 @@ packages/
 ```
 
 - **웹**: `apps/web` — Route Handler는 DB 직접 접근 금지, 반드시 `apps/web/src/services/**` 경유
+- **트래블**: `apps/travel` — `apps/web`와 동일 레이어 규칙, DB 접근은 `apps/travel/src/services/**`만 허용
 - **워커**: `apps/worker` — 엔트리포인트만 두고, 실제 로직은 `@workspace/worker-shared`의 public 진입점만 사용 (`/browser`, `/jobs`, `/runtime`, `/observability`)
 - **DB**: `packages/db`만 Prisma 소유. 다른 패키지는 `import { prisma } from "@workspace/db"` 만 허용
-- **공유**: `packages/shared`는 순수 코드만(네트워크/DB/Node 내장/process.env 금지). `packages/worker-shared`는 웹에서 import 금지
+- **공유**: `packages/shared`는 순수 코드만(네트워크/DB/Node 내장/process.env 금지). `packages/worker-shared`는 Next.js 앱(`apps/web`, `apps/travel`)에서 import 금지
 
 ---
 

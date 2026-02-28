@@ -4,14 +4,14 @@
 
 이 문서는 **현재 적용된 워커 리팩터링 코드**가 실제 실행 시 어떤 순서로 동작하는지, 초보자가 따라갈 수 있게 단계별로 설명합니다.
 
-- 대상: `apps/worker`, `packages/shared/src/worker` 중심 변경
+- 대상: `apps/worker`, `packages/worker-shared/src` 중심 변경
 
 핵심 변화:
 
 1. `node-cron + in-process limiter` 구조 제거
 2. `BullMQ(Redis)` 기반 `cycle/check` 2단계 큐 구조 도입
 3. `Puppeteer`에서 `Playwright` 기반 브라우저 풀로 전환
-4. `shared/worker`를 `browser/jobs/runtime/observability` 도메인으로 재구성
+4. `packages/worker-shared`를 `browser/jobs/runtime/observability` 도메인으로 재구성
 
 ---
 
@@ -39,29 +39,29 @@
 
 ### 공유 런타임 모듈
 
-- `packages/shared/src/worker/index.ts`
-- `packages/shared/src/worker/jobs/types.ts`
-- `packages/shared/src/worker/runtime/connection.ts`
-- `packages/shared/src/worker/runtime/queues.ts`
-- `packages/shared/src/worker/runtime/workers.ts`
-- `packages/shared/src/worker/runtime/scheduler.ts`
-- `packages/shared/src/worker/runtime/settings/index.ts`
-- `packages/shared/src/worker/runtime/settings/env.ts`
+- `packages/worker-shared/src/index.ts`
+- `packages/worker-shared/src/jobs/types.ts`
+- `packages/worker-shared/src/runtime/connection.ts`
+- `packages/worker-shared/src/runtime/queues.ts`
+- `packages/worker-shared/src/runtime/workers.ts`
+- `packages/worker-shared/src/runtime/scheduler.ts`
+- `packages/worker-shared/src/runtime/settings/index.ts`
+- `packages/worker-shared/src/runtime/settings/env.ts`
 
 ### 브라우저/체커
 
-- `packages/shared/src/worker/browser/browser.ts`
-- `packages/shared/src/worker/browser/browserPool.ts`
-- `packages/shared/src/worker/browser/baseChecker.ts`
-- `packages/shared/src/worker/browser/airbnb.ts`
-- `packages/shared/src/worker/browser/agoda.ts`
-- `packages/shared/src/worker/browser/selectors/index.ts`
+- `packages/worker-shared/src/browser/browser.ts`
+- `packages/worker-shared/src/browser/browserPool.ts`
+- `packages/worker-shared/src/browser/baseChecker.ts`
+- `packages/worker-shared/src/browser/airbnb.ts`
+- `packages/worker-shared/src/browser/agoda.ts`
+- `packages/worker-shared/src/browser/selectors/index.ts`
 
 ### 관측/알림
 
-- `packages/shared/src/worker/observability/heartbeat/index.ts`
-- `packages/shared/src/worker/observability/heartbeat/history.ts`
-- `packages/shared/src/worker/observability/kakao/message.ts`
+- `packages/worker-shared/src/observability/heartbeat/index.ts`
+- `packages/worker-shared/src/observability/heartbeat/history.ts`
+- `packages/worker-shared/src/observability/kakao/message.ts`
 
 ---
 
@@ -453,14 +453,14 @@ SIGINT/SIGTERM 수신 시:
 
 ## 부록: 핵심 타입 요약
 
-### `CheckJobPayload` (`packages/shared/src/worker/jobs/types.ts`)
+### `CheckJobPayload` (`packages/worker-shared/src/jobs/types.ts`)
 
 - cycle 연동: `cycleId`
 - 체크 입력: `url`, `platform`, `checkIn`, `checkOut`, `adults`
 - 사용자/알림: `userId`, `kakaoAccessToken`
 - 중복알림 판단: `lastStatus`
 
-### `CheckerRuntimeConfig` (`packages/shared/src/worker/browser/baseChecker.ts`)
+### `CheckerRuntimeConfig` (`packages/worker-shared/src/browser/baseChecker.ts`)
 
 - 재시도/타임아웃/리소스 차단 정책을 checker에 명시적으로 전달
 - 테스트(`POST /test`)와 실제 check worker가 같은 구조를 사용

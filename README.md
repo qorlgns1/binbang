@@ -18,7 +18,7 @@
 - **Problem**: 경쟁이 높은 숙소의 빈방 발생을 사람이 수동으로 추적하기 어려움
 - **Role**: Full-stack 개발 (아키텍처, 웹, 워커, DB 모델링, CI/CD, 운영)
 - **Architecture**:
-  - Next.js 웹 앱(`apps/web`)과 백그라운드 워커(`apps/worker`) 분리
+  - Next.js 운영 웹(`apps/web`), 여행 앱(`apps/travel`), 백그라운드 워커(`apps/worker`) 분리
   - Prisma 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
   - monorepo 경계 규칙(`rules.md`, `RULES_SUMMARY.md`) 기반으로 유지보수성 확보
 - **Technical Decisions**:
@@ -71,11 +71,13 @@
 pnpm install
 cp .env.example .env
 cp apps/web/.env.example apps/web/.env.local
+cp apps/travel/.env.example apps/travel/.env.local
 
 pnpm local:docker up -d db redis
 pnpm db:migrate
 
 pnpm dev:web
+pnpm dev:travel
 pnpm dev:worker
 ```
 
