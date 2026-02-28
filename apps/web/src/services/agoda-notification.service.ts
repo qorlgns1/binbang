@@ -240,7 +240,7 @@ async function claimNotifications(ids: bigint[], fromStatus: string): Promise<bi
   const idLiterals = ids.map(String).join(',');
   const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
     `UPDATE agoda_notifications
-     SET status = 'processing', updated_at = NOW()
+     SET status = 'processing', "updatedAt" = NOW()
      WHERE status = $1 AND id = ANY(ARRAY[${idLiterals}]::bigint[])
      RETURNING id::text`,
     fromStatus,
@@ -294,10 +294,10 @@ export async function dispatchAgodaNotifications(params?: {
   // (워커가 이메일을 보낸 후 크래시한 경우, attempt 증가로 maxAttempts에 도달하면 재발송 방지)
   await prisma.$executeRaw`
     UPDATE agoda_notifications
-    SET status = 'queued', attempt = attempt + 1, updated_at = NOW()
+    SET status = 'queued', attempt = attempt + 1, "updatedAt" = NOW()
     WHERE channel = 'email'
       AND status = 'processing'
-      AND updated_at <= ${new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS)}
+      AND "updatedAt" <= ${new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS)}
   `;
 
   // queued를 우선 처리하고, 남은 슬롯에만 failed를 채운다.
