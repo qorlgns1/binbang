@@ -1,6 +1,7 @@
 import { prisma } from '@workspace/db';
 import { BadRequestError, ValidationError } from '@workspace/shared/errors';
 import { BINBANG_SETTING_KEYS, clearBinbangRuntimeSettingsCache } from '@/services/binbang-runtime-settings.service';
+import { WEB_SETTING_KEYS, clearWebSettingsCache } from '@/services/web-settings.service';
 import type { SettingsChangeLogsResponse, SystemSettingItem, SystemSettingsResponse } from '@/types/admin';
 
 // ============================================================================
@@ -137,6 +138,45 @@ const BINBANG_SETTINGS_DEFAULTS = [
   },
 ] as const;
 
+const WEB_MONITORING_HEARTBEAT_SETTINGS_DEFAULTS = [
+  {
+    key: WEB_SETTING_KEYS.workerHealthyThresholdMs,
+    value: '2400000',
+    type: 'int',
+    category: 'monitoring',
+    description: '마지막 작업 후 이 시간 안에 응답이 있으면 "정상" 상태로 표시',
+    minValue: '60000',
+    maxValue: '86400000',
+  },
+  {
+    key: WEB_SETTING_KEYS.workerDegradedThresholdMs,
+    value: '5400000',
+    type: 'int',
+    category: 'monitoring',
+    description: '마지막 작업 후 이 시간이 지나면 "주의" 상태로 표시 (초과 시 "중단")',
+    minValue: '60000',
+    maxValue: '86400000',
+  },
+  {
+    key: WEB_SETTING_KEYS.heartbeatIntervalMs,
+    value: '60000',
+    type: 'int',
+    category: 'heartbeat',
+    description: '워커가 살아있음을 알리는 하트비트 업데이트 간격',
+    minValue: '10000',
+    maxValue: '600000',
+  },
+  {
+    key: WEB_SETTING_KEYS.heartbeatMissedThreshold,
+    value: '1',
+    type: 'int',
+    category: 'heartbeat',
+    description: '알림 발송 전 놓쳐도 되는 하트비트 횟수 (이 횟수 이상 놓치면 알림)',
+    minValue: '1',
+    maxValue: '10',
+  },
+] as const;
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -156,6 +196,7 @@ const CRON_SETTING_KEYS = new Set(['worker.cronSchedule', 'worker.publicAvailabi
 const RATIO_SETTING_KEYS = new Set(['binbang.priceDropThreshold']);
 const EMAIL_PROVIDER_SETTING_KEYS = new Set(['binbang.emailProvider']);
 const BINBANG_SETTING_KEY_SET = new Set<string>(Object.values(BINBANG_SETTING_KEYS));
+const WEB_SETTING_KEY_SET = new Set<string>(Object.values(WEB_SETTING_KEYS));
 
 const CRON_FIELD_RULES = [
   { min: 0, max: 59 }, // minute
@@ -254,12 +295,34 @@ async function ensureBinbangSettingsRows(): Promise<void> {
   );
 }
 
+async function ensureWebMonitoringHeartbeatRows(): Promise<void> {
+  await Promise.all(
+    WEB_MONITORING_HEARTBEAT_SETTINGS_DEFAULTS.map((setting) =>
+      prisma.systemSettings.upsert({
+        where: { key: setting.key },
+        update: {
+          type: setting.type,
+          category: setting.category,
+          description: setting.description,
+          minValue: setting.minValue,
+          maxValue: setting.maxValue,
+        },
+        create: setting,
+      }),
+    ),
+  );
+}
+
+async function ensureSettingsRows(): Promise<void> {
+  await Promise.all([ensureBinbangSettingsRows(), ensureWebMonitoringHeartbeatRows()]);
+}
+
 // ============================================================================
 // Service Functions
 // ============================================================================
 
 export async function getSettings(): Promise<SystemSettingsResponse> {
-  await ensureBinbangSettingsRows();
+  await ensureSettingsRows();
 
   const rows = await prisma.systemSettings.findMany({
     orderBy: [{ category: 'asc' }, { key: 'asc' }],
@@ -274,7 +337,7 @@ export async function getSettings(): Promise<SystemSettingsResponse> {
 export async function updateSettings(input: UpdateSettingsInput): Promise<SystemSettingsResponse> {
   const { settings: updates, changedById } = input;
 
-  await ensureBinbangSettingsRows();
+  await ensureSettingsRows();
 
   // 전체 설정 1회 조회 (검증 + 응답 베이스 겸용)
   const allSettings = await prisma.systemSettings.findMany({
@@ -453,6 +516,10 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
 
     if (actualChanges.some((change) => BINBANG_SETTING_KEY_SET.has(change.key))) {
       clearBinbangRuntimeSettingsCache();
+    }
+
+    if (actualChanges.some((change) => WEB_SETTING_KEY_SET.has(change.key))) {
+      clearWebSettingsCache();
     }
   }
 
