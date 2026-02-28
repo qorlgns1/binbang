@@ -229,6 +229,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       currency: true,
       locale: true,
       priceDropThreshold: true,
+      platformMetadata: true,
     },
   });
 
@@ -487,7 +488,18 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
           lastPolledAt: now,
           lastStatus: normalized.offers.length > 0 ? 'AVAILABLE' : 'UNAVAILABLE',
           ...(vacancyEventsInserted > 0 || priceDropEventsInserted > 0 ? { lastEventAt: now } : {}),
-          ...(discoveredLandingUrl ? { platformMetadata: toJsonValue({ landingUrl: discoveredLandingUrl }) } : {}),
+          ...(discoveredLandingUrl
+            ? {
+                platformMetadata: toJsonValue({
+                  ...(typeof accommodation.platformMetadata === 'object' &&
+                  accommodation.platformMetadata != null &&
+                  !Array.isArray(accommodation.platformMetadata)
+                    ? (accommodation.platformMetadata as Record<string, unknown>)
+                    : {}),
+                  landingUrl: discoveredLandingUrl,
+                }),
+              }
+            : {}),
         },
       }),
     ]);

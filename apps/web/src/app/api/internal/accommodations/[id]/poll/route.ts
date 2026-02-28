@@ -1,24 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { authorizeInternalRequest } from '@/lib/internalAuth';
 import { pollAccommodationOnce } from '@/services/agoda-polling.service';
-
-function authorizeInternalRequest(req: Request): { ok: boolean; message?: string; status?: number } {
-  const token = process.env.BINBANG_INTERNAL_API_TOKEN?.trim();
-
-  if (!token) {
-    if (process.env.NODE_ENV === 'production') {
-      return { ok: false, status: 503, message: 'BINBANG_INTERNAL_API_TOKEN is not configured' };
-    }
-    return { ok: true };
-  }
-
-  const provided = req.headers.get('x-binbang-internal-token')?.trim();
-  if (!provided || provided !== token) {
-    return { ok: false, status: 401, message: 'invalid internal token' };
-  }
-
-  return { ok: true };
-}
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const auth = authorizeInternalRequest(req);

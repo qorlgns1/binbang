@@ -11,6 +11,9 @@ import { type KakaoMemoTemplate, sendKakaoMemo } from '@/lib/kakao/sendKakaoMemo
 const REFRESH_MARGIN_MS = 300_000; // 만료 5분 전 갱신
 const REQUEST_TIMEOUT_MS = 10_000;
 
+/** 동시 refresh 요청을 직렬화하는 in-flight 맵 (userId → Promise) */
+const refreshInFlight = new Map<string, Promise<string | null>>();
+
 async function refreshKakaoAccessToken(userId: string, refreshToken: string): Promise<string | null> {
   try {
     const controller = new AbortController();
@@ -29,7 +32,10 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
     });
     clearTimeout(timeoutId);
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`[kakao] token refresh failed: HTTP ${response.status} for userId=${userId}`);
+      return null;
+    }
 
     const data = (await response.json()) as {
       access_token: string;
@@ -48,7 +54,11 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
     });
 
     return data.access_token;
-  } catch {
+  } catch (error) {
+    console.error(
+      `[kakao] token refresh error for userId=${userId}:`,
+      error instanceof Error ? error.message : String(error),
+    );
     return null;
   }
 }
@@ -56,6 +66,9 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
 /**
  * DB에 저장된 카카오 토큰을 조회하고, 만료 임박 시 자동 갱신 후 반환한다.
  * 토큰이 없거나 갱신에 실패하면 null을 반환한다 (예외 미전파).
+ *
+ * 동일 userId에 대한 동시 refresh 요청은 in-flight 맵으로 직렬화되어
+ * 하나의 refresh만 Kakao API에 전달된다. 두 번째 호출자는 첫 번째 결과를 공유한다.
  */
 export async function getValidKakaoAccessToken(userId: string): Promise<string | null> {
   const user = await prisma.user.findUnique({
@@ -72,12 +85,23 @@ export async function getValidKakaoAccessToken(userId: string): Promise<string |
   }
 
   const needsRefresh =
-    user.kakaoTokenExpiry &&
     user.kakaoRefreshToken &&
-    new Date(user.kakaoTokenExpiry) < new Date(Date.now() + REFRESH_MARGIN_MS);
+    (!user.kakaoTokenExpiry || new Date(user.kakaoTokenExpiry) < new Date(Date.now() + REFRESH_MARGIN_MS));
 
   if (needsRefresh) {
-    return refreshKakaoAccessToken(userId, user.kakaoRefreshToken as string);
+    // 동일 userId에 대한 동시 refresh를 직렬화한다.
+    // Kakao는 refresh token을 한 번만 사용할 수 있으므로,
+    // 두 번째 동시 요청이 첫 번째가 받은 refresh token을 무효화하는 것을 방지한다.
+    const existing = refreshInFlight.get(userId);
+    if (existing) {
+      return existing;
+    }
+
+    const promise = refreshKakaoAccessToken(userId, user.kakaoRefreshToken as string).finally(() => {
+      refreshInFlight.delete(userId);
+    });
+    refreshInFlight.set(userId, promise);
+    return promise;
   }
 
   return user.kakaoAccessToken;

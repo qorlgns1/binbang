@@ -290,14 +290,15 @@ export async function dispatchAgodaNotifications(params?: {
   const now = new Date();
 
   // 워커 충돌·타임아웃으로 'processing'에 멈춘 알림을 'queued'로 복구한다.
-  await prisma.agodaNotification.updateMany({
-    where: {
-      channel: 'email',
-      status: 'processing',
-      updatedAt: { lte: new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS) },
-    },
-    data: { status: 'queued' },
-  });
+  // attempt를 증가시켜 이미 발송된 이메일의 중복 발송 위험을 줄인다.
+  // (워커가 이메일을 보낸 후 크래시한 경우, attempt 증가로 maxAttempts에 도달하면 재발송 방지)
+  await prisma.$executeRaw`
+    UPDATE agoda_notifications
+    SET status = 'queued', attempt = attempt + 1, updated_at = NOW()
+    WHERE channel = 'email'
+      AND status = 'processing'
+      AND updated_at <= ${new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS)}
+  `;
 
   // queued를 우선 처리하고, 남은 슬롯에만 failed를 채운다.
   // queued + failed를 혼합 조회하면 backoff 중인 failed가 슬롯을 점유해

@@ -15,6 +15,7 @@ const {
   mockConsentLogFindFirst,
   mockTransaction,
   mockQueryRawUnsafe,
+  mockExecuteRaw,
   mockSendAgodaAlertEmail,
   mockCreateAgodaUnsubscribeToken,
   mockBuildAgodaUnsubscribeUrl,
@@ -25,6 +26,7 @@ const {
   mockConsentLogFindFirst: vi.fn(),
   mockTransaction: vi.fn(),
   mockQueryRawUnsafe: vi.fn(),
+  mockExecuteRaw: vi.fn(),
   mockSendAgodaAlertEmail: vi.fn(),
   mockCreateAgodaUnsubscribeToken: vi.fn().mockReturnValue('test_token'),
   mockBuildAgodaUnsubscribeUrl: vi.fn().mockReturnValue('https://example.com/unsubscribe?token=test_token'),
@@ -42,6 +44,7 @@ vi.mock('@workspace/db', () => ({
     },
     $transaction: mockTransaction,
     $queryRawUnsafe: mockQueryRawUnsafe,
+    $executeRaw: mockExecuteRaw,
   },
 }));
 
@@ -167,6 +170,7 @@ describe('dispatchAgodaNotifications', () => {
     mockNotificationUpdateMany.mockResolvedValue({ count: 0 });
     mockNotificationUpdate.mockResolvedValue({});
     mockQueryRawUnsafe.mockResolvedValue([]); // 기본값: 클레임 없음
+    mockExecuteRaw.mockResolvedValue(0); // stale processing 복구: 기본 0건
     mockCreateAgodaUnsubscribeToken.mockReturnValue('test_token');
     mockBuildAgodaUnsubscribeUrl.mockReturnValue('https://example.com/unsubscribe?token=test_token');
   });
