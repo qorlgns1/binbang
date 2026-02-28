@@ -31,7 +31,7 @@
     "organizationDescription": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva y envía notificaciones por correo cuando hay habitación.",
     "websiteDescription": "Servicio de alertas de disponibilidad para alojamientos. Te avisamos cuando hay habitación.",
     "applicationName": "Binbang",
-    "applicationDescription": "Alertas automáticas de disponibilidad cada minuto. Compatible con Airbnb y Agoda."
+    "applicationDescription": "Alertas automáticas de disponibilidad cada minuto."
   },
   "tutorial": {
     "step1": {
@@ -40,7 +40,7 @@
     },
     "step2": {
       "title": "Añade tu primer alojamiento",
-      "body": "Añade una URL de Airbnb, Agoda, etc. y comprobaremos la disponibilidad por ti."
+      "body": "Busca y añade un alojamiento y comprobaremos la disponibilidad por ti."
     },
     "step3": {
       "title": "Alertas por KakaoTalk",

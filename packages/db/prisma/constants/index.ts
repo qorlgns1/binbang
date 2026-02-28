@@ -570,7 +570,7 @@ export const SEED_FORM_SUBMISSIONS: SeedFormSubmission[] = (() => {
 
   const s1 = makeSubmissionPayload(
     SEED_ACCOMMODATIONS[0].url,
-    '2인 기준 파리 에어비앤비 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
+    '2인 기준 파리 숙소 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
   );
   const s2 = makeSubmissionPayload(SEED_ACCOMMODATIONS[1].url, '적당한 가격에 파리 숙소 2인 예약 가능하면 알려주세요');
   const s3 = makeSubmissionPayload(
@@ -1142,6 +1142,42 @@ export const SYSTEM_SETTINGS = [
     minValue: '5000',
     maxValue: '600000',
   },
+  {
+    key: 'binbang.pollIntervalMinutes',
+    value: '30',
+    type: 'int',
+    category: 'worker',
+    description: 'Agoda API due poll 판정 간격(분)',
+    minValue: '1',
+    maxValue: '1440',
+  },
+  {
+    key: 'binbang.duePollLimit',
+    value: '20',
+    type: 'int',
+    category: 'worker',
+    description: '1회 due poll에서 처리할 최대 숙소 수',
+    minValue: '1',
+    maxValue: '500',
+  },
+  {
+    key: 'binbang.duePollConcurrency',
+    value: '3',
+    type: 'int',
+    category: 'worker',
+    description: 'due poll 동시 실행 수',
+    minValue: '1',
+    maxValue: '50',
+  },
+  {
+    key: 'binbang.snapshotRetentionDays',
+    value: '30',
+    type: 'int',
+    category: 'worker',
+    description: 'Agoda poll run/snapshot 보존 일수',
+    minValue: '1',
+    maxValue: '365',
+  },
 
   // ── 브라우저 타임아웃 ──
   {
@@ -1209,6 +1245,33 @@ export const SYSTEM_SETTINGS = [
     minValue: null,
     maxValue: null,
   },
+  {
+    key: 'binbang.priceDropThreshold',
+    value: '0.1',
+    type: 'string',
+    category: 'checker',
+    description: '전역 가격 하락 임계값 (0~1 사이, 예: 0.1 = 10%)',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.vacancyCooldownHours',
+    value: '24',
+    type: 'int',
+    category: 'checker',
+    description: 'vacancy 이벤트 쿨다운 시간(시간)',
+    minValue: '1',
+    maxValue: '168',
+  },
+  {
+    key: 'binbang.priceDropCooldownHours',
+    value: '6',
+    type: 'int',
+    category: 'checker',
+    description: 'price_drop 이벤트 쿨다운 시간(시간)',
+    minValue: '1',
+    maxValue: '168',
+  },
 
   // ── 모니터링 임계값 ──
   {
@@ -1239,6 +1302,42 @@ export const SYSTEM_SETTINGS = [
     description: '카카오 알림 인증이 만료되기 전 미리 갱신하는 여유 시간',
     minValue: '60000',
     maxValue: '3600000',
+  },
+  {
+    key: 'binbang.emailProvider',
+    value: 'console',
+    type: 'string',
+    category: 'notification',
+    description: '이메일 전송 provider (console/resend)',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.fromEmail',
+    value: 'Binbang <no-reply@binbang.local>',
+    type: 'string',
+    category: 'notification',
+    description: '이메일 발신자 주소',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.notificationDispatchLimit',
+    value: '50',
+    type: 'int',
+    category: 'notification',
+    description: '1회 dispatch에서 처리할 최대 알림 수',
+    minValue: '1',
+    maxValue: '1000',
+  },
+  {
+    key: 'binbang.notificationMaxAttempts',
+    value: '5',
+    type: 'int',
+    category: 'notification',
+    description: '알림 최대 재시도 횟수',
+    minValue: '1',
+    maxValue: '20',
   },
 
   // ── 하트비트 모니터링 ──

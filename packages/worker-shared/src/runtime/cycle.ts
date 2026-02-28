@@ -16,10 +16,11 @@ export interface ActiveAccommodation {
 }
 
 export async function findActiveAccommodations(): Promise<ActiveAccommodation[]> {
-  return prisma.accommodation.findMany({
+  const accommodations = await prisma.accommodation.findMany({
     where: {
       isActive: true,
       checkIn: { gte: new Date() },
+      url: { not: null },
     },
     select: {
       id: true,
@@ -33,6 +34,17 @@ export async function findActiveAccommodations(): Promise<ActiveAccommodation[]>
       user: { select: { id: true, kakaoAccessToken: true } },
     },
   });
+
+  return accommodations.flatMap((accommodation) =>
+    accommodation.url
+      ? [
+          {
+            ...accommodation,
+            url: accommodation.url,
+          },
+        ]
+      : [],
+  );
 }
 
 export interface CreateCheckCycleInput {

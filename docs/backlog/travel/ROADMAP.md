@@ -1,6 +1,6 @@
 # 빈방 (Binbang) Travel - Long-term Roadmap
 
-Last updated: 2026-02-16
+Last updated: 2026-02-27
 Owner: KIHOON BAE
 
 ## Service Vision
@@ -76,13 +76,17 @@ UI/UX       Auth +      수익화 +     SEO +       모델 추상화
 Handling    Control
 ```
 
-| Phase | Name | Focus | Detail Doc |
-|-------|------|-------|------------|
-| 1 | UI/UX 고도화 | mindtrip 스타일 유지 + 브랜드(등대/빈방) 반영 + Empty State·PlaceCard CTA + 모바일 + 에러 핸들링 | [phase1-ui-polish.md](phase1-ui-polish.md) |
-| 2 | 인증 + 히스토리 | 게스트 세션 + OAuth + 대화 관리 + 비용 제어 | [phase2-auth-history.md](phase2-auth-history.md) |
-| 3 | 수익화 + 캐싱 | Agoda Affiliate + API 캐싱 + 사전 데이터 로딩 | [phase3-monetization.md](phase3-monetization.md) |
-| 4 | SEO + i18n | 랜딩 페이지 + 여행지 SSR 페이지 + 한/영 다국어 | [phase4-seo-i18n.md](phase4-seo-i18n.md) |
-| 5 | 모델 고도화 | LLM 추상화 + 대화 압축 + 분석 + 성능 최적화 | [phase5-advanced.md](phase5-advanced.md) |
+| Phase | Name | Focus | 상태 |
+|-------|------|-------|------|
+| 1 | UI/UX 고도화 | mindtrip 스타일 + 브랜드 반영 + 모바일 + 에러 핸들링 | ✅ 완료 |
+| 2 | 인증 + 히스토리 | 게스트 세션 + OAuth + 대화 관리 + 비용 제어 | ✅ 완료 (PR #100) |
+| 3 | 수익화 + 캐싱 | Agoda Affiliate + API 캐싱 + 사전 데이터 로딩 | ✅ 완료 (PR #104) |
+| 4 | SEO + i18n | 랜딩 + 여행지 SSR 페이지 + 한/영 다국어 | ✅ 완료 (PR #116) |
+| 5 | 모델 고도화 | LLM 추상화 + 대화 압축 + 분석 + 성능 최적화 | 🔜 미시작 |
+
+## 남은 운영 작업
+
+- [ ] Google Search Console 도메인 인증 + 사이트맵 제출 (Phase 4 후속, 운영 작업)
 
 ## Cost Estimation (Gemini 2.5 Flash-Lite)
 

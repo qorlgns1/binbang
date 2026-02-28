@@ -167,3 +167,23 @@ export function getTravelCachePrewarmConfig(): TravelCachePrewarmConfig {
     cronToken: readOptionalEnv(process.env.TRAVEL_INTERNAL_CRON_TOKEN),
   };
 }
+
+export interface BinbangCronConfig {
+  webInternalUrl: string;
+  internalApiToken: string | null;
+  pollDueCron: string;
+  dispatchCron: string;
+  snapshotCleanupCron: string;
+  timeoutMs: number;
+}
+
+export function getBinbangCronConfig(): BinbangCronConfig {
+  return {
+    webInternalUrl: process.env.BINBANG_WEB_INTERNAL_URL?.trim() || 'http://web:3000',
+    internalApiToken: readOptionalEnv(process.env.BINBANG_INTERNAL_API_TOKEN),
+    pollDueCron: process.env.BINBANG_POLL_DUE_CRON?.trim() || '*/30 * * * *',
+    dispatchCron: process.env.BINBANG_DISPATCH_CRON?.trim() || '*/5 * * * *',
+    snapshotCleanupCron: process.env.BINBANG_SNAPSHOT_CLEANUP_CRON?.trim() || '0 3 * * *',
+    timeoutMs: parsePositiveInt(process.env.BINBANG_CRON_TIMEOUT_MS, 120_000),
+  };
+}

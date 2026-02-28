@@ -14,6 +14,20 @@ export interface CreateAccommodationInput {
   adults: number;
 }
 
+export interface CreateAgodaApiAccommodationInput {
+  userId: string;
+  userEmail: string;
+  platformId: string; // Agoda hotelId
+  name: string;
+  checkIn: Date;
+  checkOut: Date;
+  adults: number;
+  children: number;
+  rooms: number;
+  currency: string;
+  locale: string;
+}
+
 export interface UpdateAccommodationInput {
   name?: string;
   url?: string;
@@ -21,6 +35,7 @@ export interface UpdateAccommodationInput {
   checkOut?: Date;
   adults?: number;
   isActive?: boolean;
+  priceDropThreshold?: number | null;
 }
 
 export interface AccommodationWithLogs extends Accommodation {
@@ -58,7 +73,13 @@ const ACCOMMODATION_SELECT = {
   checkOut: true,
   adults: true,
   rooms: true,
+  children: true,
+  currency: true,
+  locale: true,
   isActive: true,
+  priceDropThreshold: true,
+  lastPolledAt: true,
+  lastEventAt: true,
   lastCheck: true,
   lastStatus: true,
   lastPrice: true,
@@ -80,6 +101,34 @@ const ACCOMMODATION_SELECT = {
   platformMetadata: true,
   createdAt: true,
   updatedAt: true,
+} as const;
+
+const ACCOMMODATION_LIST_SELECT = {
+  ...ACCOMMODATION_SELECT,
+  checkLogs: {
+    where: {
+      status: 'ERROR',
+      errorMessage: { not: null },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+    select: {
+      errorMessage: true,
+      createdAt: true,
+    },
+  },
+  agodaPollRuns: {
+    where: {
+      status: 'failed',
+      error: { not: null },
+    },
+    orderBy: { polledAt: 'desc' },
+    take: 1,
+    select: {
+      error: true,
+      polledAt: true,
+    },
+  },
 } as const;
 
 const CHECK_LOG_SELECT = {
@@ -107,10 +156,34 @@ const CHECK_LOG_SELECT = {
 // ============================================================================
 
 export async function getAccommodationsByUserId(userId: string): Promise<Accommodation[]> {
-  return prisma.accommodation.findMany({
+  const rows = await prisma.accommodation.findMany({
     where: { userId },
-    select: ACCOMMODATION_SELECT,
+    select: ACCOMMODATION_LIST_SELECT,
     orderBy: { createdAt: 'desc' },
+  });
+
+  return rows.map((row) => {
+    const latestCheckError = row.checkLogs?.[0];
+    const latestPollError = row.agodaPollRuns?.[0];
+
+    const latestError =
+      latestCheckError && latestPollError
+        ? latestCheckError.createdAt >= latestPollError.polledAt
+          ? { message: latestCheckError.errorMessage, at: latestCheckError.createdAt }
+          : { message: latestPollError.error, at: latestPollError.polledAt }
+        : latestCheckError
+          ? { message: latestCheckError.errorMessage, at: latestCheckError.createdAt }
+          : latestPollError
+            ? { message: latestPollError.error, at: latestPollError.polledAt }
+            : null;
+
+    const { checkLogs: _checkLogs, agodaPollRuns: _agodaPollRuns, ...base } = row;
+
+    return {
+      ...base,
+      lastErrorMessage: latestError?.message ?? null,
+      lastErrorAt: latestError?.at ?? null,
+    };
   });
 }
 
@@ -169,6 +242,43 @@ export async function createAccommodation(input: CreateAccommodationInput): Prom
   });
 }
 
+export async function createAgodaApiAccommodation(input: CreateAgodaApiAccommodationInput): Promise<Accommodation> {
+  const [accommodation] = await prisma.$transaction(async (tx) => {
+    const created = await tx.accommodation.create({
+      data: {
+        userId: input.userId,
+        name: input.name,
+        platform: 'AGODA',
+        platformId: input.platformId,
+        url: null, // Agoda API 방식은 URL 불필요
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        adults: input.adults,
+        children: input.children,
+        rooms: input.rooms,
+        currency: input.currency,
+        locale: input.locale,
+      },
+      select: ACCOMMODATION_SELECT,
+    });
+
+    // 알림 등록 시 수신동의(opt_in)를 consent log에 기록한다.
+    // dispatch 시 hasActiveConsent() 체크에 사용된다.
+    await tx.agodaConsentLog.create({
+      data: {
+        userId: input.userId,
+        accommodationId: created.id,
+        email: input.userEmail.trim().toLowerCase(),
+        type: 'opt_in',
+      },
+    });
+
+    return [created];
+  });
+
+  return accommodation;
+}
+
 export async function updateAccommodation(
   id: string,
   userId: string,
@@ -193,6 +303,7 @@ export async function updateAccommodation(
       ...(input.checkOut !== undefined && { checkOut: input.checkOut }),
       ...(input.adults !== undefined && { adults: input.adults }),
       ...(input.isActive !== undefined && { isActive: input.isActive }),
+      ...(input.priceDropThreshold !== undefined && { priceDropThreshold: input.priceDropThreshold }),
     },
     select: ACCOMMODATION_SELECT,
   });

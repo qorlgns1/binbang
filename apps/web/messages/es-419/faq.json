@@ -16,9 +16,9 @@
   },
   "service": {
     "q1": "¿Qué es Binbang?",
-    "a1": "Binbang monitorea automáticamente sitios de reserva de alojamiento (Airbnb, Agoda, etc.) y envía alertas por correo y KakaoTalk cuando hay disponibilidad.",
+    "a1": "Binbang monitorea automáticamente sitios de reserva de alojamiento y envía alertas por correo y KakaoTalk cuando hay disponibilidad.",
     "q2": "¿Qué sitios de reserva son compatibles?",
-    "a2": "Actualmente soportamos Airbnb y Agoda. Planeamos agregar más plataformas en el futuro."
+    "a2": "Actualmente soportamos Agoda. Planeamos agregar más plataformas en el futuro."
   },
   "monitoring": {
     "q1": "¿Con qué frecuencia se verifican las vacantes?",

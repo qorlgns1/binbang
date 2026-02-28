@@ -357,11 +357,6 @@ export function AwinTestPanel() {
       setTxResult({ ok: false, error: '기간을 다시 확인하세요.' });
       return;
     }
-    const diffDays = Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1;
-    if (diffDays > 31) {
-      setTxResult({ ok: false, error: '기간은 최대 31일입니다.' });
-      return;
-    }
     setTxLoading(true);
     setTxResult(null);
     try {
@@ -688,7 +683,7 @@ export function AwinTestPanel() {
           </CardTitle>
           <CardDescription>
             <code className='rounded bg-muted px-1.5 py-0.5'>GET /publishers/.../transactions/</code>— 전환(매출) 목록,
-            최대 31일 구간
+            31일 청크 자동 분할(20 calls/min)
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>

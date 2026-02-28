@@ -1,5 +1,6 @@
 import { prisma } from '@workspace/db';
 import { BadRequestError, ValidationError } from '@workspace/shared/errors';
+import { BINBANG_SETTING_KEYS, clearBinbangRuntimeSettingsCache } from '@/services/binbang-runtime-settings.service';
 import type { SettingsChangeLogsResponse, SystemSettingItem, SystemSettingsResponse } from '@/types/admin';
 
 // ============================================================================
@@ -34,6 +35,108 @@ const SETTING_SELECT = {
   updatedAt: true,
 } as const;
 
+const BINBANG_SETTINGS_DEFAULTS = [
+  {
+    key: 'binbang.pollIntervalMinutes',
+    value: '30',
+    type: 'int',
+    category: 'worker',
+    description: 'Agoda API due poll 판정 간격(분)',
+    minValue: '1',
+    maxValue: '1440',
+  },
+  {
+    key: 'binbang.duePollLimit',
+    value: '20',
+    type: 'int',
+    category: 'worker',
+    description: '1회 due poll에서 처리할 최대 숙소 수',
+    minValue: '1',
+    maxValue: '500',
+  },
+  {
+    key: 'binbang.duePollConcurrency',
+    value: '3',
+    type: 'int',
+    category: 'worker',
+    description: 'due poll 동시 실행 수',
+    minValue: '1',
+    maxValue: '50',
+  },
+  {
+    key: 'binbang.snapshotRetentionDays',
+    value: '30',
+    type: 'int',
+    category: 'worker',
+    description: 'Agoda poll run/snapshot 보존 일수',
+    minValue: '1',
+    maxValue: '365',
+  },
+  {
+    key: 'binbang.priceDropThreshold',
+    value: '0.1',
+    type: 'string',
+    category: 'checker',
+    description: '전역 가격 하락 임계값 (0~1 사이, 예: 0.1 = 10%)',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.vacancyCooldownHours',
+    value: '24',
+    type: 'int',
+    category: 'checker',
+    description: 'vacancy 이벤트 쿨다운 시간(시간)',
+    minValue: '1',
+    maxValue: '168',
+  },
+  {
+    key: 'binbang.priceDropCooldownHours',
+    value: '6',
+    type: 'int',
+    category: 'checker',
+    description: 'price_drop 이벤트 쿨다운 시간(시간)',
+    minValue: '1',
+    maxValue: '168',
+  },
+  {
+    key: 'binbang.emailProvider',
+    value: 'console',
+    type: 'string',
+    category: 'notification',
+    description: '이메일 전송 provider (console/resend)',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.fromEmail',
+    value: 'Binbang <no-reply@binbang.local>',
+    type: 'string',
+    category: 'notification',
+    description: '이메일 발신자 주소',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.notificationDispatchLimit',
+    value: '50',
+    type: 'int',
+    category: 'notification',
+    description: '1회 dispatch에서 처리할 최대 알림 수',
+    minValue: '1',
+    maxValue: '1000',
+  },
+  {
+    key: 'binbang.notificationMaxAttempts',
+    value: '5',
+    type: 'int',
+    category: 'notification',
+    description: '알림 최대 재시도 횟수',
+    minValue: '1',
+    maxValue: '20',
+  },
+] as const;
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -50,6 +153,9 @@ interface SettingRow {
 }
 
 const CRON_SETTING_KEYS = new Set(['worker.cronSchedule', 'worker.publicAvailabilitySnapshotSchedule']);
+const RATIO_SETTING_KEYS = new Set(['binbang.priceDropThreshold']);
+const EMAIL_PROVIDER_SETTING_KEYS = new Set(['binbang.emailProvider']);
+const BINBANG_SETTING_KEY_SET = new Set<string>(Object.values(BINBANG_SETTING_KEYS));
 
 const CRON_FIELD_RULES = [
   { min: 0, max: 59 }, // minute
@@ -125,11 +231,36 @@ function toSettingItem(row: SettingRow): SystemSettingItem {
   };
 }
 
+function isValidRatioText(value: string): boolean {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) && parsed > 0 && parsed < 1;
+}
+
+async function ensureBinbangSettingsRows(): Promise<void> {
+  await Promise.all(
+    BINBANG_SETTINGS_DEFAULTS.map((setting) =>
+      prisma.systemSettings.upsert({
+        where: { key: setting.key },
+        update: {
+          type: setting.type,
+          category: setting.category,
+          description: setting.description,
+          minValue: setting.minValue,
+          maxValue: setting.maxValue,
+        },
+        create: setting,
+      }),
+    ),
+  );
+}
+
 // ============================================================================
 // Service Functions
 // ============================================================================
 
 export async function getSettings(): Promise<SystemSettingsResponse> {
+  await ensureBinbangSettingsRows();
+
   const rows = await prisma.systemSettings.findMany({
     orderBy: [{ category: 'asc' }, { key: 'asc' }],
     select: SETTING_SELECT,
@@ -142,6 +273,8 @@ export async function getSettings(): Promise<SystemSettingsResponse> {
 
 export async function updateSettings(input: UpdateSettingsInput): Promise<SystemSettingsResponse> {
   const { settings: updates, changedById } = input;
+
+  await ensureBinbangSettingsRows();
 
   // 전체 설정 1회 조회 (검증 + 응답 베이스 겸용)
   const allSettings = await prisma.systemSettings.findMany({
@@ -251,6 +384,21 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
         [{ field: 'value', message: 'Invalid cron expression' }],
       );
     }
+
+    if (RATIO_SETTING_KEYS.has(update.key) && !isValidRatioText(update.value)) {
+      throw new ValidationError(`Setting "${update.key}": Value must be between 0 and 1`, [
+        { field: 'value', message: 'Must be a decimal number between 0 and 1 (exclusive)' },
+      ]);
+    }
+
+    if (EMAIL_PROVIDER_SETTING_KEYS.has(update.key)) {
+      const normalized = update.value.trim().toLowerCase();
+      if (normalized !== 'console' && normalized !== 'resend') {
+        throw new ValidationError(`Setting "${update.key}": Supported values are console or resend`, [
+          { field: 'value', message: 'Supported values: console, resend' },
+        ]);
+      }
+    }
   }
 
   // 실제로 값이 바뀐 항목만 필터 (value, minValue, maxValue 중 하나라도 변경)
@@ -301,6 +449,10 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
 
     for (const row of updatedRows) {
       settingMap.set(row.key, row);
+    }
+
+    if (actualChanges.some((change) => BINBANG_SETTING_KEY_SET.has(change.key))) {
+      clearBinbangRuntimeSettingsCache();
     }
   }
 

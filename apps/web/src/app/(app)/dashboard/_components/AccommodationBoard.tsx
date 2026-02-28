@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 
 import { BOARD_EMPTY_TEXT, BOARD_TAB_LABELS, SEVERITY_SCORE } from '@/app/(app)/dashboard/_lib/constants';
 import { trackBoardTabChanged } from '@/app/(app)/dashboard/_lib/dashboardTracker';
+import { isProblemStatus } from '@/app/(app)/dashboard/_lib/status';
 import type { BoardTab } from '@/app/(app)/dashboard/_lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -61,7 +62,7 @@ export function AccommodationBoard({
   // 탭별 건수 계산
   const tabCounts = useMemo(
     (): Record<BoardTab, number> => ({
-      problem: accommodations.filter((a) => a.lastStatus === 'ERROR' || a.lastStatus === 'UNKNOWN').length,
+      problem: accommodations.filter((a) => isProblemStatus(a)).length,
       all: accommodations.length,
       paused: accommodations.filter((a) => !a.isActive).length,
     }),
@@ -73,7 +74,7 @@ export function AccommodationBoard({
     let filtered: Accommodation[];
     switch (activeTab) {
       case 'problem':
-        filtered = accommodations.filter((a) => a.lastStatus === 'ERROR' || a.lastStatus === 'UNKNOWN');
+        filtered = accommodations.filter((a) => isProblemStatus(a));
         break;
       case 'paused':
         filtered = accommodations.filter((a) => !a.isActive);
@@ -88,8 +89,10 @@ export function AccommodationBoard({
       const sevB = SEVERITY_SCORE[b.lastStatus] ?? 0;
       if (sevB !== sevA) return sevB - sevA;
 
-      const dateA = a.lastCheck ? new Date(a.lastCheck).getTime() : 0;
-      const dateB = b.lastCheck ? new Date(b.lastCheck).getTime() : 0;
+      const lastActivityA = a.platformId ? (a.lastPolledAt ?? a.lastCheck) : a.lastCheck;
+      const lastActivityB = b.platformId ? (b.lastPolledAt ?? b.lastCheck) : b.lastCheck;
+      const dateA = lastActivityA ? new Date(lastActivityA).getTime() : 0;
+      const dateB = lastActivityB ? new Date(lastActivityB).getTime() : 0;
       return dateB - dateA;
     });
   }, [accommodations, activeTab]);
@@ -102,7 +105,7 @@ export function AccommodationBoard({
           <Button asChild size='sm'>
             <Link href='/accommodations/new'>
               <Plus className='mr-1.5 size-4' />
-              숙소 추가
+              알림 등록
             </Link>
           </Button>
         </div>
@@ -119,7 +122,7 @@ export function AccommodationBoard({
           <Button asChild size='sm'>
             <Link href='/accommodations/new'>
               <Plus className='mr-1.5 size-4' />
-              숙소 추가
+              알림 등록
             </Link>
           </Button>
         </div>
@@ -145,7 +148,7 @@ export function AccommodationBoard({
         <Button asChild size='sm'>
           <Link href='/accommodations/new'>
             <Plus className='mr-1.5 size-4' />
-            숙소 추가
+            알림 등록
           </Link>
         </Button>
       </div>
