@@ -3,7 +3,7 @@ import { test } from '@playwright/test';
 import { cleanupSignedInE2eUser } from './auth';
 import { setAgodaMockScenario } from './polling';
 
-const ALLOWED_APP_ENVS = new Set(['local', 'development']);
+const ALLOWED_APP_ENVS = new Set(['local', 'development', 'ci', 'test']);
 
 /**
  * APP_ENV 값이 E2E 실행 허용 범위(local/development)인지 판별한다.

@@ -327,20 +327,24 @@ export async function dispatchAgodaNotifications(params?: {
   });
 
   const remaining = limit - queuedIdRows.length;
+  // due 조건 필터링 전에 take를 적용하면, 백오프가 긴 오래된 행들이 슬롯을 선점해
+  // 실제로 due인 행들이 take 범위 밖으로 밀릴 수 있다. (starvation)
+  // over-fetch 후 isRetryDue 필터 → slice(remaining) 로 해결한다.
   const failedIdRows =
     remaining > 0
       ? await prisma.agodaNotification.findMany({
           where: { channel: 'email', status: 'failed', attempt: { lt: maxAttempts } },
           orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-          take: remaining,
+          take: remaining * 2,
           select: { id: true, updatedAt: true, attempt: true },
         })
       : [];
 
   // 백오프 대기 중인 failed 항목은 클레임 전에 필터링한다.
   const queuedIds = queuedIdRows.map((r) => r.id);
-  const failedDueIds = failedIdRows.filter((r) => isRetryDue(r.updatedAt, r.attempt)).map((r) => r.id);
-  const skippedNotDue = failedIdRows.length - failedDueIds.length;
+  const allDueFailed = failedIdRows.filter((r) => isRetryDue(r.updatedAt, r.attempt));
+  const failedDueIds = allDueFailed.slice(0, remaining).map((r) => r.id);
+  const skippedNotDue = failedIdRows.length - allDueFailed.length;
 
   // 원자적 클레임: 이 워커가 실제로 업데이트한 행만 반환된다.
   // 동시 실행 중인 다른 디스패처는 이미 'processing'인 행을 클레임할 수 없다.

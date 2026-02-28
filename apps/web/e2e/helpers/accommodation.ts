@@ -180,26 +180,29 @@ export async function registerAlertViaApi(
   checkInOffsetDays = 3,
   checkOutOffsetDays = 5,
 ): Promise<{ accommodationId: string; hotelName: string }> {
-  // 1. DB에서 호텔 검색 (후보어 순서대로 첫 결과 사용)
-  let platformId = '';
-  let hotelName = '';
+  // 1. 호텔 선택: E2E_HOTEL_PLATFORM_ID 환경변수가 있으면 결정론적 픽스처 우선 사용.
+  //    없으면 실제 DB 검색으로 fallback (로컬 개발 편의).
+  let platformId = process.env.E2E_HOTEL_PLATFORM_ID ?? '';
+  let hotelName = process.env.E2E_HOTEL_NAME ?? '';
 
-  for (const query of DEFAULT_HOTEL_QUERY_CANDIDATES) {
-    const searchResp = await page.request.get(`/api/hotels/search?q=${encodeURIComponent(query)}`);
-    if (!searchResp.ok()) continue;
+  if (!platformId) {
+    for (const query of DEFAULT_HOTEL_QUERY_CANDIDATES) {
+      const searchResp = await page.request.get(`/api/hotels/search?q=${encodeURIComponent(query)}`);
+      if (!searchResp.ok()) continue;
 
-    const body = (await searchResp.json()) as HotelSearchEnvelope;
-    const first = body.hotels?.[0];
-    if (first) {
-      platformId = first.hotelId;
-      hotelName = first.name;
-      break;
+      const body = (await searchResp.json()) as HotelSearchEnvelope;
+      const first = body.hotels?.[0];
+      if (first) {
+        platformId = first.hotelId;
+        hotelName = first.name;
+        break;
+      }
     }
   }
 
   if (!platformId) {
     throw new Error(
-      '검색 가능한 Agoda 호텔이 없습니다. e2e 실행 전 실제 연결된 DB의 agoda_hotels 데이터를 확인해주세요.',
+      '검색 가능한 Agoda 호텔이 없습니다. E2E_HOTEL_PLATFORM_ID 환경변수를 설정하거나, DB의 agoda_hotels 데이터를 확인해주세요.',
     );
   }
 

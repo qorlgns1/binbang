@@ -12,8 +12,10 @@ function getSecret(): string {
   const secret = process.env.BINBANG_UNSUBSCRIBE_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
   if (secret) return secret;
 
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('BINBANG_UNSUBSCRIBE_SECRET is required in production');
+  const appEnv = process.env.APP_ENV;
+  const isLocalDev = process.env.NODE_ENV !== 'production' && (!appEnv || appEnv === 'local' || appEnv === 'development');
+  if (!isLocalDev) {
+    throw new Error('BINBANG_UNSUBSCRIBE_SECRET (or NEXTAUTH_SECRET) is required');
   }
 
   return 'agoda-dev-unsubscribe-secret';

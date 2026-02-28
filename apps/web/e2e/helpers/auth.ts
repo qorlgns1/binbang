@@ -176,6 +176,6 @@ export async function cleanupSignedInE2eUser(page: Page): Promise<void> {
 
   if (!response.ok()) {
     const body = await response.text().catch(() => '');
-    console.warn(`[e2e cleanup] failed: ${response.status()} ${body}`);
+    throw new Error(`[e2e cleanup] failed: ${response.status()} ${body}`);
   }
 }

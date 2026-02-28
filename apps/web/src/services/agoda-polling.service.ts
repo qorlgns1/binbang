@@ -393,7 +393,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       const insertedId = await createAlertEventWithDedupe({
         accommodationId,
         type: 'vacancy',
-        eventKey: event.eventKey,
+        eventKey: `vacancy:${accommodationId}:${event.offerKey}:${pollRun.id.toString()}`,
         offerKey: event.offerKey,
         status: 'detected',
         beforeHash: event.beforeHash,
@@ -436,7 +436,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       const insertedId = await createAlertEventWithDedupe({
         accommodationId,
         type: 'price_drop',
-        eventKey: event.eventKey,
+        eventKey: `price_drop:${accommodationId}:${event.offerKey}:${pollRun.id.toString()}`,
         offerKey: event.offerKey,
         status: 'detected',
         beforeHash: event.beforeHash,

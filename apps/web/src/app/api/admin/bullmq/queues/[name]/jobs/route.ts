@@ -38,9 +38,9 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
 
   const sp = request.nextUrl.searchParams;
   const queryResult = listQuerySchema.safeParse({
-    state: sp.get('state'),
-    page: sp.get('page'),
-    limit: sp.get('limit'),
+    state: sp.get('state') ?? undefined,
+    page: sp.get('page') ?? undefined,
+    limit: sp.get('limit') ?? undefined,
   });
   if (!queryResult.success) return validationErrorResponse(queryResult.error.issues);
 
