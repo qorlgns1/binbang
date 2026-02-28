@@ -21,8 +21,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const payload = (body ?? {}) as { limit?: unknown };
   const rawLimit = payload.limit;
-  const limit =
-    typeof rawLimit === 'number' && Number.isInteger(rawLimit) && rawLimit > 0 ? rawLimit : undefined;
+  const limit = typeof rawLimit === 'number' && Number.isInteger(rawLimit) && rawLimit > 0 ? rawLimit : undefined;
 
   try {
     const result = await dispatchAgodaNotifications({ limit });

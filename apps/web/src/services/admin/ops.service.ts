@@ -467,7 +467,7 @@ export async function getAdminOpsAccommodationDiagnostics(
         detail: `등록 후 약 ${createdAgoMinutes}분이 경과했습니다(설정 주기 ${pollIntervalMinutes}분 초과). worker 스케줄 또는 큐 상태를 확인하세요.`,
       });
       checks.push(buildWorkerStatusCheck(workerStatus));
-      if (pollDueBullmqFailure) {
+      if (pollDueBullmqFailure && pollDueBullmqFailure !== REDIS_UNAVAILABLE) {
         checks.push({
           level: 'error',
           code: 'bullmq_poll_due_failed',
@@ -483,7 +483,7 @@ export async function getAdminOpsAccommodationDiagnostics(
         detail: `등록 후 약 ${createdAgoMinutes}분이 지났습니다. worker 스케줄/큐 또는 내부 API 연결 상태를 확인하세요.`,
       });
       checks.push(buildWorkerStatusCheck(workerStatus));
-      if (pollDueBullmqFailure) {
+      if (pollDueBullmqFailure && pollDueBullmqFailure !== REDIS_UNAVAILABLE) {
         checks.push({
           level: 'error',
           code: 'bullmq_poll_due_failed',
