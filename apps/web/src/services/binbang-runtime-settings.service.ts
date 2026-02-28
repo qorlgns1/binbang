@@ -170,7 +170,8 @@ async function readDbSettingsMap(): Promise<Map<string, string>> {
       select: { key: true, value: true },
     });
     return new Map(rows.map((row) => [row.key, row.value]));
-  } catch {
+  } catch (err) {
+    console.warn('[binbang-runtime-settings] DB 조회 실패, 기본값으로 폴백합니다:', err);
     return new Map();
   }
 }

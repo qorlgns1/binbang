@@ -19,12 +19,13 @@ export async function POST(req: Request): Promise<Response> {
     body = null;
   }
 
-  const payload = (body ?? {}) as { limit?: number };
+  const payload = (body ?? {}) as { limit?: unknown };
+  const rawLimit = payload.limit;
+  const limit =
+    typeof rawLimit === 'number' && Number.isInteger(rawLimit) && rawLimit > 0 ? rawLimit : undefined;
 
   try {
-    const result = await dispatchAgodaNotifications({
-      limit: typeof payload.limit === 'number' ? payload.limit : undefined,
-    });
+    const result = await dispatchAgodaNotifications({ limit });
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     if (error instanceof Error) {

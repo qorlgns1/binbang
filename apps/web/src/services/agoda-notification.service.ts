@@ -362,7 +362,10 @@ export async function dispatchAgodaNotifications(params?: {
   });
 
   const outcomes: NotificationOutcome[] = [];
-  const baseUrl = process.env.NEXTAUTH_URL?.trim() || 'http://localhost:3000';
+  const baseUrl = (process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL)?.trim() || 'http://localhost:3000';
+  if (!process.env.NEXTAUTH_URL?.trim() && process.env.NODE_ENV === 'production') {
+    console.error('[agoda-notification] NEXTAUTH_URL이 설정되지 않았습니다. 이메일 링크가 localhost를 가리킵니다.');
+  }
 
   for (const notification of candidates) {
     if (!notification.accommodation || !notification.accommodation.isActive) {

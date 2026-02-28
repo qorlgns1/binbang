@@ -49,12 +49,17 @@ export async function POST(request: NextRequest): Promise<Response> {
     // userId 미지정 시 어드민 본인 ID 사용
     const targetUserId = data.userId ?? session.user.id;
 
-    // URL에서 플랫폼 자동 감지
+    // URL에서 플랫폼 자동 감지 (hostname 기준으로 판별)
     let platform = data.platform;
-    if (data.url.includes('airbnb')) {
-      platform = 'AIRBNB';
-    } else if (data.url.includes('agoda')) {
-      platform = 'AGODA';
+    try {
+      const hostname = new URL(data.url).hostname;
+      if (hostname.includes('airbnb')) {
+        platform = 'AIRBNB';
+      } else if (hostname.includes('agoda')) {
+        platform = 'AGODA';
+      }
+    } catch {
+      // URL 파싱 실패 시 data.platform 유지
     }
 
     const accommodation = await createAccommodation({

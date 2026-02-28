@@ -273,7 +273,9 @@ function toSettingItem(row: SettingRow): SystemSettingItem {
 }
 
 function isValidRatioText(value: string): boolean {
-  const parsed = Number.parseFloat(value);
+  const trimmed = value.trim();
+  if (trimmed === '' || !/^-?\d+(\.\d+)?$/.test(trimmed)) return false;
+  const parsed = Number(trimmed);
   return Number.isFinite(parsed) && parsed > 0 && parsed < 1;
 }
 
@@ -313,8 +315,12 @@ async function ensureWebMonitoringHeartbeatRows(): Promise<void> {
   );
 }
 
+let settingsRowsInitialized = false;
+
 async function ensureSettingsRows(): Promise<void> {
+  if (settingsRowsInitialized) return;
   await Promise.all([ensureBinbangSettingsRows(), ensureWebMonitoringHeartbeatRows()]);
+  settingsRowsInitialized = true;
 }
 
 // ============================================================================
@@ -461,6 +467,7 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
           { field: 'value', message: 'Supported values: console, resend' },
         ]);
       }
+      update.value = normalized;
     }
   }
 

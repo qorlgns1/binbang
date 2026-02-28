@@ -59,7 +59,7 @@ export interface AdminOpsSummary {
 export interface SchedulerJobStatus {
   key: string;
   displayName: string;
-  status: 'ok' | 'failing';
+  status: 'ok' | 'failing' | 'unknown';
   latestFailure: {
     failedReason: string;
     failedAt: string;
@@ -696,14 +696,16 @@ const MONITORED_SCHEDULERS: { prefix: string; displayName: string }[] = [
   { prefix: 'repeat:binbang-dispatch-scheduler:', displayName: 'binbang-dispatch (5분 알림 발송)' },
 ];
 
+const REDIS_UNAVAILABLE = Symbol('REDIS_UNAVAILABLE');
+
 async function getLatestBullmqSchedulerFailure(
   schedulerPrefix: string,
-): Promise<{ failedReason: string; failedAt: string } | null> {
+): Promise<{ failedReason: string; failedAt: string } | null | typeof REDIS_UNAVAILABLE> {
   const redis = getRedisClient();
-  if (!redis) return null;
+  if (!redis) return REDIS_UNAVAILABLE;
   try {
     const connected = await ensureRedisConnected(redis);
-    if (!connected) return null;
+    if (!connected) return REDIS_UNAVAILABLE;
     const failedSetKey = `${BULLMQ_PREFIX}:${CYCLE_QUEUE}:failed`;
     const recentIds = await redis.zrevrange(failedSetKey, 0, 29);
     const matchingId = recentIds.find((id) => id.startsWith(schedulerPrefix));
@@ -714,20 +716,24 @@ async function getLatestBullmqSchedulerFailure(
       failedReason: job.failedReason,
       failedAt: job.finishedOn ? new Date(parseInt(job.finishedOn, 10)).toISOString() : 'unknown',
     };
-  } catch {
-    return null;
+  } catch (err) {
+    console.warn('[ops] 스케줄러 헬스 조회 실패 (Redis 오류):', err);
+    return REDIS_UNAVAILABLE;
   }
 }
 
 async function getSchedulerHealth(): Promise<SchedulerJobStatus[]> {
   return Promise.all(
     MONITORED_SCHEDULERS.map(async ({ prefix, displayName }) => {
-      const latestFailure = await getLatestBullmqSchedulerFailure(prefix);
+      const result = await getLatestBullmqSchedulerFailure(prefix);
+      if (result === REDIS_UNAVAILABLE) {
+        return { key: prefix, displayName, status: 'unknown' as const, latestFailure: null };
+      }
       return {
         key: prefix,
         displayName,
-        status: latestFailure ? ('failing' as const) : ('ok' as const),
-        latestFailure,
+        status: result ? ('failing' as const) : ('ok' as const),
+        latestFailure: result,
       };
     }),
   );
