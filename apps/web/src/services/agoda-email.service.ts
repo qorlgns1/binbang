@@ -18,7 +18,10 @@ async function sendByConsole(params: SendEmailParams): Promise<{ provider: strin
   return { provider: 'console', messageId };
 }
 
-async function sendByResend(params: SendEmailParams, fromEmail: string): Promise<{ provider: string; messageId: string }> {
+async function sendByResend(
+  params: SendEmailParams,
+  fromEmail: string,
+): Promise<{ provider: string; messageId: string }> {
   const apiKey = process.env.BINBANG_RESEND_API_KEY?.trim();
   if (!apiKey) {
     throw new Error('BINBANG_RESEND_API_KEY is required for resend provider');

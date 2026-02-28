@@ -72,15 +72,9 @@ function normalizeEmailProvider(value: string | undefined): 'console' | 'resend'
 
 function buildEnvFallback(): BinbangRuntimeSettings {
   return {
-    pollIntervalMinutes: parsePositiveInteger(
-      process.env.BINBANG_POLL_INTERVAL_MINUTES,
-      DEFAULTS.pollIntervalMinutes,
-    ),
+    pollIntervalMinutes: parsePositiveInteger(process.env.BINBANG_POLL_INTERVAL_MINUTES, DEFAULTS.pollIntervalMinutes),
     duePollLimit: parsePositiveInteger(process.env.BINBANG_DUE_POLL_LIMIT, DEFAULTS.duePollLimit),
-    duePollConcurrency: parsePositiveInteger(
-      process.env.BINBANG_DUE_POLL_CONCURRENCY,
-      DEFAULTS.duePollConcurrency,
-    ),
+    duePollConcurrency: parsePositiveInteger(process.env.BINBANG_DUE_POLL_CONCURRENCY, DEFAULTS.duePollConcurrency),
     priceDropThreshold: parsePositiveRatio(process.env.BINBANG_PRICE_DROP_THRESHOLD, DEFAULTS.priceDropThreshold),
     vacancyCooldownHours: parsePositiveInteger(
       process.env.BINBANG_VACANCY_COOLDOWN_HOURS,
