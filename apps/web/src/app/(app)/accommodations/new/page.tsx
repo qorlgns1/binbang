@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -103,9 +104,12 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
         data-testid='selected-hotel-card'
       >
         {selectedHotel.photoUrl && (
-          <img
+          <Image
             src={selectedHotel.photoUrl}
             alt={selectedHotel.name}
+            width={56}
+            height={56}
+            unoptimized
             className='size-14 shrink-0 rounded object-cover'
           />
         )}
@@ -168,7 +172,14 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
                   }}
                 >
                   {hotel.photoUrl && (
-                    <img src={hotel.photoUrl} alt={hotel.name} className='size-10 shrink-0 rounded object-cover' />
+                    <Image
+                      src={hotel.photoUrl}
+                      alt={hotel.name}
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className='size-10 shrink-0 rounded object-cover'
+                    />
                   )}
                   <div className='min-w-0'>
                     <p className='truncate text-sm font-medium'>{hotel.name}</p>
