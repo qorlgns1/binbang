@@ -57,13 +57,13 @@ CREATE INDEX "agoda_alert_events_accommodationId_type_offerKey_detectedAt_idx"
 
 ## W5: 베타 안정화 (Day 21~25)
 
-### W5-D1: 스테이징 인프라 ✅
+### W5-D1: 개발 검증 인프라 ✅
 
 | Task | 파일 | 상태 |
 |---|---|---|
-| T1 | `docker/docker-compose.staging.yml` | ✅ |
-| T2 | `apps/web/.env.staging.example` | ✅ |
-| T3 | `docs/deployment/ENVIRONMENTS.md` 스테이징 행 추가 | ✅ |
+| T1 | `docker/docker-compose.develop.yml` | ✅ |
+| T2 | `apps/web/.env.example` | ✅ |
+| T3 | `docs/deployment/ENVIRONMENTS.md` 개발 검증 행 추가 | ✅ |
 
 ### W5-D2: 쿨다운 ✅
 
@@ -153,12 +153,12 @@ DB 마이그레이션: `Accommodation.priceDropThreshold Decimal? @db.Decimal(5,
 | T2 | `api/accommodations/[id]/route.ts` — PATCH 스키마에 `priceDropThreshold(0~1, nullable)` 추가 | ✅ |
 | T3 | `agoda-polling.service.ts` — `accommodation.priceDropThreshold` 설정 시 전역 env 대신 우선 적용 | ✅ |
 
-### W6-D3: 스테이징 E2E 검증 ✅
+### W6-D3: 개발 검증 E2E 검증 ✅
 
 | Task | 파일 | 상태 |
 |---|---|---|
-| T1 | `apps/web/.env.staging.example` — Sprint 3 쿨다운/스냅샷 env 3종 추가 | ✅ |
-| T2 | `scripts/binbang/staging-smoke.sh` — W6 기능 항목 추가 (priceDropThreshold PATCH + dispatch 응답 출력) | ✅ |
+| T1 | `apps/web/.env.example` — Sprint 3 쿨다운/스냅샷 env 3종 추가 | ✅ |
+| T2 | `scripts/binbang/local-smoke.sh` — W6 기능 항목 추가 (priceDropThreshold PATCH + dispatch 응답 출력) | ✅ |
 | T3 | `scripts/binbang/local-smoke.sh` — 로컬 dev 서버(port 3000) 대상 즉시 실행 가능한 smoke 스크립트 신규 작성 | ✅ |
 
 ---

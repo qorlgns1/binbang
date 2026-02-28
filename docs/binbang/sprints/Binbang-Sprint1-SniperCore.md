@@ -55,7 +55,7 @@ Sprint 1의 목표는 "빈방(remainingRooms) 변화 감지 → 알림 발송까
 | 수신동의/수신거부       | ✅ 완료  | `consent_logs` + unsubscribe 토큰                  |
 | 유닛 테스트          | ✅ 완료  | 13개 통과 (detector + normalize + unsubscribe)      |
 | UI (Watch 생성 폼) | 📋 미완 | Sprint 2에서 `apps/web`에 구현                        |
-| 배포 (스테이징)       | 📋 미완 | Sprint 2 이후                                      |
+| 배포 (개발 검증)       | 📋 미완 | Sprint 2 이후                                      |
 
 
 ---
@@ -86,7 +86,7 @@ Sprint 1의 목표는 "빈방(remainingRooms) 변화 감지 → 알림 발송까
 | Day 8  | D8-T2  | 수신동의/수신거부/로그              | ✅     | opt-in/opt-out + HMAC unsubscribe 토큰               |
 | Day 9  | D9-T1  | 오탐 방지 2차 확인 (verify poll) | ✅     | verify 실패 시 try/catch fallback                     |
 | Day 9  | D9-T2  | 테스트 (유닛/통합)               | ✅     | 13개 통과, CI 설정 완료                                   |
-| Day 10 | D10-T1 | 스테이징 배포                   | 📋 미완 | Sprint 2 이후 (`apps/web`에 이식 후)                     |
+| Day 10 | D10-T1 | 개발 검증 배포                   | 📋 미완 | Sprint 2 이후 (`apps/web`에 이식 후)                     |
 | Day 10 | D10-T2 | 운영 체크리스트/대시보드             | ✅     | `docs/runbook.md` 작성                               |
 
 
@@ -191,7 +191,7 @@ consent_logs: 4 (opt_in 3, opt_out 1)
 | URL 등록 → 호텔 검색 등록 전환           | UX 개선                 |
 | 스크래핑 → 어드민 전용 격리               | 아키텍처 결정               |
 | ~~`remainingRooms` 반환 문제 해결~~      | ~~Agoda 계정 확인 필요~~ → ✅ Sprint 3에서 vacancy 감지 기준 재설계로 해결 완료 |
-| 스테이징 배포                        | `apps/web` 이식 후 진행    |
+| 개발 검증 배포                        | `apps/web` 이식 후 진행    |
 | 운영 대시보드 (간단)                   | 배포 이후                 |
 
 

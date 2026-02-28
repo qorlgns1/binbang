@@ -1,6 +1,6 @@
 # Environment Matrix
 
-Last verified: 2026-02-18
+Last verified: 2026-02-28
 Owner: binbang
 
 ## 1) Environments
@@ -8,30 +8,29 @@ Owner: binbang
 |---|---|---|---|---|---|
 | dev | integration/test on server | `develop` / `develop` image tag | `https://dev-binbang.moodybeard.com` | GitHub Actions `deploy.yml` on push | Compose project: `binbang-dev`, web -> `:3200` |
 | dev-travel | travel app test on server | `develop` / `develop` image tag | `https://dev-travel.moodybeard.com` | GitHub Actions `deploy.yml` on push | Same compose project: `binbang-dev`, travel -> `:3301` |
-| staging | Binbang e2e 검증 | `develop` / `develop` image tag | `https://staging.moodybeard.com` | 수동 또는 GitHub Actions `deploy.yml` on push to `develop` | Compose project: `binbang-staging`, web -> `:3500` |
 | production | live traffic | `main` / `main` image tag | `https://binbang.moodybeard.com` | GitHub Actions `deploy.yml` on push | web -> `:4000` |
 | production-travel | travel app live | `main` / `main` image tag | `https://travel.moodybeard.com` | GitHub Actions `deploy.yml` on push | travel -> `:3300` |
 
 ## 2) Runtime and Infra Differences
-| Item | dev | staging | production |
-|---|---|---|---|
-| Compose file | `docker/docker-compose.develop.yml` | `docker/docker-compose.staging.yml` | `docker/docker-compose.production.yml` |
-| Domain (web) | `dev-binbang.moodybeard.com` | `staging.moodybeard.com` | `binbang.moodybeard.com` |
-| Domain (travel) | `dev-travel.moodybeard.com` | `N/A` | `travel.moodybeard.com` |
-| Web upstream port (host) | `3200` | `3500` | `4000` |
-| Travel upstream port (host) | `3301` | `N/A` | `3300` |
-| Compose project name | `binbang-dev` | `binbang-staging` | default |
-| Redis | `redis:7-alpine` | `redis:7-alpine` | `redis:7-alpine` |
-| DB | external PostgreSQL (`DATABASE_URL`) | external PostgreSQL (별도 staging DB 권장) | external PostgreSQL (`DATABASE_URL`) |
-| Replica count | 1 web / 1 worker / 1 travel / 1 redis | 1 web / 1 worker / 1 redis | 1 web / 1 worker / 1 travel / 1 redis |
+| Item | dev | production |
+|---|---|---|
+| Compose file | `docker/docker-compose.develop.yml` | `docker/docker-compose.production.yml` |
+| Domain (web) | `dev-binbang.moodybeard.com` | `binbang.moodybeard.com` |
+| Domain (travel) | `dev-travel.moodybeard.com` | `travel.moodybeard.com` |
+| Web upstream port (host) | `3200` | `4000` |
+| Travel upstream port (host) | `3301` | `3300` |
+| Compose project name | `binbang-dev` | default |
+| Redis | `redis:7-alpine` | `redis:7-alpine` |
+| DB | external PostgreSQL (`DATABASE_URL`) | external PostgreSQL (`DATABASE_URL`) |
+| Replica count | 1 web / 1 worker / 1 travel / 1 redis | 1 web / 1 worker / 1 travel / 1 redis |
 
 ## 3) External Integrations by Environment
-| Integration | dev | staging | production | Failure impact |
-|---|---|---|---|---|
-| Google OAuth | enabled via env | enabled via env | enabled via env | login failure |
-| Kakao OAuth | enabled via env | enabled via env | enabled via env | login/notification flow impact |
-| Google Analytics | optional (`NEXT_PUBLIC_GA_MEASUREMENT_ID`) | 비활성 권장 | optional | analytics visibility loss |
-| Docker Hub pull | required | required | required | deploy blocked |
+| Integration | dev | production | Failure impact |
+|---|---|---|---|
+| Google OAuth | enabled via env | enabled via env | login failure |
+| Kakao OAuth | enabled via env | enabled via env | login/notification flow impact |
+| Google Analytics | optional (`NEXT_PUBLIC_GA_MEASUREMENT_ID`) | optional | analytics visibility loss |
+| Docker Hub pull | required | required | deploy blocked |
 
 ## 4) Env File Structure (Server)
 각 환경별로 두 파일을 운영한다.
@@ -98,11 +97,6 @@ Docker Compose는 `--env-file` 순서상 나중 파일이 이기므로 `.env.dep
 - [ ] `https://dev-travel.moodybeard.com` loads travel app
 - [ ] `docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development --env-file .env.deploy.development ps`
 - [ ] Basic login and accommodation list flow works
-
-### staging
-- [ ] `https://staging.moodybeard.com/api/health` returns `200`
-- [ ] `docker compose -p binbang-staging -f docker/docker-compose.staging.yml --env-file .env.staging --env-file .env.deploy.staging ps`
-- [ ] Binbang e2e smoke: `BASE_URL=https://staging.moodybeard.com INTERNAL_TOKEN=... ./scripts/binbang/staging-smoke.sh`
 
 ### production
 - [ ] `https://binbang.moodybeard.com/api/health` returns `200`

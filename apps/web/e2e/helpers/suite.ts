@@ -27,7 +27,7 @@ function isAllowedSniperCoreAppEnv(appEnv: string | undefined): boolean {
  * SniperCore E2E 스펙 공통 가드(환경 제한 + 테스트 계정 정리 훅)를 등록한다.
  *
  * 적용 효과:
- * - 운영/스테이징에서 실수 실행되는 것을 방지한다.
+ * - 운영 환경에서 실수 실행되는 것을 방지한다.
  * - 각 테스트 종료 후 test-only cleanup endpoint를 호출해 DB 오염을 줄인다.
  *
  * 사용 위치:
