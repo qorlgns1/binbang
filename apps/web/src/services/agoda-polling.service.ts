@@ -4,14 +4,9 @@ import { prisma } from '@workspace/db';
 import { normalizeAgodaSearchResponse } from '@/lib/agoda/normalize';
 import { searchAgodaAvailability } from '@/lib/agoda/searchClient';
 import { detectPriceDropEvents, detectVacancyEvents } from '@/services/agoda-detector.service';
+import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 
 const MAX_ERROR_LENGTH = 1000;
-const DEFAULT_DUE_POLL_INTERVAL_MINUTES = 30;
-const DEFAULT_DUE_POLL_LIMIT = 20;
-const DEFAULT_DUE_POLL_CONCURRENCY = 3;
-const DEFAULT_PRICE_DROP_RATIO = 0.1;
-const DEFAULT_VACANCY_COOLDOWN_HOURS = 24;
-const DEFAULT_PRICE_DROP_COOLDOWN_HOURS = 6;
 
 interface OfferSnapshotSeed {
   offerKey: string;
@@ -31,6 +26,7 @@ export interface PollAccommodationResult {
   vacancyEventsRejectedByVerify: number;
   vacancyEventsInserted: number;
   vacancyEventsSkippedByCooldown: number;
+  vacancyVerifySkipped: boolean;
   priceDropEventsDetected: number;
   priceDropEventsInserted: number;
   priceDropEventsSkippedByCooldown: number;
@@ -56,20 +52,6 @@ function toAgodaLanguageCode(locale: string): string {
   if (normalized === 'ko') return 'ko-kr';
   if (normalized === 'en') return 'en-us';
   return normalized;
-}
-
-function parsePositiveInteger(value: string | undefined, fallbackValue: number): number {
-  if (!value) return fallbackValue;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallbackValue;
-  return parsed;
-}
-
-function parsePositiveRatio(value: string | undefined, fallbackValue: number): number {
-  if (!value) return fallbackValue;
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed) || parsed <= 0 || parsed >= 1) return fallbackValue;
-  return parsed;
 }
 
 function toJsonValue(value: unknown): Prisma.InputJsonValue {
@@ -116,13 +98,9 @@ async function isInCooldown(params: {
   accommodationId: string;
   type: 'vacancy' | 'price_drop' | 'vacancy_proxy';
   offerKey: string;
+  cooldownHours: number;
 }): Promise<boolean> {
-  const cooldownHours =
-    params.type === 'price_drop'
-      ? parsePositiveInteger(process.env.BINBANG_PRICE_DROP_COOLDOWN_HOURS, DEFAULT_PRICE_DROP_COOLDOWN_HOURS)
-      : parsePositiveInteger(process.env.BINBANG_VACANCY_COOLDOWN_HOURS, DEFAULT_VACANCY_COOLDOWN_HOURS);
-
-  const cooldownFrom = new Date(Date.now() - cooldownHours * 60 * 60 * 1000);
+  const cooldownFrom = new Date(Date.now() - params.cooldownHours * 60 * 60 * 1000);
 
   const existing = await prisma.agodaAlertEvent.findFirst({
     where: {
@@ -170,10 +148,6 @@ async function createAlertEventWithDedupe(params: {
     }
     throw error;
   }
-}
-
-function resolvePriceDropThreshold(): number {
-  return parsePositiveRatio(process.env.BINBANG_PRICE_DROP_THRESHOLD, DEFAULT_PRICE_DROP_RATIO);
 }
 
 async function verifyVacancyCandidates(params: {
@@ -239,6 +213,7 @@ async function enqueueNotifications(params: { accommodationId: string; alertEven
 }
 
 export async function pollAccommodationOnce(accommodationId: string): Promise<PollAccommodationResult> {
+  const runtimeSettings = await getBinbangRuntimeSettings();
   const accommodation = await prisma.accommodation.findUnique({
     where: { id: accommodationId },
     select: {
@@ -350,6 +325,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     });
 
     let verifyResult: Awaited<ReturnType<typeof verifyVacancyCandidates>>;
+    let vacancyVerifySkipped = false;
     try {
       verifyResult = await verifyVacancyCandidates({
         accommodationCriteria: {
@@ -368,12 +344,18 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       // verify API 호출 실패 시 후보를 rejected로 처리하지 않고 스킵한다.
       // rejected로 처리하면 DB에 'rejected_verify_failed' 이벤트가 기록되어
       // 실제 verify 실패인지 API 오류인지 구분이 어려워진다.
-      // 스킵하면 다음 poll 주기에서 다시 verify를 시도한다.
+      //
+      // vacancy 후보가 있었는데 verify에 실패한 경우, 이 run을 'partial'로 마킹해
+      // latestSuccessfulRun 쿼리에서 제외한다. 그래야 다음 poll 주기에서
+      // 이전 baseline(스냅샷 없음 = sold out)을 다시 참조하여 vacancy를 재감지할 수 있다.
+      // 'success'로 마킹하면 이 run의 스냅샷이 baseline이 되어
+      // previousSnapshots.length > 0 → vacancy 감지가 영구적으로 불가능해진다.
       console.warn(
         '[polling] vacancy verify API failed, skipping candidates:',
         verifyError instanceof Error ? verifyError.message : String(verifyError),
       );
       verifyResult = { confirmed: [], rejected: [] };
+      vacancyVerifySkipped = vacancyEvents.length > 0;
     }
 
     const priceDropEvents = detectPriceDropEvents({
@@ -383,7 +365,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       minDropRatio:
         accommodation.priceDropThreshold != null
           ? Number(accommodation.priceDropThreshold)
-          : resolvePriceDropThreshold(),
+          : runtimeSettings.priceDropThreshold,
     });
 
     const alertEventIdsToNotify: bigint[] = [];
@@ -393,7 +375,14 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     let priceDropEventsSkippedByCooldown = 0;
 
     for (const event of verifyResult.confirmed) {
-      if (await isInCooldown({ accommodationId, type: 'vacancy', offerKey: event.offerKey })) {
+      if (
+        await isInCooldown({
+          accommodationId,
+          type: 'vacancy',
+          offerKey: event.offerKey,
+          cooldownHours: runtimeSettings.vacancyCooldownHours,
+        })
+      ) {
         vacancyEventsSkippedByCooldown += 1;
         continue;
       }
@@ -429,7 +418,14 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     }
 
     for (const event of priceDropEvents) {
-      if (await isInCooldown({ accommodationId, type: 'price_drop', offerKey: event.offerKey })) {
+      if (
+        await isInCooldown({
+          accommodationId,
+          type: 'price_drop',
+          offerKey: event.offerKey,
+          cooldownHours: runtimeSettings.priceDropCooldownHours,
+        })
+      ) {
         priceDropEventsSkippedByCooldown += 1;
         continue;
       }
@@ -468,15 +464,21 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     // metaSearch extra에서 받은 landingUrl 저장 (첫 번째 오퍼의 hotel-level URL)
     const discoveredLandingUrl = normalized.offers.find((o) => o.landingUrl != null)?.landingUrl ?? null;
 
+    // vacancy 후보가 있었지만 verify API가 실패해 스킵된 경우 'partial'로 마킹한다.
+    // 'partial' run은 latestSuccessfulRun 쿼리(status: 'success')에 매칭되지 않으므로,
+    // 다음 poll 주기에서 이전의 진짜 'success' run을 baseline으로 사용해
+    // sold-out → available 전환을 다시 감지할 수 있다.
+    const pollRunStatus = vacancyVerifySkipped ? 'partial' : 'success';
+
     await prisma.$transaction([
       prisma.agodaPollRun.update({
         where: { id: pollRun.id },
         data: {
-          status: 'success',
+          status: pollRunStatus,
           httpStatus: apiResult.httpStatus,
           latencyMs,
           polledAt: now,
-          error: null,
+          error: vacancyVerifySkipped ? 'vacancy verify API failed, will retry next cycle' : null,
         },
       }),
       prisma.accommodation.update({
@@ -501,6 +503,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       vacancyEventsRejectedByVerify: verifyResult.rejected.length,
       vacancyEventsInserted,
       vacancyEventsSkippedByCooldown,
+      vacancyVerifySkipped,
       priceDropEventsDetected: priceDropEvents.length,
       priceDropEventsInserted,
       priceDropEventsSkippedByCooldown,
@@ -530,15 +533,15 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
   }
 }
 
-function buildDueThreshold(now: Date): Date {
-  const minutes = parsePositiveInteger(process.env.BINBANG_POLL_INTERVAL_MINUTES, DEFAULT_DUE_POLL_INTERVAL_MINUTES);
-  return new Date(now.getTime() - minutes * 60 * 1000);
+function buildDueThreshold(now: Date, pollIntervalMinutes: number): Date {
+  return new Date(now.getTime() - pollIntervalMinutes * 60 * 1000);
 }
 
 export async function findDueAccommodationIds(limit?: number): Promise<string[]> {
+  const runtimeSettings = await getBinbangRuntimeSettings();
   const now = new Date();
-  const dueThreshold = buildDueThreshold(now);
-  const take = limit ?? parsePositiveInteger(process.env.BINBANG_DUE_POLL_LIMIT, DEFAULT_DUE_POLL_LIMIT);
+  const dueThreshold = buildDueThreshold(now, runtimeSettings.pollIntervalMinutes);
+  const take = limit ?? runtimeSettings.duePollLimit;
 
   // 체크인 당일 자정(UTC)을 기준으로 필터한다.
   // new Date()를 쓰면 당일 오전 1시에 이미 "지난 날"로 판단해 폴링이 멈추는 버그가 생긴다.
@@ -574,12 +577,10 @@ export async function pollDueAccommodationsOnce(params?: {
   limit?: number;
   concurrency?: number;
 }): Promise<PollDueAccommodationsResult> {
+  const runtimeSettings = await getBinbangRuntimeSettings();
   const now = new Date();
   const dueIds = await findDueAccommodationIds(params?.limit);
-  const concurrency = Math.max(
-    1,
-    params?.concurrency ?? parsePositiveInteger(process.env.BINBANG_DUE_POLL_CONCURRENCY, DEFAULT_DUE_POLL_CONCURRENCY),
-  );
+  const concurrency = Math.max(1, params?.concurrency ?? runtimeSettings.duePollConcurrency);
 
   const results: PollAccommodationResult[] = [];
   const failures: Array<{ accommodationId: string; reason: string }> = [];

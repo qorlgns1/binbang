@@ -1,18 +1,10 @@
+import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
+
 interface SendEmailParams {
   to: string;
   subject: string;
   text: string;
   html?: string;
-}
-
-function getProvider(): 'console' | 'resend' {
-  const provider = process.env.BINBANG_EMAIL_PROVIDER?.trim().toLowerCase();
-  if (provider === 'resend') return 'resend';
-  return 'console';
-}
-
-function getFromEmail(): string {
-  return process.env.BINBANG_FROM_EMAIL?.trim() || 'Binbang <no-reply@binbang.local>';
 }
 
 async function sendByConsole(params: SendEmailParams): Promise<{ provider: string; messageId: string }> {
@@ -26,7 +18,7 @@ async function sendByConsole(params: SendEmailParams): Promise<{ provider: strin
   return { provider: 'console', messageId };
 }
 
-async function sendByResend(params: SendEmailParams): Promise<{ provider: string; messageId: string }> {
+async function sendByResend(params: SendEmailParams, fromEmail: string): Promise<{ provider: string; messageId: string }> {
   const apiKey = process.env.BINBANG_RESEND_API_KEY?.trim();
   if (!apiKey) {
     throw new Error('BINBANG_RESEND_API_KEY is required for resend provider');
@@ -39,7 +31,7 @@ async function sendByResend(params: SendEmailParams): Promise<{ provider: string
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: getFromEmail(),
+      from: fromEmail,
       to: [params.to],
       subject: params.subject,
       text: params.text,
@@ -59,9 +51,10 @@ async function sendByResend(params: SendEmailParams): Promise<{ provider: string
 }
 
 export async function sendAgodaAlertEmail(params: SendEmailParams): Promise<{ provider: string; messageId: string }> {
-  const provider = getProvider();
+  const runtimeSettings = await getBinbangRuntimeSettings();
+  const provider = runtimeSettings.emailProvider;
   if (provider === 'resend') {
-    return sendByResend(params);
+    return sendByResend(params, runtimeSettings.fromEmail);
   }
   return sendByConsole(params);
 }

@@ -1,10 +1,10 @@
 import { prisma } from '@workspace/db';
 import { getHeartbeatStatus } from '../health.service';
+import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { ensureRedisConnected, getRedisClient } from '@/lib/redis';
 
 const DEFAULT_LOOKBACK_DAYS = 7;
 const FALSE_POSITIVE_LIMIT = 20;
-const DEFAULT_POLL_INTERVAL_MINUTES = 30;
 const STALL_MULTIPLIER = 2;
 const STALL_LIMIT = 20;
 
@@ -161,23 +161,6 @@ function toRate(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 1000) / 1000;
 }
 
-function resolvePollIntervalMs(): number {
-  const raw = process.env.BINBANG_POLL_INTERVAL_MINUTES;
-  if (!raw) return DEFAULT_POLL_INTERVAL_MINUTES * 60 * 1000;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_POLL_INTERVAL_MINUTES * 60 * 1000;
-  return parsed * 60 * 1000;
-}
-
-function resolveEmailProvider(): 'console' | 'resend' {
-  const provider = process.env.BINBANG_EMAIL_PROVIDER?.trim().toLowerCase();
-  return provider === 'resend' ? 'resend' : 'console';
-}
-
-function resolveFromEmail(): string {
-  return process.env.BINBANG_FROM_EMAIL?.trim() || 'Binbang <no-reply@binbang.local>';
-}
-
 function countByStatus(rows: Array<{ status: string; _count: { _all: number } }>): Record<string, number> {
   return rows.reduce<Record<string, number>>((acc, row) => {
     acc[row.status] = row._count._all;
@@ -253,11 +236,12 @@ export async function getAdminOpsAccommodationDiagnostics(
     return null;
   }
 
+  const runtimeSettings = await getBinbangRuntimeSettings();
   const accommodationId = accommodation.id;
   const now = new Date();
-  const pollIntervalMs = resolvePollIntervalMs();
-  const pollIntervalMinutes = Math.max(1, Math.round(pollIntervalMs / 60_000));
-  const emailProvider = resolveEmailProvider();
+  const pollIntervalMinutes = runtimeSettings.pollIntervalMinutes;
+  const pollIntervalMs = pollIntervalMinutes * 60_000;
+  const emailProvider = runtimeSettings.emailProvider;
 
   const [
     pollStatusGroups,
@@ -622,7 +606,7 @@ export async function getAdminOpsAccommodationDiagnostics(
     config: {
       pollIntervalMinutes,
       emailProvider,
-      fromEmail: resolveFromEmail(),
+      fromEmail: runtimeSettings.fromEmail,
     },
     counters: {
       polls: {
@@ -670,7 +654,8 @@ export async function getAdminOpsAccommodationDiagnostics(
 }
 
 async function fetchStalledAccommodations(now: Date): Promise<StalledAccommodation[]> {
-  const stallThreshold = new Date(now.getTime() - STALL_MULTIPLIER * resolvePollIntervalMs());
+  const runtimeSettings = await getBinbangRuntimeSettings();
+  const stallThreshold = new Date(now.getTime() - STALL_MULTIPLIER * runtimeSettings.pollIntervalMinutes * 60_000);
 
   const rows = await prisma.accommodation.findMany({
     where: {

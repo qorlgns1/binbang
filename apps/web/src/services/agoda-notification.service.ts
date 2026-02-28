@@ -3,10 +3,9 @@ import { prisma } from '@workspace/db';
 import { buildAgodaLandingUrl, buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
 import { sendAgodaAlertEmail } from '@/services/agoda-email.service';
 import { sendBinbangKakaoNotification } from '@/services/agoda-kakao.service';
+import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { buildAgodaUnsubscribeUrl, createAgodaUnsubscribeToken } from '@/services/agoda-unsubscribe.service';
 
-const DEFAULT_DISPATCH_LIMIT = 50;
-const DEFAULT_MAX_ATTEMPTS = 5;
 const RETRY_BACKOFF_MINUTES = [1, 5, 30, 120, 360];
 const STALE_PROCESSING_TIMEOUT_MS = 10 * 60 * 1000; // 10분: 워커 충돌 후 복구
 
@@ -17,13 +16,6 @@ export interface DispatchAgodaNotificationsResult {
   failed: number;
   suppressed: number;
   skippedNotDue: number;
-}
-
-function parsePositiveInteger(value: string | undefined, fallbackValue: number): number {
-  if (!value) return fallbackValue;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallbackValue;
-  return parsed;
 }
 
 type AgodaEmailLocale = 'ko' | 'en';
@@ -292,9 +284,9 @@ const notificationSelect = {
 export async function dispatchAgodaNotifications(params?: {
   limit?: number;
 }): Promise<DispatchAgodaNotificationsResult> {
-  const limit =
-    params?.limit ?? parsePositiveInteger(process.env.BINBANG_NOTIFICATION_DISPATCH_LIMIT, DEFAULT_DISPATCH_LIMIT);
-  const maxAttempts = parsePositiveInteger(process.env.BINBANG_NOTIFICATION_MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
+  const runtimeSettings = await getBinbangRuntimeSettings();
+  const limit = params?.limit ?? runtimeSettings.notificationDispatchLimit;
+  const maxAttempts = runtimeSettings.notificationMaxAttempts;
   const now = new Date();
 
   // 워커 충돌·타임아웃으로 'processing'에 멈춘 알림을 'queued'로 복구한다.

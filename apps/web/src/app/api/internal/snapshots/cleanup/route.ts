@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { cleanupExpiredAgodaPollRuns } from '@/services/agoda-snapshot-cleanup.service';
-
-const DEFAULT_RETENTION_DAYS = 30;
+import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 
 function authorizeInternalRequest(req: Request): { ok: boolean; message?: string; status?: number } {
   const internalToken = process.env.BINBANG_INTERNAL_API_TOKEN?.trim();
@@ -21,14 +20,6 @@ function authorizeInternalRequest(req: Request): { ok: boolean; message?: string
   return { ok: true };
 }
 
-function resolveRetentionDays(): number {
-  const raw = process.env.BINBANG_SNAPSHOT_RETENTION_DAYS;
-  if (!raw) return DEFAULT_RETENTION_DAYS;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_RETENTION_DAYS;
-  return parsed;
-}
-
 export async function POST(req: Request): Promise<Response> {
   const auth = authorizeInternalRequest(req);
   if (!auth.ok) {
@@ -38,7 +29,8 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  const retentionDays = resolveRetentionDays();
+  const runtimeSettings = await getBinbangRuntimeSettings();
+  const retentionDays = runtimeSettings.snapshotRetentionDays;
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
 
   try {

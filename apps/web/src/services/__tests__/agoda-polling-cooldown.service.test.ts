@@ -226,6 +226,68 @@ describe('agoda-polling: cooldown 쿨다운', () => {
     expect(result.notificationsQueued).toBe(0);
   });
 
+  it('vacancy verify API 실패 시 poll run을 partial로 마킹하고 vacancyVerifySkipped=true 반환', async () => {
+    setupBaseAccommodation();
+
+    // 이전 poll run 존재(hasBaseline=true), 스냅샷 없음(호텔 sold out)
+    mockPollRunFindFirst.mockResolvedValue({ id: 0n });
+    mockSnapshotFindMany.mockResolvedValue([]);
+
+    const currentOffer = makeAgodaOffer();
+    // 첫 번째 호출(main poll): 정상 응답
+    // 두 번째 호출(verify): 에러
+    mockSearchAgodaAvailability
+      .mockResolvedValueOnce({ payload: { properties: [] }, httpStatus: 200 })
+      .mockRejectedValueOnce(new Error('Agoda API timeout'));
+    mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
+
+    const result = await pollAccommodationOnce('acc_001');
+
+    // verify 실패 → vacancy 이벤트 미생성, verify skipped 플래그 true
+    expect(result.vacancyEventsDetected).toBe(1);
+    expect(result.vacancyEventsInserted).toBe(0);
+    expect(result.vacancyVerifySkipped).toBe(true);
+    expect(result.notificationsQueued).toBe(0);
+
+    // poll run이 'partial' 상태로 업데이트되었는지 확인
+    expect(mockPollRunUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 1n },
+        data: expect.objectContaining({
+          status: 'partial',
+          error: 'vacancy verify API failed, will retry next cycle',
+        }),
+      }),
+    );
+  });
+
+  it('vacancy verify API 실패지만 vacancy 후보가 없으면 success로 마킹', async () => {
+    setupBaseAccommodation();
+
+    // 이전 스냅샷 있음 → vacancy 후보 없음
+    mockPollRunFindFirst.mockResolvedValue({ id: 0n });
+    mockSnapshotFindMany.mockResolvedValue([
+      {
+        propertyId: '1001',
+        roomId: '2001',
+        ratePlanId: '3001',
+        remainingRooms: null,
+        totalInclusive: 100_000,
+        payloadHash: 'hash_before',
+      },
+    ]);
+
+    const currentOffer = makeAgodaOffer();
+    mockSearchAgodaAvailability.mockResolvedValue({ payload: { properties: [] }, httpStatus: 200 });
+    mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
+
+    const result = await pollAccommodationOnce('acc_001');
+
+    // vacancy 후보 없음 → vacancyVerifySkipped=false
+    expect(result.vacancyEventsDetected).toBe(0);
+    expect(result.vacancyVerifySkipped).toBe(false);
+  });
+
   it('isInCooldown 쿼리는 accommodationId + type + offerKey + status=detected 조건으로 조회', async () => {
     setupBaseAccommodation();
 
