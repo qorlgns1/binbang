@@ -102,7 +102,8 @@ export async function seedBase() {
     await prisma.systemSettings.upsert({
       where: { key: setting.key },
       update: {
-        value: setting.value,
+        // 운영 중 Admin에서 변경한 value는 유지한다.
+        // seed는 기본 메타데이터(type/category/description/range) 동기화만 담당.
         type: setting.type,
         category: setting.category,
         description: setting.description,
