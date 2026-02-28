@@ -13,7 +13,8 @@ function getSecret(): string {
   if (secret) return secret;
 
   const appEnv = process.env.APP_ENV;
-  const isLocalDev = process.env.NODE_ENV !== 'production' && (!appEnv || appEnv === 'local' || appEnv === 'development');
+  const isLocalDev =
+    process.env.NODE_ENV !== 'production' && (!appEnv || appEnv === 'local' || appEnv === 'development');
   if (!isLocalDev) {
     throw new Error('BINBANG_UNSUBSCRIBE_SECRET (or NEXTAUTH_SECRET) is required');
   }
