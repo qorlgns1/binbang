@@ -42,6 +42,15 @@ export interface PreviousSnapshotForDetector {
   payloadHash: string;
 }
 
+function pickVacancyRepresentativeOffer(offers: NormalizedRoomOffer[]): NormalizedRoomOffer {
+  return [...offers].sort((a, b) => {
+    const aPrice = a.totalInclusive ?? Number.POSITIVE_INFINITY;
+    const bPrice = b.totalInclusive ?? Number.POSITIVE_INFINITY;
+    if (aPrice !== bPrice) return aPrice - bPrice;
+    return a.offerKey.localeCompare(b.offerKey);
+  })[0] as NormalizedRoomOffer;
+}
+
 /**
  * 빈방 감지: 이전 poll에서 결과가 없었고(호텔 sold out), 현재 poll에서 결과가 생겼을 때 발생.
  *
@@ -58,23 +67,28 @@ export function detectVacancyEvents(params: {
   if (params.previousSnapshots.length > 0) return [];
   if (params.currentOffers.length === 0) return [];
 
-  // 이전 poll에 결과 없음(sold out) → 현재 poll에 결과 있음 → vacancy
-  return params.currentOffers.map((offer) => ({
-    type: 'vacancy',
-    eventKey: `vacancy:${params.accommodationId}:${offer.offerKey}:${offer.payloadHash}`,
-    beforeHash: null,
-    afterHash: offer.payloadHash,
-    offerKey: offer.offerKey,
-    meta: {
-      propertyId: offer.propertyId.toString(),
-      roomId: offer.roomId.toString(),
-      ratePlanId: offer.ratePlanId.toString(),
-      currency: offer.currency,
-      totalInclusive: offer.totalInclusive,
-      freeCancellation: offer.freeCancellation,
-      freeCancellationDate: offer.freeCancellationDate?.toISOString() ?? null,
+  // 이전 poll에 결과 없음(sold out) → 현재 poll에 결과 있음 → vacancy.
+  // 재오픈 시 오퍼 수만큼 중복 알림이 나가지 않도록 대표 오퍼 1개만 이벤트로 발행한다.
+  const offer = pickVacancyRepresentativeOffer(params.currentOffers);
+
+  return [
+    {
+      type: 'vacancy',
+      eventKey: `vacancy:${params.accommodationId}:${offer.offerKey}:${offer.payloadHash}`,
+      beforeHash: null,
+      afterHash: offer.payloadHash,
+      offerKey: offer.offerKey,
+      meta: {
+        propertyId: offer.propertyId.toString(),
+        roomId: offer.roomId.toString(),
+        ratePlanId: offer.ratePlanId.toString(),
+        currency: offer.currency,
+        totalInclusive: offer.totalInclusive,
+        freeCancellation: offer.freeCancellation,
+        freeCancellationDate: offer.freeCancellationDate?.toISOString() ?? null,
+      },
     },
-  }));
+  ];
 }
 
 function shouldEmitPriceDrop(

@@ -99,7 +99,7 @@ describe('detectVacancyEvents', () => {
     expect(events[0].afterHash).toBe('appeared_hash');
   });
 
-  it('현재 오퍼가 여러 개면 각각 vacancy 이벤트 생성', () => {
+  it('현재 오퍼가 여러 개여도 vacancy 이벤트는 1개만 생성', () => {
     const events = detectVacancyEvents({
       accommodationId: ACCOMMODATION_ID,
       previousSnapshots: [],
@@ -109,8 +109,22 @@ describe('detectVacancyEvents', () => {
       ],
       hasBaseline: true,
     });
-    expect(events).toHaveLength(2);
-    expect(events.map((e) => e.offerKey)).toEqual(['p:r1:rate1', 'p:r2:rate2']);
+    expect(events).toHaveLength(1);
+    expect(events[0].offerKey).toBe('p:r1:rate1');
+  });
+
+  it('현재 오퍼가 여러 개면 vacancy 대표 오퍼로 최저가를 선택', () => {
+    const events = detectVacancyEvents({
+      accommodationId: ACCOMMODATION_ID,
+      previousSnapshots: [],
+      currentOffers: [
+        makeOffer({ offerKey: 'p:r1:rate1', propertyId: 1n, roomId: 1n, ratePlanId: 1n, totalInclusive: 300_000 }),
+        makeOffer({ offerKey: 'p:r2:rate2', propertyId: 1n, roomId: 2n, ratePlanId: 2n, totalInclusive: 200_000 }),
+      ],
+      hasBaseline: true,
+    });
+    expect(events).toHaveLength(1);
+    expect(events[0].offerKey).toBe('p:r2:rate2');
   });
 
   it('eventKey는 vacancy 접두사 + accommodationId + offerKey + payloadHash 포함', () => {

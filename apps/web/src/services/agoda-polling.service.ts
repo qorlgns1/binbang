@@ -203,6 +203,8 @@ async function enqueueNotifications(params: { accommodationId: string; alertEven
     data: params.alertEventIds.map((alertEventId) => ({
       accommodationId: params.accommodationId,
       alertEventId,
+      // 현재 큐는 email 채널 단일 모델이며, Kakao는 dispatch 단계에서 병행 발송한다.
+      // 향후 kakao-only 사용자를 지원할 때는 채널별 큐 분리가 필요하다.
       channel: 'email',
       status: 'queued',
       attempt: 0,
