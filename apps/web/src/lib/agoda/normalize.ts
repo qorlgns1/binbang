@@ -163,11 +163,15 @@ function resolveHotels(payload: unknown): unknown[] {
 }
 
 function resolveOffersFromHotel(hotel: unknown): Array<{ room: unknown; rate: unknown }> {
-  const rooms = firstArray(hotel, ROOM_LIST_PATHS) ?? [hotel];
+  // room/rate 배열이 명시적으로 존재하는 경우만 offer를 생성한다.
+  // 배열이 없을 때 hotel/room 객체 자체를 fallback으로 쓰면 가짜 offer가 만들어질 수 있다.
+  const rooms = firstArray(hotel, ROOM_LIST_PATHS);
+  if (!rooms || rooms.length === 0) return [];
   const pairs: Array<{ room: unknown; rate: unknown }> = [];
 
   for (const room of rooms) {
-    const rates = firstArray(room, RATE_LIST_PATHS) ?? [room];
+    const rates = firstArray(room, RATE_LIST_PATHS);
+    if (!rates || rates.length === 0) continue;
     for (const rate of rates) {
       pairs.push({ room, rate });
     }

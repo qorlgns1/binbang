@@ -40,7 +40,9 @@ function toDisplayPrice(value: number | null, currency: string | null, locale: A
 }
 
 function resolveRetryDelayMinutes(attempt: number): number {
-  const index = Math.min(Math.max(attempt, 0), RETRY_BACKOFF_MINUTES.length - 1);
+  // failed 상태의 첫 재시도는 attempt=1로 기록되므로 backoff[0](1분)부터 시작해야 한다.
+  const retryIndex = Math.max(attempt - 1, 0);
+  const index = Math.min(retryIndex, RETRY_BACKOFF_MINUTES.length - 1);
   return RETRY_BACKOFF_MINUTES[index] ?? RETRY_BACKOFF_MINUTES[RETRY_BACKOFF_MINUTES.length - 1] ?? 60;
 }
 

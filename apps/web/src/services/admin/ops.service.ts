@@ -1,4 +1,5 @@
 import { prisma } from '@workspace/db';
+import { startOfUtcDay } from '@workspace/shared/utils/date';
 import { getHeartbeatStatus } from '../health.service';
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { ensureRedisConnected, getRedisClient } from '@/lib/redis';
@@ -656,13 +657,14 @@ export async function getAdminOpsAccommodationDiagnostics(
 async function fetchStalledAccommodations(now: Date): Promise<StalledAccommodation[]> {
   const runtimeSettings = await getBinbangRuntimeSettings();
   const stallThreshold = new Date(now.getTime() - STALL_MULTIPLIER * runtimeSettings.pollIntervalMinutes * 60_000);
+  const todayStart = startOfUtcDay(now);
 
   const rows = await prisma.accommodation.findMany({
     where: {
       platform: 'AGODA',
       isActive: true,
       platformId: { not: null },
-      checkIn: { gte: now },
+      checkIn: { gte: todayStart },
       OR: [{ lastPolledAt: { lte: stallThreshold } }, { lastPolledAt: null, createdAt: { lte: stallThreshold } }],
     },
     orderBy: { lastPolledAt: 'asc' },

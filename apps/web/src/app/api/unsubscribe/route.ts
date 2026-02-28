@@ -4,8 +4,7 @@ import { NextResponse } from 'next/server';
 import { unsubscribeAgodaAccommodation, verifyAgodaUnsubscribeToken } from '@/services/agoda-unsubscribe.service';
 
 // 수신거부 확인 페이지 HTML (GET 요청: 상태 변경 없음)
-function confirmationPage(token: string): string {
-  // token은 base64url + '.' + base64url — URL-safe 문자만 포함하므로 HTML 이스케이프 불필요
+function confirmationPage(): string {
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -24,7 +23,6 @@ function confirmationPage(token: string): string {
   <h2>알림 수신거부</h2>
   <p>이 숙소에 대한 알림을 더 이상 받지 않으시겠습니까?</p>
   <form method="POST">
-    <input type="hidden" name="token" value="${token}">
     <button type="submit">수신거부 확인</button>
   </form>
 </body>
@@ -56,7 +54,7 @@ export async function GET(request: Request): Promise<Response> {
     });
   }
 
-  return new Response(confirmationPage(token), {
+  return new Response(confirmationPage(), {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
