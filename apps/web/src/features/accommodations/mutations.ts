@@ -170,6 +170,7 @@ export function useBulkDeleteAccommodationsMutation(): UseBulkDeleteAccommodatio
     mutationFn: bulkDeleteAccommodations,
     onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.quota() });
     },
   });
 }

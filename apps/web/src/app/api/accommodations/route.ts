@@ -62,18 +62,22 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     return unauthorizedResponse();
   }
 
+  let body: unknown;
   try {
-    const body = await request.json();
-    const { ids } = bulkDeleteSchema.parse(body);
+    body = await request.json();
+  } catch {
+    return validationErrorResponse([{ code: 'custom', path: [], message: '잘못된 JSON 본문입니다' }]);
+  }
 
-    const count = await deleteAccommodations(ids, session.user.id);
+  const parsed = bulkDeleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.issues);
+  }
 
+  try {
+    const count = await deleteAccommodations(parsed.data.ids, session.user.id);
     return NextResponse.json({ success: true, count });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return validationErrorResponse(error.issues);
-    }
-
     return handleServiceError(error, '숙소 일괄 삭제 오류');
   }
 }
