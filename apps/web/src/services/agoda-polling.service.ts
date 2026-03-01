@@ -456,10 +456,17 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
       }
     }
 
-    const notificationsQueued = await enqueueNotifications({
-      accommodationId,
-      alertEventIds: alertEventIdsToNotify,
-    });
+    let notificationsQueued = 0;
+    try {
+      notificationsQueued = await enqueueNotifications({
+        accommodationId,
+        alertEventIds: alertEventIdsToNotify,
+      });
+    } catch (err) {
+      // 알림 큐잉 실패 시 이벤트는 DB에 'detected' 상태로 보존된다.
+      // dispatch cron이 다음 주기에 queued 상태로 전환해 재처리한다.
+      console.warn('[agoda-polling] enqueueNotifications 실패, 다음 dispatch 주기에서 재처리됩니다:', err);
+    }
 
     const now = new Date();
     const latencyMs = Date.now() - pipelineStartedAt;

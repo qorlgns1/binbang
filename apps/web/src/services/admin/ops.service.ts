@@ -558,7 +558,8 @@ export async function getAdminOpsAccommodationDiagnostics(
     });
   }
 
-  if ((notificationCounts.queued ?? 0) > 0 && queuedAgedMinutes >= pollIntervalMinutes) {
+  const DISPATCH_INTERVAL_MINUTES = 5;
+  if ((notificationCounts.queued ?? 0) > 0 && queuedAgedMinutes >= DISPATCH_INTERVAL_MINUTES) {
     checks.push({
       level: 'warn',
       code: 'notification_queue_backlog',

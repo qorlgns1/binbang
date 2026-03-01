@@ -28,7 +28,7 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     if (error instanceof Error) {
-      return NextResponse.json({ error: { code: 'DISPATCH_FAILED', message: error.message } }, { status: 400 });
+      return NextResponse.json({ error: { code: 'DISPATCH_FAILED', message: error.message } }, { status: 500 });
     }
     return NextResponse.json({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'dispatch failed' } }, { status: 500 });
   }

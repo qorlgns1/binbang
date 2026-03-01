@@ -21,8 +21,9 @@ const createAccommodationSchema = z
   .refine(
     (data) => {
       const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-      const checkInDate = new Date(data.checkIn);
+      today.setHours(0, 0, 0, 0);
+      const [y, m, d] = data.checkIn.split('-').map(Number);
+      const checkInDate = new Date(y, m - 1, d);
       return checkInDate >= today;
     },
     {

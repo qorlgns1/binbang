@@ -15,6 +15,14 @@ export async function POST(req: Request): Promise<Response> {
 
   const runtimeSettings = await getBinbangRuntimeSettings();
   const retentionDays = runtimeSettings.snapshotRetentionDays;
+
+  if (retentionDays <= 0) {
+    return NextResponse.json(
+      { error: { code: 'INVALID_CONFIG', message: `snapshotRetentionDays must be > 0, got ${retentionDays}` } },
+      { status: 400 },
+    );
+  }
+
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
 
   try {

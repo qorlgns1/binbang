@@ -125,7 +125,6 @@ export function buildAgodaSearchRequest(request: AgodaSearchRequest): AgodaSearc
       currency: request.criteria.currency ?? 'KRW',
       language: request.criteria.language ?? 'ko-kr',
       userCountry: request.criteria.userCountry ?? 'KR',
-      propertyIds: request.criteria.propertyIds.map((id) => id.toString()),
     },
     features: {
       ratesPerProperty: request.features?.ratesPerProperty ?? 25,

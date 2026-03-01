@@ -117,7 +117,7 @@ export async function getQueueStats(queueName: QueueName): Promise<QueueStats> {
   }
 
   const [waiting, active, failed, completed, delayed, pausedField] = await Promise.all([
-    redis.llen(queueKey(queueName, 'waiting')),
+    redis.llen(queueKey(queueName, 'wait')),
     redis.llen(queueKey(queueName, 'active')),
     redis.zcard(queueKey(queueName, 'failed')),
     redis.zcard(queueKey(queueName, 'completed')),
@@ -217,34 +217,27 @@ export async function getJobDetail(queueName: QueueName, jobId: string): Promise
 
 // ─── 잡 제어 ─────────────────────────────────────────────────────────────────
 
-/**
- * 원자성 개선: zscore 확인 후 pipeline으로 모든 쓰기를 단일 왕복에 처리.
- */
 export async function retryJob(queueName: QueueName, jobId: string): Promise<void> {
   const redis = await getRedis();
   if (!redis) throw new Error('Redis 연결 불가');
 
   const hashKey = jobKey(queueName, jobId);
   const failedKey = queueKey(queueName, 'failed');
-  const waitingKey = queueKey(queueName, 'waiting');
+  const waitKey = queueKey(queueName, 'wait');
 
-  // 1. 상태 검증: failed set에 존재하는지 + hash 데이터 확인 (2개 명령 → 1 파이프라인)
-  const checkPipe = redis.pipeline().zscore(failedKey, jobId).hget(hashKey, 'attemptsMade');
-  const checkResults = await checkPipe.exec();
-  const score = checkResults?.[0]?.[1] as string | null;
-  const rawAttempts = checkResults?.[1]?.[1] as string | null;
+  // zrem + hget을 한 파이프라인으로 처리: zrem 결과(0/1)로 중복 retry 방지
+  const firstPipe = await redis.pipeline().zrem(failedKey, jobId).hget(hashKey, 'attemptsMade').exec();
+  const removed = (firstPipe?.[0]?.[1] as number) ?? 0;
+  if (removed === 0) throw new Error(`Job ${jobId} 은 failed 상태가 아닙니다.`);
 
-  if (score === null) throw new Error(`Job ${jobId} 은 failed 상태가 아닙니다.`);
-
+  const rawAttempts = firstPipe?.[1]?.[1] as string | null;
   const currentAttempts = parseInt(rawAttempts ?? '0', 10);
 
-  // 2. 쓰기: 모든 변경을 단일 파이프라인으로 원자적으로 처리
   await redis
     .pipeline()
-    .zrem(failedKey, jobId)
     .hdel(hashKey, 'failedReason', 'finishedOn', 'processedOn', 'stacktrace')
     .hset(hashKey, 'attemptsMade', String(Math.max(0, currentAttempts - 1)))
-    .rpush(waitingKey, jobId)
+    .rpush(waitKey, jobId)
     .exec();
 }
 
@@ -258,7 +251,7 @@ export async function removeJob(queueName: QueueName, jobId: string): Promise<vo
     .zrem(queueKey(queueName, 'failed'), jobId)
     .zrem(queueKey(queueName, 'completed'), jobId)
     .zrem(queueKey(queueName, 'delayed'), jobId)
-    .lrem(queueKey(queueName, 'waiting'), 0, jobId)
+    .lrem(queueKey(queueName, 'wait'), 0, jobId)
     .lrem(queueKey(queueName, 'active'), 0, jobId)
     .lrem(queueKey(queueName, 'paused'), 0, jobId)
     .del(jobKey(queueName, jobId))

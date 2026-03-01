@@ -50,6 +50,7 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const search = useCallback(async (q: string): Promise<void> => {
@@ -59,17 +60,23 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
       return;
     }
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/hotels/search?q=${encodeURIComponent(q)}&limit=10`);
+      const res = await fetch(`/api/hotels/search?q=${encodeURIComponent(q)}&limit=10`, {
+        signal: controller.signal,
+      });
       if (res.ok) {
         const payload = (await res.json()) as HotelSearchResult[] | { hotels?: HotelSearchResult[] };
         const hotels = Array.isArray(payload) ? payload : Array.isArray(payload.hotels) ? payload.hotels : [];
         setResults(hotels);
         setIsOpen(hotels.length > 0);
       }
-    } catch {
-      // 검색 실패 시 결과 없음으로 처리
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
     } finally {
       setIsSearching(false);
     }
@@ -260,7 +267,7 @@ export default function NewAccommodationPage(): React.ReactElement {
         rooms,
         currency: 'KRW',
         locale: 'ko',
-        consentOptIn: true,
+        consentOptIn,
       },
       {
         onSuccess: () => {

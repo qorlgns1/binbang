@@ -13,29 +13,14 @@ export interface CleanupE2eUserResult {
 /**
  * E2E 테스트에서 생성한 사용자를 안전하게 삭제한다.
  *
- * 구현 포인트:
- * - 먼저 존재 여부를 확인해 불필요한 예외를 피한다.
- * - 실제 삭제는 `User` 단건 삭제로 수행한다.
- * - schema의 cascade 관계(Session/Account/Accommodation 등)에 의해
- *   관련 데이터가 함께 정리된다.
+ * deleteMany를 사용해 TOCTOU 경합 없이 원자적으로 처리한다.
+ * schema의 cascade 관계(Session/Account/Accommodation 등)에 의해
+ * 관련 데이터가 함께 정리된다.
  *
  * @param userId 삭제 대상 사용자 ID
  * @returns 삭제 수행 여부
  */
 export async function cleanupE2eUserById(userId: string): Promise<CleanupE2eUserResult> {
-  const existing = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true },
-  });
-
-  if (!existing) {
-    return { deleted: false };
-  }
-
-  await prisma.user.delete({
-    where: { id: userId },
-    select: { id: true },
-  });
-
-  return { deleted: true };
+  const { count } = await prisma.user.deleteMany({ where: { id: userId } });
+  return { deleted: count > 0 };
 }
