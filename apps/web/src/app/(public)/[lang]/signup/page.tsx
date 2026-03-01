@@ -75,7 +75,7 @@ export default function SignupPage(): React.ReactElement {
               </Alert>
             )}
 
-            <form onSubmit={handleSignup} className='space-y-3'>
+            <form onSubmit={handleSignup} className='space-y-3' data-testid='signup-form'>
               <div className='space-y-1.5'>
                 <Label htmlFor='name'>{t('signup.name')}</Label>
                 <Input
@@ -87,6 +87,7 @@ export default function SignupPage(): React.ReactElement {
                   required
                   autoComplete='name'
                   className='bg-background/80'
+                  data-testid='signup-name-input'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -100,6 +101,7 @@ export default function SignupPage(): React.ReactElement {
                   required
                   autoComplete='email'
                   className='bg-background/80'
+                  data-testid='signup-email-input'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -114,6 +116,7 @@ export default function SignupPage(): React.ReactElement {
                   minLength={8}
                   autoComplete='new-password'
                   className='bg-background/80'
+                  data-testid='signup-password-input'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -127,12 +130,14 @@ export default function SignupPage(): React.ReactElement {
                   minLength={8}
                   autoComplete='new-password'
                   className='bg-background/80'
+                  data-testid='signup-password-confirm-input'
                 />
               </div>
               <Button
                 type='submit'
                 className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
                 disabled={loading}
+                data-testid='signup-submit-button'
               >
                 {loading ? t('signup.submitting') : t('signup.submit')}
               </Button>

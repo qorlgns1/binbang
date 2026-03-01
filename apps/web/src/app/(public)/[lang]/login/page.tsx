@@ -71,7 +71,7 @@ function LoginForm(): React.ReactElement {
               </Alert>
             )}
 
-            <form onSubmit={handleCredentialsLogin} className='space-y-3'>
+            <form onSubmit={handleCredentialsLogin} className='space-y-3' data-testid='login-form'>
               <div className='space-y-1.5'>
                 <Label htmlFor='email'>{t('login.email')}</Label>
                 <Input
@@ -83,6 +83,7 @@ function LoginForm(): React.ReactElement {
                   required
                   autoComplete='email'
                   className='bg-background/80'
+                  data-testid='login-email-input'
                 />
               </div>
               <div className='space-y-1.5'>
@@ -95,12 +96,14 @@ function LoginForm(): React.ReactElement {
                   required
                   autoComplete='current-password'
                   className='bg-background/80'
+                  data-testid='login-password-input'
                 />
               </div>
               <Button
                 type='submit'
                 className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
                 disabled={loading}
+                data-testid='login-submit-button'
               >
                 {loading ? t('login.submitting') : t('login.submit')}
               </Button>

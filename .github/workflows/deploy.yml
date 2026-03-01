@@ -28,7 +28,6 @@ jobs:
       web_digest: ${{ steps.digests.outputs.web_digest }}
       worker_digest: ${{ steps.digests.outputs.worker_digest }}
       travel_digest: ${{ steps.digests.outputs.travel_digest }}
-      mooncatch_digest: ${{ steps.digests.outputs.mooncatch_digest }}
     steps:
       - uses: actions/checkout@v6
 
@@ -69,11 +68,9 @@ jobs:
           web_digest=$(jq -r '.web["containerimage.digest"]' <<<"$METADATA")
           worker_digest=$(jq -r '.worker["containerimage.digest"]' <<<"$METADATA")
           travel_digest=$(jq -r '.travel["containerimage.digest"]' <<<"$METADATA")
-          mooncatch_digest=$(jq -r '.mooncatch["containerimage.digest"]' <<<"$METADATA")
           echo "web_digest=$web_digest" >> "$GITHUB_OUTPUT"
           echo "worker_digest=$worker_digest" >> "$GITHUB_OUTPUT"
           echo "travel_digest=$travel_digest" >> "$GITHUB_OUTPUT"
-          echo "mooncatch_digest=$mooncatch_digest" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy to OCI
@@ -151,7 +148,6 @@ jobs:
             update_env_var IMAGE_WEB_DIGEST       "${{ needs.docker.outputs.web_digest }}"      "$DEPLOY_FILE"
             update_env_var IMAGE_WORKER_DIGEST    "${{ needs.docker.outputs.worker_digest }}"   "$DEPLOY_FILE"
             update_env_var IMAGE_TRAVEL_DIGEST    "${{ needs.docker.outputs.travel_digest }}"   "$DEPLOY_FILE"
-            update_env_var IMAGE_MOONCATCH_DIGEST "${{ needs.docker.outputs.mooncatch_digest }}" "$DEPLOY_FILE"
             update_env_var DEPLOY_SHA             "${{ github.sha }}"                           "$DEPLOY_FILE"
             update_env_var DEPLOYED_AT            "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"            "$DEPLOY_FILE"
 

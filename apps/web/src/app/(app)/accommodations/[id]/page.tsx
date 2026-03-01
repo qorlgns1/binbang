@@ -10,9 +10,11 @@ import { LocalDateTime } from '@/components/LocalDateTime';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { authOptions } from '@/lib/auth';
 import { getAccommodationById } from '@/services/accommodations.service';
+import { getNotificationHistory } from '@/services/agoda-notification-history.service';
 import type { PageParams } from '@/types/api';
 
 import { PriceTrendSection } from './_components/PriceTrendSection';
@@ -51,6 +53,11 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
   const accommodation = await getAccommodationById(id, session.user.id);
 
   if (!accommodation) notFound();
+
+  const notificationHistory = await getNotificationHistory({
+    accommodationId: id,
+    userId: session.user.id,
+  });
 
   const t = await getTranslations('common');
 
@@ -118,14 +125,18 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
               <ExternalLink className='size-4' />
               <span>URL</span>
             </div>
-            <a
-              href={buildAccommodationUrl(accommodation)}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='break-all text-sm text-primary transition-colors hover:text-primary/80 hover:underline'
-            >
-              {buildAccommodationUrl(accommodation)}
-            </a>
+            {accommodation.url ? (
+              <a
+                href={buildAccommodationUrl({ ...accommodation, url: accommodation.url })}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='break-all text-sm text-primary transition-colors hover:text-primary/80 hover:underline'
+              >
+                {buildAccommodationUrl({ ...accommodation, url: accommodation.url })}
+              </a>
+            ) : (
+              <span className='text-sm text-muted-foreground'>Agoda API 모니터링 (URL 없음)</span>
+            )}
           </div>
 
           <div className='space-y-1'>
@@ -177,6 +188,44 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
 
       {/* 체크 로그 */}
       <CheckLogList accommodationId={accommodation.id} />
+
+      {/* 알림 이력 */}
+      {notificationHistory.length > 0 && (
+        <Card className='mt-8 border-border/80'>
+          <CardHeader>
+            <CardTitle className='text-base'>알림 이력</CardTitle>
+            <CardDescription>최근 {notificationHistory.length}건</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>감지 시각</TableHead>
+                  <TableHead>이벤트 유형</TableHead>
+                  <TableHead>발송 상태</TableHead>
+                  <TableHead>발송 시각</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {notificationHistory.map((item) => (
+                  <TableRow key={item.notificationId}>
+                    <TableCell className='text-xs text-muted-foreground'>
+                      {new Date(item.detectedAt).toLocaleString('ko-KR', { hour12: false })}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant='secondary'>{item.type}</Badge>
+                    </TableCell>
+                    <TableCell className='text-xs'>{item.status}</TableCell>
+                    <TableCell className='text-xs text-muted-foreground'>
+                      {item.sentAt ? new Date(item.sentAt).toLocaleString('ko-KR', { hour12: false }) : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </main>
   );
 }

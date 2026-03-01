@@ -854,10 +854,8 @@ export function AgodaTestPanel() {
         <AlertCircle className='size-4' />
         <AlertTitle>환경 변수 필요</AlertTitle>
         <AlertDescription className='text-xs'>
-          <code>.env.local</code>에 <code>AGODA_SITE_ID</code>와 <code>AGODA_API_KEY</code>를 설정해야 City Search /
-          Hotel List Search API가 동작합니다.
-          <br />
-          Authorization 헤더 형식: <code>siteid:apikey</code>
+          <code>.env.local</code>에 <code>AGODA_AFFILIATE_SITE_ID</code>와 <code>AGODA_AFFILIATE_API_KEY</code>를
+          설정해야 City Search / Hotel List Search API가 동작합니다.
         </AlertDescription>
       </Alert>
 

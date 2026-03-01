@@ -1,7 +1,7 @@
 /**
  * Settings utilities for web app
  * Simplified version that only uses environment variables (no DB caching)
- * For full DB-backed settings, use @workspace/worker-shared/runtime in apps/worker
+ * For DB-backed settings, use @/services/web-settings.service
  */
 
 interface MonitoringSettings {
@@ -21,7 +21,7 @@ export interface WebSettingsCache {
 
 function toInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
-  const parsed = parseInt(value, 10);
+  const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 

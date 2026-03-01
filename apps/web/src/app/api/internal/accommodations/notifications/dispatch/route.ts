@@ -1,0 +1,35 @@
+import { NextResponse } from 'next/server';
+
+import { authorizeInternalRequest } from '@/lib/internalAuth';
+import { dispatchAgodaNotifications } from '@/services/agoda-notification.service';
+
+export async function POST(req: Request): Promise<Response> {
+  const auth = authorizeInternalRequest(req);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: auth.message ?? 'unauthorized' } },
+      { status: auth.status ?? 401 },
+    );
+  }
+
+  let body: unknown = null;
+  try {
+    body = await req.json();
+  } catch {
+    body = null;
+  }
+
+  const payload = (body ?? {}) as { limit?: unknown };
+  const rawLimit = payload.limit;
+  const limit = typeof rawLimit === 'number' && Number.isInteger(rawLimit) && rawLimit > 0 ? rawLimit : undefined;
+
+  try {
+    const result = await dispatchAgodaNotifications({ limit });
+    return NextResponse.json({ ok: true, result });
+  } catch (error) {
+    if (error instanceof Error) {
+      return NextResponse.json({ error: { code: 'DISPATCH_FAILED', message: error.message } }, { status: 500 });
+    }
+    return NextResponse.json({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'dispatch failed' } }, { status: 500 });
+  }
+}

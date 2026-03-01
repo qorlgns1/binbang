@@ -10,6 +10,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
   BarChart3,
+  Bell,
   Building2,
   CreditCard,
   FileText,
@@ -17,6 +18,7 @@ import {
   Heart,
   Hotel,
   LayoutDashboard,
+  Layers,
   Link2,
   ListFilter,
   LogOut,
@@ -55,6 +57,14 @@ const NAV_GROUPS: Array<{
       { href: '/admin/cases', label: 'Cases', icon: MapIcon },
       { href: '/admin/selectors', label: 'Selectors', icon: ListFilter },
       { href: '/admin/intake-mappings', label: 'Intake Maps', icon: FileText },
+    ],
+  },
+  {
+    label: 'Binbang',
+    items: [
+      { href: '/admin/accommodations', label: 'Accommodations', icon: Bell },
+      { href: '/admin/ops', label: 'Ops Dashboard', icon: Activity },
+      { href: '/admin/bullmq', label: 'BullMQ', icon: Layers },
     ],
   },
   {

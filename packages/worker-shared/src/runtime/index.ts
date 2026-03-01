@@ -7,12 +7,14 @@ export {
   getEnvNumber,
   getAffiliateAuditPurgeConfig,
   getTravelCachePrewarmConfig,
+  getBinbangCronConfig,
 } from './settings/env';
 export type { SystemSettingsCache } from './settings';
 export type {
   AffiliateAuditPurgeConfig,
   AffiliateAuditTelegramConfig,
   TravelCachePrewarmConfig,
+  BinbangCronConfig,
 } from './settings/env';
 
 // Redis & Queue
@@ -51,6 +53,11 @@ export type {
 } from './affiliateAuditPurge';
 export { triggerTravelCachePrewarm } from './travelCachePrewarm';
 export type { TriggerTravelCachePrewarmResult, TravelCachePrewarmMetrics } from './travelCachePrewarm';
+export {
+  triggerBinbangPollDue,
+  triggerBinbangDispatch,
+  triggerBinbangSnapshotCleanup,
+} from './binbangCron';
 
 // Heartbeat
 export {

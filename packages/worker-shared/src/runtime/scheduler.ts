@@ -11,6 +11,9 @@ const DEFAULT_CASE_EXPIRATION_SCHEDULE = '37 0 * * *';
 const DEFAULT_AFFILIATE_AUDIT_PURGE_SCHEDULE = '10 3 * * *';
 const DEFAULT_AFFILIATE_AUDIT_CRON_WATCHDOG_SCHEDULE = '*/15 * * * *';
 const DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE = '20 */6 * * *';
+const DEFAULT_BINBANG_POLL_DUE_SCHEDULE = '*/30 * * * *';
+const DEFAULT_BINBANG_DISPATCH_SCHEDULE = '*/5 * * * *';
+const DEFAULT_BINBANG_SNAPSHOT_CLEANUP_SCHEDULE = '0 3 * * *';
 
 interface SetupRepeatableJobsOptions {
   publicAvailabilitySnapshotSchedule?: string;
@@ -18,6 +21,9 @@ interface SetupRepeatableJobsOptions {
   affiliateAuditPurgeSchedule?: string;
   affiliateAuditCronWatchdogSchedule?: string;
   travelCachePrewarmSchedule?: string;
+  binbangPollDueCron?: string;
+  binbangDispatchCron?: string;
+  binbangSnapshotCleanupCron?: string;
 }
 
 function resolvePublicAvailabilitySchedule(value: string | undefined): string {
@@ -60,6 +66,12 @@ export async function setupRepeatableJobs(
   const travelCachePrewarmSchedule = resolveSchedule(
     options.travelCachePrewarmSchedule,
     DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE,
+  );
+  const binbangPollDueSchedule = resolveSchedule(options.binbangPollDueCron, DEFAULT_BINBANG_POLL_DUE_SCHEDULE);
+  const binbangDispatchSchedule = resolveSchedule(options.binbangDispatchCron, DEFAULT_BINBANG_DISPATCH_SCHEDULE);
+  const binbangSnapshotCleanupSchedule = resolveSchedule(
+    options.binbangSnapshotCleanupCron,
+    DEFAULT_BINBANG_SNAPSHOT_CLEANUP_SCHEDULE,
   );
 
   await queue.upsertJobScheduler(
@@ -152,6 +164,24 @@ export async function setupRepeatableJobs(
       },
     },
   );
+
+  await queue.upsertJobScheduler(
+    'binbang-poll-due-scheduler',
+    { pattern: binbangPollDueSchedule },
+    { name: 'binbang-poll-due', data: { triggeredAt: new Date().toISOString() } },
+  );
+
+  await queue.upsertJobScheduler(
+    'binbang-dispatch-scheduler',
+    { pattern: binbangDispatchSchedule },
+    { name: 'binbang-dispatch', data: { triggeredAt: new Date().toISOString() } },
+  );
+
+  await queue.upsertJobScheduler(
+    'binbang-snapshot-cleanup-scheduler',
+    { pattern: binbangSnapshotCleanupSchedule },
+    { name: 'binbang-snapshot-cleanup', data: { triggeredAt: new Date().toISOString() } },
+  );
 }
 
 export async function removeRepeatableJobs(queue: Queue): Promise<void> {
@@ -164,4 +194,7 @@ export async function removeRepeatableJobs(queue: Queue): Promise<void> {
   await queue.removeJobScheduler('affiliate-audit-purge-scheduler');
   await queue.removeJobScheduler('affiliate-audit-cron-watchdog-scheduler');
   await queue.removeJobScheduler('travel-cache-prewarm-scheduler');
+  await queue.removeJobScheduler('binbang-poll-due-scheduler');
+  await queue.removeJobScheduler('binbang-dispatch-scheduler');
+  await queue.removeJobScheduler('binbang-snapshot-cleanup-scheduler');
 }

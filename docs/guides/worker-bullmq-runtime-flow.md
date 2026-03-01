@@ -2,16 +2,16 @@
 
 ## 이 문서의 목적
 
-이 문서는 **현재 staging된 워커 리팩터링 코드**가 실제 실행 시 어떤 순서로 동작하는지, 초보자가 따라갈 수 있게 단계별로 설명합니다.
+이 문서는 **현재 적용된 워커 리팩터링 코드**가 실제 실행 시 어떤 순서로 동작하는지, 초보자가 따라갈 수 있게 단계별로 설명합니다.
 
-- 대상: `apps/worker`, `packages/shared/src/worker` 중심 변경
+- 대상: `apps/worker`, `packages/worker-shared/src` 중심 변경
 
 핵심 변화:
 
 1. `node-cron + in-process limiter` 구조 제거
 2. `BullMQ(Redis)` 기반 `cycle/check` 2단계 큐 구조 도입
 3. `Puppeteer`에서 `Playwright` 기반 브라우저 풀로 전환
-4. `shared/worker`를 `browser/jobs/runtime/observability` 도메인으로 재구성
+4. `packages/worker-shared`를 `browser/jobs/runtime/observability` 도메인으로 재구성
 
 ---
 
@@ -39,29 +39,29 @@
 
 ### 공유 런타임 모듈
 
-- `packages/shared/src/worker/index.ts`
-- `packages/shared/src/worker/jobs/types.ts`
-- `packages/shared/src/worker/runtime/connection.ts`
-- `packages/shared/src/worker/runtime/queues.ts`
-- `packages/shared/src/worker/runtime/workers.ts`
-- `packages/shared/src/worker/runtime/scheduler.ts`
-- `packages/shared/src/worker/runtime/settings/index.ts`
-- `packages/shared/src/worker/runtime/settings/env.ts`
+- `packages/worker-shared/src/index.ts`
+- `packages/worker-shared/src/jobs/types.ts`
+- `packages/worker-shared/src/runtime/connection.ts`
+- `packages/worker-shared/src/runtime/queues.ts`
+- `packages/worker-shared/src/runtime/workers.ts`
+- `packages/worker-shared/src/runtime/scheduler.ts`
+- `packages/worker-shared/src/runtime/settings/index.ts`
+- `packages/worker-shared/src/runtime/settings/env.ts`
 
 ### 브라우저/체커
 
-- `packages/shared/src/worker/browser/browser.ts`
-- `packages/shared/src/worker/browser/browserPool.ts`
-- `packages/shared/src/worker/browser/baseChecker.ts`
-- `packages/shared/src/worker/browser/airbnb.ts`
-- `packages/shared/src/worker/browser/agoda.ts`
-- `packages/shared/src/worker/browser/selectors/index.ts`
+- `packages/worker-shared/src/browser/browser.ts`
+- `packages/worker-shared/src/browser/browserPool.ts`
+- `packages/worker-shared/src/browser/baseChecker.ts`
+- `packages/worker-shared/src/browser/airbnb.ts`
+- `packages/worker-shared/src/browser/agoda.ts`
+- `packages/worker-shared/src/browser/selectors/index.ts`
 
 ### 관측/알림
 
-- `packages/shared/src/worker/observability/heartbeat/index.ts`
-- `packages/shared/src/worker/observability/heartbeat/history.ts`
-- `packages/shared/src/worker/observability/kakao/message.ts`
+- `packages/worker-shared/src/observability/heartbeat/index.ts`
+- `packages/worker-shared/src/observability/heartbeat/history.ts`
+- `packages/worker-shared/src/observability/kakao/message.ts`
 
 ---
 
@@ -453,23 +453,91 @@ SIGINT/SIGTERM 수신 시:
 
 ## 부록: 핵심 타입 요약
 
-### `CheckJobPayload` (`packages/shared/src/worker/jobs/types.ts`)
+### `CheckJobPayload` (`packages/worker-shared/src/jobs/types.ts`)
 
 - cycle 연동: `cycleId`
 - 체크 입력: `url`, `platform`, `checkIn`, `checkOut`, `adults`
 - 사용자/알림: `userId`, `kakaoAccessToken`
 - 중복알림 판단: `lastStatus`
 
-### `CheckerRuntimeConfig` (`packages/shared/src/worker/browser/baseChecker.ts`)
+### `CheckerRuntimeConfig` (`packages/worker-shared/src/browser/baseChecker.ts`)
 
 - 재시도/타임아웃/리소스 차단 정책을 checker에 명시적으로 전달
 - 테스트(`POST /test`)와 실제 check worker가 같은 구조를 사용
 
 ---
 
+## 12) Binbang 폴링 스케줄러 (Repeat Jobs)
+
+Vercel Cron 대신 Worker BullMQ Repeat Job이 Binbang 내부 API를 주기적으로 호출한다.
+
+### 12-1. 등록된 스케줄러 3개
+
+| Scheduler ID | Job Name | 기본 주기 | 처리 내용 |
+|---|---|---|---|
+| `binbang-poll-due-scheduler` | `binbang-poll-due` | `*/30 * * * *` | due 숙소 배치 폴링 |
+| `binbang-dispatch-scheduler` | `binbang-dispatch` | `*/5 * * * *` | 알림 큐 발송 |
+| `binbang-snapshot-cleanup-scheduler` | `binbang-snapshot-cleanup` | `0 3 * * *` | 30일 이상 된 스냅샷 정리 |
+
+스케줄은 환경변수(`BINBANG_POLL_DUE_CRON`, `BINBANG_DISPATCH_CRON`, `BINBANG_SNAPSHOT_CLEANUP_CRON`)로 오버라이드 가능하다.
+
+### 12-2. 실행 흐름
+
+```text
+BullMQ Repeat Job 트리거 (cron pattern 도달)
+    │
+    ▼
+cycleProcessor.ts에서 job.name 분기
+    │
+    ├── 'binbang-poll-due'
+    │       └── triggerBinbangPollDue()
+    │               └── POST http://web:3000/api/internal/accommodations/poll-due
+    │                       Header: x-binbang-internal-token: <token>
+    │                       Response: { ok: true, result: { processedCount, ... } }
+    │
+    ├── 'binbang-dispatch'
+    │       └── triggerBinbangDispatch()
+    │               └── POST http://web:3000/api/internal/accommodations/notifications/dispatch
+    │                       Header: x-binbang-internal-token: <token>
+    │                       Response: { ok: true, result: { sent, failed, ... } }
+    │
+    └── 'binbang-snapshot-cleanup'
+            └── triggerBinbangSnapshotCleanup()
+                    └── POST http://web:3000/api/internal/snapshots/cleanup
+                            Header: x-binbang-internal-token: <token>
+                            Response: { ok: true, result: { deletedPollRuns, ... } }
+```
+
+### 12-3. 인증
+
+Worker → apps/web 호출 시 `x-binbang-internal-token` 헤더에 `BINBANG_INTERNAL_API_TOKEN` 값을 담는다.
+토큰이 없으면 (`BINBANG_INTERNAL_API_TOKEN` 미설정):
+- `production` 환경: apps/web이 503 반환
+- 그 외 환경: 토큰 검사 건너뜀 (개발 편의)
+
+### 12-4. 관련 환경변수 (Worker 쪽)
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `WEB_INTERNAL_URL` | `http://web:3000` | Docker 서비스명 기반 URL |
+| `BINBANG_INTERNAL_API_TOKEN` | — | apps/web 인증 토큰 |
+| `BINBANG_POLL_DUE_CRON` | `*/30 * * * *` | poll-due 주기 오버라이드 |
+| `BINBANG_DISPATCH_CRON` | `*/5 * * * *` | dispatch 주기 오버라이드 |
+| `BINBANG_SNAPSHOT_CLEANUP_CRON` | `0 3 * * *` | cleanup 주기 오버라이드 |
+| `BINBANG_CRON_TIMEOUT_MS` | `120000` | HTTP 호출 타임아웃(ms) |
+
+### 12-5. 핵심 파일
+
+- `packages/worker-shared/src/runtime/binbangCron.ts` — HTTP 호출 함수 3개
+- `packages/worker-shared/src/runtime/scheduler.ts` — `setupRepeatableJobs`에 3개 scheduler 등록
+- `apps/worker/src/cycleProcessor.ts` — job handler 3개
+- `packages/worker-shared/src/runtime/settings/env.ts` — `getBinbangCronConfig()`
+
+---
+
 ## 결론
 
-현재 staging된 워커는 “한 프로세스 안에서 직접 반복/제한/실행”하던 구조에서, “큐로 분리된 단계형 파이프라인”으로 바뀌었습니다.
+현재 워커는 “한 프로세스 안에서 직접 반복/제한/실행”하던 구조에서, “큐로 분리된 단계형 파이프라인”으로 바뀌었습니다.
 
 - cycle 단계는 “무엇을 체크할지 결정”
 - check 단계는 “각 숙소를 병렬로 실행/저장/알림”

@@ -1,6 +1,6 @@
 # 빈방
 
-> binbang — Airbnb · Agoda 빈방 모니터링 & 알림 서비스
+> binbang — 숙소 빈방 알림 서비스
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-green.svg)](https://nodejs.org/)
@@ -9,7 +9,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![CI](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml)
 
-Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**하고, 예약이 가능해지면 **카카오톡으로 알림**을 보내는 서비스입니다.
+숙소의 **빈방 발생·가격 하락을 주기적으로 모니터링**하고, 조건이 충족되면 **이메일로 알림**을 보내는 서비스입니다.
 
 > 인기 숙소의 취소 건을 잡기 위해 만들었습니다.
 
@@ -18,7 +18,7 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 - **Problem**: 경쟁이 높은 숙소의 빈방 발생을 사람이 수동으로 추적하기 어려움
 - **Role**: Full-stack 개발 (아키텍처, 웹, 워커, DB 모델링, CI/CD, 운영)
 - **Architecture**:
-  - Next.js 웹 앱(`apps/web`)과 백그라운드 워커(`apps/worker`) 분리
+  - Next.js 운영 웹(`apps/web`), 여행 앱(`apps/travel`), 백그라운드 워커(`apps/worker`) 분리
   - Prisma 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
   - monorepo 경계 규칙(`rules.md`, `RULES_SUMMARY.md`) 기반으로 유지보수성 확보
 - **Technical Decisions**:
@@ -71,11 +71,13 @@ Airbnb, Agoda 숙소의 **예약 가능 여부를 주기적으로 모니터링**
 pnpm install
 cp .env.example .env
 cp apps/web/.env.example apps/web/.env.local
+cp apps/travel/.env.example apps/travel/.env.local
 
 pnpm local:docker up -d db redis
 pnpm db:migrate
 
 pnpm dev:web
+pnpm dev:travel
 pnpm dev:worker
 ```
 

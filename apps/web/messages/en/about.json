@@ -15,11 +15,11 @@
   "howItWorks": {
     "title": "How It Works",
     "step1Title": "Register Accommodation",
-    "step1Desc": "Add the URL of your desired accommodation from Airbnb, Agoda, and more.",
+    "step1Desc": "Search and register your desired accommodation.",
     "step2Title": "Automatic Monitoring",
     "step2Desc": "Binbang checks for vacancies around the clock. Pro plans check every minute.",
     "step3Title": "Instant Alerts",
-    "step3Desc": "When a room opens up, we notify you instantly via email and KakaoTalk."
+    "step3Desc": "When a room opens up, we notify you instantly via email."
   },
   "values": {
     "title": "Core Values",

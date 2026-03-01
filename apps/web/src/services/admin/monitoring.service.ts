@@ -1,5 +1,5 @@
 import { type AvailabilityStatus, type Platform, type Prisma, prisma } from '@workspace/db';
-import { loadSettings } from '@/lib/settings';
+import { loadWebSettings } from '@/services/web-settings.service';
 import type { MonitoringLogEntry, MonitoringLogsResponse, MonitoringSummary, WorkerHealthInfo } from '@/types/admin';
 
 // ============================================================================
@@ -37,7 +37,7 @@ function getWorkerStatus(
 // ============================================================================
 
 export async function getMonitoringSummary(): Promise<MonitoringSummary> {
-  const settings = await loadSettings();
+  const settings = await loadWebSettings();
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);

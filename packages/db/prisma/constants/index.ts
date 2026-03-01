@@ -195,26 +195,8 @@ export const SEED_USERS: SeedUser[] = [
 export const MOCK_ACCOMMODATIONS_URLS = [
   'https://www.agoda.com/ko-kr/citadines-bastille-marais-paris/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&los=3&searchrequestid=7a2fe157-1614-491b-b20d-566305de114b',
   'https://www.agoda.com/ko-kr/hotel-splendid_2/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/citizenm-paris-charles-de-gaulle-airport/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=2&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/hotel-fertel-etoile/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=2&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/aparthotel-adagio-paris-tour-eiffel/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=9&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/hotel-du-collectionneur-arc-de-triomphe/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=5&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/mercure-paris-centre-tour-eiffel/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/oden-ivry/hotel/ivry-sur-seine-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=6&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/first-hotel-paris-tour-eiffel/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/hotel-home-latin/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=2&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/citadines-tour-eiffel-paris/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
-  'https://www.agoda.com/ko-kr/ibis-paris-tour-eiffel-cambronne-15eme/hotel/paris-fr.html?countryId=153&finalPriceView=1&isShowMobileAppPrice=false&cid=-1&numberOfBedrooms=&familyMode=false&adults=2&children=0&rooms=1&maxRooms=0&checkIn=2026-08-19&isCalendarCallout=false&childAges=&numberOfGuest=0&missingChildAges=false&travellerType=1&showReviewSubmissionEntry=false&currencyCode=KRW&isFreeOccSearch=false&flightSearchCriteria=[object%20Object]&tspTypes=9&los=3&searchrequestid=3f2da6f0-fc79-4837-9e04-9aadd8ab8e89',
   'https://www.airbnb.co.kr/rooms/53715390?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3UJgnMH7nuJu0T3&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
   'https://www.airbnb.co.kr/rooms/868339047183852861?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3HJ4flpW1Gq1a4S&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/17297515?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3Ha8exfO2FNNtD8&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/1606145865212729624?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3Hvv1wmHfLgXebj&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/1249656444561231380?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3mNgBogfPlH7RKq&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/650237323606561424?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P387cbQjZ6nv0gNd&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/877951015453398830?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3fUKohhNXMO4hcb&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/1369309130430707931?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3K5qmiVGj53wqJT&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/1607001066760941183?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3PSL9MLnZU6qdiB&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
-  'https://www.airbnb.co.kr/rooms/1570236741895335112?check_in=2026-02-17&check_out=2026-02-20&search_mode=regular_search&source_impression_id=p3_1770120294_P3BhCwhfA2ZZR0R9&previous_page_section_name=1000&federated_search_id=3361c20f-007c-43cb-a4c4-3eb3cc6eb0e8',
 ];
 
 export const SEED_ACCOMMODATIONS: SeedAccommodation[] = MOCK_ACCOMMODATIONS_URLS.map((url, index) => {
@@ -570,7 +552,7 @@ export const SEED_FORM_SUBMISSIONS: SeedFormSubmission[] = (() => {
 
   const s1 = makeSubmissionPayload(
     SEED_ACCOMMODATIONS[0].url,
-    '2인 기준 파리 에어비앤비 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
+    '2인 기준 파리 숙소 1박 15만원 이하로 예약 가능 상태가 되면 알려주세요',
   );
   const s2 = makeSubmissionPayload(SEED_ACCOMMODATIONS[1].url, '적당한 가격에 파리 숙소 2인 예약 가능하면 알려주세요');
   const s3 = makeSubmissionPayload(
@@ -752,7 +734,7 @@ export const SEED_CASES: SeedCase[] = [
 ];
 
 export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
-  // Case 1: RECEIVED only
+  // Case 1: RECEIVED
   {
     id: 'seed_cslog_1_1',
     caseId: 'seed_case_1',
@@ -762,7 +744,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: '케이스 생성',
     createdAt: addMinutes(SEED_NOW, -6 * 24 * 60),
   },
-  // Case 2: RECEIVED → REVIEWING → NEEDS_CLARIFICATION
+  // Case 2: → NEEDS_CLARIFICATION
   {
     id: 'seed_cslog_2_1',
     caseId: 'seed_case_2',
@@ -773,15 +755,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
   },
   {
-    id: 'seed_cslog_2_2',
-    caseId: 'seed_case_2',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 60),
-  },
-  {
     id: 'seed_cslog_2_3',
     caseId: 'seed_case_2',
     fromStatus: CaseStatus.REVIEWING,
@@ -790,7 +763,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: 'AMBER: 모호 표현 감지 — 명확화 요청',
     createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
   },
-  // Case 3: RECEIVED → REVIEWING → WAITING_PAYMENT
+  // Case 3: → WAITING_PAYMENT
   {
     id: 'seed_cslog_3_1',
     caseId: 'seed_case_3',
@@ -801,15 +774,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
   },
   {
-    id: 'seed_cslog_3_2',
-    caseId: 'seed_case_3',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 60),
-  },
-  {
     id: 'seed_cslog_3_3',
     caseId: 'seed_case_3',
     fromStatus: CaseStatus.REVIEWING,
@@ -818,7 +782,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: null,
     createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 120),
   },
-  // Case 4: RECEIVED → REVIEWING → WAITING_PAYMENT → payment → ACTIVE_MONITORING
+  // Case 4: → ACTIVE_MONITORING
   {
     id: 'seed_cslog_4_1',
     caseId: 'seed_case_4',
@@ -829,33 +793,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     createdAt: addMinutes(SEED_NOW, -5 * 24 * 60),
   },
   {
-    id: 'seed_cslog_4_2',
-    caseId: 'seed_case_4',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 60),
-  },
-  {
-    id: 'seed_cslog_4_3',
-    caseId: 'seed_case_4',
-    fromStatus: CaseStatus.REVIEWING,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -5 * 24 * 60 + 120),
-  },
-  {
-    id: 'seed_cslog_4_4',
-    caseId: 'seed_case_4',
-    fromStatus: CaseStatus.WAITING_PAYMENT,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: '결제 확인',
-    createdAt: addMinutes(SEED_NOW, -3 * 24 * 60),
-  },
-  {
     id: 'seed_cslog_4_5',
     caseId: 'seed_case_4',
     fromStatus: CaseStatus.WAITING_PAYMENT,
@@ -864,7 +801,7 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     reason: null,
     createdAt: addMinutes(SEED_NOW, -3 * 24 * 60 + 60),
   },
-  // Case 5: RECEIVED → REVIEWING → WAITING_PAYMENT → payment → ACTIVE_MONITORING → CONDITION_MET
+  // Case 5: → CONDITION_MET
   {
     id: 'seed_cslog_5_1',
     caseId: 'seed_case_5',
@@ -873,42 +810,6 @@ export const SEED_CASE_STATUS_LOGS: SeedCaseStatusLog[] = [
     changedByKey: 'admin',
     reason: '케이스 생성',
     createdAt: addMinutes(SEED_NOW, -7 * 24 * 60),
-  },
-  {
-    id: 'seed_cslog_5_2',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.RECEIVED,
-    toStatus: CaseStatus.REVIEWING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60 + 60),
-  },
-  {
-    id: 'seed_cslog_5_3',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.REVIEWING,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -7 * 24 * 60 + 120),
-  },
-  {
-    id: 'seed_cslog_5_4',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.WAITING_PAYMENT,
-    toStatus: CaseStatus.WAITING_PAYMENT,
-    changedByKey: 'admin',
-    reason: '결제 확인',
-    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60),
-  },
-  {
-    id: 'seed_cslog_5_5',
-    caseId: 'seed_case_5',
-    fromStatus: CaseStatus.WAITING_PAYMENT,
-    toStatus: CaseStatus.ACTIVE_MONITORING,
-    changedByKey: 'admin',
-    reason: null,
-    createdAt: addMinutes(SEED_NOW, -4 * 24 * 60 + 60),
   },
   {
     id: 'seed_cslog_5_6',
@@ -1142,6 +1043,42 @@ export const SYSTEM_SETTINGS = [
     minValue: '5000',
     maxValue: '600000',
   },
+  {
+    key: 'binbang.pollIntervalMinutes',
+    value: '30',
+    type: 'int',
+    category: 'worker',
+    description: 'Agoda API due poll 판정 간격(분)',
+    minValue: '1',
+    maxValue: '1440',
+  },
+  {
+    key: 'binbang.duePollLimit',
+    value: '20',
+    type: 'int',
+    category: 'worker',
+    description: '1회 due poll에서 처리할 최대 숙소 수',
+    minValue: '1',
+    maxValue: '500',
+  },
+  {
+    key: 'binbang.duePollConcurrency',
+    value: '3',
+    type: 'int',
+    category: 'worker',
+    description: 'due poll 동시 실행 수',
+    minValue: '1',
+    maxValue: '50',
+  },
+  {
+    key: 'binbang.snapshotRetentionDays',
+    value: '30',
+    type: 'int',
+    category: 'worker',
+    description: 'Agoda poll run/snapshot 보존 일수',
+    minValue: '1',
+    maxValue: '365',
+  },
 
   // ── 브라우저 타임아웃 ──
   {
@@ -1209,6 +1146,33 @@ export const SYSTEM_SETTINGS = [
     minValue: null,
     maxValue: null,
   },
+  {
+    key: 'binbang.priceDropThreshold',
+    value: '0.1',
+    type: 'string',
+    category: 'checker',
+    description: '전역 가격 하락 임계값 (0~1 사이, 예: 0.1 = 10%)',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.vacancyCooldownHours',
+    value: '24',
+    type: 'int',
+    category: 'checker',
+    description: 'vacancy 이벤트 쿨다운 시간(시간)',
+    minValue: '1',
+    maxValue: '168',
+  },
+  {
+    key: 'binbang.priceDropCooldownHours',
+    value: '6',
+    type: 'int',
+    category: 'checker',
+    description: 'price_drop 이벤트 쿨다운 시간(시간)',
+    minValue: '1',
+    maxValue: '168',
+  },
 
   // ── 모니터링 임계값 ──
   {
@@ -1239,6 +1203,42 @@ export const SYSTEM_SETTINGS = [
     description: '카카오 알림 인증이 만료되기 전 미리 갱신하는 여유 시간',
     minValue: '60000',
     maxValue: '3600000',
+  },
+  {
+    key: 'binbang.emailProvider',
+    value: 'console',
+    type: 'string',
+    category: 'notification',
+    description: '이메일 전송 provider (console/resend)',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.fromEmail',
+    value: 'Binbang <no-reply@binbang.local>',
+    type: 'string',
+    category: 'notification',
+    description: '이메일 발신자 주소',
+    minValue: null,
+    maxValue: null,
+  },
+  {
+    key: 'binbang.notificationDispatchLimit',
+    value: '50',
+    type: 'int',
+    category: 'notification',
+    description: '1회 dispatch에서 처리할 최대 알림 수',
+    minValue: '1',
+    maxValue: '1000',
+  },
+  {
+    key: 'binbang.notificationMaxAttempts',
+    value: '5',
+    type: 'int',
+    category: 'notification',
+    description: '알림 최대 재시도 횟수',
+    minValue: '1',
+    maxValue: '20',
   },
 
   // ── 하트비트 모니터링 ──
@@ -1331,7 +1331,7 @@ export interface SeedPlatformPattern {
   priority: number;
 }
 
-export const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
+const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
   // 가격 추출
   {
     platform: Platform.AIRBNB,
@@ -1398,7 +1398,7 @@ export const SEED_AIRBNB_SELECTORS: SeedPlatformSelector[] = [
   },
 ];
 
-export const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
+const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
   // 가격 추출
   {
     platform: Platform.AGODA,
@@ -1503,7 +1503,7 @@ export const SEED_AGODA_SELECTORS: SeedPlatformSelector[] = [
 
 export const SEED_PLATFORM_SELECTORS: SeedPlatformSelector[] = [...SEED_AIRBNB_SELECTORS, ...SEED_AGODA_SELECTORS];
 
-export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
+const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
   // 예약 가능
   { platform: Platform.AIRBNB, patternType: PatternType.AVAILABLE, pattern: '예약하기', locale: 'ko', priority: 10 },
   { platform: Platform.AIRBNB, patternType: PatternType.AVAILABLE, pattern: 'Reserve', locale: 'en', priority: 5 },
@@ -1560,7 +1560,7 @@ export const SEED_AIRBNB_PATTERNS: SeedPlatformPattern[] = [
   },
 ];
 
-export const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
+const SEED_AGODA_PATTERNS: SeedPlatformPattern[] = [
   // 예약 가능
   {
     platform: Platform.AGODA,

@@ -63,7 +63,7 @@ export class AgodaConfigError extends Error {
 function requireAuthHeader(): string {
   const auth = getAgodaAuthHeader();
   if (!auth) {
-    throw new AgodaConfigError('AGODA_API_KEY가 설정되지 않았습니다.');
+    throw new AgodaConfigError('AGODA_AFFILIATE_SITE_ID / AGODA_AFFILIATE_API_KEY가 설정되지 않았습니다.');
   }
   return auth;
 }

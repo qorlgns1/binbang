@@ -16,9 +16,9 @@
   },
   "service": {
     "q1": "What is Binbang?",
-    "a1": "Binbang automatically monitors accommodation booking sites (Airbnb, Agoda, etc.) for vacancies and sends email and KakaoTalk alerts when a room becomes available.",
+    "a1": "Binbang automatically monitors accommodation booking sites for vacancies and sends email and KakaoTalk alerts when a room becomes available.",
     "q2": "Which booking sites are supported?",
-    "a2": "We currently support Airbnb and Agoda. We plan to add more platforms in the future."
+    "a2": "We currently support Agoda. We plan to add more platforms in the future."
   },
   "monitoring": {
     "q1": "How often are vacancies checked?",

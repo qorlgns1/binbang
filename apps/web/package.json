@@ -11,6 +11,10 @@
     "typecheck": "next typegen && tsc --noEmit",
     "clean": "rm -rf .next node_modules",
     "test": "vitest run",
+    "test:e2e:run": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:debug": "playwright test --config=e2e/playwright.config.ts --project=chromium --debug",
+    "test:e2e:ui": "playwright test --config=e2e/playwright.config.ts --project=chromium --ui",
+    "test:e2e:headed": "playwright test --config=e2e/playwright.config.ts --project=chromium --headed",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
@@ -48,6 +52,7 @@
     "@types/node": "^24.10.9",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.0.2",
+    "@playwright/test": "^1.58.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.7.2",

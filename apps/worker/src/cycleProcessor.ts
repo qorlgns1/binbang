@@ -12,6 +12,9 @@ import {
   refreshPublicAvailabilitySnapshots,
   retryStaleCaseNotifications,
   runAffiliateAuditPurge,
+  triggerBinbangDispatch,
+  triggerBinbangPollDue,
+  triggerBinbangSnapshotCleanup,
   triggerTravelCachePrewarm,
   updateHeartbeat,
   type ActiveAccommodation,
@@ -52,6 +55,24 @@ export function createCycleProcessor(checkQueue: Queue, redisConnection: RedisLi
       console.log(
         `[travel-cache-prewarm] durationMs=${result.durationMs} places(warmed=${result.places.warmed}, skipped=${result.places.skipped}, failed=${result.places.failed}) weather(warmed=${result.weather.warmed}, skipped=${result.weather.skipped}, failed=${result.weather.failed}) exchange(warmed=${result.exchangeRate.warmed}, skipped=${result.exchangeRate.skipped}, failed=${result.exchangeRate.failed})`,
       );
+      return;
+    }
+
+    if (job.name === 'binbang-poll-due') {
+      const result = await triggerBinbangPollDue();
+      console.log(`[binbang-poll-due] polled=${result.polled}`);
+      return;
+    }
+
+    if (job.name === 'binbang-dispatch') {
+      const result = await triggerBinbangDispatch();
+      console.log(`[binbang-dispatch] dispatched=${result.dispatched}`);
+      return;
+    }
+
+    if (job.name === 'binbang-snapshot-cleanup') {
+      const result = await triggerBinbangSnapshotCleanup();
+      console.log(`[binbang-snapshot-cleanup] deleted=${result.deleted}`);
       return;
     }
 

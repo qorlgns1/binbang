@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 interface StatusBadgeProps {
   status: AvailabilityStatus;
   isPaused?: boolean;
+  unknownLabel?: string;
 }
 
 /**
@@ -17,12 +18,9 @@ interface StatusBadgeProps {
  * @param isPaused - If true, displays `PAUSED` regardless of `status`.
  * @returns A React element containing a styled Badge with the status text.
  */
-export function StatusBadge({ status, isPaused }: StatusBadgeProps): React.ReactElement {
+export function StatusBadge({ status, isPaused, unknownLabel }: StatusBadgeProps): React.ReactElement {
   const displayStatus: StatusType = isPaused ? 'PAUSED' : status;
+  const label = displayStatus === 'UNKNOWN' && unknownLabel ? unknownLabel : STATUS_BADGE_TEXT[displayStatus];
 
-  return (
-    <Badge className={cn('border-transparent', STATUS_BADGE_STYLES[displayStatus])}>
-      {STATUS_BADGE_TEXT[displayStatus]}
-    </Badge>
-  );
+  return <Badge className={cn('border-transparent', STATUS_BADGE_STYLES[displayStatus])}>{label}</Badge>;
 }

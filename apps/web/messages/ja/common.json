@@ -31,7 +31,7 @@
     "organizationDescription": "Binbangは宿泊予約サイトの空室を監視し、空室ができたときにメールでお知らせするサービスです。",
     "websiteDescription": "宿泊予約サイトの空室アラートサービス。空室が出たらお知らせします。",
     "applicationName": "Binbang",
-    "applicationDescription": "1分ごとに自動チェックする空室アラートサービス。Airbnb・Agoda対応。"
+    "applicationDescription": "1分ごとに自動チェックする空室アラートサービス。"
   },
   "tutorial": {
     "step1": {
@@ -40,7 +40,7 @@
     },
     "step2": {
       "title": "最初の宿を登録してください",
-      "body": "エアビーアンドビーやアゴダなど、宿のURLを登録すると自動で空室をチェックします。"
+      "body": "お気に入りの宿を検索して登録すると自動で空室をチェックします。"
     },
     "step3": {
       "title": "カカオトーク通知設定",

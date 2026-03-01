@@ -27,6 +27,8 @@ services:
         required: false
     environment:
       NODE_ENV: development
+      DOCKER_ENV: 'true'
+      WORKER_INTERNAL_URL: http://worker:3500
     restart: unless-stopped
 
   worker:
@@ -42,6 +44,8 @@ services:
     environment:
       NODE_ENV: development
       REDIS_URL: redis://redis-dev:6379
+      WEB_INTERNAL_URL: http://web:3000
+      TRAVEL_INTERNAL_URL: http://travel:3000
     depends_on:
       redis-dev:
         condition: service_healthy
@@ -63,21 +67,6 @@ services:
       NODE_ENV: development
     restart: unless-stopped
 
-  mooncatch:
-    image: kihoonbae/binbang:mooncatch-develop
-    ports:
-      - '3401:3000'
-    networks:
-      - shared-network
-    env_file:
-      - ../.env.common
-      - ../.env.development
-      - ../apps/mooncatch/.env.common
-      - path: ../apps/mooncatch/.env.development
-        required: false
-    environment:
-      NODE_ENV: development
-    restart: unless-stopped
 
 networks:
   shared-network:
