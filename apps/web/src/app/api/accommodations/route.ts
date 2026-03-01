@@ -9,8 +9,13 @@ import { handleServiceError, unauthorizedResponse, validationErrorResponse } fro
 import {
   checkUserQuota,
   createAgodaApiAccommodation,
+  deleteAccommodations,
   getAccommodationsByUserId,
 } from '@/services/accommodations.service';
+
+const bulkDeleteSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100),
+});
 
 // Agoda API 방식 (일반 사용자): platformId 필수, url 불필요
 // URL 스크래핑 방식은 /api/admin/accommodations (어드민 전용)
@@ -48,6 +53,34 @@ const createAgodaAlertSchema = z
       path: ['checkOut'],
     },
   );
+
+// DELETE: 숙소 일괄 삭제
+export async function DELETE(request: NextRequest): Promise<Response> {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return unauthorizedResponse();
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return validationErrorResponse([{ code: 'custom', path: [], message: '잘못된 JSON 본문입니다' }]);
+  }
+
+  const parsed = bulkDeleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error.issues);
+  }
+
+  try {
+    const count = await deleteAccommodations(parsed.data.ids, session.user.id);
+    return NextResponse.json({ success: true, count });
+  } catch (error) {
+    return handleServiceError(error, '숙소 일괄 삭제 오류');
+  }
+}
 
 // GET: 숙소 목록 조회
 export async function GET(): Promise<Response> {

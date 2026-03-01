@@ -1,18 +1,30 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Pencil, Plus, Trash2, X } from 'lucide-react';
 
 import { BOARD_EMPTY_TEXT, BOARD_TAB_LABELS, SEVERITY_SCORE } from '@/app/(app)/dashboard/_lib/constants';
 import { trackBoardTabChanged } from '@/app/(app)/dashboard/_lib/dashboardTracker';
 import { isProblemStatus } from '@/app/(app)/dashboard/_lib/status';
 import type { BoardTab } from '@/app/(app)/dashboard/_lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useBulkDeleteAccommodationsMutation } from '@/features/accommodations/mutations';
 import type { Accommodation } from '@/types/accommodation';
 
 import { AccommodationRow } from './AccommodationRow';
@@ -59,6 +71,28 @@ export function AccommodationBoard({
   const { data: session } = useSession();
   const userId = session?.user?.id ?? '';
 
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { mutate: bulkDelete, isPending: isBulkDeleting } = useBulkDeleteAccommodationsMutation();
+
+  const handleToggleEditMode = useCallback((): void => {
+    setIsEditMode((prev) => !prev);
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleToggleSelect = useCallback((id: string): void => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
   // 탭별 건수 계산
   const tabCounts = useMemo(
     (): Record<BoardTab, number> => ({
@@ -96,6 +130,44 @@ export function AccommodationBoard({
       return dateB - dateA;
     });
   }, [accommodations, activeTab]);
+
+  const allCurrentIds = useMemo(() => filteredAccommodations.map((a) => a.id), [filteredAccommodations]);
+  const allSelected = allCurrentIds.length > 0 && allCurrentIds.every((id) => selectedIds.has(id));
+  const someSelected = allCurrentIds.some((id) => selectedIds.has(id));
+  const selectedCurrentIds = useMemo(
+    () => allCurrentIds.filter((id) => selectedIds.has(id)),
+    [allCurrentIds, selectedIds],
+  );
+
+  const handleToggleSelectAll = useCallback((): void => {
+    if (allSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of allCurrentIds) next.delete(id);
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of allCurrentIds) next.add(id);
+        return next;
+      });
+    }
+  }, [allSelected, allCurrentIds]);
+
+  const handleBulkDelete = useCallback((): void => {
+    if (selectedCurrentIds.length === 0) return;
+    setIsDeleteDialogOpen(true);
+  }, [selectedCurrentIds]);
+
+  const handleConfirmedDelete = useCallback((): void => {
+    bulkDelete(selectedCurrentIds, {
+      onSuccess: () => {
+        setSelectedIds(new Set());
+        setIsEditMode(false);
+      },
+    });
+  }, [selectedCurrentIds, bulkDelete]);
 
   if (isError) {
     return (
@@ -142,49 +214,105 @@ export function AccommodationBoard({
   };
 
   return (
-    <section>
-      <div className='mb-3 flex items-center justify-between'>
-        <h2 className='text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
-        <Button asChild size='sm'>
-          <Link href='/accommodations/new'>
-            <Plus className='mr-1.5 size-4' />
-            알림 등록
-          </Link>
-        </Button>
-      </div>
-      <Card>
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <CardHeader className='border-b'>
-            <TabsList>
-              {TABS.map((tab) => (
-                <TabsTrigger key={tab} value={tab}>
-                  {BOARD_TAB_LABELS[tab]}
-                  <span className='ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground'>
-                    {tabCounts[tab]}
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </CardHeader>
-
-          {TABS.map((tab) => (
-            <TabsContent key={tab} value={tab} className='mt-0'>
-              {activeTab === tab && filteredAccommodations.length === 0 ? (
-                <CardContent className='flex flex-col items-center gap-2 py-12 text-center'>
-                  <LighthouseQuiet className='mb-1 text-muted-foreground' />
-                  <p className='text-sm text-muted-foreground'>{BOARD_EMPTY_TEXT[tab]}</p>
-                </CardContent>
-              ) : (
-                <div className='divide-y'>
-                  {filteredAccommodations.map((acc) => (
-                    <AccommodationRow key={acc.id} accommodation={acc} />
+    <>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>숙소 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              선택한 숙소 {selectedCurrentIds.length}개를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction variant='destructive' onClick={handleConfirmedDelete} disabled={isBulkDeleting}>
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <section>
+        <div className='mb-3 flex items-center justify-between'>
+          <h2 className='text-lg font-semibold leading-[1.3] md:text-xl'>숙소 운영 보드</h2>
+          <div className='flex items-center gap-2'>
+            {isEditMode ? (
+              <>
+                {selectedCurrentIds.length > 0 && (
+                  <Button variant='destructive' size='sm' onClick={handleBulkDelete} disabled={isBulkDeleting}>
+                    <Trash2 className='mr-1.5 size-4' />
+                    삭제 ({selectedCurrentIds.length})
+                  </Button>
+                )}
+                <Button variant='outline' size='sm' onClick={handleToggleEditMode}>
+                  <X className='mr-1.5 size-4' />
+                  취소
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant='outline' size='sm' onClick={handleToggleEditMode}>
+                  <Pencil className='mr-1.5 size-4' />
+                  편집
+                </Button>
+                <Button asChild size='sm'>
+                  <Link href='/accommodations/new'>
+                    <Plus className='mr-1.5 size-4' />
+                    알림 등록
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+        <Card>
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <CardHeader className='border-b'>
+              <div className='flex items-center gap-3'>
+                {isEditMode && (
+                  <Checkbox
+                    checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                    onCheckedChange={handleToggleSelectAll}
+                    aria-label='전체 선택'
+                  />
+                )}
+                <TabsList>
+                  {TABS.map((tab) => (
+                    <TabsTrigger key={tab} value={tab}>
+                      {BOARD_TAB_LABELS[tab]}
+                      <span className='ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground'>
+                        {tabCounts[tab]}
+                      </span>
+                    </TabsTrigger>
                   ))}
-                </div>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
-      </Card>
-    </section>
+                </TabsList>
+              </div>
+            </CardHeader>
+
+            {TABS.map((tab) => (
+              <TabsContent key={tab} value={tab} className='mt-0'>
+                {activeTab === tab && filteredAccommodations.length === 0 ? (
+                  <CardContent className='flex flex-col items-center gap-2 py-12 text-center'>
+                    <LighthouseQuiet className='mb-1 text-muted-foreground' />
+                    <p className='text-sm text-muted-foreground'>{BOARD_EMPTY_TEXT[tab]}</p>
+                  </CardContent>
+                ) : (
+                  <div className='divide-y'>
+                    {filteredAccommodations.map((acc) => (
+                      <AccommodationRow
+                        key={acc.id}
+                        accommodation={acc}
+                        isEditMode={isEditMode}
+                        isSelected={selectedIds.has(acc.id)}
+                        onToggleSelect={handleToggleSelect}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </Card>
+      </section>
+    </>
   );
 }

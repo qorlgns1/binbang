@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -118,7 +119,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
               <span className='hidden md:inline'>
                 <ThemeToggle lang={lang} />
               </span>
-              <LangToggle currentLang={lang} />
+              <Suspense fallback={null}>
+                <LangToggle currentLang={lang} />
+              </Suspense>
               <Button
                 asChild
                 variant='outline'
@@ -137,7 +140,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
 
         {variant === 'pricing' && (
           <div className='flex items-center gap-2'>
-            <LangToggle currentLang={lang} />
+            <Suspense fallback={null}>
+              <LangToggle currentLang={lang} />
+            </Suspense>
             {isLoggedIn ? (
               <>
                 <span className='hidden text-sm text-muted-foreground sm:inline'>{session?.user?.name}</span>
@@ -162,7 +167,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
 
         {(variant === 'auth' || variant === 'legal' || variant === 'default') && (
           <div className='flex items-center'>
-            <LangToggle currentLang={lang} />
+            <Suspense fallback={null}>
+              <LangToggle currentLang={lang} />
+            </Suspense>
           </div>
         )}
       </div>

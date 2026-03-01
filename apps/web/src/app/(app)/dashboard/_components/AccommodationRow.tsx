@@ -8,6 +8,7 @@ import type { StatusType } from '@/app/(app)/dashboard/_lib/types';
 import { LocalDateTime } from '@/components/LocalDateTime';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import type { Accommodation } from '@/types/accommodation';
 
@@ -15,6 +16,9 @@ import { StatusBadge } from './StatusBadge';
 
 interface AccommodationRowProps {
   accommodation: Accommodation;
+  isEditMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 /**
@@ -25,7 +29,12 @@ interface AccommodationRowProps {
  * @param accommodation - The accommodation record containing `id`, `name`, `platform`, `checkIn`, `checkOut`, `lastCheck`, `lastStatus`, and `isActive`.
  * @returns A React element representing the accommodation row.
  */
-export function AccommodationRow({ accommodation }: AccommodationRowProps): React.ReactElement {
+export function AccommodationRow({
+  accommodation,
+  isEditMode = false,
+  isSelected = false,
+  onToggleSelect,
+}: AccommodationRowProps): React.ReactElement {
   const {
     id,
     name,
@@ -61,11 +70,21 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
       className={cn(
         'flex min-h-[72px] items-center gap-4 px-6 py-4 transition-colors duration-140 ease-out hover:bg-muted/50',
         hasProblem && isActive && 'bg-destructive/5',
+        isEditMode && isSelected && 'bg-muted/60',
       )}
     >
       {/* row 단위 test id: e2e에서 특정 숙소 행을 안정적으로 찾기 위한 기준점 */}
-      {/* 상태 도트 */}
-      <div className={cn('size-2.5 shrink-0 rounded-full', STATUS_DOT_STYLES[displayStatus])} />
+      {isEditMode ? (
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelect?.(id)}
+          aria-label={`${name} 선택`}
+          className='shrink-0'
+        />
+      ) : (
+        /* 상태 도트 */
+        <div className={cn('size-2.5 shrink-0 rounded-full', STATUS_DOT_STYLES[displayStatus])} />
+      )}
 
       <div className='min-w-0 flex-1'>
         <div className='mb-1 flex flex-wrap items-center gap-2'>
@@ -99,21 +118,23 @@ export function AccommodationRow({ accommodation }: AccommodationRowProps): Reac
           </div>
         )}
       </div>
-      <div className='flex shrink-0 items-center gap-1'>
-        <Button asChild variant='ghost' size='sm'>
-          {/* 상세보기 링크 test id: DOM 깊이 의존 locator 대신 직접 선택 */}
-          <Link href={`/accommodations/${id}`} data-testid='accommodation-row-detail-link'>
-            <ExternalLink className='size-4' />
-            <span className='sr-only md:not-sr-only'>상세보기</span>
-          </Link>
-        </Button>
-        <Button asChild variant='ghost' size='sm'>
-          <Link href={`/accommodations/${id}/edit`}>
-            <Pencil className='size-4' />
-            <span className='sr-only md:not-sr-only'>수정</span>
-          </Link>
-        </Button>
-      </div>
+      {!isEditMode && (
+        <div className='flex shrink-0 items-center gap-1'>
+          <Button asChild variant='ghost' size='sm'>
+            {/* 상세보기 링크 test id: DOM 깊이 의존 locator 대신 직접 선택 */}
+            <Link href={`/accommodations/${id}`} data-testid='accommodation-row-detail-link'>
+              <ExternalLink className='size-4' />
+              <span className='sr-only md:not-sr-only'>상세보기</span>
+            </Link>
+          </Button>
+          <Button asChild variant='ghost' size='sm'>
+            <Link href={`/accommodations/${id}/edit`}>
+              <Pencil className='size-4' />
+              <span className='sr-only md:not-sr-only'>수정</span>
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
