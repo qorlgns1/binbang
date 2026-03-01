@@ -328,6 +328,13 @@ export async function deleteAccommodation(id: string, userId: string): Promise<b
   return true;
 }
 
+export async function deleteAccommodations(ids: string[], userId: string): Promise<number> {
+  const { count } = await prisma.accommodation.deleteMany({
+    where: { id: { in: ids }, userId },
+  });
+  return count;
+}
+
 export async function getAccommodationLogs(input: GetLogsInput): Promise<GetLogsResult> {
   const logs = await prisma.checkLog.findMany({
     where: { accommodationId: input.accommodationId },

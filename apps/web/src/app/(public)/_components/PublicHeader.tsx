@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -118,7 +119,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
               <span className='hidden md:inline'>
                 <ThemeToggle lang={lang} />
               </span>
-              <LangToggle currentLang={lang} />
+              <Suspense fallback={null}>
+                <LangToggle currentLang={lang} />
+              </Suspense>
               <Button
                 asChild
                 variant='outline'

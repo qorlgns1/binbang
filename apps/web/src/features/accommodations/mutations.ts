@@ -37,6 +37,7 @@ export type UseUpdateAccommodationMutationResult = UseMutationResult<
   UpdateAccommodationVariables
 >;
 export type UseDeleteAccommodationMutationResult = UseMutationResult<void, Error, string>;
+export type UseBulkDeleteAccommodationsMutationResult = UseMutationResult<void, Error, string[]>;
 export type UseToggleActiveMutationResult = UseMutationResult<Accommodation, Error, ToggleActiveVariables>;
 
 // ============================================================================
@@ -85,6 +86,17 @@ async function deleteAccommodation(id: string): Promise<void> {
   });
   if (!res.ok) {
     throw await parseApiError(res, '숙소 삭제에 실패했습니다');
+  }
+}
+
+async function bulkDeleteAccommodations(ids: string[]): Promise<void> {
+  const res = await fetch('/api/accommodations', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) {
+    throw await parseApiError(res, '숙소 일괄 삭제에 실패했습니다');
   }
 }
 
@@ -145,6 +157,17 @@ export function useDeleteAccommodationMutation(): UseDeleteAccommodationMutation
 
   return useMutation({
     mutationFn: deleteAccommodation,
+    onSuccess: (): void => {
+      queryClient.invalidateQueries({ queryKey: accommodationKeys.all });
+    },
+  });
+}
+
+export function useBulkDeleteAccommodationsMutation(): UseBulkDeleteAccommodationsMutationResult {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkDeleteAccommodations,
     onSuccess: (): void => {
       queryClient.invalidateQueries({ queryKey: accommodationKeys.all });
     },
