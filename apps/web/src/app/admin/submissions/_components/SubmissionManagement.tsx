@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCreateCaseMutation } from '@/features/admin/cases';
 import { type SubmissionItem, useSubmissionsQuery } from '@/features/admin/submissions';
+import { getUserMessage } from '@/lib/apiError';
 
 // ============================================================================
 // Constants
@@ -120,7 +121,7 @@ export function SubmissionManagement() {
       await refetch();
       alert(`케이스를 생성했습니다. (${result.case.id})`);
     } catch (error) {
-      alert(error instanceof Error ? error.message : '케이스 생성에 실패했습니다');
+      alert(error instanceof Error ? getUserMessage(error) : '케이스 생성에 실패했습니다');
     } finally {
       setCreatingSubmissionId(null);
     }

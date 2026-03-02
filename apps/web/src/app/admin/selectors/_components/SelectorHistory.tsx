@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { getUserMessage } from '@/lib/apiError';
 import { useSelectorHistory } from '@/hooks/useSelectorHistory';
 
 const ACTION_LABELS: Record<string, string> = {
@@ -30,7 +31,7 @@ export function SelectorHistory() {
   }
 
   if (error) {
-    return <div className='py-8 text-center text-destructive'>오류: {error.message}</div>;
+    return <div className='py-8 text-center text-destructive'>오류: {getUserMessage(error)}</div>;
   }
 
   return (

@@ -12,13 +12,20 @@ import {
 } from './handleServiceError';
 
 describe('handleServiceError', () => {
-  it('maps NotFoundError to 404', async () => {
-    const res = handleServiceError(new NotFoundError('User not found'));
+  it('maps NotFoundError to 404 with safe message and logs actual message', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation((): void => {});
+
+    const res = handleServiceError(new NotFoundError('User not found'), 'Test');
     expect(res.status).toBe(404);
 
     const body = await res.json();
     expect(body.error.code).toBe('NOT_FOUND');
-    expect(body.error.message).toBe('User not found');
+    // 클라이언트에는 안전한 generic 메시지만 반환
+    expect(body.error.message).toBe('Not found');
+    // 실제 메시지는 서버 로그에만 기록
+    expect(spy).toHaveBeenCalledWith('Test [NOT_FOUND]:', 'User not found');
+
+    spy.mockRestore();
   });
 
   it('maps ConflictError to 409', async () => {

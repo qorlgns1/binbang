@@ -19,6 +19,7 @@ import {
   useFormQuestionMappingsQuery,
   useUpdateFormQuestionMappingMutation,
 } from '@/features/admin/form-question-mappings';
+import { getUserMessage } from '@/lib/apiError';
 
 const DEFAULT_FORM_KEY = '*';
 
@@ -137,7 +138,7 @@ export function FormQuestionMappingManagement() {
 
       resetDraft();
     } catch (error) {
-      alert(error instanceof Error ? error.message : '질문 매핑 저장에 실패했습니다');
+      alert(error instanceof Error ? getUserMessage(error) : '질문 매핑 저장에 실패했습니다');
     }
   }
 
@@ -151,7 +152,7 @@ export function FormQuestionMappingManagement() {
         resetDraft();
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : '질문 매핑 삭제에 실패했습니다');
+      alert(error instanceof Error ? getUserMessage(error) : '질문 매핑 삭제에 실패했습니다');
     }
   }
 
@@ -162,7 +163,7 @@ export function FormQuestionMappingManagement() {
         payload: { isActive: !item.isActive },
       });
     } catch (error) {
-      alert(error instanceof Error ? error.message : '활성 상태 변경에 실패했습니다');
+      alert(error instanceof Error ? getUserMessage(error) : '활성 상태 변경에 실패했습니다');
     }
   }
 
