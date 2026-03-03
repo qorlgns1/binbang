@@ -592,8 +592,9 @@ export async function getPublicAvailabilitySitemapItems(
     properties = await prisma.publicProperty.findMany({
       where: {
         isActive: true,
+        slug: { not: '' },
       },
-      orderBy: [{ updatedAt: 'desc' }],
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       skip: offset,
       take: limit,
       select: {
@@ -610,15 +611,13 @@ export async function getPublicAvailabilitySitemapItems(
     throw error;
   }
 
-  return properties
-    .filter((property): boolean => property.slug.trim().length > 0)
-    .map(
-      (property): PublicAvailabilitySitemapItem => ({
-        platformSegment: toPublicPlatformSegment(property.platform),
-        slug: property.slug,
-        lastModified: (property.lastObservedAt ?? property.updatedAt).toISOString(),
-      }),
-    );
+  return properties.map(
+    (property): PublicAvailabilitySitemapItem => ({
+      platformSegment: toPublicPlatformSegment(property.platform),
+      slug: property.slug,
+      lastModified: (property.lastObservedAt ?? property.updatedAt).toISOString(),
+    }),
+  );
 }
 
 export async function getPublicAvailabilitySitemapTotalCount(): Promise<number> {
@@ -626,6 +625,7 @@ export async function getPublicAvailabilitySitemapTotalCount(): Promise<number> 
     return await prisma.publicProperty.count({
       where: {
         isActive: true,
+        slug: { not: '' },
       },
     });
   } catch (error) {

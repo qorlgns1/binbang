@@ -20,7 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const title = tCommon('appName');
   const description = t('subtitle');
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
+
   return {
+    metadataBase: new URL(baseUrl),
     title: {
       default: title,
       template: `%s | ${title}`,

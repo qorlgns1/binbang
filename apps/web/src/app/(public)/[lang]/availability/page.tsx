@@ -214,9 +214,7 @@ export default async function AvailabilityListPage({ params }: PageProps): Promi
                     <ArrowRight className='mt-0.5 size-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
                   </Link>
 
-                  <p className='mt-2 text-sm text-muted-foreground'>
-                    {resolveLocationLabel(item.addressLocality, item.addressRegion, t('labels.unknownLocation'))}
-                  </p>
+                  <p className='mt-2 text-sm text-muted-foreground'>{regionName}</p>
 
                   {regionHref ? (
                     <Link

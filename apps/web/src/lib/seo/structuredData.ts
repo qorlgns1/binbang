@@ -97,9 +97,7 @@ export function buildLodgingBusinessJsonLd(input: BuildLodgingBusinessJsonLdInpu
         }
       : null;
 
-  const sameAs = Array.from(
-    new Set(compact([normalizeText(input.url), ...(input.sameAs ?? []).map((value) => normalizeText(value))])),
-  );
+  const sameAs = Array.from(new Set(compact([...(input.sameAs ?? []).map((value) => normalizeText(value))])));
 
   return {
     '@context': 'https://schema.org',

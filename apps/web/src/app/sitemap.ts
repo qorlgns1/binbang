@@ -54,7 +54,7 @@ async function buildRegionalSitemapEntries(baseUrl: string): Promise<MetadataRou
   const entries: MetadataRoute.Sitemap = [];
 
   try {
-    const regionalItems = await getRegionalSitemapItems({ limit: 2000 });
+    const regionalItems = await getRegionalSitemapItems({ limit: 50_000 });
 
     for (const region of regionalItems) {
       for (const lang of SUPPORTED_LOCALES) {
@@ -126,6 +126,9 @@ export async function generateSitemaps(): Promise<Array<{ id: number }>> {
 
 export default async function sitemap(props: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
   const id = Number(await props.id);
+  if (!Number.isInteger(id) || id < STATIC_SITEMAP_ID) {
+    return [];
+  }
   const baseUrl = getBaseUrl();
 
   if (id === STATIC_SITEMAP_ID) {

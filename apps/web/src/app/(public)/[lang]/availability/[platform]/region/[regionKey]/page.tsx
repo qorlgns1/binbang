@@ -218,19 +218,19 @@ export default async function RegionalAvailabilityPage({ params }: PageProps): P
 
         <section className='mb-10 grid gap-4 md:grid-cols-4'>
           <div className='rounded-xl border border-border/70 bg-card/80 p-5'>
-            <h2 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.avgOpenRate')}</h2>
+            <h3 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.avgOpenRate')}</h3>
             <p className='text-2xl font-semibold text-foreground'>
               {formatPercent(locale, data.aggregateStats.avgOpenRate)}
             </p>
           </div>
           <div className='rounded-xl border border-border/70 bg-card/80 p-5'>
-            <h2 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.avgPrice')}</h2>
+            <h3 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.avgPrice')}</h3>
             <p className='text-2xl font-semibold text-foreground'>
               {formatCurrency(locale, data.aggregateStats.avgPriceAmount, data.aggregateStats.currency)}
             </p>
           </div>
           <div className='rounded-xl border border-border/70 bg-card/80 p-5'>
-            <h2 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.priceRange')}</h2>
+            <h3 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.priceRange')}</h3>
             <p className='text-sm font-medium text-foreground'>
               {typeof data.aggregateStats.minPriceAmount === 'number' &&
               typeof data.aggregateStats.maxPriceAmount === 'number'
@@ -243,7 +243,7 @@ export default async function RegionalAvailabilityPage({ params }: PageProps): P
             </p>
           </div>
           <div className='rounded-xl border border-border/70 bg-card/80 p-5'>
-            <h2 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.properties')}</h2>
+            <h3 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.properties')}</h3>
             <p className='text-2xl font-semibold text-foreground'>{data.region.propertyCount}</p>
           </div>
         </section>
