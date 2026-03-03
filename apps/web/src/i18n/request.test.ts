@@ -3,21 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { getAllNamespaces, getNamespacesForPathname } from './namespaces';
 
 describe('getNamespacesForPathname', () => {
-  describe('public 라우트 — PublicHeader base (common + landing + pricing)', () => {
+  describe('public 라우트 — PublicHeader/Auth base (common + landing + pricing + auth)', () => {
     it('landing (/ko)', () => {
-      expect(getNamespacesForPathname('/ko')).toEqual(['common', 'landing', 'pricing']);
+      expect(getNamespacesForPathname('/ko')).toEqual(['common', 'landing', 'pricing', 'auth']);
     });
 
     it('landing (/en)', () => {
-      expect(getNamespacesForPathname('/en')).toEqual(['common', 'landing', 'pricing']);
+      expect(getNamespacesForPathname('/en')).toEqual(['common', 'landing', 'pricing', 'auth']);
     });
 
     it('pricing (/ko/pricing)', () => {
-      expect(getNamespacesForPathname('/ko/pricing')).toEqual(['common', 'landing', 'pricing']);
+      expect(getNamespacesForPathname('/ko/pricing')).toEqual(['common', 'landing', 'pricing', 'auth']);
     });
   });
 
-  describe('public 라우트 — auth 추가', () => {
+  describe('public 라우트 — login/signup도 base 그대로 사용', () => {
     it('login (/ko/login)', () => {
       expect(getNamespacesForPathname('/ko/login')).toEqual(['common', 'landing', 'pricing', 'auth']);
     });
@@ -29,13 +29,13 @@ describe('getNamespacesForPathname', () => {
 
   describe('public 라우트 — faq 추가', () => {
     it('faq (/ko/faq)', () => {
-      expect(getNamespacesForPathname('/ko/faq')).toEqual(['common', 'landing', 'pricing', 'faq']);
+      expect(getNamespacesForPathname('/ko/faq')).toEqual(['common', 'landing', 'pricing', 'auth', 'faq']);
     });
   });
 
   describe('public 라우트 — about 추가', () => {
     it('about (/ko/about)', () => {
-      expect(getNamespacesForPathname('/ko/about')).toEqual(['common', 'landing', 'pricing', 'about']);
+      expect(getNamespacesForPathname('/ko/about')).toEqual(['common', 'landing', 'pricing', 'auth', 'about']);
     });
   });
 
@@ -45,6 +45,7 @@ describe('getNamespacesForPathname', () => {
         'common',
         'landing',
         'pricing',
+        'auth',
         'availability',
       ]);
     });
@@ -52,11 +53,11 @@ describe('getNamespacesForPathname', () => {
 
   describe('public 라우트 — legal 추가', () => {
     it('terms (/ko/terms)', () => {
-      expect(getNamespacesForPathname('/ko/terms')).toEqual(['common', 'landing', 'pricing', 'legal']);
+      expect(getNamespacesForPathname('/ko/terms')).toEqual(['common', 'landing', 'pricing', 'auth', 'legal']);
     });
 
     it('privacy (/en/privacy)', () => {
-      expect(getNamespacesForPathname('/en/privacy')).toEqual(['common', 'landing', 'pricing', 'legal']);
+      expect(getNamespacesForPathname('/en/privacy')).toEqual(['common', 'landing', 'pricing', 'auth', 'legal']);
     });
   });
 
@@ -80,7 +81,7 @@ describe('getNamespacesForPathname', () => {
 
   describe('알 수 없는 public 하위 경로 — base 반환', () => {
     it('unknown segment', () => {
-      expect(getNamespacesForPathname('/ko/unknown')).toEqual(['common', 'landing', 'pricing']);
+      expect(getNamespacesForPathname('/ko/unknown')).toEqual(['common', 'landing', 'pricing', 'auth']);
     });
   });
 });
