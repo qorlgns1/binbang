@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { parseApiError } from '@/lib/apiError';
+import { getUserMessage, parseApiError } from '@/lib/apiError';
 import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
@@ -113,7 +113,7 @@ export function AdminAccommodationForm(): React.ReactElement {
       router.refresh();
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        setError(getUserMessage(err));
       }
     } finally {
       setIsPending(false);

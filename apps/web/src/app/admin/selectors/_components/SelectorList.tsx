@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import type { Platform, SelectorCategory } from '@workspace/db/enums';
+import { getUserMessage } from '@/lib/apiError';
 import { useDeleteSelector, useSelectors, useUpdateSelector } from '@/hooks/useSelectors';
 import type { PlatformSelectorItem } from '@/types/admin';
 
@@ -63,7 +64,7 @@ export function SelectorList({ platform }: SelectorListProps) {
   }
 
   if (error) {
-    return <div className='py-8 text-center text-destructive'>오류: {error.message}</div>;
+    return <div className='py-8 text-center text-destructive'>오류: {getUserMessage(error)}</div>;
   }
 
   return (

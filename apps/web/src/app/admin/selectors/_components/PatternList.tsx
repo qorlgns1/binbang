@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import type { PatternType, Platform } from '@workspace/db/enums';
+import { getUserMessage } from '@/lib/apiError';
 import { useDeletePattern, usePatterns, useUpdatePattern } from '@/hooks/usePatterns';
 import type { PlatformPatternItem } from '@/types/admin';
 
@@ -59,7 +60,7 @@ export function PatternList({ platform }: PatternListProps) {
   }
 
   if (error) {
-    return <div className='py-8 text-center text-destructive'>오류: {error.message}</div>;
+    return <div className='py-8 text-center text-destructive'>오류: {getUserMessage(error)}</div>;
   }
 
   return (
