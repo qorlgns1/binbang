@@ -1,13 +1,15 @@
 /**
  * Namespace slicing — pathname 기반 최소 namespace 결정.
  *
+ * public [lang] layout은 클라이언트 라우팅에서 재사용되므로,
+ * login/signup에서 사용하는 auth를 base에 포함해 키 노출(fallback)을 방지한다.
  * PublicHeader가 common/landing/pricing을 무조건 사용하므로,
- * public 라우트의 기본(base)은 이 3개이고, 페이지별로 auth/legal을 추가한다.
+ * public 라우트의 기본(base)은 common/landing/pricing/auth 이고, 페이지별로 legal 등만 추가한다.
  * app 라우트는 common만 로드한다.
  */
 
 /** 모든 public 라우트의 기본 namespace (PublicHeader가 사용) */
-const PUBLIC_BASE = ['common', 'landing', 'pricing'] as const;
+const PUBLIC_BASE = ['common', 'landing', 'pricing', 'auth'] as const;
 
 /** 모든 namespace (fallback용) */
 const ALL_NAMESPACES = ['common', 'landing', 'legal', 'auth', 'pricing', 'faq', 'about', 'availability'] as const;
@@ -55,7 +57,7 @@ export function getNamespacesForPathname(pathname: string): readonly string[] {
       return [...PUBLIC_BASE, 'availability'];
     case 'login':
     case 'signup':
-      return [...PUBLIC_BASE, 'auth'];
+      return PUBLIC_BASE;
     case 'terms':
     case 'privacy':
       return [...PUBLIC_BASE, 'legal'];
