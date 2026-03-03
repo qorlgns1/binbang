@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { DestinationGrid } from '@/components/destinations/DestinationGrid';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { buildLocalePath } from '@/lib/localePath';
 import { getPublishedDestinations } from '@/services/destination.service';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
@@ -31,10 +32,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       locale: locale === 'ko' ? 'ko_KR' : 'en_US',
     },
     alternates: {
-      canonical: `/${locale}/destinations`,
+      canonical: buildLocalePath(locale, '/destinations'),
       languages: {
-        ko: '/ko/destinations',
-        en: '/en/destinations',
+        ko: buildLocalePath('ko', '/destinations'),
+        en: buildLocalePath('en', '/destinations'),
       },
     },
   };
@@ -55,7 +56,7 @@ export default async function DestinationsPage({ params }: Props) {
       item: {
         '@type': 'TouristDestination',
         name: locale === 'ko' ? dest.nameKo : dest.nameEn,
-        url: `${BASE_URL}/${locale}/destinations/${dest.slug}`,
+        url: `${BASE_URL}${buildLocalePath(locale, `/destinations/${dest.slug}`)}`,
         image: dest.imageUrl,
       },
     })),
@@ -70,13 +71,13 @@ export default async function DestinationsPage({ params }: Props) {
         {/* Header */}
         <header className='border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50'>
           <div className='container mx-auto px-4 py-4 flex items-center justify-between'>
-            <Link href={`/${locale}`} className='text-xl font-bold hover:text-primary transition-colors'>
+            <Link href={buildLocalePath(locale, '')} className='text-xl font-bold hover:text-primary transition-colors'>
               {t('common.appName')}
             </Link>
             <div className='flex items-center gap-3'>
               <LanguageSwitcher />
               <Link
-                href={`/${locale}/chat`}
+                href={buildLocalePath(locale, '/chat')}
                 className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
               >
                 {t('landing.hero.cta')}

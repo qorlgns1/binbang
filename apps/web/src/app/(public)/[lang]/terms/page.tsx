@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 interface PageProps {
@@ -71,12 +72,12 @@ export default async function TermsPage({ params }: PageProps): Promise<React.Re
       </div>
       <div className='mt-12 flex gap-4'>
         <Link
-          href={`/${lang}/privacy`}
+          href={buildPublicPath(lang, '/privacy')}
           className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'
         >
           {t('terms.privacyLink')}
         </Link>
-        <Link href={`/${lang}`} className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link href={buildPublicPath(lang, '')} className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
           {t('terms.homeLink')}
         </Link>
       </div>

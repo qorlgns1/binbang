@@ -7,6 +7,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { buildLocalePath } from '@/lib/localePath';
+
 const ITEMS_PER_PAGE = 12;
 
 type DestinationGridProps = {
@@ -103,7 +105,7 @@ export function DestinationGrid({ destinations, locale }: DestinationGridProps) 
             return (
               <Link
                 key={destination.id}
-                href={`/${locale}/destinations/${destination.slug}`}
+                href={buildLocalePath(locale, `/destinations/${destination.slug}`)}
                 className='group bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300'
               >
                 {/* 이미지 */}

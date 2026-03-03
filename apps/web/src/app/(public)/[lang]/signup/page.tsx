@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 
 export default function SignupPage(): React.ReactElement {
   const { lang } = useParams<{ lang: string }>();
@@ -50,7 +51,7 @@ export default function SignupPage(): React.ReactElement {
         return;
       }
 
-      router.push(`/${lang}/login`);
+      router.push(buildPublicPath(lang, '/login'));
     } catch {
       setError(t('errors.serverError'));
     } finally {
@@ -61,7 +62,7 @@ export default function SignupPage(): React.ReactElement {
   return (
     <main className='relative flex flex-1 items-center justify-center p-4 md:p-8'>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel ctaLabel={t('signup.ctaLogin')} ctaHref={`/${lang}/login`} />
+        <AuthBrandPanel ctaLabel={t('signup.ctaLogin')} ctaHref={buildPublicPath(lang, '/login')} />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
@@ -146,7 +147,7 @@ export default function SignupPage(): React.ReactElement {
             <p className='text-center text-sm text-muted-foreground'>
               {t('signup.hasAccount')}{' '}
               <Link
-                href={`/${lang}/login`}
+                href={buildPublicPath(lang, '/login')}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
                 {t('signup.login')}
@@ -155,21 +156,21 @@ export default function SignupPage(): React.ReactElement {
 
             <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-center'>
               <Link
-                href={`/${lang}/pricing`}
+                href={buildPublicPath(lang, '/pricing')}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 {t('signup.pricingLink')}
               </Link>
               <span className='text-muted-foreground'>·</span>
               <Link
-                href={`/${lang}/privacy`}
+                href={buildPublicPath(lang, '/privacy')}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 {t('signup.privacyLink')}
               </Link>
               <span className='text-muted-foreground'>·</span>
               <Link
-                href={`/${lang}/terms`}
+                href={buildPublicPath(lang, '/terms')}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 {t('signup.termsLink')}

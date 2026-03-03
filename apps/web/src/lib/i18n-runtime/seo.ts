@@ -1,9 +1,10 @@
 /**
- * Public SEO helpers: base URL, canonical and hreflang alternates for [lang] routes.
+ * Public SEO helpers: base URL, canonical and hreflang alternates.
  * Used by sitemap and Public page metadata (WU-16).
  */
 
 import { type Locale, SUPPORTED_LOCALES } from '@workspace/shared/i18n';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 
 const RAW_BASE =
   typeof process.env.NEXT_PUBLIC_APP_URL === 'string' && process.env.NEXT_PUBLIC_APP_URL.length > 0
@@ -42,16 +43,16 @@ export function buildAvailabilityPath(platformSegment: string, slugSegment: stri
 /**
  * Build canonical URL and hreflang alternates for a Public page.
  * @param lang - Current locale
- * @param path - Path segment after /[lang], e.g. '' or '/pricing'
+ * @param path - Path segment after locale root, e.g. '' or '/pricing'
  */
 export function buildPublicAlternates(
   lang: Locale,
   path: string,
 ): { canonical: string; languages: Record<string, string> } {
-  const canonical = `${BASE_URL}/${lang}${path}`;
+  const canonical = `${BASE_URL}${buildPublicPath(lang, path)}`;
   const languages: Record<string, string> = {};
   for (const l of SUPPORTED_LOCALES) {
-    languages[l] = `${BASE_URL}/${l}${path}`;
+    languages[l] = `${BASE_URL}${buildPublicPath(l, path)}`;
   }
   return { canonical, languages };
 }

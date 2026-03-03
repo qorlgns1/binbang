@@ -6,8 +6,17 @@ import { notFound } from 'next/navigation';
 import { ChevronRight, ExternalLink, Lightbulb, LineChart, TrendingUp } from 'lucide-react';
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
-import { buildAvailabilityPath, buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
+import {
+  buildAvailabilityPath,
+  buildPublicAlternates,
+  DEFAULT_OG_IMAGE,
+  getBaseUrl,
+  getOgLocale,
+} from '@/lib/i18n-runtime/seo';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { buildAvailabilityDetailMeta } from '@/lib/seo/availabilityMeta';
+import { buildBreadcrumbJsonLd, buildLodgingBusinessJsonLd } from '@/lib/seo/structuredData';
 import {
   getPublicAvailabilityPageData,
   type PublicAvailabilityPredictionView,
@@ -34,6 +43,13 @@ function resolveLocationLabel(
 
   if (values.length === 0) return unknownLocationLabel;
   return values.join(', ');
+}
+
+function formatRegionName(regionKey: string): string {
+  return regionKey
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 function formatPercent(locale: Locale, value: number | null): string {
@@ -108,6 +124,32 @@ function getConfidenceBadgeClass(confidence: PublicAvailabilityPredictionView['c
   }
 }
 
+function getHomeLabel(locale: Locale): string {
+  return locale === 'ko' ? '홈' : 'Home';
+}
+
+function getAvailabilityLabel(locale: Locale): string {
+  return locale === 'ko' ? '숙소 예약 가능 여부' : 'Accommodation availability';
+}
+
+function getListLinkLabel(locale: Locale): string {
+  return locale === 'ko'
+    ? '전체 숙소 예약 가능 여부 목록 보기'
+    : 'Browse the full accommodation availability list';
+}
+
+function getRegionLinkLabel(locale: Locale, platformLabel: string, regionName: string): string {
+  return locale === 'ko'
+    ? `${regionName} ${platformLabel} 지역 숙소 더 보기`
+    : `See more ${platformLabel} stays in ${regionName}`;
+}
+
+function getDetailAnchorText(locale: Locale, propertyName: string): string {
+  return locale === 'ko'
+    ? `${propertyName} 예약 가능 여부와 가격 추이 보기`
+    : `View ${propertyName} availability and price trends`;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, platform, slug } = await params;
   if (!isSupportedLocale(lang)) return {};
@@ -126,57 +168,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const canonicalPath = buildAvailabilityPath(data.platformSegment, data.property.slug);
   const { canonical, languages } = buildPublicAlternates(locale, canonicalPath);
-
-  const title = t('meta.title', {
+  const meta = buildAvailabilityDetailMeta({
+    locale,
     propertyName: data.property.name,
-    platform: platformLabel,
+    platformLabel,
+    locationLabel,
   });
 
-  // 동적 description: 데이터가 있으면 구체적 수치 포함
-  let description: string;
-  if (data.latestSnapshot && data.latestSnapshot.openRate !== null && data.latestSnapshot.avgPriceAmount !== null) {
-    const openRateDelta =
-      typeof data.latestSnapshot.openRate === 'number' && typeof data.previousSnapshot?.openRate === 'number'
-        ? data.latestSnapshot.openRate - data.previousSnapshot.openRate
-        : 0;
-
-    const trend = openRateDelta > 0.05 ? t('meta.trendUp') : openRateDelta < -0.05 ? t('meta.trendDown') : '';
-
-    description = t('meta.descriptionWithData', {
-      propertyName: data.property.name,
-      location: locationLabel,
-      openRate: formatPercent(locale, data.latestSnapshot.openRate),
-      trend,
-      avgPrice: formatCurrency(locale, data.latestSnapshot.avgPriceAmount, data.latestSnapshot.currency),
-    });
-  } else {
-    description = t('meta.description', {
-      propertyName: data.property.name,
-      platform: platformLabel,
-      location: locationLabel,
-    });
-  }
-
   return {
-    title,
-    description,
+    title: meta.title,
+    description: meta.description,
     alternates: { canonical, languages },
     openGraph: {
       type: 'article',
       locale: getOgLocale(locale),
       url: canonical,
       siteName: 'Binbang',
-      title,
-      description: t('meta.ogDescription', {
-        propertyName: data.property.name,
-        platform: platformLabel,
-      }),
+      title: meta.title,
+      description: meta.ogDescription,
       images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: 'summary',
-      title,
-      description,
+      title: meta.title,
+      description: meta.description,
       images: ['/icon.png'],
     },
   };
@@ -192,12 +207,54 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
 
   if (!data) notFound();
 
+  const baseUrl = getBaseUrl();
   const platformLabel = t(`platform.${data.platform}`);
   const locationLabel = resolveLocationLabel(
     data.property.addressLocality,
     data.property.addressRegion,
     t('labels.unknownLocation'),
   );
+
+  const canonicalPath = buildAvailabilityPath(data.platformSegment, data.property.slug);
+  const canonicalUrl = `${baseUrl}${buildPublicPath(lang, canonicalPath)}`;
+  const meta = buildAvailabilityDetailMeta({
+    locale,
+    propertyName: data.property.name,
+    platformLabel,
+    locationLabel,
+  });
+
+  const regionName = data.property.cityKey
+    ? formatRegionName(data.property.cityKey)
+    : resolveLocationLabel(data.property.addressLocality, data.property.addressRegion, t('labels.unknownLocation'));
+  const regionPath = data.property.cityKey
+    ? `/availability/${data.platformSegment}/region/${data.property.cityKey}`
+    : null;
+
+  const breadcrumbStructuredData = buildBreadcrumbJsonLd([
+    { name: getHomeLabel(locale), url: `${baseUrl}${buildPublicPath(lang, '')}` },
+    { name: getAvailabilityLabel(locale), url: `${baseUrl}${buildPublicPath(lang, '/availability')}` },
+    ...(regionPath
+      ? [
+          {
+            name: `${platformLabel} ${regionName}`,
+            url: `${baseUrl}${buildPublicPath(lang, regionPath)}`,
+          },
+        ]
+      : []),
+    { name: data.property.name, url: canonicalUrl },
+  ]);
+
+  const lodgingBusinessStructuredData = buildLodgingBusinessJsonLd({
+    name: data.property.name,
+    url: canonicalUrl,
+    description: data.property.description ?? meta.description,
+    imageUrl: data.property.imageUrl,
+    addressLocality: data.property.addressLocality,
+    addressRegion: data.property.addressRegion,
+    addressCountry: data.property.countryKey,
+    sameAs: [data.property.sourceUrl],
+  });
 
   const openRateDelta =
     typeof data.latestSnapshot?.openRate === 'number' && typeof data.previousSnapshot?.openRate === 'number'
@@ -242,6 +299,16 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
       <script
         type='application/ld+json'
         // biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes script-breaking characters
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbStructuredData) }}
+      />
+      <script
+        type='application/ld+json'
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes script-breaking characters
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(lodgingBusinessStructuredData) }}
+      />
+      <script
+        type='application/ld+json'
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes script-breaking characters
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqStructuredData) }}
       />
 
@@ -251,6 +318,34 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
       </div>
 
       <div className='relative z-10 mx-auto max-w-6xl px-4 py-12 md:py-16'>
+        <nav aria-label='Breadcrumb' className='mb-6'>
+          <ol className='flex flex-wrap items-center gap-2 text-sm text-muted-foreground'>
+            <li>
+              <Link href={buildPublicPath(lang, '')} className='hover:text-foreground'>
+                {getHomeLabel(locale)}
+              </Link>
+            </li>
+            <li>/</li>
+            <li>
+              <Link href={buildPublicPath(lang, '/availability')} className='hover:text-foreground'>
+                {getAvailabilityLabel(locale)}
+              </Link>
+            </li>
+            {regionPath ? (
+              <>
+                <li>/</li>
+                <li>
+                  <Link href={buildPublicPath(lang, regionPath)} className='hover:text-foreground'>
+                    {`${platformLabel} ${regionName}`}
+                  </Link>
+                </li>
+              </>
+            ) : null}
+            <li>/</li>
+            <li className='font-medium text-foreground'>{data.property.name}</li>
+          </ol>
+        </nav>
+
         <section className='grid gap-6 rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur md:grid-cols-[1.2fr_0.8fr] md:p-8'>
           <div className='space-y-4'>
             <p className='text-xs font-semibold tracking-[0.2em] text-primary'>
@@ -270,7 +365,7 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
             <div className='flex flex-wrap items-center gap-3 pt-2'>
               <AvailabilityCtaButton
                 lang={locale}
-                href={`/${lang}/signup?prefill=${encodeURIComponent(
+                href={`${buildPublicPath(lang, '/signup')}?prefill=${encodeURIComponent(
                   JSON.stringify({
                     url: data.property.sourceUrl,
                     platform: data.platform,
@@ -290,6 +385,32 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
                 {t('hero.sourceLink')}
                 <ExternalLink className='size-4' />
               </a>
+            </div>
+
+            <div className='flex flex-wrap items-center gap-2 pt-1'>
+              <Link
+                href={buildPublicPath(lang, '/availability')}
+                className='inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary'
+              >
+                {getListLinkLabel(locale)}
+              </Link>
+              {regionPath ? (
+                <Link
+                  href={buildPublicPath(lang, regionPath)}
+                  className='inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary'
+                >
+                  {getRegionLinkLabel(locale, platformLabel, regionName)}
+                </Link>
+              ) : null}
+              {data.alternatives.slice(0, 2).map((item) => (
+                <Link
+                  key={item.id}
+                  href={buildPublicPath(lang, `/availability/${data.platformSegment}/${item.slug}`)}
+                  className='inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-primary'
+                >
+                  {getDetailAnchorText(locale, item.name)}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -415,11 +536,11 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
               {data.alternatives.map((item) => (
                 <article key={item.id} className='rounded-xl border border-border/70 bg-card/80 p-5 shadow-xs'>
                   <Link
-                    href={`/${lang}/availability/${data.platformSegment}/${item.slug}`}
-                    className='group inline-flex items-center gap-1 text-lg font-medium text-foreground hover:text-primary'
+                    href={buildPublicPath(lang, `/availability/${data.platformSegment}/${item.slug}`)}
+                    className='group inline-flex items-start gap-1 text-base font-medium text-foreground hover:text-primary'
                   >
-                    {item.name}
-                    <ChevronRight className='size-4 transition-transform group-hover:translate-x-0.5' />
+                    <span className='line-clamp-2'>{getDetailAnchorText(locale, item.name)}</span>
+                    <ChevronRight className='mt-0.5 size-4 shrink-0 transition-transform group-hover:translate-x-0.5' />
                   </Link>
                   <p className='mt-1 text-sm text-muted-foreground'>
                     {resolveLocationLabel(item.addressLocality, item.addressRegion, t('labels.unknownLocation'))}
@@ -454,7 +575,7 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
           <div className='mt-4'>
             <AvailabilityCtaButton
               lang={locale}
-              href={`/${lang}/signup?prefill=${encodeURIComponent(
+              href={`${buildPublicPath(lang, '/signup')}?prefill=${encodeURIComponent(
                 JSON.stringify({
                   url: data.property.sourceUrl,
                   platform: data.platform,

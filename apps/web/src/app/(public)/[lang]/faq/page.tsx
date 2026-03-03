@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { HelpCircle, Bell, UserCircle, MessageCircle } from 'lucide-react';
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { SUPPORT_EMAIL } from '@/lib/support';
@@ -119,13 +120,13 @@ export default async function FaqPage({ params }: PageProps): Promise<React.Reac
         </p>
         <div className='mt-4 flex justify-center gap-4 text-sm'>
           <Link
-            href={`/${lang}/privacy`}
+            href={buildPublicPath(lang, '/privacy')}
             className='text-muted-foreground underline underline-offset-4 hover:text-foreground'
           >
             {t('footer.privacyPolicy')}
           </Link>
           <Link
-            href={`/${lang}/pricing`}
+            href={buildPublicPath(lang, '/pricing')}
             className='text-muted-foreground underline underline-offset-4 hover:text-foreground'
           >
             {t('footer.pricing')}

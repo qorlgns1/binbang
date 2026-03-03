@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { buildLocalePath } from '@/lib/localePath';
 import { getPublishedDestinations } from '@/services/destination.service';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
@@ -34,7 +35,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
     '@type': 'WebApplication',
     name: t('common.appName'),
     description: t('landing.hero.subtitle'),
-    url: `${BASE_URL}/${locale}`,
+    url: `${BASE_URL}${buildLocalePath(locale, '')}`,
     applicationCategory: 'TravelApplication',
     operatingSystem: 'Web',
     offers: {
@@ -82,7 +83,7 @@ function LandingPageClient({ locale, topDestinations }: { locale: string; topDes
             {t('landing.hero.subtitle')}
           </p>
           <Link
-            href={`/${locale}/chat`}
+            href={buildLocalePath(locale, '/chat')}
             className='inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full text-lg font-semibold hover:bg-primary/90 transition-all duration-150 shadow-lg hover:shadow-xl active:scale-95'
           >
             {t('landing.hero.cta')}
@@ -131,7 +132,7 @@ function LandingPageClient({ locale, topDestinations }: { locale: string; topDes
                 return (
                   <Link
                     key={destination.id}
-                    href={`/${locale}/destinations/${destination.slug}`}
+                    href={buildLocalePath(locale, `/destinations/${destination.slug}`)}
                     className='group bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300'
                   >
                     <div className='relative aspect-video bg-muted overflow-hidden'>
@@ -161,7 +162,7 @@ function LandingPageClient({ locale, topDestinations }: { locale: string; topDes
             </div>
             <div className='mt-10 text-center'>
               <Link
-                href={`/${locale}/destinations`}
+                href={buildLocalePath(locale, '/destinations')}
                 className='inline-flex items-center gap-2 border border-border px-6 py-3 rounded-full text-sm font-medium hover:bg-muted transition-colors'
               >
                 {t('landing.destinations.viewAll')}

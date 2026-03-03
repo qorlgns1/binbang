@@ -5,6 +5,7 @@ import { cache } from 'react';
 
 import { DestinationDetail } from '@/components/destinations/DestinationDetail';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { buildLocalePath } from '@/lib/localePath';
 import { getDestinationBySlug } from '@/services/destination.service';
 
 type Props = {
@@ -54,10 +55,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: destination.imageUrl ? [destination.imageUrl] : [],
     },
     alternates: {
-      canonical: `/${locale}/destinations/${slug}`,
+      canonical: buildLocalePath(locale, `/destinations/${slug}`),
       languages: {
-        ko: `/ko/destinations/${slug}`,
-        en: `/en/destinations/${slug}`,
+        ko: buildLocalePath('ko', `/destinations/${slug}`),
+        en: buildLocalePath('en', `/destinations/${slug}`),
       },
     },
   };

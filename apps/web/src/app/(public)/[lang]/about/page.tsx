@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { Zap, Anchor, Target } from 'lucide-react';
 
 import { type Locale, isSupportedLocale } from '@workspace/shared/i18n';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { buildPublicAlternates, DEFAULT_OG_IMAGE, getOgLocale } from '@/lib/i18n-runtime/seo';
 
 interface PageProps {
@@ -112,7 +113,7 @@ export default async function AboutPage({ params }: PageProps): Promise<React.Re
         <h2 className='mb-3 text-2xl font-semibold text-foreground'>{t('cta.title')}</h2>
         <p className='mx-auto mb-8 max-w-xl text-muted-foreground'>{t('cta.description')}</p>
         <Link
-          href={`/${lang}/signup`}
+          href={buildPublicPath(lang, '/signup')}
           className='inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
         >
           {t('cta.button')}

@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Providers } from '@/components/Providers';
 import { locales } from '@/i18n';
+import { buildLocalePath } from '@/lib/localePath';
 
 import '../globals.css';
 
@@ -39,10 +40,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description,
     },
     alternates: {
-      canonical: `/${locale}`,
+      canonical: buildLocalePath(locale, ''),
       languages: {
-        ko: '/ko',
-        en: '/en',
+        ko: buildLocalePath('ko', ''),
+        en: buildLocalePath('en', ''),
       },
     },
   };

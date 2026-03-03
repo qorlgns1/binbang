@@ -10,14 +10,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/dashboard', '/accommodations/', '/settings/', '/admin/'],
+        disallow: ['/dashboard', '/accommodations', '/settings', '/admin'],
       },
       {
         userAgent: 'Yeti',
         allow: '/',
-        disallow: ['/dashboard', '/accommodations/', '/settings/', '/admin/'],
+        disallow: ['/dashboard', '/accommodations', '/settings', '/admin'],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap-index.xml`,
   };
 }

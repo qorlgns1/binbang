@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { trackClosingCTAClicked } from '@/lib/analytics/landingTracker';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 
 /**
  * Renders the landing page footer with closing CTA section and copyright row.
@@ -25,7 +26,7 @@ export function Footer(): React.ReactElement {
           <h2 className='text-3xl font-semibold text-foreground md:text-4xl'>{t('footer.title')}</h2>
           <p className='mx-auto mt-5 max-w-2xl text-lg text-muted-foreground'>{t('footer.description')}</p>
           <Link
-            href={`/${lang}/signup`}
+            href={buildPublicPath(lang, '/signup')}
             className='mt-10 inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
             onClick={handleCTAClick}
           >
@@ -37,11 +38,11 @@ export function Footer(): React.ReactElement {
       <footer className='border-t border-border bg-background px-4 py-7 text-center text-sm text-muted-foreground'>
         <span>{t('footer.copyright')}</span>
         <span className='mx-2'>·</span>
-        <Link href={`/${lang}/privacy`} className='underline underline-offset-4 hover:text-foreground'>
+        <Link href={buildPublicPath(lang, '/privacy')} className='underline underline-offset-4 hover:text-foreground'>
           {t('footer.privacy')}
         </Link>
         <span className='mx-2'>·</span>
-        <Link href={`/${lang}/terms`} className='underline underline-offset-4 hover:text-foreground'>
+        <Link href={buildPublicPath(lang, '/terms')} className='underline underline-offset-4 hover:text-foreground'>
           {t('footer.terms')}
         </Link>
       </footer>

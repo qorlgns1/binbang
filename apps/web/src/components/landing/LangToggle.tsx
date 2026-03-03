@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Globe } from 'lucide-react';
 
 import { trackLocaleToggled } from '@/lib/analytics/landingTracker';
+import { buildPublicPath, isPublicPath, stripLocalePrefix } from '@/lib/i18n-runtime/publicPath';
 import { SUPPORTED_LOCALES, type Locale } from '@workspace/shared/i18n';
 import { cn } from '@/lib/utils';
 
@@ -15,9 +16,6 @@ interface LangToggleProps {
   className?: string;
   variant?: 'desktop' | 'mobile';
 }
-
-/** Public pathname의 locale prefix (SUPPORTED_LOCALES와 동기화) */
-const LOCALE_PATH_REGEX = /^\/(ko|en|ja|zh-CN|es-419)(\/.*)?$/;
 
 /** 언어 선택 시 트리거/옵션에 표시할 짧은 라벨 */
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -35,7 +33,7 @@ const LOCALE_LABELS: Record<Locale, string> = {
  */
 export function LangToggle({ currentLang, className = '', variant = 'desktop' }: LangToggleProps): React.ReactElement {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || '/';
   const searchParams = useSearchParams();
 
   const handleChange = (newLang: string): void => {
@@ -47,9 +45,9 @@ export function LangToggle({ currentLang, className = '', variant = 'desktop' }:
 
     trackLocaleToggled(locale, theme);
 
-    const localeMatch = pathname.match(LOCALE_PATH_REGEX);
-    if (localeMatch) {
-      const path = `/${locale}${localeMatch[2] || ''}`;
+    const { pathname: pathWithoutLocale } = stripLocalePrefix(pathname);
+    if (isPublicPath(pathWithoutLocale)) {
+      const path = buildPublicPath(locale, pathWithoutLocale);
       const query = searchParams.toString();
       router.push(query ? `${path}?${query}` : path);
     } else {
