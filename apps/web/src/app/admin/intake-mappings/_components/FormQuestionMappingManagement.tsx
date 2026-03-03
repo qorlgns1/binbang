@@ -124,7 +124,8 @@ export function FormQuestionMappingManagement() {
       };
 
       if (!payload.questionTitle) {
-        throw new Error('questionTitle is required');
+        alert('질문 제목은 필수입니다');
+        return;
       }
 
       if (editingId) {
