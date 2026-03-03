@@ -133,9 +133,7 @@ function getAvailabilityLabel(locale: Locale): string {
 }
 
 function getListLinkLabel(locale: Locale): string {
-  return locale === 'ko'
-    ? '전체 숙소 예약 가능 여부 목록 보기'
-    : 'Browse the full accommodation availability list';
+  return locale === 'ko' ? '전체 숙소 예약 가능 여부 목록 보기' : 'Browse the full accommodation availability list';
 }
 
 function getRegionLinkLabel(locale: Locale, platformLabel: string, regionName: string): string {

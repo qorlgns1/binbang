@@ -232,7 +232,8 @@ export default async function RegionalAvailabilityPage({ params }: PageProps): P
           <div className='rounded-xl border border-border/70 bg-card/80 p-5'>
             <h2 className='mb-1 text-xs font-medium text-muted-foreground'>{t('region.stats.priceRange')}</h2>
             <p className='text-sm font-medium text-foreground'>
-              {typeof data.aggregateStats.minPriceAmount === 'number' && typeof data.aggregateStats.maxPriceAmount === 'number'
+              {typeof data.aggregateStats.minPriceAmount === 'number' &&
+              typeof data.aggregateStats.maxPriceAmount === 'number'
                 ? `${formatCurrency(locale, data.aggregateStats.minPriceAmount, data.aggregateStats.currency)} - ${formatCurrency(
                     locale,
                     data.aggregateStats.maxPriceAmount,

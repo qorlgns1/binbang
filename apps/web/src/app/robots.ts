@@ -18,6 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/dashboard', '/accommodations', '/settings', '/admin'],
       },
     ],
-    sitemap: `${baseUrl}/sitemap-index.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

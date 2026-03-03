@@ -77,7 +77,10 @@ export default async function PrivacyPage({ params }: PageProps): Promise<React.
         >
           {t('privacy.termsLink')}
         </Link>
-        <Link href={buildPublicPath(lang, '')} className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link
+          href={buildPublicPath(lang, '')}
+          className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'
+        >
           {t('privacy.homeLink')}
         </Link>
       </div>

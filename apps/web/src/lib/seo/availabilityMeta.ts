@@ -62,11 +62,7 @@ function ensureMinLength(value: string, minLength: number, extension: string): s
 }
 
 function finalizeTitle(value: string, locale: Locale): string {
-  const extended = ensureMinLength(
-    value,
-    TITLE_MIN_LENGTH,
-    locale === 'ko' ? '실시간 데이터' : 'live insights',
-  );
+  const extended = ensureMinLength(value, TITLE_MIN_LENGTH, locale === 'ko' ? '실시간 데이터' : 'live insights');
   return truncateText(extended, TITLE_MAX_LENGTH);
 }
 
@@ -90,7 +86,12 @@ function valueOrFallback(value: string | null | undefined, fallback: string): st
   return normalized.length > 0 ? normalized : fallback;
 }
 
-function buildOutput(locale: Locale, title: string, description: string, ogDescription?: string): AvailabilityMetaOutput {
+function buildOutput(
+  locale: Locale,
+  title: string,
+  description: string,
+  ogDescription?: string,
+): AvailabilityMetaOutput {
   return {
     title: finalizeTitle(title, locale),
     description: finalizeDescription(description, locale),

@@ -77,7 +77,10 @@ export default async function TermsPage({ params }: PageProps): Promise<React.Re
         >
           {t('terms.privacyLink')}
         </Link>
-        <Link href={buildPublicPath(lang, '')} className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'>
+        <Link
+          href={buildPublicPath(lang, '')}
+          className='text-sm text-primary underline underline-offset-4 hover:text-primary/80'
+        >
           {t('terms.homeLink')}
         </Link>
       </div>
