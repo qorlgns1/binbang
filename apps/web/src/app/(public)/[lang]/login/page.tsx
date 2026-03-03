@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 
 function LoginForm(): React.ReactElement {
   const { lang } = useParams<{ lang: string }>();
@@ -57,7 +58,7 @@ function LoginForm(): React.ReactElement {
   return (
     <main className='relative flex flex-1 items-center justify-center p-4 md:p-8'>
       <div className='mx-auto grid w-full max-w-6xl items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]'>
-        <AuthBrandPanel ctaLabel={t('login.ctaLanding')} ctaHref={`/${lang}`} />
+        <AuthBrandPanel ctaLabel={t('login.ctaLanding')} ctaHref={buildPublicPath(lang, '')} />
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
@@ -112,7 +113,7 @@ function LoginForm(): React.ReactElement {
             <p className='text-center text-sm text-muted-foreground'>
               {t('login.noAccount')}{' '}
               <Link
-                href={`/${lang}/signup`}
+                href={buildPublicPath(lang, '/signup')}
                 className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
               >
                 {t('login.signup')}
@@ -167,7 +168,7 @@ function LoginForm(): React.ReactElement {
 
             <div className='text-center pt-1'>
               <Link
-                href={`/${lang}/pricing`}
+                href={buildPublicPath(lang, '/pricing')}
                 className='text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground'
               >
                 {t('login.pricingLink')}

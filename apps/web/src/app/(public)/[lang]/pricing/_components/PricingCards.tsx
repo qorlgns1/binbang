@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 
 import { Check, Clock, Home, Zap } from 'lucide-react';
 
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { SUPPORT_EMAIL } from '@/lib/support';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -97,7 +98,7 @@ function PlanCard({
           </Button>
         ) : plan.price === 0 ? (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>
-            <Link href={`/${lang}/signup`}>{t('plan.getStartedFree')}</Link>
+            <Link href={buildPublicPath(lang, '/signup')}>{t('plan.getStartedFree')}</Link>
           </Button>
         ) : (
           <Button className='w-full bg-primary text-primary-foreground hover:bg-primary/90' asChild>

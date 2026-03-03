@@ -9,8 +9,8 @@ export default createMiddleware({
   // Used when no locale matches
   defaultLocale,
 
-  // Redirect to default locale if no locale prefix is present
-  localePrefix: 'always',
+  // Default locale(ko) has no prefix; others keep prefix (/en/*)
+  localePrefix: 'as-needed',
 });
 
 export const config = {

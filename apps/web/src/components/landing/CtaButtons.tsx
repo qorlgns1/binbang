@@ -8,6 +8,7 @@ import { ArrowRight, BellRing } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { trackPrimaryCTAClicked, trackSecondaryCTAClicked } from '@/lib/analytics/landingTracker';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { smoothScrollTo } from '@/lib/utils/scroll';
 
 /**
@@ -33,7 +34,7 @@ export function CTAButtons(): React.ReactElement {
   return (
     <div className='mt-10 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center'>
       <Button asChild size='lg' className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'>
-        <Link href={`/${lang}/signup`} onClick={handlePrimaryCTA}>
+        <Link href={buildPublicPath(lang, '/signup')} onClick={handlePrimaryCTA}>
           <BellRing className='mr-2 size-5' />
           {t('hero.cta')}
         </Link>

@@ -13,6 +13,7 @@ import { LangToggle } from '@/components/landing/LangToggle';
 import { MobileMenu } from '@/components/landing/MobileMenu';
 import { ThemeToggle } from '@/components/landing/ThemeToggle';
 import { trackClickEvent } from '@/lib/analytics/clickTracker';
+import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import type { Locale } from '@workspace/shared/i18n';
 
 export type PublicHeaderVariant = 'default' | 'landing' | 'pricing' | 'auth' | 'legal';
@@ -29,10 +30,16 @@ const navLinkClass =
 
 function resolveVariant(pathname: string | null, lang: Locale): PublicHeaderVariant {
   if (!pathname) return 'default';
-  if (pathname === `/${lang}`) return 'landing';
-  if (pathname === `/${lang}/pricing` || pathname === `/${lang}/faq` || pathname === `/${lang}/about`) return 'pricing';
-  if (pathname === `/${lang}/login` || pathname === `/${lang}/signup`) return 'auth';
-  if (pathname === `/${lang}/terms` || pathname === `/${lang}/privacy`) return 'legal';
+  if (pathname === buildPublicPath(lang, '')) return 'landing';
+  if (
+    pathname === buildPublicPath(lang, '/pricing') ||
+    pathname === buildPublicPath(lang, '/faq') ||
+    pathname === buildPublicPath(lang, '/about')
+  ) {
+    return 'pricing';
+  }
+  if (pathname === buildPublicPath(lang, '/login') || pathname === buildPublicPath(lang, '/signup')) return 'auth';
+  if (pathname === buildPublicPath(lang, '/terms') || pathname === buildPublicPath(lang, '/privacy')) return 'legal';
   return 'default';
 }
 
@@ -76,7 +83,7 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
       <div className='mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6'>
         <div className='flex min-h-10 items-center gap-2'>
           <Link
-            href={`/${lang}`}
+            href={buildPublicPath(lang, '')}
             className='flex items-center gap-2.5 rounded-md text-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background'
             aria-label={tCommon('brand')}
           >
@@ -93,7 +100,7 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
 
           {(variant === 'pricing' || variant === 'legal') && (
             <Link
-              href={`/${lang}`}
+              href={buildPublicPath(lang, '')}
               className={`${backButtonClass} gap-1.5 px-2 text-sm sm:px-3`}
               aria-label={tCommon('back')}
             >
@@ -105,13 +112,13 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
         {variant === 'landing' && (
           <>
             <nav className='hidden gap-1 md:flex mr-auto' aria-label='Main'>
-              <Link href={`/${lang}/about`} className={navLinkClass}>
+              <Link href={buildPublicPath(lang, '/about')} className={navLinkClass}>
                 {tLanding('nav.about')}
               </Link>
-              <Link href={`/${lang}/pricing`} className={navLinkClass} onClick={handleNavPricingClick}>
+              <Link href={buildPublicPath(lang, '/pricing')} className={navLinkClass} onClick={handleNavPricingClick}>
                 {tLanding('nav.pricing')}
               </Link>
-              <Link href={`/${lang}/faq`} className={navLinkClass}>
+              <Link href={buildPublicPath(lang, '/faq')} className={navLinkClass}>
                 {tLanding('nav.faq')}
               </Link>
             </nav>
@@ -128,7 +135,7 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
                 size='sm'
                 className='hidden border-primary/50 bg-transparent text-primary hover:bg-primary/10 hover:text-primary md:inline-flex'
               >
-                <Link href={`/${lang}/login`}>{tLanding('nav.login')}</Link>
+                <Link href={buildPublicPath(lang, '/login')}>{tLanding('nav.login')}</Link>
               </Button>
               <div className='flex items-center gap-1 md:hidden'>
                 <ThemeToggle lang={lang} variant='mobile' />
@@ -153,10 +160,10 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
             ) : (
               <>
                 <Button variant='outline' size='sm' asChild>
-                  <Link href={`/${lang}/login`}>{tPricing('nav.login')}</Link>
+                  <Link href={buildPublicPath(lang, '/login')}>{tPricing('nav.login')}</Link>
                 </Button>
                 <Button size='sm' asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                  <Link href={`/${lang}/signup`} onClick={handleNavSignupClick}>
+                  <Link href={buildPublicPath(lang, '/signup')} onClick={handleNavSignupClick}>
                     {tPricing('nav.getStarted')}
                   </Link>
                 </Button>

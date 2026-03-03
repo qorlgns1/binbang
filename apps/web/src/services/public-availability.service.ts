@@ -16,7 +16,7 @@ const MAX_ALTERNATIVES_LIMIT = 8;
 const DEFAULT_LIST_ITEMS_LIMIT = 48;
 const MAX_LIST_ITEMS_LIMIT = 120;
 const DEFAULT_SITEMAP_ITEMS_LIMIT = 10_000;
-const MAX_SITEMAP_ITEMS_LIMIT = 20_000;
+const MAX_SITEMAP_ITEMS_LIMIT = 10_000;
 
 export interface PublicAvailabilitySnapshotView {
   snapshotDate: string;
@@ -41,6 +41,8 @@ export interface PublicAvailabilityPropertyView {
   sourceUrl: string;
   imageUrl: string | null;
   description: string | null;
+  countryKey: string | null;
+  cityKey: string | null;
   addressRegion: string | null;
   addressLocality: string | null;
   ratingValue: number | null;
@@ -77,6 +79,7 @@ export interface PublicAvailabilityListItem {
   slug: string;
   name: string;
   imageUrl: string | null;
+  cityKey: string | null;
   addressRegion: string | null;
   addressLocality: string | null;
   lastObservedAt: string | null;
@@ -103,6 +106,7 @@ export interface PublicAvailabilitySitemapItem {
 
 export interface GetPublicAvailabilitySitemapItemsInput {
   limit?: number;
+  offset?: number;
 }
 
 export interface RegionalAggregateStats {
@@ -241,6 +245,8 @@ const ALTERNATIVE_SELECT = {
   sourceUrl: true,
   imageUrl: true,
   description: true,
+  countryKey: true,
+  cityKey: true,
   addressRegion: true,
   addressLocality: true,
   ratingValue: true,
@@ -260,6 +266,7 @@ const LIST_ITEM_SELECT = {
   name: true,
   imageUrl: true,
   countryKey: true,
+  cityKey: true,
   addressRegion: true,
   addressLocality: true,
   ratingValue: true,
@@ -328,6 +335,11 @@ function resolveSitemapItemsLimit(value: number | undefined): number {
   return Math.min(Math.floor(value), MAX_SITEMAP_ITEMS_LIMIT);
 }
 
+function resolveSitemapItemsOffset(value: number | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return 0;
+  return Math.floor(value);
+}
+
 function mapSnapshot(snapshot: SnapshotRecord | null | undefined): PublicAvailabilitySnapshotView | null {
   if (!snapshot) return null;
 
@@ -355,6 +367,8 @@ function mapProperty(property: {
   sourceUrl: string;
   imageUrl: string | null;
   description: string | null;
+  countryKey: string | null;
+  cityKey: string | null;
   addressRegion: string | null;
   addressLocality: string | null;
   ratingValue: number | null;
@@ -369,6 +383,8 @@ function mapProperty(property: {
     sourceUrl: property.sourceUrl,
     imageUrl: property.imageUrl,
     description: property.description,
+    countryKey: property.countryKey,
+    cityKey: property.cityKey,
     addressRegion: property.addressRegion,
     addressLocality: property.addressLocality,
     ratingValue: property.ratingValue,
@@ -506,6 +522,7 @@ export async function getPublicAvailabilityList(
     name: string;
     imageUrl: string | null;
     countryKey: string | null;
+    cityKey: string | null;
     addressRegion: string | null;
     addressLocality: string | null;
     ratingValue: number | null;
@@ -550,6 +567,7 @@ export async function getPublicAvailabilityList(
       slug: property.slug,
       name: property.name,
       imageUrl: property.imageUrl,
+      cityKey: property.cityKey,
       addressRegion: property.addressRegion,
       addressLocality: property.addressLocality,
       lastObservedAt: property.lastObservedAt?.toISOString() ?? null,
@@ -562,6 +580,7 @@ export async function getPublicAvailabilitySitemapItems(
   input: GetPublicAvailabilitySitemapItemsInput = {},
 ): Promise<PublicAvailabilitySitemapItem[]> {
   const limit = resolveSitemapItemsLimit(input.limit);
+  const offset = resolveSitemapItemsOffset(input.offset);
   let properties: Array<{
     platform: Platform;
     slug: string;
@@ -573,8 +592,10 @@ export async function getPublicAvailabilitySitemapItems(
     properties = await prisma.publicProperty.findMany({
       where: {
         isActive: true,
+        slug: { not: '' },
       },
-      orderBy: [{ updatedAt: 'desc' }],
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      skip: offset,
       take: limit,
       select: {
         platform: true,
@@ -590,15 +611,29 @@ export async function getPublicAvailabilitySitemapItems(
     throw error;
   }
 
-  return properties
-    .filter((property): boolean => property.slug.trim().length > 0)
-    .map(
-      (property): PublicAvailabilitySitemapItem => ({
-        platformSegment: toPublicPlatformSegment(property.platform),
-        slug: property.slug,
-        lastModified: (property.lastObservedAt ?? property.updatedAt).toISOString(),
-      }),
-    );
+  return properties.map(
+    (property): PublicAvailabilitySitemapItem => ({
+      platformSegment: toPublicPlatformSegment(property.platform),
+      slug: property.slug,
+      lastModified: (property.lastObservedAt ?? property.updatedAt).toISOString(),
+    }),
+  );
+}
+
+export async function getPublicAvailabilitySitemapTotalCount(): Promise<number> {
+  try {
+    return await prisma.publicProperty.count({
+      where: {
+        isActive: true,
+        slug: { not: '' },
+      },
+    });
+  } catch (error) {
+    if (isMissingPublicPropertyTableError(error)) {
+      return 0;
+    }
+    throw error;
+  }
 }
 
 export async function getRegionalAvailabilityData(
@@ -697,6 +732,7 @@ export async function getRegionalAvailabilityData(
             slug: property.slug,
             name: property.name,
             imageUrl: property.imageUrl,
+            cityKey: property.cityKey,
             addressRegion: property.addressRegion,
             addressLocality: property.addressLocality,
             lastObservedAt: property.lastObservedAt?.toISOString() ?? null,

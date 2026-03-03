@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Providers } from '@/components/Providers';
 import { locales } from '@/i18n';
+import { buildLocalePath } from '@/lib/localePath';
 
 import '../globals.css';
 
@@ -19,7 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const title = tCommon('appName');
   const description = t('subtitle');
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
+
   return {
+    metadataBase: new URL(baseUrl),
     title: {
       default: title,
       template: `%s | ${title}`,
@@ -39,10 +43,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description,
     },
     alternates: {
-      canonical: `/${locale}`,
+      canonical: buildLocalePath(locale, ''),
       languages: {
-        ko: '/ko',
-        en: '/en',
+        ko: buildLocalePath('ko', ''),
+        en: buildLocalePath('en', ''),
       },
     },
   };

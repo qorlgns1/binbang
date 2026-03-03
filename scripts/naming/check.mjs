@@ -12,6 +12,7 @@
  * Exceptions:
  * - __tests__, __snapshots__ folders
  * - route segment folders in app router: [id], (group), @slot
+ * - app router metadata route folders: sitemap-index.xml, robots.txt, etc.
  * - app router private folders: _components, _hooks, _lib
  *   (tail must be kebab-case or camelCase)
  */
@@ -33,6 +34,7 @@ function isRouteSegmentException(segment) {
   if (segment.startsWith('@')) return true;
   if (/^\(.*\)$/.test(segment)) return true;
   if (/^\[.*\]$/.test(segment)) return true;
+  if (/\.\w+$/.test(segment)) return true;
   return false;
 }
 

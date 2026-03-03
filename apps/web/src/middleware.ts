@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { DEFAULT_LOCALE, type Locale, isSupportedLocale, mapToSupportedLocale } from '@workspace/shared/i18n';
 
+import { isPublicPath, stripLocalePrefix } from '@/lib/i18n-runtime/publicPath';
 import { checkRateLimit, cleanupStore, getClientIp, getRateLimit } from '@/lib/rateLimit';
 
 /**
@@ -14,6 +15,10 @@ import { checkRateLimit, cleanupStore, getClientIp, getRateLimit } from '@/lib/r
 function parseLocaleFromPath(pathname: string): Locale | null {
   const segment = pathname.split('/')[1];
   return segment && isSupportedLocale(segment) ? segment : null;
+}
+
+function addLocalePrefix(pathname: string, locale: Locale): string {
+  return pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
 }
 
 /**
@@ -40,36 +45,59 @@ function negotiateLocale(request: NextRequest): Locale {
   return DEFAULT_LOCALE;
 }
 
-/** locale prefix 없이 접근 가능한 public 경로 (redirect 대상) */
-const PUBLIC_PATHS = ['/login', '/signup', '/pricing', '/terms', '/privacy'];
-
 /** next-intl이 getRequestConfig의 requestLocale으로 읽는 헤더 (서버로 전달) */
 const NEXT_INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
 
 /**
  * Locale 협상 + Rate Limiting middleware.
  *
- * - URL에 locale prefix가 있으면 통과 (next-intl용 locale 헤더 설정)
- * - root "/" 또는 public 경로 → locale 협상 후 redirect
+ * - URL에 default locale prefix(/ko)가 있으면 prefix 없는 canonical로 redirect
+ * - URL에 non-default locale prefix가 있으면 통과 (next-intl용 locale 헤더 설정)
+ * - public 경로에 locale prefix가 없으면:
+ *   - default locale: 내부 rewrite (/ko/*)
+ *   - non-default locale: locale prefix 경로로 redirect
  * - API 경로 → rate limit 적용
  */
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  // 1) URL에 locale prefix가 있으면 통과 (next-intl에 path 기반 locale 전달)
+  // 1) URL에 locale prefix가 있으면 처리
   const pathLocale = parseLocaleFromPath(pathname);
   if (pathLocale) {
+    // default locale(ko)는 prefix 없는 canonical 경로로 영구 리다이렉트
+    if (pathLocale === DEFAULT_LOCALE) {
+      const { pathname: canonicalPath } = stripLocalePrefix(pathname);
+      const url = request.nextUrl.clone();
+      url.pathname = canonicalPath;
+      return NextResponse.redirect(url, { status: 308 });
+    }
+
+    // non-default locale은 prefix 유지
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set(NEXT_INTL_LOCALE_HEADER, pathLocale);
     requestHeaders.set('x-pathname', pathname);
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // 2) root "/" 또는 public 경로 → locale 협상 후 redirect
-  if (pathname === '/' || PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+  // 2) locale prefix 없는 public 경로 처리
+  if (isPublicPath(pathname)) {
     const locale = negotiateLocale(request);
+
+    // default locale(ko)는 URL은 유지하고 내부적으로 /ko/*로 rewrite
+    if (locale === DEFAULT_LOCALE) {
+      const rewrittenPath = addLocalePrefix(pathname, DEFAULT_LOCALE);
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set(NEXT_INTL_LOCALE_HEADER, DEFAULT_LOCALE);
+      requestHeaders.set('x-pathname', rewrittenPath);
+
+      const url = request.nextUrl.clone();
+      url.pathname = rewrittenPath;
+      return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    }
+
+    // non-default locale은 locale prefix로 redirect
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`;
+    url.pathname = addLocalePrefix(pathname, locale);
     return NextResponse.redirect(url, { status: 302 });
   }
 
@@ -107,16 +135,20 @@ export function middleware(request: NextRequest): NextResponse {
 export const config = {
   matcher: [
     '/',
+    '/about',
+    '/faq',
+    '/availability',
+    '/availability/:path*',
+    '/login',
+    '/signup',
+    '/pricing',
+    '/terms',
+    '/privacy',
     '/ko/:path*',
     '/en/:path*',
     '/ja/:path*',
     '/zh-CN/:path*',
     '/es-419/:path*',
     '/api/:path*',
-    '/login',
-    '/signup',
-    '/pricing',
-    '/terms',
-    '/privacy',
   ],
 };
