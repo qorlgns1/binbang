@@ -247,9 +247,7 @@ export async function sendBinbangKakaoNotification(userId: string, params: SendB
 
   const sent = await sendKakaoMemo(template, context.accessToken);
   if (!sent) {
-    console.error(
-      `[kakao] agoda notification send failed: sender=${context.senderDisplayName} userId=${userId}`,
-    );
+    console.error(`[kakao] agoda notification send failed: sender=${context.senderDisplayName} userId=${userId}`);
   }
 
   return sent;

@@ -29,7 +29,10 @@ function deriveNameFromUserId(userId?: string | null): string | null {
 
 export function buildKakaoNotificationSender(input: KakaoNotificationSenderInput): KakaoNotificationSender {
   const displayName =
-    normalizeDisplayName(input.name) ?? deriveNameFromEmail(input.email) ?? deriveNameFromUserId(input.userId) ?? 'unknown';
+    normalizeDisplayName(input.name) ??
+    deriveNameFromEmail(input.email) ??
+    deriveNameFromUserId(input.userId) ??
+    'unknown';
 
   return {
     displayName,

@@ -64,7 +64,10 @@ export async function sendKakaoMessageHttp(
     if (axios.isAxiosError(error)) {
       console.error(`  ❌ 카카오톡 메시지 전송 오류 (${sender.displayName}):`, error.response?.data);
     } else {
-      console.error(`  ❌ 카카오톡 메시지 전송 오류 (${sender.displayName}):`, error instanceof Error ? error.message : error);
+      console.error(
+        `  ❌ 카카오톡 메시지 전송 오류 (${sender.displayName}):`,
+        error instanceof Error ? error.message : error,
+      );
     }
     return false;
   }
