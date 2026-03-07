@@ -41,14 +41,14 @@ services:
     ports:
       - '${WEB_PORT:-3000}:3000'
     env_file:
-      - ../.env.local
+      - ../.env
       - ../apps/web/.env.local
     environment:
       NODE_ENV: local
       DOCKER_ENV: 'true'
       WORKER_INTERNAL_URL: http://worker:3500
-      # Use Docker service DNS inside containers; root env files usually point to localhost for host-native dev.
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      # Containers always reach Postgres over the service DNS/port; only credentials and DB name should follow DB_*.
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor}}
       REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
     depends_on:
       db:
@@ -65,12 +65,11 @@ services:
     ports:
       - '${WORKER_CONTROL_PORT:-3500}:3500'
     env_file:
-      - ../.env.local
-      - ../apps/worker/.env.local
+      - ../.env
     environment:
       NODE_ENV: local
       DOCKER_ENV: 'true'
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor}}
       REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
       WEB_INTERNAL_URL: http://web:3000
     depends_on:
