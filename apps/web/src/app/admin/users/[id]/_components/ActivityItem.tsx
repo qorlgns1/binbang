@@ -18,7 +18,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const STATUS_CONFIG: Record<AvailabilityStatus, { label: string; icon: typeof Check; color: string }> = {
-  [AvailabilityStatus.AVAILABLE]: { label: '예약 가능', icon: Check, color: 'text-status-success' },
+  [AvailabilityStatus.AVAILABLE]: { label: '예약 가능', icon: Check, color: 'text-status-success-foreground' },
   [AvailabilityStatus.UNAVAILABLE]: { label: '예약 불가', icon: X, color: 'text-muted-foreground' },
   [AvailabilityStatus.ERROR]: { label: '오류', icon: X, color: 'text-destructive' },
   [AvailabilityStatus.UNKNOWN]: { label: '알 수 없음', icon: X, color: 'text-muted-foreground' },

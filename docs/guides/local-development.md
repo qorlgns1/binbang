@@ -22,9 +22,10 @@ RBAC/플랜/감사로그 변경사항 로컬 검증은 `docs/guides/rbac-local-t
 pnpm install
 
 # 2) 환경변수 파일 준비
-cp .env.example .env
+cp .env.example .env.local
 cp apps/web/.env.example apps/web/.env.local
-# .env / apps/web/.env.local 값 채우기
+cp apps/worker/.env.example apps/worker/.env.local
+# .env.local / apps/web/.env.local / apps/worker/.env.local 값 채우기
 
 # 3) DB + Redis 실행
 pnpm local:docker up -d db redis
@@ -39,7 +40,7 @@ pnpm dev:worker  # 별도 터미널 (REDIS_URL 필요)
 
 #### DATABASE_URL / REDIS_URL 설정 (중요)
 
-`.env` 파일에서 `DATABASE_URL`과 `REDIS_URL`을 **localhost**로 설정해야 합니다.
+`.env.local` 파일에서 `DATABASE_URL`과 `REDIS_URL`을 **localhost**로 설정해야 합니다.
 
 ```bash
 # Docker Compose 내부용 (사용하지 마세요)
@@ -54,9 +55,10 @@ REDIS_URL=redis://localhost:6379
 ### 방법 2: Docker로 전체 실행 (web + worker + db)
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 cp apps/web/.env.example apps/web/.env.local
-# .env / apps/web/.env.local 값 채우기
+cp apps/worker/.env.example apps/worker/.env.local
+# .env.local / apps/web/.env.local / apps/worker/.env.local 값 채우기
 
 pnpm local:docker up -d --build
 pnpm db:migrate

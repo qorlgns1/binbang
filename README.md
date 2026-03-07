@@ -69,8 +69,9 @@
 
 ```bash
 pnpm install
-cp .env.example .env
+cp .env.example .env.local
 cp apps/web/.env.example apps/web/.env.local
+cp apps/worker/.env.example apps/worker/.env.local
 cp apps/travel/.env.example apps/travel/.env.local
 
 pnpm local:docker up -d db redis

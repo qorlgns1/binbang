@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: binbang-db-local
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -11,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-accommodation_monitor}']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,6 +21,7 @@ services:
     image: redis:7-alpine
     command: redis-server --maxmemory-policy noeviction
     container_name: binbang-redis-local
+    restart: unless-stopped
     ports:
       - '${REDIS_PORT:-6379}:6379'
     volumes:
@@ -35,17 +37,23 @@ services:
       context: ..
       dockerfile: docker/web.Dockerfile
     container_name: binbang-web-local
+    restart: unless-stopped
     ports:
       - '${WEB_PORT:-3000}:3000'
     env_file:
-      - ../.env
+      - ../.env.local
       - ../apps/web/.env.local
     environment:
       NODE_ENV: local
-      # Use Docker service DNS inside containers; .env usually points to localhost for host-native dev.
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      DOCKER_ENV: 'true'
+      WORKER_INTERNAL_URL: http://worker:3500
+      # Containers always reach Postgres over the service DNS/port; only credentials and DB name should follow DB_*.
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor}}
+      REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   worker:
@@ -55,13 +63,16 @@ services:
     container_name: binbang-worker-local
     restart: unless-stopped
     ports:
-      - '3500:3500'
+      - '${WORKER_CONTROL_PORT:-3500}:3500'
     env_file:
-      - ../.env
+      - ../.env.local
+      - ../apps/worker/.env.local
     environment:
       NODE_ENV: local
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
+      DOCKER_ENV: 'true'
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor}}
       REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
+      WEB_INTERNAL_URL: http://web:3000
     depends_on:
       db:
         condition: service_healthy

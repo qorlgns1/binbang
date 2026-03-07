@@ -15,7 +15,7 @@
 - Node.js 24+, pnpm 10+
 - Docker (PostgreSQL + Redis)
 - 로컬 환경 변수 파일
-  - `.env` (루트)
+  - `.env.local` (루트)
   - `apps/web/.env.local`
 
 로컬 실행 방법과 필수 변수는 `docs/guides/local-development.md`를 따른다.
@@ -36,9 +36,9 @@
 ```bash
 pnpm install
 
-cp .env.example .env
+cp .env.example .env.local
 cp apps/web/.env.example apps/web/.env.local
-# .env / apps/web/.env.local 값 채우기
+# .env.local / apps/web/.env.local 값 채우기
 
 pnpm local:docker up -d db redis
 pnpm db:migrate
