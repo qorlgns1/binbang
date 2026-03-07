@@ -14,7 +14,8 @@
       "@workspace/db": ["../../packages/db/src"],
       "@workspace/db/enums": ["../../packages/db/src/enums.ts"],
       "@workspace/shared": ["../../packages/shared/src"],
-      "@workspace/shared/i18n": ["../../packages/shared/src/i18n"]
+      "@workspace/shared/i18n": ["../../packages/shared/src/i18n"],
+      "@workspace/shared/utils/*": ["../../packages/shared/src/utils/*"]
     },
     "declaration": false,
     "declarationMap": false

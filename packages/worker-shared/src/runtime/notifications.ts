@@ -18,6 +18,11 @@ export interface NotificationFallbackResult {
   failReason?: string;
 }
 
+interface KakaoNotificationContext {
+  accessToken: string;
+  senderDisplayName: string;
+}
+
 // ── Kakao Token Management ──
 
 /**
@@ -62,10 +67,12 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
 /**
  * 유효한 access_token 가져오기 (DB 1회 조회)
  */
-async function getValidAccessToken(userId: string): Promise<string | null> {
+async function getValidAccessToken(userId: string): Promise<KakaoNotificationContext | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      name: true,
+      email: true,
       kakaoAccessToken: true,
       kakaoRefreshToken: true,
       kakaoTokenExpiry: true,
@@ -77,6 +84,8 @@ async function getValidAccessToken(userId: string): Promise<string | null> {
     return null;
   }
 
+  const senderDisplayName = user.name?.trim() || user.email?.split('@')[0]?.trim() || userId.slice(0, 8);
+
   // 토큰 만료 확인
   const refreshMarginMs = getSettings().notification.kakaoTokenRefreshMarginMs;
   if (
@@ -85,10 +94,14 @@ async function getValidAccessToken(userId: string): Promise<string | null> {
     new Date(user.kakaoTokenExpiry) < new Date(Date.now() + refreshMarginMs)
   ) {
     console.log('⚠️ 카카오 토큰 만료 임박. 갱신 중...');
-    return refreshKakaoToken(userId, user.kakaoRefreshToken);
+    const accessToken = await refreshKakaoToken(userId, user.kakaoRefreshToken);
+    return accessToken ? { accessToken, senderDisplayName } : null;
   }
 
-  return user.kakaoAccessToken;
+  return {
+    accessToken: user.kakaoAccessToken,
+    senderDisplayName,
+  };
 }
 
 // ── Notification Sending ──
@@ -97,14 +110,17 @@ async function getValidAccessToken(userId: string): Promise<string | null> {
  * 카카오 알림 전송 (토큰 조회 + HTTP 전송 + 401 재시도)
  */
 export async function sendKakaoNotification(params: SendMessageParams, retried = false): Promise<boolean> {
-  const accessToken = await getValidAccessToken(params.userId);
+  const context = await getValidAccessToken(params.userId);
 
-  if (!accessToken) {
+  if (!context) {
     console.error('유효한 카카오 토큰이 없습니다.');
     return false;
   }
 
-  const result = await sendKakaoMessageHttp(params, accessToken);
+  const result = await sendKakaoMessageHttp(
+    { ...params, senderDisplayName: context.senderDisplayName },
+    context.accessToken,
+  );
 
   if (result === 'unauthorized' && !retried) {
     // 토큰 만료 시 갱신 후 1회 재시도

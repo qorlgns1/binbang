@@ -39,6 +39,11 @@
       "development": "./src/utils/date.ts",
       "default": "./dist/utils/date.js"
     },
+    "./utils/kakaoNotification": {
+      "types": "./src/utils/kakaoNotification.ts",
+      "development": "./src/utils/kakaoNotification.ts",
+      "default": "./dist/utils/kakaoNotification.js"
+    },
     "./utils/timeout": {
       "types": "./src/utils/timeout.ts",
       "development": "./src/utils/timeout.ts",
