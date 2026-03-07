@@ -41,7 +41,7 @@ services:
     ports:
       - '${WEB_PORT:-3000}:3000'
     env_file:
-      - ../.env
+      - ../.env.local
       - ../apps/web/.env.local
     environment:
       NODE_ENV: local
@@ -65,7 +65,8 @@ services:
     ports:
       - '${WORKER_CONTROL_PORT:-3500}:3500'
     env_file:
-      - ../.env
+      - ../.env.local
+      - ../apps/worker/.env.local
     environment:
       NODE_ENV: local
       DOCKER_ENV: 'true'

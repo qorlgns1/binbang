@@ -35,7 +35,7 @@
     "db:seed:base": "pnpm with-env pnpm --filter @workspace/db exec tsx prisma/seed-base.ts",
     "db:studio": "pnpm with-env pnpm --filter @workspace/db db:studio",
     "clean": "turbo run clean && rm -rf node_modules",
-    "local:docker": "docker compose -f docker/docker-compose.local.yml",
+    "local:docker": "docker compose --env-file .env.local -f docker/docker-compose.local.yml",
     "update:ai-context": "node scripts/update-ai-context.mjs",
     "i18n:check": "node scripts/i18n/check.mjs",
     "i18n:typegen": "node scripts/i18n/typegen.mjs",
