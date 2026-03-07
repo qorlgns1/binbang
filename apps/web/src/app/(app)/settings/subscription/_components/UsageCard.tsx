@@ -64,7 +64,7 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props): React.R
             <span className='text-sm font-medium'>등록된 숙소</span>
             <span
               className={`text-sm font-medium ${
-                isAtLimit ? 'text-destructive' : isNearLimit ? 'text-status-warning' : 'text-foreground'
+                isAtLimit ? 'text-destructive' : isNearLimit ? 'text-status-warning-foreground' : 'text-foreground'
               }`}
             >
               {usage.accommodations} / {quotas.maxAccommodations}
@@ -77,7 +77,9 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props): React.R
           {isAtLimit && (
             <p className='text-xs text-destructive'>숙소 한도에 도달했습니다. 플랜 업그레이드를 고려해보세요.</p>
           )}
-          {isNearLimit && !isAtLimit && <p className='text-xs text-status-warning'>숙소 한도에 거의 도달했습니다.</p>}
+          {isNearLimit && !isAtLimit && (
+            <p className='text-xs text-status-warning-foreground'>숙소 한도에 거의 도달했습니다.</p>
+          )}
         </div>
 
         <div className='flex items-center gap-3 p-3 rounded-lg bg-muted/50'>

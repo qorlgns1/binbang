@@ -40,6 +40,14 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-error: var(--status-error);
+  --color-status-error-foreground: var(--status-error-foreground);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
 
   /* Brand Specific Colors */
   --color-brand-navy: var(--brand-navy); /* Deep Night Navy */
@@ -107,6 +115,15 @@
   --sidebar-border: #d6e0ec;
   --sidebar-ring: #f4b400;
 
+  --status-success: #def4e5;
+  --status-success-foreground: #17623c;
+  --status-warning: #fff0bf;
+  --status-warning-foreground: #8b5a00;
+  --status-error: #ffe0dc;
+  --status-error-foreground: #9f3f35;
+  --status-neutral: #e4ebf5;
+  --status-neutral-foreground: #415978;
+
   --brand-navy: #071326;
   --brand-amber: #f4b400;
 }
@@ -155,6 +172,15 @@
   --sidebar-accent-foreground: #eaf1f8;
   --sidebar-border: #25364f;
   --sidebar-ring: #ffd166;
+
+  --status-success: #173a28;
+  --status-success-foreground: #c7f3d7;
+  --status-warning: #5b430b;
+  --status-warning-foreground: #ffd977;
+  --status-error: #5f231d;
+  --status-error-foreground: #ffc4bc;
+  --status-neutral: #25364f;
+  --status-neutral-foreground: #d7e4f5;
 
   --brand-navy: #071326;
   --brand-amber: #f4b400;

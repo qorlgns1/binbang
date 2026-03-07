@@ -115,20 +115,20 @@ export function HeartbeatTimeline() {
       </div>
 
       <div className='flex items-center justify-center gap-4 text-xs'>
-        <div className='flex items-center gap-1'>
+        <div className='flex items-center gap-1 text-status-success-foreground'>
           <div className='w-3 h-3 bg-status-success rounded-full' />
           <span>정상</span>
         </div>
-        <div className='flex items-center gap-1'>
+        <div className='flex items-center gap-1 text-status-warning-foreground'>
           <div className='w-3 h-3 bg-status-warning rounded-full' />
           <span>처리 중</span>
         </div>
-        <div className='flex items-center gap-1'>
+        <div className='flex items-center gap-1 text-status-error-foreground'>
           <div className='w-3 h-3 bg-status-error rounded-full' />
           <span>비정상</span>
         </div>
-        <div className='flex items-center gap-1'>
-          <div className='w-3 h-3 ring-2 ring-ring ring-offset-2 rounded-full' />
+        <div className='flex items-center gap-1 text-primary'>
+          <div className='w-3 h-3 rounded-full border border-primary/50 bg-primary/15 ring-2 ring-primary/60 ring-offset-2 ring-offset-background' />
           <span>현재 시간</span>
         </div>
       </div>
