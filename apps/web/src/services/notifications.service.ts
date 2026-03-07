@@ -1,4 +1,9 @@
 import { prisma } from '@workspace/db';
+import {
+  buildKakaoNotificationSender,
+  prependKakaoNotificationSender,
+  type KakaoNotificationContext,
+} from '@workspace/shared/utils/kakaoNotification';
 
 import { getEnv } from '@/lib/env';
 
@@ -10,6 +15,9 @@ export interface RetryNotificationResult {
   success: boolean;
   error?: string;
 }
+
+const REFRESH_MARGIN_MS = 300_000; // 5분
+const refreshInFlight = new Map<string, Promise<string | null>>();
 
 // ============================================================================
 // Service
@@ -102,8 +110,8 @@ export async function retryNotificationForCase(
       return { success: false, error: 'No user linked to case accommodation' };
     }
 
-    const accessToken = await getValidAccessToken(userId);
-    if (!accessToken) {
+    const context = await getValidAccessToken(userId);
+    if (!context) {
       await prisma.caseNotification.updateMany({
         where: { id: notificationId, status: 'PENDING' },
         data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음' },
@@ -112,7 +120,7 @@ export async function retryNotificationForCase(
     }
 
     const payload = notification.payload as Record<string, unknown>;
-    const sent = await sendKakaoMessage(payload, accessToken);
+    const sent = await sendKakaoMessage(payload, context, notificationId);
 
     await prisma.caseNotification.updateMany({
       where: { id: notificationId, status: 'PENDING' },
@@ -131,10 +139,12 @@ export async function retryNotificationForCase(
 // Kakao HTTP (fetch 기반, worker-shared 경계 규칙상 별도 구현)
 // ============================================================================
 
-async function getValidAccessToken(userId: string): Promise<string | null> {
+async function getValidAccessToken(userId: string): Promise<KakaoNotificationContext | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      name: true,
+      email: true,
       kakaoAccessToken: true,
       kakaoRefreshToken: true,
       kakaoTokenExpiry: true,
@@ -145,16 +155,36 @@ async function getValidAccessToken(userId: string): Promise<string | null> {
     return null;
   }
 
-  const REFRESH_MARGIN_MS = 300_000; // 5분
+  const sender = buildKakaoNotificationSender({
+    name: user.name,
+    email: user.email,
+    userId,
+  });
+
   if (
     user.kakaoTokenExpiry &&
     user.kakaoRefreshToken &&
     new Date(user.kakaoTokenExpiry) < new Date(Date.now() + REFRESH_MARGIN_MS)
   ) {
-    return refreshKakaoToken(userId, user.kakaoRefreshToken);
+    const existingRefresh = refreshInFlight.get(userId);
+    if (existingRefresh) {
+      const accessToken = await existingRefresh;
+      return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
+    }
+
+    const refreshPromise = refreshKakaoToken(userId, user.kakaoRefreshToken).finally(() => {
+      refreshInFlight.delete(userId);
+    });
+    refreshInFlight.set(userId, refreshPromise);
+
+    const accessToken = await refreshPromise;
+    return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
   }
 
-  return user.kakaoAccessToken;
+  return {
+    accessToken: user.kakaoAccessToken,
+    senderDisplayName: sender.displayName,
+  };
 }
 
 async function refreshKakaoToken(userId: string, refreshToken: string): Promise<string | null> {
@@ -199,10 +229,16 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
   }
 }
 
-async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: string): Promise<boolean> {
+async function sendKakaoMessage(
+  payload: Record<string, unknown>,
+  context: KakaoNotificationContext,
+  notificationId: string,
+): Promise<boolean> {
   const template = {
     object_type: 'text',
-    text: `🏨 ${payload.title}\n\n${payload.description}`,
+    text: prependKakaoNotificationSender(`🏨 ${payload.title}\n\n${payload.description}`, {
+      name: context.senderDisplayName,
+    }),
     link: {
       web_url: (payload.buttonUrl as string) || 'https://www.airbnb.co.kr',
       mobile_web_url: (payload.buttonUrl as string) || 'https://www.airbnb.co.kr',
@@ -217,7 +253,7 @@ async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: s
     const response = await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${context.accessToken}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
@@ -230,8 +266,18 @@ async function sendKakaoMessage(payload: Record<string, unknown>, accessToken: s
     if (!response.ok) return false;
 
     const data = (await response.json()) as { result_code: number };
+    if (data.result_code !== 0) {
+      console.error('[kakao] case notification send failed:', {
+        notificationId,
+        resultCode: data.result_code,
+      });
+    }
     return data.result_code === 0;
-  } catch {
+  } catch (error) {
+    console.error('[kakao] case notification send error:', {
+      notificationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }

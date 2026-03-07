@@ -1,4 +1,9 @@
 import { prisma } from '@workspace/db';
+import {
+  buildKakaoNotificationSender,
+  prependKakaoNotificationSender,
+  type KakaoNotificationContext,
+} from '@workspace/shared/utils/kakaoNotification';
 
 import { buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
 import { getEnv } from '@/lib/env';
@@ -70,10 +75,12 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
  * 동일 userId에 대한 동시 refresh 요청은 in-flight 맵으로 직렬화되어
  * 하나의 refresh만 Kakao API에 전달된다. 두 번째 호출자는 첫 번째 결과를 공유한다.
  */
-export async function getValidKakaoAccessToken(userId: string): Promise<string | null> {
+export async function getValidKakaoAccessToken(userId: string): Promise<KakaoNotificationContext | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      name: true,
+      email: true,
       kakaoAccessToken: true,
       kakaoRefreshToken: true,
       kakaoTokenExpiry: true,
@@ -83,6 +90,12 @@ export async function getValidKakaoAccessToken(userId: string): Promise<string |
   if (!user?.kakaoAccessToken) {
     return null;
   }
+
+  const sender = buildKakaoNotificationSender({
+    name: user.name,
+    email: user.email,
+    userId,
+  });
 
   const needsRefresh =
     user.kakaoRefreshToken &&
@@ -94,17 +107,22 @@ export async function getValidKakaoAccessToken(userId: string): Promise<string |
     // 두 번째 동시 요청이 첫 번째가 받은 refresh token을 무효화하는 것을 방지한다.
     const existing = refreshInFlight.get(userId);
     if (existing) {
-      return existing;
+      const accessToken = await existing;
+      return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
     }
 
     const promise = refreshKakaoAccessToken(userId, user.kakaoRefreshToken as string).finally(() => {
       refreshInFlight.delete(userId);
     });
     refreshInFlight.set(userId, promise);
-    return promise;
+    const accessToken = await promise;
+    return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
   }
 
-  return user.kakaoAccessToken;
+  return {
+    accessToken: user.kakaoAccessToken,
+    senderDisplayName: sender.displayName,
+  };
 }
 
 // ============================================================================
@@ -122,6 +140,7 @@ interface BinbangKakaoParams {
   afterPrice?: number | null;
   totalInclusive?: number | null;
   baseUrl: string;
+  senderDisplayName: string;
 }
 
 function toDisplayPrice(value: number | null | undefined, currency: string | null | undefined): string {
@@ -138,7 +157,7 @@ function toDisplayPrice(value: number | null | undefined, currency: string | nul
 }
 
 function buildBinbangKakaoTemplate(params: BinbangKakaoParams): KakaoMemoTemplate {
-  const { accommodationName, alertType, checkIn, checkOut, agodaUrl, baseUrl } = params;
+  const { accommodationName, alertType, checkIn, checkOut, agodaUrl, baseUrl, senderDisplayName } = params;
   const linkUrl = agodaUrl ?? baseUrl;
   const link = { web_url: linkUrl, mobile_web_url: linkUrl };
 
@@ -150,7 +169,10 @@ function buildBinbangKakaoTemplate(params: BinbangKakaoParams): KakaoMemoTemplat
 
     return {
       object_type: 'text',
-      text: `💸 [가격 하락 알림] 가격 하락 감지\n\n🏨 ${accommodationName}\n📅 ${checkIn} ~ ${checkOut}\n\n${dropLine}현재 가격: ${priceText}\n\n매진 전에 확인하세요!`,
+      text: prependKakaoNotificationSender(
+        `💸 [가격 하락 알림] 가격 하락 감지\n\n🏨 ${accommodationName}\n📅 ${checkIn} ~ ${checkOut}\n\n${dropLine}현재 가격: ${priceText}\n\n매진 전에 확인하세요!`,
+        { name: senderDisplayName },
+      ),
       link,
       button_title: '예약 페이지 이동',
     };
@@ -158,7 +180,10 @@ function buildBinbangKakaoTemplate(params: BinbangKakaoParams): KakaoMemoTemplat
 
   return {
     object_type: 'text',
-    text: `🏨 [빈방 알림] 방이 열렸어요!\n\n${accommodationName}\n📅 ${checkIn} ~ ${checkOut}\n\n매진 전에 빠르게 확인하세요!`,
+    text: prependKakaoNotificationSender(
+      `🏨 [빈방 알림] 방이 열렸어요!\n\n${accommodationName}\n📅 ${checkIn} ~ ${checkOut}\n\n매진 전에 빠르게 확인하세요!`,
+      { name: senderDisplayName },
+    ),
     link,
     button_title: '예약 페이지 이동',
   };
@@ -189,8 +214,8 @@ export interface SendBinbangKakaoParams {
  * - 발송 실패 시 false 반환, 예외 미전파
  */
 export async function sendBinbangKakaoNotification(userId: string, params: SendBinbangKakaoParams): Promise<boolean> {
-  const accessToken = await getValidKakaoAccessToken(userId);
-  if (!accessToken) {
+  const context = await getValidKakaoAccessToken(userId);
+  if (!context) {
     return false;
   }
 
@@ -213,7 +238,13 @@ export async function sendBinbangKakaoNotification(userId: string, params: SendB
     afterPrice: params.afterPrice,
     totalInclusive: params.totalInclusive,
     baseUrl: params.baseUrl,
+    senderDisplayName: context.senderDisplayName,
   });
 
-  return sendKakaoMemo(template, accessToken);
+  const sent = await sendKakaoMemo(template, context.accessToken);
+  if (!sent) {
+    console.error(`[kakao] agoda notification send failed: userId=${userId}`);
+  }
+
+  return sent;
 }
