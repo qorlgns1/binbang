@@ -1,5 +1,6 @@
 import { prisma } from '@workspace/db';
 import axios from 'axios';
+import { buildKakaoNotificationSender, type KakaoNotificationContext } from '@workspace/shared/utils/kakaoNotification';
 
 import {
   type SendMessageParams,
@@ -16,11 +17,6 @@ export interface NotificationFallbackResult {
   sent: boolean;
   channel: 'KAKAO' | 'EMAIL' | 'NONE';
   failReason?: string;
-}
-
-interface KakaoNotificationContext {
-  accessToken: string;
-  senderDisplayName: string;
 }
 
 // ── Kakao Token Management ──
@@ -84,7 +80,11 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
     return null;
   }
 
-  const senderDisplayName = user.name?.trim() || user.email?.split('@')[0]?.trim() || userId.slice(0, 8);
+  const sender = buildKakaoNotificationSender({
+    name: user.name,
+    email: user.email,
+    userId,
+  });
 
   // 토큰 만료 확인
   const refreshMarginMs = getSettings().notification.kakaoTokenRefreshMarginMs;
@@ -95,12 +95,12 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
   ) {
     console.log('⚠️ 카카오 토큰 만료 임박. 갱신 중...');
     const accessToken = await refreshKakaoToken(userId, user.kakaoRefreshToken);
-    return accessToken ? { accessToken, senderDisplayName } : null;
+    return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
   }
 
   return {
     accessToken: user.kakaoAccessToken,
-    senderDisplayName,
+    senderDisplayName: sender.displayName,
   };
 }
 
@@ -109,8 +109,12 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
 /**
  * 카카오 알림 전송 (토큰 조회 + HTTP 전송 + 401 재시도)
  */
-export async function sendKakaoNotification(params: SendMessageParams, retried = false): Promise<boolean> {
-  const context = await getValidAccessToken(params.userId);
+export async function sendKakaoNotification(
+  params: SendMessageParams,
+  retried = false,
+  cachedContext?: KakaoNotificationContext,
+): Promise<boolean> {
+  const context = cachedContext ?? (await getValidAccessToken(params.userId));
 
   if (!context) {
     console.error('유효한 카카오 토큰이 없습니다.');
@@ -130,9 +134,12 @@ export async function sendKakaoNotification(params: SendMessageParams, retried =
       select: { kakaoRefreshToken: true },
     });
     if (user?.kakaoRefreshToken) {
-      const newToken = await refreshKakaoToken(params.userId, user.kakaoRefreshToken);
-      if (newToken) {
-        return sendKakaoNotification(params, true);
+      const accessToken = await refreshKakaoToken(params.userId, user.kakaoRefreshToken);
+      if (accessToken) {
+        return sendKakaoNotification(params, true, {
+          accessToken,
+          senderDisplayName: context.senderDisplayName,
+        });
       }
     }
   }

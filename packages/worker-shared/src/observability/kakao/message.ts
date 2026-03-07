@@ -1,8 +1,5 @@
 import axios from 'axios';
-import {
-  buildKakaoNotificationSender,
-  prependKakaoNotificationSender,
-} from '@workspace/shared/utils/kakaoNotification';
+import { buildKakaoNotificationSender, prependKakaoNotificationLabel } from '@workspace/shared/utils/kakaoNotification';
 
 export interface SendMessageParams {
   userId: string;
@@ -13,20 +10,32 @@ export interface SendMessageParams {
   senderDisplayName?: string;
 }
 
+export interface SendKakaoMessageHttpParams extends SendMessageParams {
+  senderDisplayName: string;
+}
+
 /**
  * 카카오톡 나에게 보내기 — 순수 HTTP 전송
  *
  * @returns true 성공, false 일반 실패, 'unauthorized' 토큰 만료 (재시도 필요)
  */
 export async function sendKakaoMessageHttp(
-  { title, description, buttonText = '확인하기', buttonUrl = '', senderDisplayName }: SendMessageParams,
+  {
+    userId,
+    title,
+    description,
+    buttonText = '확인하기',
+    buttonUrl = '',
+    senderDisplayName,
+  }: SendKakaoMessageHttpParams,
   accessToken: string,
 ): Promise<true | false | 'unauthorized'> {
+  const sender = buildKakaoNotificationSender({ name: senderDisplayName });
+
   try {
-    const sender = buildKakaoNotificationSender({ name: senderDisplayName });
     const template = {
       object_type: 'text',
-      text: prependKakaoNotificationSender(`🏨 ${title}\n\n${description}`, { name: sender.displayName }),
+      text: prependKakaoNotificationLabel(`🏨 ${title}\n\n${description}`, sender.label),
       link: {
         web_url: buttonUrl || 'https://www.airbnb.co.kr',
         mobile_web_url: buttonUrl || 'https://www.airbnb.co.kr',
@@ -48,10 +57,10 @@ export async function sendKakaoMessageHttp(
     );
 
     if (response.data.result_code === 0) {
-      console.log(`  ✅ 카카오톡 메시지 전송 성공 (${sender.displayName})`);
+      console.log(`  ✅ 카카오톡 메시지 전송 성공 (userId=${userId})`);
       return true;
     } else {
-      console.error(`  ❌ 카카오톡 메시지 전송 실패 (${sender.displayName}):`, response.data);
+      console.error(`  ❌ 카카오톡 메시지 전송 실패 (userId=${userId}):`, response.data);
       return false;
     }
   } catch (error) {
@@ -59,13 +68,11 @@ export async function sendKakaoMessageHttp(
       return 'unauthorized';
     }
 
-    const sender = buildKakaoNotificationSender({ name: senderDisplayName });
-
     if (axios.isAxiosError(error)) {
-      console.error(`  ❌ 카카오톡 메시지 전송 오류 (${sender.displayName}):`, error.response?.data);
+      console.error(`  ❌ 카카오톡 메시지 전송 오류 (userId=${userId}):`, error.response?.data);
     } else {
       console.error(
-        `  ❌ 카카오톡 메시지 전송 오류 (${sender.displayName}):`,
+        `  ❌ 카카오톡 메시지 전송 오류 (userId=${userId}):`,
         error instanceof Error ? error.message : error,
       );
     }

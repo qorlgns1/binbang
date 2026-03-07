@@ -2,6 +2,7 @@ import { prisma } from '@workspace/db';
 import {
   buildKakaoNotificationSender,
   prependKakaoNotificationSender,
+  type KakaoNotificationContext,
 } from '@workspace/shared/utils/kakaoNotification';
 
 import { getEnv } from '@/lib/env';
@@ -13,11 +14,6 @@ import { getEnv } from '@/lib/env';
 export interface RetryNotificationResult {
   success: boolean;
   error?: string;
-}
-
-interface KakaoNotificationContext {
-  accessToken: string;
-  senderDisplayName: string;
 }
 
 // ============================================================================
@@ -121,7 +117,7 @@ export async function retryNotificationForCase(
     }
 
     const payload = notification.payload as Record<string, unknown>;
-    const sent = await sendKakaoMessage(payload, context);
+    const sent = await sendKakaoMessage(payload, context, notificationId);
 
     await prisma.caseNotification.updateMany({
       where: { id: notificationId, status: 'PENDING' },
@@ -220,7 +216,11 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
   }
 }
 
-async function sendKakaoMessage(payload: Record<string, unknown>, context: KakaoNotificationContext): Promise<boolean> {
+async function sendKakaoMessage(
+  payload: Record<string, unknown>,
+  context: KakaoNotificationContext,
+  notificationId: string,
+): Promise<boolean> {
   const template = {
     object_type: 'text',
     text: prependKakaoNotificationSender(`🏨 ${payload.title}\n\n${payload.description}`, {
@@ -254,15 +254,17 @@ async function sendKakaoMessage(payload: Record<string, unknown>, context: Kakao
 
     const data = (await response.json()) as { result_code: number };
     if (data.result_code !== 0) {
-      console.error(
-        `[kakao] case notification send failed: sender=${context.senderDisplayName} payloadTitle=${String(payload.title ?? '')}`,
-      );
+      console.error('[kakao] case notification send failed:', {
+        notificationId,
+        resultCode: data.result_code,
+      });
     }
     return data.result_code === 0;
-  } catch {
-    console.error(
-      `[kakao] case notification send error: sender=${context.senderDisplayName} payloadTitle=${String(payload.title ?? '')}`,
-    );
+  } catch (error) {
+    console.error('[kakao] case notification send error:', {
+      notificationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }

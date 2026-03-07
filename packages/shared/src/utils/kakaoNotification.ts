@@ -4,6 +4,11 @@ export interface KakaoNotificationSenderInput {
   userId?: string | null;
 }
 
+export interface KakaoNotificationContext {
+  accessToken: string;
+  senderDisplayName: string;
+}
+
 export interface KakaoNotificationSender {
   displayName: string;
   label: string;
@@ -11,7 +16,15 @@ export interface KakaoNotificationSender {
 
 function normalizeDisplayName(value?: string | null): string | null {
   const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
+  if (!trimmed) return null;
+
+  const sanitized = trimmed
+    .replace(/[\r\n]+/g, ' ')
+    .replaceAll('[', ' ')
+    .replaceAll(']', ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return sanitized || null;
 }
 
 function deriveNameFromEmail(email?: string | null): string | null {
@@ -30,8 +43,8 @@ function deriveNameFromUserId(userId?: string | null): string | null {
 export function buildKakaoNotificationSender(input: KakaoNotificationSenderInput): KakaoNotificationSender {
   const displayName =
     normalizeDisplayName(input.name) ??
-    deriveNameFromEmail(input.email) ??
-    deriveNameFromUserId(input.userId) ??
+    normalizeDisplayName(deriveNameFromEmail(input.email)) ??
+    normalizeDisplayName(deriveNameFromUserId(input.userId)) ??
     'unknown';
 
   return {
@@ -40,8 +53,12 @@ export function buildKakaoNotificationSender(input: KakaoNotificationSenderInput
   };
 }
 
-export function prependKakaoNotificationSender(message: string, input: KakaoNotificationSenderInput): string {
+export function prependKakaoNotificationLabel(message: string, label: string): string {
   const body = message.trim();
+  return body ? `${label}\n${body}` : label;
+}
+
+export function prependKakaoNotificationSender(message: string, input: KakaoNotificationSenderInput): string {
   const sender = buildKakaoNotificationSender(input);
-  return body ? `${sender.label}\n${body}` : sender.label;
+  return prependKakaoNotificationLabel(message, sender.label);
 }

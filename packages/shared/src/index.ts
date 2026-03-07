@@ -31,4 +31,9 @@ export { isRetryableError, formatDate, delay, calculateNights } from './checkers
 export { AGODA_PATTERNS, AIRBNB_PATTERNS, PRICE_PATTERN, RETRYABLE_ERRORS } from './checkers/constants';
 
 // Notification utilities (pure)
-export { buildKakaoNotificationSender, prependKakaoNotificationSender } from './utils/kakaoNotification';
+export {
+  buildKakaoNotificationSender,
+  prependKakaoNotificationLabel,
+  prependKakaoNotificationSender,
+} from './utils/kakaoNotification';
+export type { KakaoNotificationContext } from './utils/kakaoNotification';

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildKakaoNotificationSender, prependKakaoNotificationSender } from './kakaoNotification';
+import {
+  buildKakaoNotificationSender,
+  prependKakaoNotificationLabel,
+  prependKakaoNotificationSender,
+} from './kakaoNotification';
 
 describe('buildKakaoNotificationSender', () => {
   it('닉네임이 있으면 그대로 사용한다', () => {
@@ -41,6 +45,28 @@ describe('buildKakaoNotificationSender', () => {
       label: '[unknown]',
     });
   });
+
+  it('개행과 대괄호를 제거하고 한 줄로 정규화한다', () => {
+    expect(
+      buildKakaoNotificationSender({
+        name: ' [개발]\n계정 ',
+      }),
+    ).toEqual({
+      displayName: '개발 계정',
+      label: '[개발 계정]',
+    });
+  });
+
+  it('이메일 앞부분 fallback도 같은 방식으로 정규화한다', () => {
+    expect(
+      buildKakaoNotificationSender({
+        email: ' [qa]\nuser @example.com ',
+      }),
+    ).toEqual({
+      displayName: 'qa user',
+      label: '[qa user]',
+    });
+  });
 });
 
 describe('prependKakaoNotificationSender', () => {
@@ -50,5 +76,11 @@ describe('prependKakaoNotificationSender', () => {
         name: '개발용 계정',
       }),
     ).toBe('[개발용 계정]\n알림 본문');
+  });
+});
+
+describe('prependKakaoNotificationLabel', () => {
+  it('이미 계산한 라벨을 그대로 앞줄에 붙인다', () => {
+    expect(prependKakaoNotificationLabel('알림 본문', '[마르코]')).toBe('[마르코]\n알림 본문');
   });
 });

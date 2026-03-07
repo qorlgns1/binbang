@@ -2,6 +2,7 @@ import { prisma } from '@workspace/db';
 import {
   buildKakaoNotificationSender,
   prependKakaoNotificationSender,
+  type KakaoNotificationContext,
 } from '@workspace/shared/utils/kakaoNotification';
 
 import { buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
@@ -14,11 +15,6 @@ import { type KakaoMemoTemplate, sendKakaoMemo } from '@/lib/kakao/sendKakaoMemo
 
 const REFRESH_MARGIN_MS = 300_000; // 만료 5분 전 갱신
 const REQUEST_TIMEOUT_MS = 10_000;
-
-interface KakaoNotificationContext {
-  accessToken: string;
-  senderDisplayName: string;
-}
 
 /** 동시 refresh 요청을 직렬화하는 in-flight 맵 (userId → Promise) */
 const refreshInFlight = new Map<string, Promise<string | null>>();
@@ -247,7 +243,7 @@ export async function sendBinbangKakaoNotification(userId: string, params: SendB
 
   const sent = await sendKakaoMemo(template, context.accessToken);
   if (!sent) {
-    console.error(`[kakao] agoda notification send failed: sender=${context.senderDisplayName} userId=${userId}`);
+    console.error(`[kakao] agoda notification send failed: userId=${userId}`);
   }
 
   return sent;
