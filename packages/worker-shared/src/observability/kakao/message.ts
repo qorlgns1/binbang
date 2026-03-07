@@ -7,10 +7,6 @@ export interface SendMessageParams {
   description: string;
   buttonText?: string;
   buttonUrl?: string;
-  senderDisplayName?: string;
-}
-
-export interface SendKakaoMessageHttpParams extends SendMessageParams {
   senderDisplayName: string;
 }
 
@@ -20,14 +16,7 @@ export interface SendKakaoMessageHttpParams extends SendMessageParams {
  * @returns true 성공, false 일반 실패, 'unauthorized' 토큰 만료 (재시도 필요)
  */
 export async function sendKakaoMessageHttp(
-  {
-    userId,
-    title,
-    description,
-    buttonText = '확인하기',
-    buttonUrl = '',
-    senderDisplayName,
-  }: SendKakaoMessageHttpParams,
+  { userId, title, description, buttonText = '확인하기', buttonUrl = '', senderDisplayName }: SendMessageParams,
   accessToken: string,
 ): Promise<true | false | 'unauthorized'> {
   const sender = buildKakaoNotificationSender({ name: senderDisplayName });

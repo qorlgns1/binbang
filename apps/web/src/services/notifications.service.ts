@@ -16,6 +16,9 @@ export interface RetryNotificationResult {
   error?: string;
 }
 
+const REFRESH_MARGIN_MS = 300_000; // 5분
+const refreshInFlight = new Map<string, Promise<string | null>>();
+
 // ============================================================================
 // Service
 // ============================================================================
@@ -158,13 +161,23 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
     userId,
   });
 
-  const REFRESH_MARGIN_MS = 300_000; // 5분
   if (
     user.kakaoTokenExpiry &&
     user.kakaoRefreshToken &&
     new Date(user.kakaoTokenExpiry) < new Date(Date.now() + REFRESH_MARGIN_MS)
   ) {
-    const accessToken = await refreshKakaoToken(userId, user.kakaoRefreshToken);
+    const existingRefresh = refreshInFlight.get(userId);
+    if (existingRefresh) {
+      const accessToken = await existingRefresh;
+      return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
+    }
+
+    const refreshPromise = refreshKakaoToken(userId, user.kakaoRefreshToken).finally(() => {
+      refreshInFlight.delete(userId);
+    });
+    refreshInFlight.set(userId, refreshPromise);
+
+    const accessToken = await refreshPromise;
     return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
   }
 

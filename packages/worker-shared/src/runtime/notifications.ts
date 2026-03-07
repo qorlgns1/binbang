@@ -13,6 +13,8 @@ import { getEmailConfig, getEnv } from './settings/env';
 
 // ── Types ──
 
+type NotificationMessageParams = Omit<SendMessageParams, 'senderDisplayName'>;
+
 export interface NotificationFallbackResult {
   sent: boolean;
   channel: 'KAKAO' | 'EMAIL' | 'NONE';
@@ -20,6 +22,8 @@ export interface NotificationFallbackResult {
 }
 
 // ── Kakao Token Management ──
+
+const refreshInFlight = new Map<string, Promise<string | null>>();
 
 /**
  * 카카오 access_token 갱신
@@ -60,6 +64,19 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
   }
 }
 
+async function refreshKakaoTokenWithLock(userId: string, refreshToken: string): Promise<string | null> {
+  const existingRefresh = refreshInFlight.get(userId);
+  if (existingRefresh) {
+    return existingRefresh;
+  }
+
+  const refreshPromise = refreshKakaoToken(userId, refreshToken).finally(() => {
+    refreshInFlight.delete(userId);
+  });
+  refreshInFlight.set(userId, refreshPromise);
+  return refreshPromise;
+}
+
 /**
  * 유효한 access_token 가져오기 (DB 1회 조회)
  */
@@ -94,7 +111,7 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
     new Date(user.kakaoTokenExpiry) < new Date(Date.now() + refreshMarginMs)
   ) {
     console.log('⚠️ 카카오 토큰 만료 임박. 갱신 중...');
-    const accessToken = await refreshKakaoToken(userId, user.kakaoRefreshToken);
+    const accessToken = await refreshKakaoTokenWithLock(userId, user.kakaoRefreshToken);
     return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
   }
 
@@ -110,7 +127,7 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
  * 카카오 알림 전송 (토큰 조회 + HTTP 전송 + 401 재시도)
  */
 export async function sendKakaoNotification(
-  params: SendMessageParams,
+  params: NotificationMessageParams,
   retried = false,
   cachedContext?: KakaoNotificationContext,
 ): Promise<boolean> {
@@ -134,7 +151,7 @@ export async function sendKakaoNotification(
       select: { kakaoRefreshToken: true },
     });
     if (user?.kakaoRefreshToken) {
-      const accessToken = await refreshKakaoToken(params.userId, user.kakaoRefreshToken);
+      const accessToken = await refreshKakaoTokenWithLock(params.userId, user.kakaoRefreshToken);
       if (accessToken) {
         return sendKakaoNotification(params, true, {
           accessToken,
@@ -210,7 +227,7 @@ export async function notifyAvailable(
  * 사용자에게 이메일 알림을 전송한다.
  * User.email이 없거나 이메일 설정(Resend)이 없으면 false를 반환한다.
  */
-export async function sendEmailNotification(params: SendMessageParams): Promise<boolean> {
+export async function sendEmailNotification(params: NotificationMessageParams): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: params.userId },
     select: { email: true },
@@ -248,7 +265,9 @@ export async function sendEmailNotification(params: SendMessageParams): Promise<
  *
  * 반환값에 실제 전송된 채널과 실패 사유가 포함된다.
  */
-export async function sendNotificationWithFallback(params: SendMessageParams): Promise<NotificationFallbackResult> {
+export async function sendNotificationWithFallback(
+  params: NotificationMessageParams,
+): Promise<NotificationFallbackResult> {
   const kakaoSent = await sendKakaoNotification(params);
   if (kakaoSent) {
     return { sent: true, channel: 'KAKAO' };
