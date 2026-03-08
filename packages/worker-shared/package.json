@@ -55,7 +55,7 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^24.10.9",
+    "@types/node": "^25.3.5",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.7.2",
     "vitest": "catalog:"
