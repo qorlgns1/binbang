@@ -423,22 +423,25 @@ export async function getAdminOpsAccommodationDiagnostics(
     status: row.status,
     offerKey: row.offerKey,
     latestNotificationStatus: row.notifications[0]?.status ?? null,
-    latestNotificationReasonCode: row.notifications[0]
-      ? parseAgodaNotificationReason(row.notifications[0].lastError, row.notifications[0].status).code
-      : null,
+    latestNotificationReasonCode: (() => {
+      const n = row.notifications[0];
+      if (!n || (n.status !== 'failed' && n.status !== 'suppressed')) return null;
+      return parseAgodaNotificationReason(n.lastError, n.status).code;
+    })(),
     latestNotificationError: row.notifications[0]?.lastError ?? null,
   }));
 
   const recentNotifications = recentNotificationsRaw.map((row) => {
-    const parsedReason = parseAgodaNotificationReason(row.lastError, row.status);
+    const isTerminal = row.status === 'failed' || row.status === 'suppressed';
+    const parsedReason = isTerminal ? parseAgodaNotificationReason(row.lastError, row.status) : null;
     return {
       id: row.id.toString(),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       status: row.status,
       attempt: row.attempt,
-      lastErrorCode: parsedReason.code,
-      lastErrorMessage: parsedReason.message,
+      lastErrorCode: parsedReason?.code ?? null,
+      lastErrorMessage: parsedReason?.message ?? null,
       lastError: row.lastError,
     };
   });

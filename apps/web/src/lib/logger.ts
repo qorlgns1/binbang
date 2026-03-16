@@ -51,7 +51,7 @@ function normalizeRecord(value: LogContext): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeValue(entry)]));
 }
 
-function normalizeValue(value: unknown): unknown {
+function normalizeValue(value: unknown, seen = new Set<object>()): unknown {
   if (value instanceof Error) {
     return {
       name: value.name,
@@ -65,12 +65,16 @@ function normalizeValue(value: unknown): unknown {
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeValue(item));
+    return value.map((item) => normalizeValue(item, seen));
   }
 
   if (value && typeof value === 'object') {
+    if (seen.has(value)) {
+      return '[Circular]';
+    }
+    seen.add(value);
     return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, normalizeValue(entry)]),
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, normalizeValue(entry, seen)]),
     );
   }
 

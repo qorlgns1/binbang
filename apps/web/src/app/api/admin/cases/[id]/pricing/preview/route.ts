@@ -10,23 +10,22 @@ import { previewCasePriceQuote } from '@/services/pricing.service';
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_pricing_preview');
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return badRequestResponse('Invalid request payload', undefined, requestId);
-  }
-
-  const parsed = pricingInputSchema.safeParse(body);
-  if (!parsed.success) {
-    return badRequestResponse('Invalid request payload', undefined, requestId);
-  }
-
   try {
     const session = await requireAdmin();
-
     if (!session) {
       return unauthorizedResponse('Unauthorized', requestId);
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return badRequestResponse('Invalid request payload', undefined, requestId);
+    }
+
+    const parsed = pricingInputSchema.safeParse(body);
+    if (!parsed.success) {
+      return badRequestResponse('Invalid request payload', undefined, requestId);
     }
 
     const { id } = await params;
