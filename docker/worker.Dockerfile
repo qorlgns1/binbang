@@ -20,7 +20,7 @@ COPY packages/worker-shared/package.json ./packages/worker-shared/
 COPY apps/worker/package.json ./apps/worker/
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================
 # Builder (Prisma generate only)

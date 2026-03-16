@@ -7,44 +7,86 @@ dotenv.config();
  * 앱 시작 시 필수 환경변수가 설정되어 있는지 확인
  */
 
-const WEB_REQUIRED_ENV_VARS = [
-  'DATABASE_URL',
-  'NEXTAUTH_URL',
-  'NEXTAUTH_SECRET',
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-  'KAKAO_CLIENT_ID',
-  'KAKAO_CLIENT_SECRET',
-] as const;
+interface EnvRule {
+  key: string;
+  required?: boolean;
+  validate?: (value: string) => string | null;
+}
 
-const WORKER_REQUIRED_ENV_VARS = ['DATABASE_URL', 'REDIS_URL'] as const;
+const HTTP_PROTOCOLS = new Set(['http:', 'https:']);
+const DATABASE_PROTOCOLS = new Set(['postgres:', 'postgresql:']);
+const REDIS_PROTOCOLS = new Set(['redis:', 'rediss:']);
+
+const WEB_ENV_RULES = [
+  { key: 'DATABASE_URL', validate: (value): string | null => validateUrl(value, DATABASE_PROTOCOLS) },
+  { key: 'NEXTAUTH_URL', validate: (value): string | null => validateUrl(value, HTTP_PROTOCOLS) },
+  { key: 'NEXTAUTH_SECRET' },
+  { key: 'GOOGLE_CLIENT_ID' },
+  { key: 'GOOGLE_CLIENT_SECRET' },
+  { key: 'KAKAO_CLIENT_ID' },
+  { key: 'KAKAO_CLIENT_SECRET' },
+] as const satisfies readonly EnvRule[];
+
+const WORKER_ENV_RULES = [
+  { key: 'DATABASE_URL', validate: (value): string | null => validateUrl(value, DATABASE_PROTOCOLS) },
+  { key: 'REDIS_URL', validate: (value): string | null => validateUrl(value, REDIS_PROTOCOLS) },
+] as const satisfies readonly EnvRule[];
 
 /**
  * 웹 앱용 환경변수 검증
  */
 export function validateWebEnv(): void {
-  validateEnvVars(WEB_REQUIRED_ENV_VARS, '웹 앱');
+  validateEnvRules(WEB_ENV_RULES, '웹 앱');
 }
 
 /**
  * 워커용 환경변수 검증
  */
 export function validateWorkerEnv(): void {
-  validateEnvVars(WORKER_REQUIRED_ENV_VARS, '워커');
+  validateEnvRules(WORKER_ENV_RULES, '워커');
+}
+
+function readEnvValue(key: string): string | undefined {
+  const trimmed = process.env[key]?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function validateUrl(value: string, allowedProtocols: ReadonlySet<string>): string | null {
+  try {
+    const parsed = new URL(value);
+    if (!allowedProtocols.has(parsed.protocol)) {
+      return `허용되지 않은 URL scheme입니다 (${parsed.protocol})`;
+    }
+    return null;
+  } catch {
+    return '유효한 URL이 아닙니다.';
+  }
 }
 
 /**
  * 공통 검증 로직
  */
-function validateEnvVars(keys: readonly string[], context: string): void {
-  const missing = keys.filter((key): boolean => !process.env[key]);
+function validateEnvRules(rules: readonly EnvRule[], context: string): void {
+  const issues: string[] = [];
 
-  if (missing.length > 0) {
-    throw new Error(
-      `❌ ${context} 필수 환경변수가 설정되지 않았습니다:\n` +
-        missing.map((key): string => `   - ${key}`).join('\n') +
-        `\n\n.env 파일을 확인하세요.`,
-    );
+  for (const rule of rules) {
+    const value = readEnvValue(rule.key);
+
+    if (!value) {
+      if (rule.required !== false) {
+        issues.push(`   - ${rule.key}: 값이 비어 있습니다.`);
+      }
+      continue;
+    }
+
+    const reason = rule.validate?.(value);
+    if (reason) {
+      issues.push(`   - ${rule.key}: ${reason}`);
+    }
+  }
+
+  if (issues.length > 0) {
+    throw new Error(`❌ ${context} 환경변수 검증 실패:\n${issues.join('\n')}\n\n.env 파일을 확인하세요.`);
   }
 }
 
@@ -52,25 +94,25 @@ function validateEnvVars(keys: readonly string[], context: string): void {
  * 환경변수 안전하게 가져오기 (기본값 지원)
  */
 export function getEnv(key: string, defaultValue?: string): string {
-  const value = process.env[key];
-  if (value === undefined) {
-    if (defaultValue !== undefined) {
-      return defaultValue;
-    }
-    throw new Error(`환경변수 ${key}가 설정되지 않았습니다.`);
+  const value = readEnvValue(key);
+  if (value !== undefined) {
+    return value;
   }
-  return value;
+  if (defaultValue !== undefined) {
+    return defaultValue;
+  }
+  throw new Error(`환경변수 ${key}가 설정되지 않았습니다.`);
 }
 
 /**
  * 숫자형 환경변수 가져오기
  */
 export function getEnvNumber(key: string, defaultValue: number): number {
-  const value = process.env[key];
+  const value = readEnvValue(key);
   if (value === undefined) {
     return defaultValue;
   }
-  const parsed = parseInt(value, 10);
+  const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
     console.warn(`⚠️ ${key}의 값 "${value}"이 숫자가 아닙니다. 기본값 ${defaultValue} 사용`);
     return defaultValue;
@@ -83,10 +125,10 @@ export function getEnvNumber(key: string, defaultValue: number): number {
  * observability는 env에 직접 접근하지 않으므로, runtime에서 이 값을 읽어 sendEmailHttp에 전달한다.
  */
 export function getEmailConfig(): { apiKey: string; from: string } | null {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey?.trim() || !from?.trim()) return null;
-  return { apiKey: apiKey.trim(), from: from.trim() };
+  const apiKey = readEnvValue('RESEND_API_KEY');
+  const from = readEnvValue('EMAIL_FROM');
+  if (!apiKey || !from) return null;
+  return { apiKey, from };
 }
 
 export interface AffiliateAuditTelegramConfig {
@@ -137,6 +179,22 @@ function readOptionalEnv(value: string | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+function getValidatedUrlEnv(key: string, defaultValue: string, allowedProtocols: ReadonlySet<string>): string {
+  const raw = process.env[key];
+  if (raw === undefined) {
+    return defaultValue;
+  }
+  const value = raw.trim();
+  if (value.length === 0) {
+    throw new Error(`환경변수 ${key}가 비어 있습니다.`);
+  }
+  const reason = validateUrl(value, allowedProtocols);
+  if (reason) {
+    throw new Error(`환경변수 ${key}가 올바르지 않습니다: ${reason}`);
+  }
+  return value;
+}
+
 export function getAffiliateAuditPurgeConfig(): AffiliateAuditPurgeConfig {
   return {
     cronSchedule: process.env.AFFILIATE_AUDIT_PURGE_CRON?.trim() || '10 3 * * *',
@@ -161,7 +219,7 @@ export function getAffiliateAuditPurgeConfig(): AffiliateAuditPurgeConfig {
 
 export function getTravelCachePrewarmConfig(): TravelCachePrewarmConfig {
   return {
-    internalUrl: process.env.TRAVEL_INTERNAL_URL?.trim() || 'http://localhost:3300',
+    internalUrl: getValidatedUrlEnv('TRAVEL_INTERNAL_URL', 'http://localhost:3300', HTTP_PROTOCOLS),
     cronSchedule: process.env.TRAVEL_CACHE_PREWARM_CRON?.trim() || '20 */6 * * *',
     timeoutMs: parsePositiveInt(process.env.TRAVEL_CACHE_PREWARM_TIMEOUT_MS, 120000),
     cronToken: readOptionalEnv(process.env.TRAVEL_INTERNAL_CRON_TOKEN),
@@ -179,7 +237,7 @@ export interface BinbangCronConfig {
 
 export function getBinbangCronConfig(): BinbangCronConfig {
   return {
-    webInternalUrl: process.env.WEB_INTERNAL_URL?.trim() || 'http://localhost:3000',
+    webInternalUrl: getValidatedUrlEnv('WEB_INTERNAL_URL', 'http://localhost:3000', HTTP_PROTOCOLS),
     internalApiToken: readOptionalEnv(process.env.BINBANG_INTERNAL_API_TOKEN),
     pollDueCron: process.env.BINBANG_POLL_DUE_CRON?.trim() || '*/30 * * * *',
     dispatchCron: process.env.BINBANG_DISPATCH_CRON?.trim() || '*/5 * * * *',

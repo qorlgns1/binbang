@@ -22,7 +22,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================
 # Builder

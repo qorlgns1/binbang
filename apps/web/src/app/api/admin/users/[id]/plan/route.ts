@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { updateUserPlan } from '@/services/admin/users.service';
 
 const planUpdateSchema = z.object({
@@ -12,19 +13,20 @@ const planUpdateSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_user_plan');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
 
     const body = await request.json();
     const parsed = planUpdateSchema.safeParse(body);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const result = await updateUserPlan({
@@ -35,6 +37,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(result);
   } catch (error) {
-    return handleServiceError(error, 'Admin plan update error');
+    return handleServiceError(error, 'Admin plan update error', requestId);
   }
 }

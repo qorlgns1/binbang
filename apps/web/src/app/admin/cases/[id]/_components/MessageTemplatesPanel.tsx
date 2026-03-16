@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type CaseMessageItem, useCreateCaseMessageMutation } from '@/features/admin/cases';
-import { getUserMessage } from '@/lib/apiError';
+import { getAdminErrorMessage } from '@/lib/apiError';
 
 import { formatDateTime } from './formatDateTime';
 
@@ -241,7 +241,7 @@ export function MessageTemplatesPanel({ caseId, messages }: Props) {
 
             {copyError && <p className='text-sm text-destructive'>{copyError}</p>}
             {messageMutation.isError && (
-              <p className='text-sm text-destructive'>{getUserMessage(messageMutation.error)}</p>
+              <p className='text-sm text-destructive'>{getAdminErrorMessage(messageMutation.error)}</p>
             )}
           </div>
         )}

@@ -12,6 +12,7 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 
+import { parseApiError } from '@/lib/apiError';
 import { adminKeys } from '@/lib/queryKeys';
 import type { ActivityType, UserActivityResponse } from '@/types/activity';
 import type { AdminUserInfo, AdminUsersResponse } from '@/types/admin';
@@ -45,14 +46,14 @@ async function fetchUsers(filters: UsersFilterParams, cursor?: string): Promise<
   if (cursor) params.set('cursor', cursor);
 
   const res = await fetch(`/api/admin/users?${params.toString()}`);
-  if (!res.ok) throw new Error('Failed to fetch users');
+  if (!res.ok) throw await parseApiError(res, '사용자 목록을 불러올 수 없습니다');
   return res.json();
 }
 
 async function fetchUserDetail(id: string): Promise<AdminUserInfo> {
   const res = await fetch(`/api/admin/users/${id}`);
   if (!res.ok) {
-    throw new Error('사용자 정보를 불러올 수 없습니다');
+    throw await parseApiError(res, '사용자 정보를 불러올 수 없습니다');
   }
   return res.json();
 }
@@ -72,7 +73,7 @@ async function fetchUserActivity({
 
   const res = await fetch(`/api/admin/users/${userId}/activity?${params.toString()}`);
   if (!res.ok) {
-    throw new Error('활동 이력을 불러올 수 없습니다');
+    throw await parseApiError(res, '활동 이력을 불러올 수 없습니다');
   }
   return res.json();
 }

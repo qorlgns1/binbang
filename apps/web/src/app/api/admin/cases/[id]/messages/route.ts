@@ -9,6 +9,7 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
 } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { createCaseMessage, getCaseMessages } from '@/services/messages.service';
 
 const createMessageSchema = z.object({
@@ -18,38 +19,40 @@ const createMessageSchema = z.object({
 });
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_case_messages');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const messages = await getCaseMessages(id);
     return NextResponse.json({ messages });
   } catch (error) {
-    return handleServiceError(error, 'Admin case messages GET error');
+    return handleServiceError(error, 'Admin case messages GET error', requestId);
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_case_message_create');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return badRequestResponse('Invalid JSON');
+      return badRequestResponse('Invalid JSON', undefined, requestId);
     }
 
     const parsed = createMessageSchema.safeParse(body);
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const message = await createCaseMessage({
@@ -62,6 +65,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    return handleServiceError(error, 'Admin case messages POST error');
+    return handleServiceError(error, 'Admin case messages POST error', requestId);
   }
 }

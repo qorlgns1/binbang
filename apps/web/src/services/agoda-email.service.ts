@@ -1,4 +1,5 @@
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
+import { logInfo } from '@/lib/logger';
 
 interface SendEmailParams {
   to: string;
@@ -9,11 +10,11 @@ interface SendEmailParams {
 
 async function sendByConsole(params: SendEmailParams): Promise<{ provider: string; messageId: string }> {
   const messageId = `console-${Date.now()}`;
-  console.info('[agoda-email:console]', {
+  logInfo('agoda_email_console_send', {
     messageId,
     to: params.to,
     subject: params.subject,
-    text: params.text,
+    hasHtml: Boolean(params.html),
   });
   return { provider: 'console', messageId };
 }

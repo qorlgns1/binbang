@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useTransitionCaseStatusMutation } from '@/features/admin/cases';
-import { getUserMessage } from '@/lib/apiError';
+import { getAdminErrorMessage } from '@/lib/apiError';
 
 interface Props {
   caseId: string;
@@ -146,7 +146,7 @@ export function StatusTransitionDialog({
         </div>
 
         {transitionMutation.isError && (
-          <p className='text-sm text-destructive'>{getUserMessage(transitionMutation.error)}</p>
+          <p className='text-sm text-destructive'>{getAdminErrorMessage(transitionMutation.error)}</p>
         )}
 
         <DialogFooter>

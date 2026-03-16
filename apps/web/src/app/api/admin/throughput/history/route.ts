@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError } from '@/lib/handleServiceError';
+import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { getThroughputHistory } from '@/services/admin/throughput.service';
 
 const paramsSchema = z.object({
@@ -14,17 +15,18 @@ const paramsSchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+  const requestId = createRequestId('admin_throughput_history');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const params = Object.fromEntries(request.nextUrl.searchParams);
     const parsed = paramsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid parameters', details: parsed.error.issues }, { status: 400 });
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const response = await getThroughputHistory({
@@ -35,6 +37,6 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Throughput history error');
+    return handleServiceError(error, 'Throughput history error', requestId);
   }
 }

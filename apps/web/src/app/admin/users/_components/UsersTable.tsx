@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
+import { getAdminErrorMessage } from '@/lib/apiError';
 import type { AdminUserInfo } from '@/types/admin';
 
 import { PlanChangeDialog } from './PlanChangeDialog';
@@ -53,7 +54,7 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ filters }: UsersTableProps) {
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useAdminUsers(filters);
+  const { data, error, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useAdminUsers(filters);
   const [selectedUserForRole, setSelectedUserForRole] = useState<AdminUserInfo | null>(null);
   const [selectedUserForPlan, setSelectedUserForPlan] = useState<AdminUserInfo | null>(null);
 
@@ -66,7 +67,7 @@ export function UsersTable({ filters }: UsersTableProps) {
         <TableSkeleton />
       ) : isError ? (
         <div className='rounded-lg border border-border p-6 text-center text-muted-foreground'>
-          사용자 목록을 불러올 수 없습니다.
+          {error ? getAdminErrorMessage(error) : '사용자 목록을 불러올 수 없습니다.'}
         </div>
       ) : users.length === 0 ? (
         <div className='rounded-lg border border-border p-6 text-center text-muted-foreground'>

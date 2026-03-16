@@ -6,6 +6,7 @@ import {
 } from '@workspace/shared/utils/kakaoNotification';
 
 import { getEnv } from '@/lib/env';
+import { logError, logInfo, logWarn } from '@/lib/logger';
 
 // ============================================================================
 // Types
@@ -16,6 +17,10 @@ export interface RetryNotificationResult {
   error?: string;
 }
 
+interface RetryNotificationOptions {
+  requestId?: string | null;
+}
+
 const REFRESH_MARGIN_MS = 300_000; // 5분
 const refreshInFlight = new Map<string, Promise<string | null>>();
 
@@ -23,23 +28,36 @@ const refreshInFlight = new Map<string, Promise<string | null>>();
 // Service
 // ============================================================================
 
-export async function retryNotification(notificationId: string): Promise<RetryNotificationResult> {
-  return retryNotificationForCase(notificationId, null);
+export async function retryNotification(
+  notificationId: string,
+  options?: RetryNotificationOptions,
+): Promise<RetryNotificationResult> {
+  return retryNotificationForCase(notificationId, null, options);
 }
 
 export async function retryNotificationForCase(
   notificationId: string,
   caseId: string | null,
+  options?: RetryNotificationOptions,
 ): Promise<RetryNotificationResult> {
+  const requestId = options?.requestId ?? null;
+
   const markRetryFailed = async (failReason: string, error: unknown): Promise<void> => {
-    console.error('retryNotificationForCase failed:', { notificationId, caseId, failReason, error });
+    logError('case_notification_retry_failed', {
+      requestId,
+      notificationId,
+      caseId,
+      failReason,
+      error,
+    });
     try {
       await prisma.caseNotification.updateMany({
         where: { id: notificationId, status: 'PENDING' },
         data: { status: 'FAILED', failReason },
       });
     } catch (updateError) {
-      console.error('retryNotificationForCase: failed to update notification status after error:', {
+      logError('case_notification_retry_status_update_failed', {
+        requestId,
         notificationId,
         updateError,
         originalError: error,
@@ -68,18 +86,46 @@ export async function retryNotificationForCase(
     });
 
     if (!notification) {
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId,
+        reason: 'notification_not_found',
+      });
       return { success: false, error: 'Notification not found' };
     }
 
     if (caseId && notification.caseId !== caseId) {
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId,
+        actualCaseId: notification.caseId,
+        reason: 'case_mismatch',
+      });
       return { success: false, error: 'Notification does not belong to this case' };
     }
 
     if (notification.status !== 'FAILED') {
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        status: notification.status,
+        reason: 'invalid_status',
+      });
       return { success: false, error: 'Only FAILED notifications can be retried' };
     }
 
     if (notification.retryCount >= notification.maxRetries) {
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        retryCount: notification.retryCount,
+        maxRetries: notification.maxRetries,
+        reason: 'max_retries_exceeded',
+      });
       return { success: false, error: 'Max retries exceeded' };
     }
 
@@ -98,8 +144,23 @@ export async function retryNotificationForCase(
     });
 
     if (claimed.count !== 1) {
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        retryCount: notification.retryCount,
+        reason: 'claim_conflict',
+      });
       return { success: false, error: 'Notification is already being retried' };
     }
+
+    logInfo('case_notification_retry_attempt', {
+      requestId,
+      notificationId,
+      caseId: notification.caseId,
+      retryCount: notification.retryCount + 1,
+      maxRetries: notification.maxRetries,
+    });
 
     const userId = notification.case?.accommodation?.userId;
     if (!userId) {
@@ -107,25 +168,62 @@ export async function retryNotificationForCase(
         where: { id: notificationId, status: 'PENDING' },
         data: { status: 'FAILED', failReason: 'No user linked to case accommodation' },
       });
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        reason: 'missing_user_id',
+      });
       return { success: false, error: 'No user linked to case accommodation' };
     }
 
-    const context = await getValidAccessToken(userId);
+    const context = await getValidAccessToken(userId, {
+      requestId,
+      notificationId,
+      caseId: notification.caseId,
+    });
     if (!context) {
       await prisma.caseNotification.updateMany({
         where: { id: notificationId, status: 'PENDING' },
         data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음' },
       });
+      logWarn('case_notification_retry_rejected', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        userId,
+        reason: 'missing_valid_kakao_token',
+      });
       return { success: false, error: 'No valid Kakao token' };
     }
 
     const payload = notification.payload as Record<string, unknown>;
-    const sent = await sendKakaoMessage(payload, context, notificationId);
+    const sent = await sendKakaoMessage(payload, context, notificationId, {
+      requestId,
+      caseId: notification.caseId,
+      userId,
+    });
 
     await prisma.caseNotification.updateMany({
       where: { id: notificationId, status: 'PENDING' },
       data: sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '재시도 전송 실패' },
     });
+
+    if (sent) {
+      logInfo('case_notification_retry_sent', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        userId,
+      });
+    } else {
+      logWarn('case_notification_retry_send_failed', {
+        requestId,
+        notificationId,
+        caseId: notification.caseId,
+        userId,
+      });
+    }
 
     return { success: sent };
   } catch (error: unknown) {
@@ -139,7 +237,17 @@ export async function retryNotificationForCase(
 // Kakao HTTP (fetch 기반, worker-shared 경계 규칙상 별도 구현)
 // ============================================================================
 
-async function getValidAccessToken(userId: string): Promise<KakaoNotificationContext | null> {
+interface NotificationLogContext {
+  requestId?: string | null;
+  notificationId?: string | null;
+  caseId?: string | null;
+  userId?: string | null;
+}
+
+async function getValidAccessToken(
+  userId: string,
+  logContext?: NotificationLogContext,
+): Promise<KakaoNotificationContext | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -152,6 +260,12 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
   });
 
   if (!user?.kakaoAccessToken) {
+    logWarn('case_notification_kakao_token_missing', {
+      requestId: logContext?.requestId ?? null,
+      notificationId: logContext?.notificationId ?? null,
+      caseId: logContext?.caseId ?? null,
+      userId,
+    });
     return null;
   }
 
@@ -172,7 +286,7 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
       return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
     }
 
-    const refreshPromise = refreshKakaoToken(userId, user.kakaoRefreshToken).finally(() => {
+    const refreshPromise = refreshKakaoToken(userId, user.kakaoRefreshToken, logContext).finally(() => {
       refreshInFlight.delete(userId);
     });
     refreshInFlight.set(userId, refreshPromise);
@@ -187,7 +301,11 @@ async function getValidAccessToken(userId: string): Promise<KakaoNotificationCon
   };
 }
 
-async function refreshKakaoToken(userId: string, refreshToken: string): Promise<string | null> {
+async function refreshKakaoToken(
+  userId: string,
+  refreshToken: string,
+  logContext?: NotificationLogContext,
+): Promise<string | null> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10_000);
@@ -205,7 +323,16 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
     });
     clearTimeout(timeoutId);
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      logWarn('case_notification_kakao_token_refresh_failed', {
+        requestId: logContext?.requestId ?? null,
+        notificationId: logContext?.notificationId ?? null,
+        caseId: logContext?.caseId ?? null,
+        userId,
+        status: response.status,
+      });
+      return null;
+    }
 
     const data = (await response.json()) as {
       access_token: string;
@@ -224,7 +351,14 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
     });
 
     return data.access_token;
-  } catch {
+  } catch (error) {
+    logError('case_notification_kakao_token_refresh_error', {
+      requestId: logContext?.requestId ?? null,
+      notificationId: logContext?.notificationId ?? null,
+      caseId: logContext?.caseId ?? null,
+      userId,
+      error,
+    });
     return null;
   }
 }
@@ -233,6 +367,7 @@ async function sendKakaoMessage(
   payload: Record<string, unknown>,
   context: KakaoNotificationContext,
   notificationId: string,
+  logContext?: NotificationLogContext,
 ): Promise<boolean> {
   const template = {
     object_type: 'text',
@@ -263,20 +398,35 @@ async function sendKakaoMessage(
     });
     clearTimeout(timeoutId);
 
-    if (!response.ok) return false;
+    if (!response.ok) {
+      logWarn('case_notification_kakao_http_failed', {
+        requestId: logContext?.requestId ?? null,
+        notificationId,
+        caseId: logContext?.caseId ?? null,
+        userId: logContext?.userId ?? null,
+        status: response.status,
+      });
+      return false;
+    }
 
     const data = (await response.json()) as { result_code: number };
     if (data.result_code !== 0) {
-      console.error('[kakao] case notification send failed:', {
+      logWarn('case_notification_kakao_send_failed', {
+        requestId: logContext?.requestId ?? null,
         notificationId,
+        caseId: logContext?.caseId ?? null,
+        userId: logContext?.userId ?? null,
         resultCode: data.result_code,
       });
     }
     return data.result_code === 0;
   } catch (error) {
-    console.error('[kakao] case notification send error:', {
+    logError('case_notification_kakao_send_error', {
+      requestId: logContext?.requestId ?? null,
       notificationId,
-      error: error instanceof Error ? error.message : String(error),
+      caseId: logContext?.caseId ?? null,
+      userId: logContext?.userId ?? null,
+      error,
     });
     return false;
   }

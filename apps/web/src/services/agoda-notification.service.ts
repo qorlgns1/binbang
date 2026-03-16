@@ -1,8 +1,14 @@
 import { prisma } from '@workspace/db';
 
 import { buildAgodaLandingUrl, buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
+import { logError, logInfo, logWarn } from '@/lib/logger';
 import { sendAgodaAlertEmail } from '@/services/agoda-email.service';
 import { sendBinbangKakaoNotification } from '@/services/agoda-kakao.service';
+import {
+  buildAgodaNotificationReasonBreakdown,
+  encodeAgodaNotificationReason,
+  type AgodaNotificationReasonCode,
+} from '@/services/agoda-notification-observability';
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { buildAgodaUnsubscribeUrl, createAgodaUnsubscribeToken } from '@/services/agoda-unsubscribe.service';
 
@@ -16,6 +22,8 @@ export interface DispatchAgodaNotificationsResult {
   failed: number;
   suppressed: number;
   skippedNotDue: number;
+  failedReasonCounts: Record<string, number>;
+  suppressedReasonCounts: Record<string, number>;
 }
 
 type AgodaEmailLocale = 'ko' | 'en';
@@ -226,9 +234,30 @@ function buildEmailContent(params: {
 }
 
 type NotificationOutcome =
-  | { id: bigint; kind: 'suppressed'; reason: string }
+  | { id: bigint; kind: 'suppressed'; reasonCode: AgodaNotificationReasonCode; reasonMessage: string }
   | { id: bigint; kind: 'sent' }
-  | { id: bigint; kind: 'failed'; nextAttempt: number; lastError: string };
+  | { id: bigint; kind: 'failed'; nextAttempt: number; reasonCode: AgodaNotificationReasonCode; reasonMessage: string };
+
+function buildReasonCounts(outcomes: NotificationOutcome[], kind: 'failed' | 'suppressed'): Record<string, number> {
+  return outcomes.reduce<Record<string, number>>((acc, outcome) => {
+    if (outcome.kind !== kind) return acc;
+    acc[outcome.reasonCode] = (acc[outcome.reasonCode] ?? 0) + 1;
+    return acc;
+  }, {});
+}
+
+function logDispatchOutcome(params: {
+  requestId: string | null;
+  notificationId: string;
+  accommodationId: string | null;
+  alertEventId: string | null;
+  kind: 'failed' | 'suppressed';
+  reasonCode: AgodaNotificationReasonCode;
+  reasonMessage: string;
+  attempt: number;
+}): void {
+  logWarn('agoda_notification_dispatch_outcome', params);
+}
 
 /**
  * 알림 ID 배열을 원자적으로 'processing' 상태로 클레임한다.
@@ -285,12 +314,18 @@ const notificationSelect = {
 
 export async function dispatchAgodaNotifications(params?: {
   limit?: number;
+  requestId?: string;
 }): Promise<DispatchAgodaNotificationsResult> {
   const runtimeSettings = await getBinbangRuntimeSettings();
   const limit = params?.limit ?? runtimeSettings.notificationDispatchLimit;
   const maxAttempts = runtimeSettings.notificationMaxAttempts;
   const now = new Date();
   const staleThreshold = new Date(Date.now() - STALE_PROCESSING_TIMEOUT_MS);
+  const requestId = params?.requestId ?? null;
+  const staleProcessingError = encodeAgodaNotificationReason(
+    'FAILED_STALE_PROCESSING_MAX_ATTEMPTS',
+    'stale processing recovered at max attempts',
+  );
 
   // 워커 충돌·타임아웃으로 stale processing 알림을 복구한다.
   // maxAttempts를 초과/도달하는 항목은 failed로 종료 처리하고,
@@ -300,7 +335,7 @@ export async function dispatchAgodaNotifications(params?: {
     SET status = 'failed',
         attempt = ${maxAttempts},
         "updatedAt" = NOW(),
-        "lastError" = COALESCE("lastError", 'stale processing recovered at max attempts')
+        "lastError" = COALESCE("lastError", ${staleProcessingError})
     WHERE channel = 'email'
       AND status = 'processing'
       AND "updatedAt" <= ${staleThreshold}
@@ -353,7 +388,18 @@ export async function dispatchAgodaNotifications(params?: {
   const claimedIds = [...claimedQueuedIds, ...claimedFailedIds];
 
   if (claimedIds.length === 0) {
-    return { now: now.toISOString(), picked: 0, sent: 0, failed: 0, suppressed: 0, skippedNotDue };
+    const result = {
+      now: now.toISOString(),
+      picked: 0,
+      sent: 0,
+      failed: 0,
+      suppressed: 0,
+      skippedNotDue,
+      failedReasonCounts: {},
+      suppressedReasonCounts: {},
+    };
+    logInfo('agoda_notification_dispatch_summary', { requestId, ...result });
+    return result;
   }
 
   const candidates = await prisma.agodaNotification.findMany({
@@ -364,18 +410,54 @@ export async function dispatchAgodaNotifications(params?: {
   const outcomes: NotificationOutcome[] = [];
   const baseUrl = (process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL)?.trim() || 'http://localhost:3000';
   if (!process.env.NEXTAUTH_URL?.trim() && process.env.NODE_ENV === 'production') {
-    console.error('[agoda-notification] NEXTAUTH_URL이 설정되지 않았습니다. 이메일 링크가 localhost를 가리킵니다.');
+    logError('agoda_notification_nextauth_url_missing', {
+      requestId,
+      baseUrl,
+      message: 'NEXTAUTH_URL이 설정되지 않았습니다. 이메일 링크가 localhost를 가리킵니다.',
+    });
   }
 
   for (const notification of candidates) {
     if (!notification.accommodation || !notification.accommodation.isActive) {
-      outcomes.push({ id: notification.id, kind: 'suppressed', reason: 'accommodation is missing or inactive' });
+      const reasonMessage = 'accommodation is missing or inactive';
+      logDispatchOutcome({
+        requestId,
+        notificationId: notification.id.toString(),
+        accommodationId: notification.accommodation?.id ?? null,
+        alertEventId: notification.alertEvent.id.toString(),
+        kind: 'suppressed',
+        reasonCode: 'SUPPRESSED_ACCOMMODATION_INACTIVE',
+        reasonMessage,
+        attempt: notification.attempt,
+      });
+      outcomes.push({
+        id: notification.id,
+        kind: 'suppressed',
+        reasonCode: 'SUPPRESSED_ACCOMMODATION_INACTIVE',
+        reasonMessage,
+      });
       continue;
     }
 
     const recipientEmail = notification.accommodation.user?.email?.trim().toLowerCase();
     if (!recipientEmail) {
-      outcomes.push({ id: notification.id, kind: 'suppressed', reason: 'user email is missing' });
+      const reasonMessage = 'user email is missing';
+      logDispatchOutcome({
+        requestId,
+        notificationId: notification.id.toString(),
+        accommodationId: notification.accommodation.id,
+        alertEventId: notification.alertEvent.id.toString(),
+        kind: 'suppressed',
+        reasonCode: 'SUPPRESSED_MISSING_RECIPIENT_EMAIL',
+        reasonMessage,
+        attempt: notification.attempt,
+      });
+      outcomes.push({
+        id: notification.id,
+        kind: 'suppressed',
+        reasonCode: 'SUPPRESSED_MISSING_RECIPIENT_EMAIL',
+        reasonMessage,
+      });
       continue;
     }
 
@@ -385,7 +467,23 @@ export async function dispatchAgodaNotifications(params?: {
       notification.accommodation.id,
     );
     if (!consented) {
-      outcomes.push({ id: notification.id, kind: 'suppressed', reason: 'no active consent (opt_in required)' });
+      const reasonMessage = 'no active consent (opt_in required)';
+      logDispatchOutcome({
+        requestId,
+        notificationId: notification.id.toString(),
+        accommodationId: notification.accommodation.id,
+        alertEventId: notification.alertEvent.id.toString(),
+        kind: 'suppressed',
+        reasonCode: 'SUPPRESSED_MISSING_OPT_IN_CONSENT',
+        reasonMessage,
+        attempt: notification.attempt,
+      });
+      outcomes.push({
+        id: notification.id,
+        kind: 'suppressed',
+        reasonCode: 'SUPPRESSED_MISSING_OPT_IN_CONSENT',
+        reasonMessage,
+      });
       continue;
     }
 
@@ -461,19 +559,37 @@ export async function dispatchAgodaNotifications(params?: {
           afterPrice: meta.afterPrice ?? null,
           totalInclusive: meta.totalInclusive ?? null,
           baseUrl,
+          requestId,
         }).catch((err: unknown) => {
-          console.error('[kakao] notification failed:', err instanceof Error ? err.message : String(err));
+          logError('agoda_notification_kakao_failed', {
+            requestId,
+            accommodationId: acc.id,
+            userId: acc.userId,
+            alertEventId: notification.alertEvent.id.toString(),
+            error: err,
+          });
         });
       }
 
       outcomes.push({ id: notification.id, kind: 'sent' });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const rawReasonMessage = (error instanceof Error ? error.message : String(error)).slice(0, 1000);
+      logDispatchOutcome({
+        requestId,
+        notificationId: notification.id.toString(),
+        accommodationId: notification.accommodation.id,
+        alertEventId: notification.alertEvent.id.toString(),
+        kind: 'failed',
+        reasonCode: 'FAILED_EMAIL_SEND',
+        reasonMessage: 'email provider error',
+        attempt: notification.attempt + 1,
+      });
       outcomes.push({
         id: notification.id,
         kind: 'failed',
         nextAttempt: notification.attempt + 1,
-        lastError: message.slice(0, 1000),
+        reasonCode: 'FAILED_EMAIL_SEND',
+        reasonMessage: rawReasonMessage,
       });
     }
   }
@@ -498,7 +614,10 @@ export async function dispatchAgodaNotifications(params?: {
           suppressedList.map((o) =>
             prisma.agodaNotification.update({
               where: { id: o.id },
-              data: { status: 'suppressed', lastError: o.reason },
+              data: {
+                status: 'suppressed',
+                lastError: encodeAgodaNotificationReason(o.reasonCode, o.reasonMessage),
+              },
             }),
           ),
         )
@@ -508,19 +627,50 @@ export async function dispatchAgodaNotifications(params?: {
           failedList.map((o) =>
             prisma.agodaNotification.update({
               where: { id: o.id },
-              data: { status: 'failed', attempt: o.nextAttempt, lastError: o.lastError },
+              data: {
+                status: 'failed',
+                attempt: o.nextAttempt,
+                lastError: encodeAgodaNotificationReason(o.reasonCode, o.reasonMessage),
+              },
             }),
           ),
         )
       : Promise.resolve(),
   ]);
 
-  return {
+  const failedReasonCounts = buildReasonCounts(outcomes, 'failed');
+  const suppressedReasonCounts = buildReasonCounts(outcomes, 'suppressed');
+
+  const result = {
     now: now.toISOString(),
     picked: claimedIds.length,
     sent: sentIds.length,
     failed: failedList.length,
     suppressed: suppressedList.length,
     skippedNotDue,
+    failedReasonCounts,
+    suppressedReasonCounts,
   };
+
+  logInfo('agoda_notification_dispatch_summary', {
+    requestId,
+    ...result,
+    reasonBreakdown: buildAgodaNotificationReasonBreakdown(
+      [
+        ...Object.entries(failedReasonCounts).map(([code, count]) => ({
+          status: 'failed',
+          lastError: code,
+          count,
+        })),
+        ...Object.entries(suppressedReasonCounts).map(([code, count]) => ({
+          status: 'suppressed',
+          lastError: code,
+          count,
+        })),
+      ],
+      5,
+    ),
+  });
+
+  return result;
 }

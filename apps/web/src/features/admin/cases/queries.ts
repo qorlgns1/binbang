@@ -2,6 +2,7 @@
 
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
+import { parseApiError } from '@/lib/apiError';
 import { adminKeys } from '@/lib/queryKeys';
 
 // ============================================================================
@@ -133,13 +134,13 @@ async function fetchCases(filters: CasesFilterParams): Promise<CasesResponse> {
   if (filters.status) params.set('status', filters.status);
 
   const res = await fetch(`/api/admin/cases?${params.toString()}`);
-  if (!res.ok) throw new Error('Failed to fetch cases');
+  if (!res.ok) throw await parseApiError(res, '케이스 목록을 불러오지 못했습니다');
   return res.json();
 }
 
 async function fetchCaseDetail(id: string): Promise<CaseDetail> {
   const res = await fetch(`/api/admin/cases/${id}`);
-  if (!res.ok) throw new Error('케이스 정보를 불러올 수 없습니다');
+  if (!res.ok) throw await parseApiError(res, '케이스 정보를 불러올 수 없습니다');
   const data = await res.json();
   return data.case;
 }
@@ -152,9 +153,7 @@ async function fetchCasePricePreview(caseId: string, input: PricingInputSnapshot
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    const message = err?.error?.message || '견적 미리보기에 실패했습니다';
-    throw new Error(message);
+    throw await parseApiError(res, '견적 미리보기에 실패했습니다');
   }
 
   const data = await res.json();
@@ -164,9 +163,7 @@ async function fetchCasePricePreview(caseId: string, input: PricingInputSnapshot
 async function fetchCasePriceQuotes(caseId: string): Promise<CasePriceQuoteHistoryItem[]> {
   const res = await fetch(`/api/admin/cases/${caseId}/pricing/quotes`);
   if (!res.ok) {
-    const err = await res.json();
-    const message = err?.error?.message || '견적 이력을 불러오지 못했습니다';
-    throw new Error(message);
+    throw await parseApiError(res, '견적 이력을 불러오지 못했습니다');
   }
   const data = await res.json();
   return data.data.quotes;

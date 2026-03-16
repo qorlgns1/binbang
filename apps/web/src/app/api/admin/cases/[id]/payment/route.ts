@@ -9,6 +9,7 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
 } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { confirmPayment } from '@/services/cases.service';
 
 const paymentSchema = z.object({
@@ -16,23 +17,24 @@ const paymentSchema = z.object({
 });
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_case_payment');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return badRequestResponse('Invalid JSON');
+      return badRequestResponse('Invalid JSON', undefined, requestId);
     }
     const parsed = paymentSchema.safeParse(body);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const result = await confirmPayment({
@@ -43,6 +45,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ case: result });
   } catch (error) {
-    return handleServiceError(error, 'Admin payment confirmation error');
+    return handleServiceError(error, 'Admin payment confirmation error', requestId);
   }
 }

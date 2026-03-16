@@ -1,0 +1,82 @@
+type LogLevel = 'info' | 'warn' | 'error';
+
+type LogContext = Record<string, unknown>;
+
+function createEntropy(): string {
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+}
+
+export function createRequestId(prefix = 'req'): string {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:.TZ]/g, '')
+    .slice(0, 17);
+  return `${prefix}_${timestamp}_${createEntropy()}`;
+}
+
+export function logInfo(event: string, context: LogContext = {}): void {
+  writeLog('info', event, context);
+}
+
+export function logWarn(event: string, context: LogContext = {}): void {
+  writeLog('warn', event, context);
+}
+
+export function logError(event: string, context: LogContext = {}): void {
+  writeLog('error', event, context);
+}
+
+function writeLog(level: LogLevel, event: string, context: LogContext): void {
+  const payload = {
+    ts: new Date().toISOString(),
+    app: 'binbang-web',
+    level,
+    event,
+    context: normalizeRecord(context),
+  };
+  const serialized = JSON.stringify(payload);
+
+  if (level === 'error') {
+    console.error(serialized);
+    return;
+  }
+  if (level === 'warn') {
+    console.warn(serialized);
+    return;
+  }
+  console.info(serialized);
+}
+
+function normalizeRecord(value: LogContext): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeValue(entry)]));
+}
+
+function normalizeValue(value: unknown, seen = new Set<object>()): unknown {
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack ?? null,
+    };
+  }
+
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeValue(item, seen));
+  }
+
+  if (value && typeof value === 'object') {
+    if (seen.has(value)) {
+      return '[Circular]';
+    }
+    seen.add(value);
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, normalizeValue(entry, seen)]),
+    );
+  }
+
+  return value;
+}

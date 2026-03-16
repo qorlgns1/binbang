@@ -3,16 +3,18 @@ import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, notFoundResponse, unauthorizedResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { checkUserExists, getUserActivity } from '@/services/admin/users.service';
 import type { ActivityType } from '@/types/activity';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_user_activity');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id: userId } = await params;
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor') ?? undefined;
@@ -21,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const userExists = await checkUserExists(userId);
     if (!userExists) {
-      return notFoundResponse('사용자를 찾을 수 없습니다');
+      return notFoundResponse('사용자를 찾을 수 없습니다', requestId);
     }
 
     const response = await getUserActivity({
@@ -33,6 +35,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Admin user activity fetch error');
+    return handleServiceError(error, 'Admin user activity fetch error', requestId);
   }
 }
