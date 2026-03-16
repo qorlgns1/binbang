@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLinkAccommodationMutation } from '@/features/admin/cases';
-import { getUserMessage } from '@/lib/apiError';
+import { getAdminErrorMessage } from '@/lib/apiError';
 
 interface Props {
   caseId: string;
@@ -87,7 +87,7 @@ export function AccommodationLinkButton({ caseId, currentStatus, accommodationId
           />
         </div>
 
-        {linkMutation.isError && <p className='text-sm text-destructive'>{getUserMessage(linkMutation.error)}</p>}
+        {linkMutation.isError && <p className='text-sm text-destructive'>{getAdminErrorMessage(linkMutation.error)}</p>}
 
         <DialogFooter>
           <Button variant='outline' onClick={() => setOpen(false)}>

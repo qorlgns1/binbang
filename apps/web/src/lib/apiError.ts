@@ -22,6 +22,20 @@ export function getUserMessage(error: Error): string {
   return '오류가 발생했습니다';
 }
 
+export function getRequestId(error: Error): string | null {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  return typeof error.requestId === 'string' && error.requestId.length > 0 ? error.requestId : null;
+}
+
+export function getAdminErrorMessage(error: Error): string {
+  const message = getUserMessage(error);
+  const requestId = getRequestId(error);
+  return requestId ? `${message} (요청 ID: ${requestId})` : message;
+}
+
 function isZodIssueLike(value: unknown): value is ZodIssue {
   if (typeof value !== 'object' || value === null) return false;
 

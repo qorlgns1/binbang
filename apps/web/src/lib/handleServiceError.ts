@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { AppError, ValidationError } from '@workspace/shared/errors';
 import type { ErrorResponseBody } from '@workspace/shared/errors';
 
+import { logError } from './logger';
+
 export type { ErrorResponseBody };
 
 /**
@@ -31,69 +33,93 @@ const SAFE_CLIENT_MESSAGES: Record<string, string> = {
  * - `ValidationError` → includes `.details` in the body.
  * - Unknown errors → 500 with a generic message (the real error is logged).
  */
-export function handleServiceError(error: unknown, logPrefix?: string): NextResponse<ErrorResponseBody> {
+export function handleServiceError(
+  error: unknown,
+  logPrefix?: string,
+  requestId?: string,
+): NextResponse<ErrorResponseBody> {
   if (error instanceof AppError) {
     const prefix = logPrefix ?? 'AppError';
-    console.error(`${prefix} [${error.code}]:`, error.message);
+    logError('service_app_error', {
+      requestId: requestId ?? null,
+      prefix,
+      errorCode: error.code,
+      errorStatusCode: error.statusCode,
+      error,
+    });
 
-    const body: ErrorResponseBody = {
-      error: {
-        code: error.code,
-        message: SAFE_CLIENT_MESSAGES[error.code] ?? 'An error occurred',
-      },
-    };
-
-    if (error instanceof ValidationError) {
-      body.error.details = error.details;
-    }
-
-    return NextResponse.json(body, { status: error.statusCode });
+    return NextResponse.json(
+      createErrorBody(
+        error.code,
+        SAFE_CLIENT_MESSAGES[error.code] ?? 'An error occurred',
+        error instanceof ValidationError ? error.details : undefined,
+        requestId,
+      ),
+      { status: error.statusCode },
+    );
   }
 
   const prefix = logPrefix ?? 'Unhandled service error';
-  console.error(`${prefix}:`, error);
+  logError('service_unhandled_error', {
+    requestId: requestId ?? null,
+    prefix,
+    error,
+  });
 
-  return NextResponse.json(
-    {
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Internal server error',
-      },
-    },
-    { status: 500 },
-  );
+  return NextResponse.json(createErrorBody('INTERNAL_SERVER_ERROR', 'Internal server error', undefined, requestId), {
+    status: 500,
+  });
 }
 
-export function unauthorizedResponse(message = 'Unauthorized'): NextResponse<ErrorResponseBody> {
-  return NextResponse.json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+export function unauthorizedResponse(message = 'Unauthorized', requestId?: string): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(createErrorBody('UNAUTHORIZED', message, undefined, requestId), { status: 401 });
 }
 
-export function badRequestResponse(message: string, details?: unknown): NextResponse<ErrorResponseBody> {
-  const body: ErrorResponseBody = { error: { code: 'BAD_REQUEST', message } };
-  if (details !== undefined) body.error.details = details;
-  return NextResponse.json(body, { status: 400 });
+export function badRequestResponse(
+  message: string,
+  details?: unknown,
+  requestId?: string,
+): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(createErrorBody('BAD_REQUEST', message, details, requestId), { status: 400 });
 }
 
-export function validationErrorResponse(details: unknown): NextResponse<ErrorResponseBody> {
-  return NextResponse.json(
-    { error: { code: 'VALIDATION_ERROR', message: 'Validation failed', details } },
-    { status: 400 },
-  );
+export function validationErrorResponse(details: unknown, requestId?: string): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(createErrorBody('VALIDATION_ERROR', 'Validation failed', details, requestId), {
+    status: 400,
+  });
 }
 
-export function forbiddenResponse(message = 'Forbidden'): NextResponse<ErrorResponseBody> {
-  return NextResponse.json({ error: { code: 'FORBIDDEN', message } }, { status: 403 });
+export function forbiddenResponse(message = 'Forbidden', requestId?: string): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(createErrorBody('FORBIDDEN', message, undefined, requestId), { status: 403 });
 }
 
-export function notFoundResponse(message = 'Not found'): NextResponse<ErrorResponseBody> {
-  return NextResponse.json({ error: { code: 'NOT_FOUND', message } }, { status: 404 });
+export function notFoundResponse(message = 'Not found', requestId?: string): NextResponse<ErrorResponseBody> {
+  return NextResponse.json(createErrorBody('NOT_FOUND', message, undefined, requestId), { status: 404 });
 }
 
 export function serviceUnavailableResponse(
   message = 'Service unavailable',
   details?: unknown,
+  requestId?: string,
 ): NextResponse<ErrorResponseBody> {
-  const body: ErrorResponseBody = { error: { code: 'SERVICE_UNAVAILABLE', message } };
-  if (details !== undefined) body.error.details = details;
-  return NextResponse.json(body, { status: 503 });
+  return NextResponse.json(createErrorBody('SERVICE_UNAVAILABLE', message, details, requestId), { status: 503 });
+}
+
+function createErrorBody(code: string, message: string, details?: unknown, requestId?: string): ErrorResponseBody {
+  const body: ErrorResponseBody = {
+    error: {
+      code,
+      message,
+    },
+  };
+
+  if (details !== undefined) {
+    body.error.details = details;
+  }
+
+  if (requestId) {
+    body.error.requestId = requestId;
+  }
+
+  return body;
 }

@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function UserDetailView({ userId }: Props) {
-  const { data: user, isLoading, isError } = useUserDetail(userId);
+  const { data: user, error, isLoading, isError } = useUserDetail(userId);
 
   return (
     <div className='space-y-6'>
@@ -29,7 +29,7 @@ export function UserDetailView({ userId }: Props) {
       </div>
 
       <div className='grid gap-6 lg:grid-cols-[1fr_2fr]'>
-        <UserDetailCard user={user ?? null} isLoading={isLoading} isError={isError} />
+        <UserDetailCard user={user ?? null} error={error ?? null} isLoading={isLoading} isError={isError} />
         <UserActivityTimeline userId={userId} />
       </div>
     </div>

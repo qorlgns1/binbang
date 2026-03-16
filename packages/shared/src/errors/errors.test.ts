@@ -117,6 +117,7 @@ describe('parseApiError', () => {
           code: 'VALIDATION_ERROR',
           message: 'Validation failed',
           details: [{ path: ['name'], message: 'Required' }],
+          requestId: 'req_123',
         },
       }),
       { status: 400 },
@@ -129,6 +130,7 @@ describe('parseApiError', () => {
     expect(error.message).toBe('Validation failed');
     expect(error.status).toBe(400);
     expect(error.details).toEqual([{ path: ['name'], message: 'Required' }]);
+    expect(error.requestId).toBe('req_123');
   });
 
   it('falls back to UNKNOWN when response body is not parseable json', async () => {

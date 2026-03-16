@@ -8,6 +8,7 @@ import {
 import { buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
 import { getEnv } from '@/lib/env';
 import { type KakaoMemoTemplate, sendKakaoMemo } from '@/lib/kakao/sendKakaoMemo';
+import { logError, logInfo, logWarn } from '@/lib/logger';
 
 // ============================================================================
 // 토큰 관리
@@ -19,7 +20,18 @@ const REQUEST_TIMEOUT_MS = 10_000;
 /** 동시 refresh 요청을 직렬화하는 in-flight 맵 (userId → Promise) */
 const refreshInFlight = new Map<string, Promise<string | null>>();
 
-async function refreshKakaoAccessToken(userId: string, refreshToken: string): Promise<string | null> {
+interface KakaoNotificationLogContext {
+  requestId?: string | null;
+  userId: string;
+  accommodationId?: string | null;
+  alertType?: string | null;
+}
+
+async function refreshKakaoAccessToken(
+  userId: string,
+  refreshToken: string,
+  logContext?: Omit<KakaoNotificationLogContext, 'userId'>,
+): Promise<string | null> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -38,7 +50,13 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error(`[kakao] token refresh failed: HTTP ${response.status} for userId=${userId}`);
+      logWarn('agoda_kakao_token_refresh_failed', {
+        requestId: logContext?.requestId ?? null,
+        userId,
+        accommodationId: logContext?.accommodationId ?? null,
+        alertType: logContext?.alertType ?? null,
+        status: response.status,
+      });
       return null;
     }
 
@@ -60,10 +78,13 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
 
     return data.access_token;
   } catch (error) {
-    console.error(
-      `[kakao] token refresh error for userId=${userId}:`,
-      error instanceof Error ? error.message : String(error),
-    );
+    logError('agoda_kakao_token_refresh_error', {
+      requestId: logContext?.requestId ?? null,
+      userId,
+      accommodationId: logContext?.accommodationId ?? null,
+      alertType: logContext?.alertType ?? null,
+      error,
+    });
     return null;
   }
 }
@@ -75,7 +96,10 @@ async function refreshKakaoAccessToken(userId: string, refreshToken: string): Pr
  * 동일 userId에 대한 동시 refresh 요청은 in-flight 맵으로 직렬화되어
  * 하나의 refresh만 Kakao API에 전달된다. 두 번째 호출자는 첫 번째 결과를 공유한다.
  */
-export async function getValidKakaoAccessToken(userId: string): Promise<KakaoNotificationContext | null> {
+export async function getValidKakaoAccessToken(
+  userId: string,
+  logContext?: Omit<KakaoNotificationLogContext, 'userId'>,
+): Promise<KakaoNotificationContext | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -88,6 +112,12 @@ export async function getValidKakaoAccessToken(userId: string): Promise<KakaoNot
   });
 
   if (!user?.kakaoAccessToken) {
+    logWarn('agoda_kakao_token_missing', {
+      requestId: logContext?.requestId ?? null,
+      userId,
+      accommodationId: logContext?.accommodationId ?? null,
+      alertType: logContext?.alertType ?? null,
+    });
     return null;
   }
 
@@ -111,7 +141,7 @@ export async function getValidKakaoAccessToken(userId: string): Promise<KakaoNot
       return accessToken ? { accessToken, senderDisplayName: sender.displayName } : null;
     }
 
-    const promise = refreshKakaoAccessToken(userId, user.kakaoRefreshToken as string).finally(() => {
+    const promise = refreshKakaoAccessToken(userId, user.kakaoRefreshToken as string, logContext).finally(() => {
       refreshInFlight.delete(userId);
     });
     refreshInFlight.set(userId, promise);
@@ -205,6 +235,7 @@ export interface SendBinbangKakaoParams {
   afterPrice?: number | null;
   totalInclusive?: number | null;
   baseUrl: string;
+  requestId?: string | null;
 }
 
 /**
@@ -214,7 +245,11 @@ export interface SendBinbangKakaoParams {
  * - 발송 실패 시 false 반환, 예외 미전파
  */
 export async function sendBinbangKakaoNotification(userId: string, params: SendBinbangKakaoParams): Promise<boolean> {
-  const context = await getValidKakaoAccessToken(userId);
+  const context = await getValidKakaoAccessToken(userId, {
+    requestId: params.requestId ?? null,
+    accommodationId: params.accommodationId,
+    alertType: params.alertType,
+  });
   if (!context) {
     return false;
   }
@@ -243,8 +278,21 @@ export async function sendBinbangKakaoNotification(userId: string, params: SendB
 
   const sent = await sendKakaoMemo(template, context.accessToken);
   if (!sent) {
-    console.error(`[kakao] agoda notification send failed: userId=${userId}`);
+    logWarn('agoda_kakao_notification_send_failed', {
+      requestId: params.requestId ?? null,
+      userId,
+      accommodationId: params.accommodationId,
+      alertType: params.alertType,
+    });
+    return false;
   }
 
-  return sent;
+  logInfo('agoda_kakao_notification_sent', {
+    requestId: params.requestId ?? null,
+    userId,
+    accommodationId: params.accommodationId,
+    alertType: params.alertType,
+  });
+
+  return true;
 }

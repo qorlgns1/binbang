@@ -17,8 +17,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminPlans } from '@/hooks/useAdminPlans';
 import { useUpdateUserPlan } from '@/hooks/useUpdateUserPlan';
+import { getAdminErrorMessage } from '@/lib/apiError';
 import type { AdminUserInfo } from '@/types/admin';
-import { getUserMessage } from '@/lib/apiError';
 import { cn } from '@/lib/utils';
 
 interface PlanChangeDialogProps {
@@ -123,7 +123,7 @@ export function PlanChangeDialog({ user, onClose }: PlanChangeDialogProps) {
 
         {mutation.isError && (
           <p className='text-sm text-destructive'>
-            {mutation.error ? getUserMessage(mutation.error) : '플랜 변경에 실패했습니다'}
+            {mutation.error ? getAdminErrorMessage(mutation.error) : '플랜 변경에 실패했습니다'}
           </p>
         )}
 

@@ -27,6 +27,10 @@ function formatNotificationStatus(value: string | null): string {
   return value;
 }
 
+function formatReasonCode(value: string | null): string {
+  return value ?? '-';
+}
+
 function formatStatusBadgeVariant(level: AdminOpsDiagnosticLevel): 'default' | 'secondary' | 'destructive' | 'outline' {
   if (level === 'error') return 'destructive';
   if (level === 'warn') return 'secondary';
@@ -178,6 +182,33 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
                 </div>
               </div>
 
+              <div className='grid gap-3 text-sm md:grid-cols-2'>
+                <div className='rounded-md border p-3'>
+                  <p className='text-xs text-muted-foreground'>누적 실패 사유</p>
+                  {diagnostics.notificationReasons.failed.length === 0 ? (
+                    <p className='text-xs text-muted-foreground'>failed 사유가 없습니다.</p>
+                  ) : (
+                    diagnostics.notificationReasons.failed.map((item) => (
+                      <p key={`diag-failed-${item.code}`}>
+                        {item.label}: <span className='font-semibold'>{item.count.toLocaleString()}</span>
+                      </p>
+                    ))
+                  )}
+                </div>
+                <div className='rounded-md border p-3'>
+                  <p className='text-xs text-muted-foreground'>누적 억제 사유</p>
+                  {diagnostics.notificationReasons.suppressed.length === 0 ? (
+                    <p className='text-xs text-muted-foreground'>suppressed 사유가 없습니다.</p>
+                  ) : (
+                    diagnostics.notificationReasons.suppressed.map((item) => (
+                      <p key={`diag-suppressed-${item.code}`}>
+                        {item.label}: <span className='font-semibold'>{item.count.toLocaleString()}</span>
+                      </p>
+                    ))
+                  )}
+                </div>
+              </div>
+
               <p className='rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground'>
                 Vacancy 판단 메모: {diagnostics.vacancyContext.note}
               </p>
@@ -230,6 +261,7 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
                         <TableHead>이벤트</TableHead>
                         <TableHead>offerKey</TableHead>
                         <TableHead>알림 상태</TableHead>
+                        <TableHead>사유 코드</TableHead>
                         <TableHead>알림 오류</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -244,6 +276,9 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
                           </TableCell>
                           <TableCell className='text-xs font-mono'>{item.offerKey ?? '-'}</TableCell>
                           <TableCell className='text-xs'>{item.latestNotificationStatus ?? '-'}</TableCell>
+                          <TableCell className='font-mono text-[11px]'>
+                            {formatReasonCode(item.latestNotificationReasonCode)}
+                          </TableCell>
                           <TableCell className='text-xs text-muted-foreground'>
                             {truncateText(item.latestNotificationError)}
                           </TableCell>
@@ -265,6 +300,7 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
                         <TableHead>시각</TableHead>
                         <TableHead>상태</TableHead>
                         <TableHead>attempt</TableHead>
+                        <TableHead>사유 코드</TableHead>
                         <TableHead>오류</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -276,8 +312,11 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
                           </TableCell>
                           <TableCell className='text-xs'>{item.status}</TableCell>
                           <TableCell className='text-xs'>{item.attempt}</TableCell>
+                          <TableCell className='font-mono text-[11px]'>
+                            {formatReasonCode(item.lastErrorCode)}
+                          </TableCell>
                           <TableCell className='text-xs text-muted-foreground'>
-                            {truncateText(item.lastError)}
+                            {truncateText(item.lastErrorMessage ?? item.lastError)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -320,7 +359,7 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
 
       <SchedulerHealthCard jobs={summary.schedulerHealth} />
 
-      <section className='grid gap-4 md:grid-cols-3'>
+      <section className='grid gap-4 md:grid-cols-4'>
         <Card>
           <CardHeader className='pb-3'>
             <CardTitle className='text-base'>알림 등록 수</CardTitle>
@@ -371,6 +410,32 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
             <p>
               attempted: <span className='font-semibold'>{summary.notifications.attempted.toLocaleString()}</span>
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className='pb-3'>
+            <CardTitle className='text-base'>주요 실패/억제 사유</CardTitle>
+            <CardDescription>최근 {summary.range.days}일 상위 3개</CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-2 text-sm'>
+            {summary.notifications.reasonBreakdown.failed.length === 0 &&
+            summary.notifications.reasonBreakdown.suppressed.length === 0 ? (
+              <p className='text-muted-foreground'>집계된 사유가 없습니다.</p>
+            ) : (
+              <>
+                {summary.notifications.reasonBreakdown.failed.map((item) => (
+                  <p key={`failed-${item.code}`}>
+                    fail · {item.label}: <span className='font-semibold'>{item.count.toLocaleString()}</span>
+                  </p>
+                ))}
+                {summary.notifications.reasonBreakdown.suppressed.map((item) => (
+                  <p key={`suppressed-${item.code}`}>
+                    suppress · {item.label}: <span className='font-semibold'>{item.count.toLocaleString()}</span>
+                  </p>
+                ))}
+              </>
+            )}
           </CardContent>
         </Card>
       </section>

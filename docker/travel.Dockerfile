@@ -22,7 +22,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/travel/package.json ./apps/travel/
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================
 # Builder

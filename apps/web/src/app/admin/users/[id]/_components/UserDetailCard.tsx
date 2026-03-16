@@ -9,10 +9,12 @@ import { CalendarDays, Home, Mail, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getAdminErrorMessage } from '@/lib/apiError';
 import type { AdminUserInfo } from '@/types/admin';
 
 interface Props {
   user: AdminUserInfo | null;
+  error: Error | null;
   isLoading: boolean;
   isError: boolean;
 }
@@ -56,7 +58,7 @@ function CardSkeleton() {
   );
 }
 
-export function UserDetailCard({ user, isLoading, isError }: Props) {
+export function UserDetailCard({ user, error, isLoading, isError }: Props) {
   if (isLoading) {
     return <CardSkeleton />;
   }
@@ -65,7 +67,9 @@ export function UserDetailCard({ user, isLoading, isError }: Props) {
     return (
       <Card>
         <CardContent className='pt-6'>
-          <div className='text-center text-muted-foreground py-8'>사용자 정보를 불러올 수 없습니다.</div>
+          <div className='text-center text-muted-foreground py-8'>
+            {error ? getAdminErrorMessage(error) : '사용자 정보를 불러올 수 없습니다.'}
+          </div>
         </CardContent>
       </Card>
     );

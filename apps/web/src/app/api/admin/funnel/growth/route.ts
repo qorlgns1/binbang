@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { handleServiceError } from '@/lib/handleServiceError';
+import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import { createRequestId, logInfo } from '@/lib/logger';
 import { getAdminFunnelGrowth } from '@/services/admin/funnel-growth.service';
 import type { FunnelRangePreset } from '@/services/admin/funnel.service';
 
@@ -45,48 +46,22 @@ const paramsSchema = z
     }
   });
 
-type ErrorCode = 'BAD_REQUEST' | 'UNAUTHORIZED' | 'INTERNAL_SERVER_ERROR';
-
-function makeRequestId(): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:.TZ]/g, '')
-    .slice(0, 14);
-  const entropy = Math.floor(Math.random() * 1000)
-    .toString()
-    .padStart(3, '0');
-  return `req_${timestamp}_${entropy}`;
-}
-
-function errorResponse(status: number, code: ErrorCode, message: string, requestId: string): NextResponse {
-  return NextResponse.json(
-    {
-      error: {
-        code,
-        message,
-        requestId,
-      },
-    },
-    { status },
-  );
-}
-
 export async function GET(request: NextRequest): Promise<Response> {
-  const requestId = makeRequestId();
+  const requestId = createRequestId('admin_funnel_growth');
   const startedAt = Date.now();
-
-  const session = await requireAdmin();
-  if (!session) {
-    return errorResponse(401, 'UNAUTHORIZED', 'Unauthorized', requestId);
-  }
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const parsed = paramsSchema.safeParse(params);
   if (!parsed.success) {
-    return errorResponse(400, 'BAD_REQUEST', 'Invalid request payload', requestId);
+    return badRequestResponse('Invalid request payload', undefined, requestId);
   }
 
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const range: FunnelRangePreset | undefined = parsed.data.range;
     const data = await getAdminFunnelGrowth({
       range,
@@ -95,7 +70,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
     const latencyMs = Date.now() - startedAt;
 
-    console.info('[admin/funnel/growth] success', {
+    logInfo('admin_funnel_growth_route_success', {
       requestId,
       range: range ?? '30d',
       from: parsed.data.from ?? null,
@@ -108,6 +83,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       data,
     });
   } catch (error) {
-    return handleServiceError(error, 'Funnel growth');
+    return handleServiceError(error, 'Funnel growth', requestId);
   }
 }

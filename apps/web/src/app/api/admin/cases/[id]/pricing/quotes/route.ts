@@ -3,17 +3,19 @@ import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
 import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { savePricingQuoteSchema } from '@/lib/schemas/pricingQuote';
 import { getCasePriceQuoteHistory, saveCasePriceQuote } from '@/services/pricing.service';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_case_pricing_quotes');
   try {
+    const session = await requireAdmin();
+
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const quotes = await getCasePriceQuoteHistory(id, 50);
 
@@ -24,30 +26,32 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       },
     });
   } catch (error) {
-    return handleServiceError(error, '[admin/cases/:id/pricing/quotes] get');
+    return handleServiceError(error, '[admin/cases/:id/pricing/quotes] get', requestId);
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-
-  if (!session) {
-    return unauthorizedResponse();
-  }
+  const requestId = createRequestId('admin_case_pricing_quote_create');
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return badRequestResponse('Invalid request payload');
+    return badRequestResponse('Invalid request payload', undefined, requestId);
   }
 
   const parsed = savePricingQuoteSchema.safeParse(body);
   if (!parsed.success) {
-    return badRequestResponse('Invalid request payload');
+    return badRequestResponse('Invalid request payload', undefined, requestId);
   }
 
   try {
+    const session = await requireAdmin();
+
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const data = await saveCasePriceQuote({
       caseId: id,
@@ -67,6 +71,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       data,
     });
   } catch (error) {
-    return handleServiceError(error, '[admin/cases/:id/pricing/quotes]');
+    return handleServiceError(error, '[admin/cases/:id/pricing/quotes]', requestId);
   }
 }

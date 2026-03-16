@@ -10,6 +10,7 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
 } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { updateUserRoles } from '@/services/admin/users.service';
 
 const rolesUpdateSchema = z.object({
@@ -17,23 +18,24 @@ const rolesUpdateSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_user_roles');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
 
     if (session.user.id === id) {
-      return badRequestResponse('자기 자신의 역할은 변경할 수 없습니다');
+      return badRequestResponse('자기 자신의 역할은 변경할 수 없습니다', undefined, requestId);
     }
 
     const body = await request.json();
     const parsed = rolesUpdateSchema.safeParse(body);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const result = await updateUserRoles({
@@ -44,6 +46,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(result);
   } catch (error) {
-    return handleServiceError(error, 'Admin roles update error');
+    return handleServiceError(error, 'Admin roles update error', requestId);
   }
 }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { createCase, getCases } from '@/services/cases.service';
 
 const createCaseSchema = z.object({
@@ -11,12 +12,13 @@ const createCaseSchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_cases');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor') ?? undefined;
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') ?? '20', 10), 1), 100);
@@ -30,22 +32,23 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Admin cases fetch error');
+    return handleServiceError(error, 'Admin cases fetch error', requestId);
   }
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse();
-  }
-
+  const requestId = createRequestId('admin_case_create');
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const body: unknown = await request.json();
     const parsed = createCaseSchema.safeParse(body);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const result = await createCase({
@@ -55,6 +58,6 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     return NextResponse.json({ case: result }, { status: 201 });
   } catch (error) {
-    return handleServiceError(error, 'Admin case creation error');
+    return handleServiceError(error, 'Admin case creation error', requestId);
   }
 }

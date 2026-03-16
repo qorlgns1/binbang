@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useUpdateUserRole } from '@/hooks/useUpdateUserRole';
-import { getUserMessage } from '@/lib/apiError';
+import { getAdminErrorMessage } from '@/lib/apiError';
 import type { AdminUserInfo } from '@/types/admin';
 
 const AVAILABLE_ROLES = ['USER', 'ADMIN'] as const;
@@ -105,7 +105,7 @@ export function RoleChangeDialog({ user, onClose }: RoleChangeDialogProps) {
 
         {mutation.isError && (
           <p className='text-sm text-destructive'>
-            {mutation.error ? getUserMessage(mutation.error) : '역할 변경에 실패했습니다'}
+            {mutation.error ? getAdminErrorMessage(mutation.error) : '역할 변경에 실패했습니다'}
           </p>
         )}
 
