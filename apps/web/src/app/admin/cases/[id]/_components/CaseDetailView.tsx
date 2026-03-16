@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCaseDetailQuery } from '@/features/admin/cases';
+import { getAdminErrorMessage } from '@/lib/apiError';
 
 import { AccommodationLinkButton } from './AccommodationLinkButton';
 import { ClarificationPanel } from './ClarificationPanel';
@@ -25,7 +26,7 @@ interface Props {
 }
 
 export function CaseDetailView({ caseId }: Props) {
-  const { data: caseData, isLoading, isError } = useCaseDetailQuery(caseId);
+  const { data: caseData, error, isLoading, isError } = useCaseDetailQuery(caseId);
 
   if (isLoading) {
     return (
@@ -48,7 +49,7 @@ export function CaseDetailView({ caseId }: Props) {
             케이스 목록
           </Link>
         </Button>
-        <p className='text-destructive'>케이스 정보를 불러올 수 없습니다</p>
+        <p className='text-destructive'>{error ? getAdminErrorMessage(error) : '케이스 정보를 불러올 수 없습니다'}</p>
       </div>
     );
   }

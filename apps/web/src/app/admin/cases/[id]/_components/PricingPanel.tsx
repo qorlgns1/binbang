@@ -16,7 +16,7 @@ import {
   useSaveCasePriceQuoteMutation,
   type PricingInputSnapshot,
 } from '@/features/admin/cases';
-import { getUserMessage } from '@/lib/apiError';
+import { getAdminErrorMessage } from '@/lib/apiError';
 
 import { formatDateTime } from './formatDateTime';
 
@@ -239,7 +239,7 @@ export function PricingPanel({ caseId }: Props) {
           </div>
 
           {previewQuery.isError ? (
-            <p className='text-sm text-destructive'>{getUserMessage(previewQuery.error)}</p>
+            <p className='text-sm text-destructive'>{getAdminErrorMessage(previewQuery.error)}</p>
           ) : null}
 
           {preview ? (
@@ -298,7 +298,7 @@ export function PricingPanel({ caseId }: Props) {
           </Button>
           {formError ? <p className='text-sm text-destructive'>{formError}</p> : null}
           {saveMutation.isError ? (
-            <p className='text-sm text-destructive'>{getUserMessage(saveMutation.error)}</p>
+            <p className='text-sm text-destructive'>{getAdminErrorMessage(saveMutation.error)}</p>
           ) : null}
           {savedAt ? (
             <p className='text-sm text-emerald-700 flex items-center gap-1.5'>
@@ -316,7 +316,7 @@ export function PricingPanel({ caseId }: Props) {
 
           {historyQuery.isLoading ? <p className='text-sm text-muted-foreground'>이력을 불러오는 중...</p> : null}
           {historyQuery.isError ? (
-            <p className='text-sm text-destructive'>{getUserMessage(historyQuery.error)}</p>
+            <p className='text-sm text-destructive'>{getAdminErrorMessage(historyQuery.error)}</p>
           ) : null}
           {historyQuery.data && historyQuery.data.length === 0 ? (
             <p className='text-sm text-muted-foreground'>아직 저장된 견적 이력이 없습니다.</p>

@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { badRequestResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import { createRequestId, logInfo } from '@/lib/logger';
 import { getAdminFunnel, type FunnelRangePreset } from '@/services/admin/funnel.service';
 
 const utcIsoSchema = z
@@ -45,18 +46,19 @@ const paramsSchema = z
   });
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const requestId = createRequestId('admin_funnel');
   const startedAt = Date.now();
 
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const parsed = paramsSchema.safeParse(params);
 
   if (!parsed.success) {
-    return badRequestResponse('Invalid request payload');
+    return badRequestResponse('Invalid request payload', undefined, requestId);
   }
 
   try {
@@ -68,7 +70,8 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
     const latencyMs = Date.now() - startedAt;
 
-    console.info('[admin/funnel] success', {
+    logInfo('admin_funnel_route_success', {
+      requestId,
       range: range ?? '30d',
       from: parsed.data.from ?? null,
       to: parsed.data.to ?? null,
@@ -80,8 +83,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       data,
     });
   } catch (error) {
-    const latencyMs = Date.now() - startedAt;
-    console.error('[admin/funnel] error', { latencyMs, error });
-    return handleServiceError(error, '[admin/funnel]');
+    return handleServiceError(error, '[admin/funnel]', requestId);
   }
 }

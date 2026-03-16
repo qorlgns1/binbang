@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { getMonitoringSummary } from '@/services/admin/monitoring.service';
 
 export async function GET(): Promise<Response> {
+  const requestId = createRequestId('admin_monitoring_summary');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -15,6 +17,6 @@ export async function GET(): Promise<Response> {
 
     return NextResponse.json(summary);
   } catch (error) {
-    return handleServiceError(error, 'Monitoring summary error');
+    return handleServiceError(error, 'Monitoring summary error', requestId);
   }
 }

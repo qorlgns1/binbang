@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { transitionCaseStatus } from '@/services/cases.service';
 
 const transitionSchema = z.object({
@@ -12,9 +13,10 @@ const transitionSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
+  const requestId = createRequestId('admin_case_status');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -23,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const parsed = transitionSchema.safeParse(body);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const result = await transitionCaseStatus({
@@ -35,6 +37,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ case: result });
   } catch (error) {
-    return handleServiceError(error, 'Admin case status transition error');
+    return handleServiceError(error, 'Admin case status transition error', requestId);
   }
 }

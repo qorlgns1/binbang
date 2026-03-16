@@ -15,15 +15,25 @@ describe('handleServiceError', () => {
   it('maps NotFoundError to 404 with safe message and logs actual message', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((): void => {});
 
-    const res = handleServiceError(new NotFoundError('User not found'), 'Test');
+    const res = handleServiceError(new NotFoundError('User not found'), 'Test', 'req_123');
     expect(res.status).toBe(404);
 
     const body = await res.json();
     expect(body.error.code).toBe('NOT_FOUND');
     // 클라이언트에는 안전한 generic 메시지만 반환
     expect(body.error.message).toBe('Not found');
+    expect(body.error.requestId).toBe('req_123');
     // 실제 메시지는 서버 로그에만 기록
-    expect(spy).toHaveBeenCalledWith('Test [NOT_FOUND]:', 'User not found');
+    const payload = JSON.parse(String(spy.mock.calls[0]?.[0] ?? '{}')) as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      level: 'error',
+      event: 'service_app_error',
+      requestId: 'req_123',
+      prefix: 'Test',
+      errorCode: 'NOT_FOUND',
+      errorStatusCode: 404,
+    });
+    expect((payload.error as { message?: string }).message).toBe('User not found');
 
     spy.mockRestore();
   });
@@ -66,14 +76,22 @@ describe('handleServiceError', () => {
   it('maps unknown Error to 500 and logs', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((): void => {});
 
-    const res = handleServiceError(new Error('boom'), 'Test prefix');
+    const res = handleServiceError(new Error('boom'), 'Test prefix', 'req_unknown');
     expect(res.status).toBe(500);
 
     const body = await res.json();
     expect(body.error.code).toBe('INTERNAL_SERVER_ERROR');
     expect(body.error.message).toBe('Internal server error');
+    expect(body.error.requestId).toBe('req_unknown');
 
-    expect(spy).toHaveBeenCalledWith('Test prefix:', expect.any(Error));
+    const payload = JSON.parse(String(spy.mock.calls[0]?.[0] ?? '{}')) as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      level: 'error',
+      event: 'service_unhandled_error',
+      requestId: 'req_unknown',
+      prefix: 'Test prefix',
+    });
+    expect((payload.error as { message?: string }).message).toBe('boom');
     spy.mockRestore();
   });
 
@@ -103,10 +121,11 @@ describe('unauthorizedResponse', () => {
   });
 
   it('returns 401 with custom message', async () => {
-    const res = unauthorizedResponse('Custom unauthorized');
+    const res = unauthorizedResponse('Custom unauthorized', 'req_unauthorized');
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.error.message).toBe('Custom unauthorized');
+    expect(body.error.requestId).toBe('req_unauthorized');
   });
 });
 
@@ -122,21 +141,23 @@ describe('badRequestResponse', () => {
 
   it('includes details when provided', async () => {
     const details = { field: 'name' };
-    const res = badRequestResponse('Bad request', details);
+    const res = badRequestResponse('Bad request', details, 'req_bad_request');
     const body = await res.json();
     expect(body.error.details).toEqual(details);
+    expect(body.error.requestId).toBe('req_bad_request');
   });
 });
 
 describe('validationErrorResponse', () => {
   it('returns 400 with VALIDATION_ERROR code and details', async () => {
     const details = [{ path: 'email', message: 'Required' }];
-    const res = validationErrorResponse(details);
+    const res = validationErrorResponse(details, 'req_validation');
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe('VALIDATION_ERROR');
     expect(body.error.message).toBe('Validation failed');
     expect(body.error.details).toEqual(details);
+    expect(body.error.requestId).toBe('req_validation');
   });
 });
 
@@ -167,8 +188,9 @@ describe('serviceUnavailableResponse', () => {
 
   it('includes details when provided', async () => {
     const details = { source: 'worker', timeoutMs: 7000 };
-    const res = serviceUnavailableResponse('Timeout', details);
+    const res = serviceUnavailableResponse('Timeout', details, 'req_timeout');
     const body = await res.json();
     expect(body.error.details).toEqual(details);
+    expect(body.error.requestId).toBe('req_timeout');
   });
 });

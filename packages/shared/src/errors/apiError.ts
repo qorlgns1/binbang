@@ -9,6 +9,7 @@ export interface ErrorResponseBody {
     code: string;
     message: string;
     details?: unknown;
+    requestId?: string;
   };
 }
 
@@ -25,6 +26,7 @@ export class ApiError extends Error {
     message: string,
     public readonly details?: unknown,
     public readonly status?: number,
+    public readonly requestId?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -43,7 +45,8 @@ export async function parseApiError(res: Response, fallbackMessage: string): Pro
     const code = body?.error?.code ?? 'UNKNOWN';
     const message = body?.error?.message ?? fallbackMessage;
     const details = body?.error?.details;
-    return new ApiError(code, message, details, res.status);
+    const requestId = body?.error?.requestId;
+    return new ApiError(code, message, details, res.status, requestId);
   } catch {
     return new ApiError('UNKNOWN', fallbackMessage, undefined, res.status);
   }

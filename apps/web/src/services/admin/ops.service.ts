@@ -1,6 +1,11 @@
 import { prisma } from '@workspace/db';
 import { startOfUtcDay } from '@workspace/shared/utils/date';
 import { getHeartbeatStatus } from '../health.service';
+import {
+  buildAgodaNotificationReasonBreakdown,
+  parseAgodaNotificationReason,
+  type AgodaNotificationReasonStat,
+} from '@/services/agoda-notification-observability';
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { ensureRedisConnected, getRedisClient } from '@/lib/redis';
 
@@ -47,6 +52,10 @@ export interface AdminOpsSummary {
     suppressed: number;
     attempted: number;
     successRate: number;
+    reasonBreakdown: {
+      failed: AgodaNotificationReasonStat[];
+      suppressed: AgodaNotificationReasonStat[];
+    };
   };
   falsePositiveCandidates: AdminOpsFalsePositiveCandidate[];
   stalled: {
@@ -140,6 +149,7 @@ export interface AdminOpsAccommodationDiagnostics {
     status: string;
     offerKey: string | null;
     latestNotificationStatus: string | null;
+    latestNotificationReasonCode: string | null;
     latestNotificationError: string | null;
   }>;
   recentNotifications: Array<{
@@ -148,8 +158,14 @@ export interface AdminOpsAccommodationDiagnostics {
     updatedAt: string;
     status: string;
     attempt: number;
+    lastErrorCode: string | null;
+    lastErrorMessage: string | null;
     lastError: string | null;
   }>;
+  notificationReasons: {
+    failed: AgodaNotificationReasonStat[];
+    suppressed: AgodaNotificationReasonStat[];
+  };
   checks: AdminOpsDiagnosticCheck[];
 }
 
@@ -255,6 +271,7 @@ export async function getAdminOpsAccommodationDiagnostics(
     priceDropDetectedCount,
     recentEventsRaw,
     notificationStatusGroups,
+    notificationReasonGroups,
     recentNotificationsRaw,
     oldestQueuedNotification,
     consentRows,
@@ -325,6 +342,14 @@ export async function getAdminOpsAccommodationDiagnostics(
     prisma.agodaNotification.groupBy({
       by: ['status'],
       where: { accommodationId },
+      _count: { _all: true },
+    }),
+    prisma.agodaNotification.groupBy({
+      by: ['status', 'lastError'],
+      where: {
+        accommodationId,
+        status: { in: ['failed', 'suppressed'] },
+      },
       _count: { _all: true },
     }),
     prisma.agodaNotification.findMany({
@@ -398,20 +423,36 @@ export async function getAdminOpsAccommodationDiagnostics(
     status: row.status,
     offerKey: row.offerKey,
     latestNotificationStatus: row.notifications[0]?.status ?? null,
+    latestNotificationReasonCode: row.notifications[0]
+      ? parseAgodaNotificationReason(row.notifications[0].lastError, row.notifications[0].status).code
+      : null,
     latestNotificationError: row.notifications[0]?.lastError ?? null,
   }));
 
-  const recentNotifications = recentNotificationsRaw.map((row) => ({
-    id: row.id.toString(),
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    status: row.status,
-    attempt: row.attempt,
-    lastError: row.lastError,
-  }));
+  const recentNotifications = recentNotificationsRaw.map((row) => {
+    const parsedReason = parseAgodaNotificationReason(row.lastError, row.status);
+    return {
+      id: row.id.toString(),
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      status: row.status,
+      attempt: row.attempt,
+      lastErrorCode: parsedReason.code,
+      lastErrorMessage: parsedReason.message,
+      lastError: row.lastError,
+    };
+  });
 
   const pollCounts = countByStatus(pollStatusGroups);
   const notificationCounts = countByStatus(notificationStatusGroups);
+  const reasonBreakdown = buildAgodaNotificationReasonBreakdown(
+    notificationReasonGroups.map((row) => ({
+      status: row.status,
+      lastError: row.lastError,
+      count: row._count._all,
+    })),
+    3,
+  );
   const latestConsentType = consentRows[0]?.type ?? null;
   const queuedAgedMinutes =
     oldestQueuedNotification != null
@@ -651,6 +692,7 @@ export async function getAdminOpsAccommodationDiagnostics(
     recentPollRuns,
     recentEvents,
     recentNotifications,
+    notificationReasons: reasonBreakdown,
     checks,
   };
 }
@@ -761,15 +803,21 @@ function buildWorkerStatusCheck(workerStatus: Awaited<ReturnType<typeof getHeart
   };
 }
 
-function buildFalsePositiveReason(input: { eventStatus: string; notificationStatus: string | null }): string {
+function buildFalsePositiveReason(input: {
+  eventStatus: string;
+  notificationStatus: string | null;
+  notificationError: string | null;
+}): string {
   if (input.eventStatus === 'rejected_verify_failed') {
     return 'verify 단계에서 빈방 신호가 기각됨';
   }
   if (input.notificationStatus === 'failed') {
-    return '알림 발송 실패 케이스';
+    const parsed = parseAgodaNotificationReason(input.notificationError, input.notificationStatus);
+    return `알림 발송 실패: ${parsed.label}`;
   }
   if (input.notificationStatus === 'suppressed') {
-    return '동의/조건 이슈로 알림 억제됨';
+    const parsed = parseAgodaNotificationReason(input.notificationError, input.notificationStatus);
+    return `알림 억제: ${parsed.label}`;
   }
   return '수동 검토 필요';
 }
@@ -784,6 +832,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
     alertsActive,
     alertsRegisteredInRange,
     notificationGroups,
+    notificationReasonGroups,
     falsePositiveRows,
     stalledItems,
     schedulerHealth,
@@ -801,6 +850,16 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
       by: ['status'],
       where: {
         createdAt: { gte: from },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+    prisma.agodaNotification.groupBy({
+      by: ['status', 'lastError'],
+      where: {
+        createdAt: { gte: from },
+        status: { in: ['failed', 'suppressed'] },
       },
       _count: {
         _all: true,
@@ -838,6 +897,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
           take: 1,
           select: {
             status: true,
+            lastError: true,
           },
         },
       },
@@ -847,6 +907,14 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
   ]);
 
   const counts = countByStatus(notificationGroups);
+  const reasonBreakdown = buildAgodaNotificationReasonBreakdown(
+    notificationReasonGroups.map((row) => ({
+      status: row.status,
+      lastError: row.lastError,
+      count: row._count._all,
+    })),
+    3,
+  );
 
   const queued = counts.queued ?? 0;
   const sent = counts.sent ?? 0;
@@ -873,6 +941,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
       suppressed,
       attempted,
       successRate: toRate(sent, attempted),
+      reasonBreakdown,
     },
     falsePositiveCandidates: falsePositiveRows.map((row) => {
       const notificationStatus = row.notifications[0]?.status ?? null;
@@ -887,6 +956,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
         reason: buildFalsePositiveReason({
           eventStatus: row.status,
           notificationStatus,
+          notificationError: row.notifications[0]?.lastError ?? null,
         }),
       };
     }),

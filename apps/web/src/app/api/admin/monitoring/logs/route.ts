@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { getMonitoringLogs } from '@/services/admin/monitoring.service';
 
 const logsParamsSchema = z.object({
@@ -18,9 +19,10 @@ const logsParamsSchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const requestId = createRequestId('admin_monitoring_logs');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const parsed = logsParamsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const response = await getMonitoringLogs({
@@ -43,6 +45,6 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Monitoring logs error');
+    return handleServiceError(error, 'Monitoring logs error', requestId);
   }
 }

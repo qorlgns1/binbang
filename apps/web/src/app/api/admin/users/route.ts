@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { getUsers } from '@/services/admin/users.service';
 
 const usersParamsSchema = z.object({
@@ -15,9 +16,10 @@ const usersParamsSchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const requestId = createRequestId('admin_users');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -25,13 +27,13 @@ export async function GET(request: NextRequest): Promise<Response> {
     const parsed = usersParamsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const response = await getUsers(parsed.data);
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Admin users error');
+    return handleServiceError(error, 'Admin users error', requestId);
   }
 }

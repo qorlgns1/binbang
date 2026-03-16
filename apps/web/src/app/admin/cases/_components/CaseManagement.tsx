@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCasesQuery } from '@/features/admin/cases';
+import { getAdminErrorMessage } from '@/lib/apiError';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: '전체 상태' },
@@ -62,7 +63,7 @@ export function CaseManagement() {
 
   const filters = useMemo(() => (status !== 'all' ? { status } : {}), [status]);
 
-  const { data, isLoading, isError } = useCasesQuery(filters);
+  const { data, error, isLoading, isError } = useCasesQuery(filters);
 
   return (
     <div className='space-y-4'>
@@ -109,7 +110,7 @@ export function CaseManagement() {
             {isError && (
               <TableRow>
                 <TableCell colSpan={5} className='text-center text-destructive'>
-                  데이터를 불러오는 데 실패했습니다
+                  {error ? getAdminErrorMessage(error) : '데이터를 불러오는 데 실패했습니다'}
                 </TableCell>
               </TableRow>
             )}

@@ -2,6 +2,7 @@
 
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { parseApiError } from '@/lib/apiError';
 import { adminKeys } from '@/lib/queryKeys';
 import type { CaseDetail, CaseMessageItem, CasePricePreview, PricingInputSnapshot } from './queries';
 
@@ -107,8 +108,7 @@ async function createCase({ submissionId }: CreateCaseVariables): Promise<Create
     body: JSON.stringify({ submissionId }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '케이스 생성에 실패했습니다');
+    throw await parseApiError(res, '케이스 생성에 실패했습니다');
   }
   return res.json();
 }
@@ -124,8 +124,7 @@ async function transitionCaseStatus({
     body: JSON.stringify({ status, reason }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '상태 변경에 실패했습니다');
+    throw await parseApiError(res, '상태 변경에 실패했습니다');
   }
   return res.json();
 }
@@ -137,8 +136,7 @@ async function confirmPayment({ caseId, note }: ConfirmPaymentVariables): Promis
     body: JSON.stringify({ note }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '결제 확인에 실패했습니다');
+    throw await parseApiError(res, '결제 확인에 실패했습니다');
   }
   return res.json();
 }
@@ -153,8 +151,7 @@ async function linkAccommodation({
     body: JSON.stringify({ accommodationId }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '숙소 연결에 실패했습니다');
+    throw await parseApiError(res, '숙소 연결에 실패했습니다');
   }
   return res.json();
 }
@@ -171,8 +168,7 @@ async function createCaseMessage({
     body: JSON.stringify({ templateKey, channel, content }),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || '메시지 기록에 실패했습니다');
+    throw await parseApiError(res, '메시지 기록에 실패했습니다');
   }
   return res.json();
 }
@@ -200,9 +196,7 @@ async function saveCasePriceQuote({
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    const message = err?.error?.message || err?.error || '견적 저장에 실패했습니다';
-    throw new Error(message);
+    throw await parseApiError(res, '견적 저장에 실패했습니다');
   }
 
   return res.json();

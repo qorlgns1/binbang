@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { createCase, getCases } from '@/services/cases.service';
 
 const createCaseSchema = z.object({
@@ -11,9 +12,10 @@ const createCaseSchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const requestId = createRequestId('admin_cases');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -30,14 +32,15 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Admin cases fetch error');
+    return handleServiceError(error, 'Admin cases fetch error', requestId);
   }
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
+  const requestId = createRequestId('admin_case_create');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const parsed = createCaseSchema.safeParse(body);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const result = await createCase({
@@ -55,6 +58,6 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     return NextResponse.json({ case: result }, { status: 201 });
   } catch (error) {
-    return handleServiceError(error, 'Admin case creation error');
+    return handleServiceError(error, 'Admin case creation error', requestId);
   }
 }

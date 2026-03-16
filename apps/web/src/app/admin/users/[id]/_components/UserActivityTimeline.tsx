@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserActivity } from '@/hooks/useUserActivity';
+import { getAdminErrorMessage } from '@/lib/apiError';
 import type { ActivityType } from '@/types/activity';
 
 import { ActivityItem } from './ActivityItem';
@@ -39,7 +40,10 @@ export function UserActivityTimeline({ userId }: Props) {
     ...(typeFilter !== 'all' && { type: typeFilter }),
   };
 
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useUserActivity(userId, filters);
+  const { data, error, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useUserActivity(
+    userId,
+    filters,
+  );
 
   const activities = data?.pages.flatMap((p) => p.activities) ?? [];
   const total = data?.pages[0]?.total ?? 0;
@@ -73,7 +77,7 @@ export function UserActivityTimeline({ userId }: Props) {
           <TimelineSkeleton />
         ) : isError ? (
           <div className='rounded-lg border border-border p-6 text-center text-muted-foreground'>
-            활동 이력을 불러올 수 없습니다.
+            {error ? getAdminErrorMessage(error) : '활동 이력을 불러올 수 없습니다.'}
           </div>
         ) : activities.length === 0 ? (
           <div className='rounded-lg border border-border p-6 text-center text-muted-foreground'>

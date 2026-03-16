@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
+import { createRequestId } from '@/lib/logger';
 import { getThroughputCompare } from '@/services/admin/throughput.service';
 
 const paramsSchema = z.object({
@@ -14,9 +15,10 @@ const paramsSchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const requestId = createRequestId('admin_throughput_compare');
   const session = await requireAdmin();
   if (!session) {
-    return unauthorizedResponse();
+    return unauthorizedResponse('Unauthorized', requestId);
   }
 
   try {
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const parsed = paramsSchema.safeParse(params);
 
     if (!parsed.success) {
-      return validationErrorResponse(parsed.error.issues);
+      return validationErrorResponse(parsed.error.issues, requestId);
     }
 
     const response = await getThroughputCompare({
@@ -35,6 +37,6 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleServiceError(error, 'Throughput compare error');
+    return handleServiceError(error, 'Throughput compare error', requestId);
   }
 }

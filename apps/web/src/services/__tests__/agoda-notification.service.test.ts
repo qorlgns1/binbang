@@ -225,8 +225,16 @@ describe('dispatchAgodaNotifications', () => {
 
     const result = await dispatchAgodaNotifications();
     expect(result.suppressed).toBe(1);
+    expect(result.suppressedReasonCounts.SUPPRESSED_MISSING_RECIPIENT_EMAIL).toBe(1);
     expect(result.sent).toBe(0);
     expect(mockSendAgodaAlertEmail).not.toHaveBeenCalled();
+    expect(mockNotificationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          lastError: 'SUPPRESSED_MISSING_RECIPIENT_EMAIL::user email is missing',
+        }),
+      }),
+    );
   });
 
   it('동의 없는 사용자 → suppressed', async () => {
@@ -263,7 +271,15 @@ describe('dispatchAgodaNotifications', () => {
 
     const result = await dispatchAgodaNotifications();
     expect(result.failed).toBe(1);
+    expect(result.failedReasonCounts.FAILED_EMAIL_SEND).toBe(1);
     expect(result.sent).toBe(0);
+    expect(mockNotificationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          lastError: 'FAILED_EMAIL_SEND::SMTP 오류',
+        }),
+      }),
+    );
   });
 
   it('price_drop 타입 알림도 전송', async () => {
