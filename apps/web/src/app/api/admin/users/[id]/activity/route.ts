@@ -9,12 +9,12 @@ import type { ActivityType } from '@/types/activity';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_user_activity');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id: userId } = await params;
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor') ?? undefined;

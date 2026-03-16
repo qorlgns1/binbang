@@ -184,7 +184,7 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
 
               <div className='grid gap-3 text-sm md:grid-cols-2'>
                 <div className='rounded-md border p-3'>
-                  <p className='text-xs text-muted-foreground'>최근 실패 사유</p>
+                  <p className='text-xs text-muted-foreground'>누적 실패 사유</p>
                   {diagnostics.notificationReasons.failed.length === 0 ? (
                     <p className='text-xs text-muted-foreground'>failed 사유가 없습니다.</p>
                   ) : (
@@ -196,7 +196,7 @@ export default async function AdminOpsPage({ searchParams }: AdminOpsPageProps) 
                   )}
                 </div>
                 <div className='rounded-md border p-3'>
-                  <p className='text-xs text-muted-foreground'>최근 억제 사유</p>
+                  <p className='text-xs text-muted-foreground'>누적 억제 사유</p>
                   {diagnostics.notificationReasons.suppressed.length === 0 ? (
                     <p className='text-xs text-muted-foreground'>suppressed 사유가 없습니다.</p>
                   ) : (

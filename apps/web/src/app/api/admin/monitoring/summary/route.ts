@@ -7,12 +7,12 @@ import { getMonitoringSummary } from '@/services/admin/monitoring.service';
 
 export async function GET(): Promise<Response> {
   const requestId = createRequestId('admin_monitoring_summary');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const summary = await getMonitoringSummary();
 
     return NextResponse.json(summary);

@@ -28,12 +28,14 @@ describe('handleServiceError', () => {
     expect(payload).toMatchObject({
       level: 'error',
       event: 'service_app_error',
-      requestId: 'req_123',
-      prefix: 'Test',
-      errorCode: 'NOT_FOUND',
-      errorStatusCode: 404,
+      context: {
+        requestId: 'req_123',
+        prefix: 'Test',
+        errorCode: 'NOT_FOUND',
+        errorStatusCode: 404,
+      },
     });
-    expect((payload.error as { message?: string }).message).toBe('User not found');
+    expect(((payload.context as Record<string, unknown>).error as { message?: string }).message).toBe('User not found');
 
     spy.mockRestore();
   });
@@ -88,10 +90,12 @@ describe('handleServiceError', () => {
     expect(payload).toMatchObject({
       level: 'error',
       event: 'service_unhandled_error',
-      requestId: 'req_unknown',
-      prefix: 'Test prefix',
+      context: {
+        requestId: 'req_unknown',
+        prefix: 'Test prefix',
+      },
     });
-    expect((payload.error as { message?: string }).message).toBe('boom');
+    expect(((payload.context as Record<string, unknown>).error as { message?: string }).message).toBe('boom');
     spy.mockRestore();
   });
 

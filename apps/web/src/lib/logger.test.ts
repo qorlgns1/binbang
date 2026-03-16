@@ -10,7 +10,7 @@ describe('logger', () => {
   it('creates request ids with a stable prefix', () => {
     const requestId = createRequestId('dispatch');
 
-    expect(requestId).toMatch(/^dispatch_\d{14}_\d{3}$/);
+    expect(requestId).toMatch(/^dispatch_\d{17}_[a-f0-9]{12}$/);
   });
 
   it('serializes structured info logs as JSON', () => {
@@ -28,8 +28,10 @@ describe('logger', () => {
       app: 'binbang-web',
       level: 'info',
       event: 'test_event',
-      requestId: 'req_123',
-      count: 2,
+      context: {
+        requestId: 'req_123',
+        count: 2,
+      },
     });
   });
 
@@ -42,9 +44,9 @@ describe('logger', () => {
 
     expect(errorSpy).toHaveBeenCalledOnce();
     const payload = JSON.parse(errorSpy.mock.calls[0]?.[0] as string) as {
-      error: { name: string; message: string };
+      context: { error: { name: string; message: string } };
     };
-    expect(payload.error).toMatchObject({
+    expect(payload.context.error).toMatchObject({
       name: 'Error',
       message: 'boom',
     });
