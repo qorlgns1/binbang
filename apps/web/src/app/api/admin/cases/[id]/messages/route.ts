@@ -20,12 +20,12 @@ const createMessageSchema = z.object({
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_messages');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const messages = await getCaseMessages(id);
     return NextResponse.json({ messages });
@@ -36,12 +36,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_message_create');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     let body: unknown;
     try {

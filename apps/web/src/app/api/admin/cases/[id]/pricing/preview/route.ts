@@ -9,11 +9,6 @@ import { previewCasePriceQuote } from '@/services/pricing.service';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_pricing_preview');
-  const session = await requireAdmin();
-
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
 
   let body: unknown;
   try {
@@ -28,6 +23,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
+    const session = await requireAdmin();
+
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const data = await previewCasePriceQuote({
       caseId: id,

@@ -13,12 +13,12 @@ const accommodationSchema = z.object({
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_accommodation');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const body: unknown = await request.json();
     const parsed = accommodationSchema.safeParse(body);

@@ -7,12 +7,12 @@ import { getUserDetail } from '@/services/admin/users.service';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_user_detail');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
 
     const result = await getUserDetail(id);

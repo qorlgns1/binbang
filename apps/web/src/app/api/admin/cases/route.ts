@@ -13,12 +13,12 @@ const createCaseSchema = z.object({
 
 export async function GET(request: NextRequest): Promise<Response> {
   const requestId = createRequestId('admin_cases');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor') ?? undefined;
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') ?? '20', 10), 1), 100);
@@ -38,12 +38,12 @@ export async function GET(request: NextRequest): Promise<Response> {
 
 export async function POST(request: NextRequest): Promise<Response> {
   const requestId = createRequestId('admin_case_create');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const body: unknown = await request.json();
     const parsed = createCaseSchema.safeParse(body);
 

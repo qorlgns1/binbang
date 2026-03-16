@@ -9,13 +9,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string; notificationId: string }> },
 ): Promise<Response> {
   const requestId = createRequestId('case_retry');
-  const session = await requireAdmin();
-  if (!session) {
-    logWarn('case_notification_retry_route_unauthorized', { requestId });
-    return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized', requestId } }, { status: 401 });
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      logWarn('case_notification_retry_route_unauthorized', { requestId });
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Unauthorized', requestId } },
+        { status: 401 },
+      );
+    }
+
     const { id: caseId, notificationId } = await params;
     const result = await retryNotificationForCase(notificationId, caseId, { requestId });
 

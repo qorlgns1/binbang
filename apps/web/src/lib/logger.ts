@@ -3,16 +3,14 @@ type LogLevel = 'info' | 'warn' | 'error';
 type LogContext = Record<string, unknown>;
 
 function createEntropy(): string {
-  return Math.floor(Math.random() * 1000)
-    .toString()
-    .padStart(3, '0');
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
 }
 
 export function createRequestId(prefix = 'req'): string {
   const timestamp = new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, '')
-    .slice(0, 14);
+    .slice(0, 17);
   return `${prefix}_${timestamp}_${createEntropy()}`;
 }
 
@@ -34,7 +32,7 @@ function writeLog(level: LogLevel, event: string, context: LogContext): void {
     app: 'binbang-web',
     level,
     event,
-    ...normalizeRecord(context),
+    context: normalizeRecord(context),
   };
   const serialized = JSON.stringify(payload);
 

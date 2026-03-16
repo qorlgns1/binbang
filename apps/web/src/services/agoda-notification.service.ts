@@ -573,7 +573,7 @@ export async function dispatchAgodaNotifications(params?: {
 
       outcomes.push({ id: notification.id, kind: 'sent' });
     } catch (error) {
-      const reasonMessage = (error instanceof Error ? error.message : String(error)).slice(0, 1000);
+      const rawReasonMessage = (error instanceof Error ? error.message : String(error)).slice(0, 1000);
       logDispatchOutcome({
         requestId,
         notificationId: notification.id.toString(),
@@ -581,7 +581,7 @@ export async function dispatchAgodaNotifications(params?: {
         alertEventId: notification.alertEvent.id.toString(),
         kind: 'failed',
         reasonCode: 'FAILED_EMAIL_SEND',
-        reasonMessage,
+        reasonMessage: 'email provider error',
         attempt: notification.attempt + 1,
       });
       outcomes.push({
@@ -589,7 +589,7 @@ export async function dispatchAgodaNotifications(params?: {
         kind: 'failed',
         nextAttempt: notification.attempt + 1,
         reasonCode: 'FAILED_EMAIL_SEND',
-        reasonMessage,
+        reasonMessage: rawReasonMessage,
       });
     }
   }

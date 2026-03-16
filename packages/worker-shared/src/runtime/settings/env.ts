@@ -180,7 +180,14 @@ function readOptionalEnv(value: string | undefined): string | null {
 }
 
 function getValidatedUrlEnv(key: string, defaultValue: string, allowedProtocols: ReadonlySet<string>): string {
-  const value = readEnvValue(key) ?? defaultValue;
+  const raw = process.env[key];
+  if (raw === undefined) {
+    return defaultValue;
+  }
+  const value = raw.trim();
+  if (value.length === 0) {
+    throw new Error(`환경변수 ${key}가 비어 있습니다.`);
+  }
   const reason = validateUrl(value, allowedProtocols);
   if (reason) {
     throw new Error(`환경변수 ${key}가 올바르지 않습니다: ${reason}`);

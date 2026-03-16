@@ -9,13 +9,13 @@ import { getCasePriceQuoteHistory, saveCasePriceQuote } from '@/services/pricing
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_pricing_quotes');
-  const session = await requireAdmin();
-
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const quotes = await getCasePriceQuoteHistory(id, 50);
 
@@ -32,11 +32,6 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const requestId = createRequestId('admin_case_pricing_quote_create');
-  const session = await requireAdmin();
-
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
 
   let body: unknown;
   try {
@@ -51,6 +46,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
+    const session = await requireAdmin();
+
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const { id } = await params;
     const data = await saveCasePriceQuote({
       caseId: id,

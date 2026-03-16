@@ -1,3 +1,5 @@
 #!/bin/sh
+set -e
+STAGED=$(git diff --cached --name-only)
 pnpm format
-git add -u
+echo "$STAGED" | xargs -I{} git add {}

@@ -50,11 +50,6 @@ export async function GET(request: NextRequest): Promise<Response> {
   const requestId = createRequestId('admin_funnel_growth');
   const startedAt = Date.now();
 
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
   const parsed = paramsSchema.safeParse(params);
   if (!parsed.success) {
@@ -62,6 +57,11 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const range: FunnelRangePreset | undefined = parsed.data.range;
     const data = await getAdminFunnelGrowth({
       range,

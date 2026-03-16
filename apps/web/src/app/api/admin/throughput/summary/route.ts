@@ -15,12 +15,12 @@ const paramsSchema = z.object({
 
 export async function GET(request: NextRequest): Promise<Response> {
   const requestId = createRequestId('admin_throughput_summary');
-  const session = await requireAdmin();
-  if (!session) {
-    return unauthorizedResponse('Unauthorized', requestId);
-  }
-
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return unauthorizedResponse('Unauthorized', requestId);
+    }
+
     const params = Object.fromEntries(request.nextUrl.searchParams);
     const parsed = paramsSchema.safeParse(params);
 
