@@ -10,6 +10,8 @@ const PUBLIC_STATIC_PATHS = new Set([
   '/signup',
   '/terms',
   '/privacy',
+  '/chat',
+  '/destinations',
 ]);
 
 function normalizePath(path: string): string {
@@ -37,7 +39,9 @@ export function stripLocalePrefix(pathname: string): { locale: Locale | null; pa
 export function isPublicPath(pathname: string): boolean {
   const normalized = normalizePath(pathname);
   if (PUBLIC_STATIC_PATHS.has(normalized)) return true;
-  return normalized.startsWith('/availability/');
+  if (normalized.startsWith('/availability/')) return true;
+  if (normalized.startsWith('/destinations/')) return true;
+  return false;
 }
 
 /**

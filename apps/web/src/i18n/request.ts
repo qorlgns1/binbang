@@ -25,6 +25,11 @@ const loaders: Record<string, (locale: Locale) => Promise<Record<string, unknown
   faq: (l) => import(`../../messages/${l}/faq.json`).then((m) => m.default),
   about: (l) => import(`../../messages/${l}/about.json`).then((m) => m.default),
   availability: (l) => import(`../../messages/${l}/availability.json`).then((m) => m.default),
+  chat: (l) => import(`../../messages/${l}/chat.json`).then((m) => m.default),
+  destinations: (l) => import(`../../messages/${l}/destinations.json`).then((m) => m.default),
+  place: (l) => import(`../../messages/${l}/place.json`).then((m) => m.default),
+  weather: (l) => import(`../../messages/${l}/weather.json`).then((m) => m.default),
+  exchange: (l) => import(`../../messages/${l}/exchange.json`).then((m) => m.default),
 };
 
 export default getRequestConfig(async ({ requestLocale }) => {

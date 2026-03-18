@@ -1,0 +1,31 @@
+{
+  "title": "AI와 대화하기",
+  "placeholder": "여행에 대해 무엇이든 물어보세요...",
+  "send": "전송",
+  "newConversation": "새 대화",
+  "conversationHistory": "대화 히스토리",
+  "saveConversation": "대화 저장",
+  "loginToSave": "대화를 저장하려면 로그인하세요",
+  "exampleQuestions": {
+    "title": "추천 질문",
+    "question1": "파리 에펠탑 근처, 취소분이 자주 나오는 가성비 숙소 찾아줘.",
+    "question2": "런던에서 지금 당장 예약 가능한 4성급 호텔 리스트 보여줘.",
+    "question3": "특정 숙소의 빈 방 알림을 설정하고 싶어."
+  },
+  "thinking": "생각 중...",
+  "typing": "입력 중...",
+  "emptyState": "아직 메시지가 없습니다. 무엇이든 물어보세요!",
+  "welcomeTitle": "빈방",
+  "welcomeMessage": "반가워요. 당신의 휴식이 길을 잃지 않도록, 빈방이 밤새 불을 밝혀둘게요.",
+  "conversationSaved": "대화가 저장되었습니다",
+  "conversationLoaded": "대화를 불러왔습니다",
+  "conversationLoadFailed": "대화를 불러오지 못했습니다",
+  "alertFeatureComingSoon": "빈방 알림 기능은 준비 중이에요.",
+  "retryLastMessage": "마지막 메시지 다시 생성",
+  "retry": "다시 시도",
+  "closeError": "에러 메시지 닫기",
+  "close": "닫기",
+  "rateLimitError": "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
+  "networkError": "답변을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.",
+  "exampleQuestion": "추천 질문: {query}"
+}

@@ -1,0 +1,31 @@
+{
+  "title": "Chat with AI",
+  "placeholder": "Ask me anything about travel...",
+  "send": "Send",
+  "newConversation": "New Conversation",
+  "conversationHistory": "History",
+  "saveConversation": "Save Conversation",
+  "loginToSave": "Login to save your conversation",
+  "exampleQuestions": {
+    "title": "Example Questions",
+    "question1": "Find me budget-friendly hotels near the Eiffel Tower in Paris with frequent cancellations.",
+    "question2": "Show me a list of 4-star hotels available for immediate booking in London.",
+    "question3": "I want to set up a vacancy alert for a specific hotel."
+  },
+  "thinking": "Thinking...",
+  "typing": "Typing...",
+  "emptyState": "No messages yet. Ask me anything!",
+  "welcomeTitle": "Binbang",
+  "welcomeMessage": "Welcome! We'll keep the light on all night so your rest never loses its way.",
+  "conversationSaved": "Conversation saved",
+  "conversationLoaded": "Conversation loaded",
+  "conversationLoadFailed": "Failed to load conversation",
+  "alertFeatureComingSoon": "Vacancy alert feature is coming soon.",
+  "retryLastMessage": "Retry last message",
+  "retry": "Retry",
+  "closeError": "Close error message",
+  "close": "Close",
+  "rateLimitError": "Too many requests. Please try again later.",
+  "networkError": "Failed to load response. Please check your network and try again.",
+  "exampleQuestion": "Example question: {query}"
+}

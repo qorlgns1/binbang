@@ -1,0 +1,7 @@
+{
+  "title": "Exchange Rate",
+  "base": "Base Currency",
+  "target": "Target Currency",
+  "rate": "Rate",
+  "lastUpdated": "Last Updated"
+}

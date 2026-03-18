@@ -1,0 +1,10 @@
+{
+  "title": "Weather",
+  "temperature": "Temperature",
+  "humidity": "Humidity",
+  "rainfall": "Rainfall",
+  "monthly": "Monthly Weather",
+  "avgTemp": "Avg. Temperature",
+  "minTemp": "Min. Temperature",
+  "maxTemp": "Max. Temperature"
+}

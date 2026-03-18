@@ -1,0 +1,12 @@
+{
+  "rating": "Rating",
+  "reviews": "reviews",
+  "priceLevel": "Price Level",
+  "openNow": "Open Now",
+  "closed": "Closed",
+  "viewOnMap": "View on Map",
+  "noImage": "No image",
+  "setAlert": "Set vacancy alert",
+  "selectToViewOnMap": "Select {name} to view on map",
+  "setAlertFor": "Set vacancy alert for {name}"
+}

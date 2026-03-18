@@ -1,0 +1,12 @@
+{
+  "rating": "평점",
+  "reviews": "리뷰",
+  "priceLevel": "가격대",
+  "openNow": "영업 중",
+  "closed": "영업 종료",
+  "viewOnMap": "지도에서 보기",
+  "noImage": "이미지 없음",
+  "setAlert": "빈방 알림 설정하기",
+  "selectToViewOnMap": "{name} 선택하여 지도에서 보기",
+  "setAlertFor": "{name}의 빈방 알림 설정하기"
+}

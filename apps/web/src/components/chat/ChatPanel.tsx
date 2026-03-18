@@ -1,0 +1,147 @@
+'use client';
+
+import { useChat } from '@ai-sdk/react';
+import { useSession } from 'next-auth/react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
+import { ChatPanelHeader } from '@/components/chat/ChatPanelHeader';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { ChatMessageList } from '@/components/chat/ChatMessageList';
+import { ChatPanelErrorBanner, ChatPanelRestoreBanner } from '@/components/chat/ChatPanelSections';
+import { extractMapEntitiesFromMessages, isRateLimitErrorMessage } from '@/components/chat/chatPanelUtils';
+import { HistorySidebar } from '@/components/history/HistorySidebar';
+import { useChatComposer } from '@/hooks/useChatComposer';
+import { useChatViewport } from '@/hooks/useChatViewport';
+import { useChatLoginGate } from '@/hooks/useChatLoginGate';
+import { useConversationRestore } from '@/hooks/useConversationRestore';
+import { useGuestSession } from '@/hooks/useGuestSession';
+import { useRateLimitLoginPrompt } from '@/hooks/useRateLimitLoginPrompt';
+import { useSessionMerge } from '@/hooks/useSessionMerge';
+import { ApiError, getUserMessage } from '@/lib/apiError';
+import { isRestoreAutoEnabled } from '@/lib/featureFlags';
+import { useChatSessionStore } from '@/stores/useChatSessionStore';
+import { usePlaceStore } from '@/stores/usePlaceStore';
+
+export function ChatPanel() {
+  const t = useTranslations('chat');
+  const locale = useLocale();
+  const [input, setInput] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+
+  const { status: authStatus } = useSession();
+  const restoreAutoEnabled = isRestoreAutoEnabled();
+
+  const { sessionId, currentConversationId } = useChatSessionStore();
+  const { selectedPlaceId, setEntities } = usePlaceStore();
+
+  // 세션 초기화 (store에 sessionId/mergeStatus 기록)
+  useGuestSession();
+  useSessionMerge();
+
+  const { messages, sendMessage, status, stop, error, regenerate, clearError, setMessages } = useChat();
+
+  const { restoreStatus, handleNewConversation, handleRetryRestore, handleSelectConversation } = useConversationRestore(
+    {
+      messages,
+      restoreAutoEnabled,
+      setMessages,
+    },
+  );
+
+  const { openLoginModalForRateLimit, handleHistoryClick, handleSaveClick } = useChatLoginGate({
+    authStatus,
+    messagesCount: messages.length,
+    onOpenHistory: () => setShowHistory(true),
+  });
+
+  const isLoading = status !== 'ready';
+  const rawErrorMessage = typeof error?.message === 'string' ? error.message : null;
+  const userErrorMessage = error instanceof Error ? getUserMessage(error) : null;
+  const isRateLimitError =
+    error instanceof ApiError
+      ? error.code === 'RATE_LIMITED'
+      : rawErrorMessage != null && isRateLimitErrorMessage(rawErrorMessage);
+  const rateLimitPromptKey =
+    error instanceof ApiError ? `${error.code}:${String(error.status ?? '')}` : rawErrorMessage;
+
+  const { getChatRequestBody, handleSubmit, handleExampleClick } = useChatComposer({
+    authStatus,
+    currentConversationId,
+    input,
+    isLoading,
+    locale,
+    sendMessage,
+    sessionId: sessionId ?? undefined,
+    setInput,
+  });
+
+  useRateLimitLoginPrompt({
+    authStatus,
+    errorKey: rateLimitPromptKey,
+    isRateLimitError,
+    onPromptLogin: openLoginModalForRateLimit,
+  });
+
+  const { messagesEndRef, scrollAreaRef } = useChatViewport({
+    messagesLength: messages.length,
+    selectedPlaceId,
+  });
+
+  useEffect(() => {
+    setEntities(extractMapEntitiesFromMessages(messages));
+  }, [messages, setEntities]);
+
+  const exampleQueries = [
+    t('exampleQuestions.question1'),
+    t('exampleQuestions.question2'),
+    t('exampleQuestions.question3'),
+  ];
+
+  return (
+    <div className='flex h-full flex-col'>
+      <ChatPanelHeader
+        onNewConversation={handleNewConversation}
+        onSaveClick={handleSaveClick}
+        onHistoryClick={handleHistoryClick}
+      />
+
+      <ChatPanelRestoreBanner
+        restoreStatus={restoreStatus}
+        onRetryRestore={() => void handleRetryRestore()}
+        onOpenHistory={() => setShowHistory(true)}
+      />
+
+      <ChatMessageList
+        messages={messages}
+        status={status}
+        exampleQueries={exampleQueries}
+        scrollAreaRef={scrollAreaRef}
+        messagesEndRef={messagesEndRef}
+        onExampleClick={handleExampleClick}
+      />
+
+      {error && (
+        <ChatPanelErrorBanner
+          isRateLimitError={isRateLimitError}
+          message={userErrorMessage}
+          showLoginAction={authStatus !== 'authenticated' && isRateLimitError}
+          onLogin={openLoginModalForRateLimit}
+          onRetry={() => regenerate({ body: getChatRequestBody() })}
+          onDismiss={clearError}
+        />
+      )}
+
+      <div className='border-t border-border/60 bg-background/95 backdrop-blur-md p-4 md:p-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]'>
+        <ChatInput input={input} isLoading={isLoading} onInputChange={setInput} onSubmit={handleSubmit} onStop={stop} />
+      </div>
+
+      <HistorySidebar
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        onSelectConversation={handleSelectConversation}
+        onNewConversation={handleNewConversation}
+      />
+    </div>
+  );
+}

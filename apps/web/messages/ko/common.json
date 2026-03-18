@@ -33,6 +33,11 @@
     "applicationName": "빈방",
     "applicationDescription": "1분마다 자동으로 체크하는 숙소 빈방 알림 서비스."
   },
+  "close": "닫기",
+  "placesCount": "{count}곳",
+  "chatTab": "채팅",
+  "mapTab": "지도",
+  "switchBetweenChatAndMap": "채팅과 지도 전환",
   "tutorial": {
     "step1": { "title": "빈방 시작하기", "body": "원하는 숙소를 등록하면 빈방 발생 시 카카오톡으로 알림을 받아요." },
     "step2": {

@@ -87,9 +87,9 @@ describe('getNamespacesForPathname', () => {
 });
 
 describe('getAllNamespaces', () => {
-  it('8개 전체 namespace를 반환한다', () => {
+  it('13개 전체 namespace를 반환한다', () => {
     const all = getAllNamespaces();
-    expect(all).toHaveLength(8);
+    expect(all).toHaveLength(13);
     expect(all).toContain('common');
     expect(all).toContain('landing');
     expect(all).toContain('legal');
@@ -98,5 +98,10 @@ describe('getAllNamespaces', () => {
     expect(all).toContain('faq');
     expect(all).toContain('about');
     expect(all).toContain('availability');
+    expect(all).toContain('chat');
+    expect(all).toContain('destinations');
+    expect(all).toContain('place');
+    expect(all).toContain('weather');
+    expect(all).toContain('exchange');
   });
 });

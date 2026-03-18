@@ -1,0 +1,10 @@
+{
+  "title": "날씨 정보",
+  "temperature": "기온",
+  "humidity": "습도",
+  "rainfall": "강수량",
+  "monthly": "월별 날씨",
+  "avgTemp": "평균 기온",
+  "minTemp": "최저 기온",
+  "maxTemp": "최고 기온"
+}
