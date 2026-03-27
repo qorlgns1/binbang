@@ -38,14 +38,21 @@ const ROOM_LIST_PATHS = ['rooms', 'roomTypes', 'roomOptions', 'roomRates'];
 const RATE_LIST_PATHS = ['rates', 'ratePlans', 'rateOptions', 'offers', 'priceDetails'];
 const LANDING_URL_PATHS = [
   'metaSearch.landingUrl',
+  'metaSearch.landingURL',
   'metaSearch.deepLink',
   'metaSearch.url',
   'landingUrl',
+  'landingURL',
   'deepLink',
   'bookingUrl',
   'hotelUrl',
   'url',
 ];
+const ROOM_NAME_PATHS = ['roomtypeName', 'roomTypeName', 'roomName', 'roomtype', 'title', 'name'];
+const TOTAL_INCLUSIVE_PATHS = ['totalPayment.inclusive', 'totalInclusive', 'inclusive', 'price.inclusive', 'dailyRate'];
+const CURRENCY_PATHS = ['totalPayment.currency', 'currency', 'price.currency'];
+const FREE_CANCELLATION_PATHS = ['freeCancellation', 'isFreeCancellation'];
+const FREE_CANCELLATION_DATE_PATHS = ['freeCancellationDate', 'cancellationPolicy.freeCancellationDate'];
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -190,6 +197,87 @@ function resolveLandingUrl(...values: unknown[]): string | null {
   return null;
 }
 
+function buildOffer(params: {
+  propertyId: bigint;
+  roomId: bigint;
+  ratePlanId: bigint;
+  remainingRooms: number | null;
+  freeCancellation: boolean | null;
+  freeCancellationDate: Date | null;
+  totalInclusive: number | null;
+  currency: string | null;
+  landingUrl: string | null;
+  raw: UnknownRecord;
+}): NormalizedRoomOffer {
+  const offerCore = {
+    propertyId: params.propertyId.toString(),
+    roomId: params.roomId.toString(),
+    ratePlanId: params.ratePlanId.toString(),
+    remainingRooms: params.remainingRooms,
+    freeCancellation: params.freeCancellation,
+    freeCancellationDate: params.freeCancellationDate?.toISOString() ?? null,
+    totalInclusive: params.totalInclusive,
+    currency: params.currency,
+  };
+
+  return {
+    offerKey: `${params.propertyId.toString()}:${params.roomId.toString()}:${params.ratePlanId.toString()}`,
+    propertyId: params.propertyId,
+    roomId: params.roomId,
+    ratePlanId: params.ratePlanId,
+    remainingRooms: params.remainingRooms,
+    freeCancellation: params.freeCancellation,
+    freeCancellationDate: params.freeCancellationDate,
+    totalInclusive: params.totalInclusive,
+    currency: params.currency ? params.currency.toUpperCase() : null,
+    landingUrl: params.landingUrl,
+    payloadHash: buildPayloadHash(offerCore),
+    raw: params.raw,
+  };
+}
+
+function resolveFlatOfferFromHotel(params: {
+  hotel: unknown;
+  propertyId: bigint;
+  hotelLandingUrl: string | null;
+}): NormalizedRoomOffer | null {
+  const roomName = firstString(params.hotel, ROOM_NAME_PATHS);
+  const totalInclusive = firstNumber(params.hotel, TOTAL_INCLUSIVE_PATHS);
+  const currency = firstString(params.hotel, CURRENCY_PATHS);
+  const landingUrl = resolveLandingUrl(params.hotel, params.hotelLandingUrl);
+
+  // Admin Hotel List Search처럼 flat 결과만 내려오는 경우를 예약 가능 오퍼 1개로 본다.
+  const looksLikeBookableRow = totalInclusive != null || landingUrl != null || roomName != null;
+  if (!looksLikeBookableRow) return null;
+
+  const stableRoomName = (roomName ?? 'default-room').trim().toLowerCase();
+  const roomId =
+    parseBigIntValue(firstString(params.hotel, ['roomId', 'room_id'])) ??
+    pseudoBigInt(`flat-room:${params.propertyId.toString()}:${stableRoomName}`);
+  const ratePlanId =
+    parseBigIntValue(firstString(params.hotel, ['ratePlanId', 'ratePlan_id', 'rateId'])) ??
+    pseudoBigInt(`flat-rate:${params.propertyId.toString()}:${stableRoomName}`);
+
+  return buildOffer({
+    propertyId: params.propertyId,
+    roomId,
+    ratePlanId,
+    remainingRooms: normalizeRemainingRooms(
+      firstNumber(params.hotel, ['remainingRooms', 'remaining_rooms', 'allotment']),
+    ),
+    freeCancellation: firstBoolean(params.hotel, FREE_CANCELLATION_PATHS),
+    freeCancellationDate: firstDate(params.hotel, FREE_CANCELLATION_DATE_PATHS),
+    totalInclusive,
+    currency,
+    landingUrl,
+    raw: {
+      hotel: isRecord(params.hotel) ? params.hotel : { value: params.hotel },
+      room: { fallback: true, name: roomName },
+      rate: { fallback: true },
+    },
+  });
+}
+
 export function normalizeAgodaSearchResponse(payload: unknown): AgodaNormalizeResult {
   const hotels = resolveHotels(payload);
   const offers: NormalizedRoomOffer[] = [];
@@ -203,6 +291,16 @@ export function normalizeAgodaSearchResponse(payload: unknown): AgodaNormalizeRe
     const hotelLandingUrl = resolveLandingUrl(hotel);
 
     const roomRatePairs = resolveOffersFromHotel(hotel);
+    if (roomRatePairs.length === 0) {
+      const flatOffer = resolveFlatOfferFromHotel({
+        hotel,
+        propertyId,
+        hotelLandingUrl,
+      });
+      if (flatOffer) offers.push(flatOffer);
+      return;
+    }
+
     roomRatePairs.forEach((pair, pairIndex) => {
       const room = pair.room;
       const rate = pair.rate;
@@ -227,56 +325,37 @@ export function normalizeAgodaSearchResponse(payload: unknown): AgodaNormalizeRe
       );
 
       const freeCancellation =
-        firstBoolean(rate, ['freeCancellation', 'isFreeCancellation']) ??
-        firstBoolean(room, ['freeCancellation', 'isFreeCancellation']) ??
-        null;
+        firstBoolean(rate, FREE_CANCELLATION_PATHS) ?? firstBoolean(room, FREE_CANCELLATION_PATHS) ?? null;
 
       const freeCancellationDate =
-        firstDate(rate, ['freeCancellationDate', 'cancellationPolicy.freeCancellationDate']) ??
-        firstDate(room, ['freeCancellationDate', 'cancellationPolicy.freeCancellationDate']) ??
-        null;
+        firstDate(rate, FREE_CANCELLATION_DATE_PATHS) ?? firstDate(room, FREE_CANCELLATION_DATE_PATHS) ?? null;
 
       const totalInclusive =
-        firstNumber(rate, ['totalPayment.inclusive', 'totalInclusive', 'inclusive', 'price.inclusive', 'dailyRate']) ??
-        firstNumber(room, ['totalPayment.inclusive', 'totalInclusive', 'inclusive', 'dailyRate']) ??
-        firstNumber(hotel, ['totalPayment.inclusive', 'totalInclusive', 'dailyRate']) ??
+        firstNumber(rate, TOTAL_INCLUSIVE_PATHS) ??
+        firstNumber(room, TOTAL_INCLUSIVE_PATHS) ??
+        firstNumber(hotel, TOTAL_INCLUSIVE_PATHS) ??
         null;
 
-      const currency =
-        firstString(rate, ['totalPayment.currency', 'currency', 'price.currency']) ??
-        firstString(room, ['totalPayment.currency', 'currency']) ??
-        null;
+      const currency = firstString(rate, CURRENCY_PATHS) ?? firstString(room, CURRENCY_PATHS) ?? null;
 
-      const offerCore = {
-        propertyId: propertyId.toString(),
-        roomId: roomId.toString(),
-        ratePlanId: ratePlanId.toString(),
-        remainingRooms,
-        freeCancellation,
-        freeCancellationDate: freeCancellationDate?.toISOString() ?? null,
-        totalInclusive,
-        currency,
-      };
-
-      const payloadHash = buildPayloadHash(offerCore);
-      offers.push({
-        offerKey: `${propertyId.toString()}:${roomId.toString()}:${ratePlanId.toString()}`,
-        propertyId,
-        roomId,
-        ratePlanId,
-        remainingRooms,
-        freeCancellation,
-        freeCancellationDate,
-        totalInclusive,
-        currency: currency ? currency.toUpperCase() : null,
-        landingUrl,
-        payloadHash,
-        raw: {
-          hotel: isRecord(hotel) ? hotel : { value: hotel },
-          room: isRecord(room) ? room : { value: room },
-          rate: isRecord(rate) ? rate : { value: rate },
-        },
-      });
+      offers.push(
+        buildOffer({
+          propertyId,
+          roomId,
+          ratePlanId,
+          remainingRooms,
+          freeCancellation,
+          freeCancellationDate,
+          totalInclusive,
+          currency,
+          landingUrl,
+          raw: {
+            hotel: isRecord(hotel) ? hotel : { value: hotel },
+            room: isRecord(room) ? room : { value: room },
+            rate: isRecord(rate) ? rate : { value: rate },
+          },
+        }),
+      );
     });
   });
 
