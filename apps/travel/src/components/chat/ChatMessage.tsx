@@ -27,19 +27,17 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
       <div className={`flex-1 min-w-0 space-y-2 ${isUser ? 'text-right' : ''}`}>
         {isUser ? (
           <div className='inline-block rounded-3xl bg-primary px-4 py-2.5 text-sm text-primary-foreground max-w-[85%]'>
-            {message.parts.map((part) =>
-              part.type === 'text' ? (
-                <span key={`text-${message.id ?? 'msg'}-${part.text.slice(0, 32)}`}>{part.text}</span>
-              ) : null,
+            {message.parts.map((part, idx) =>
+              part.type === 'text' ? <span key={`text-${message.id ?? 'msg'}-${idx}`}>{part.text}</span> : null,
             )}
           </div>
         ) : (
           <div className='space-y-2'>
-            {message.parts.map((part) => {
+            {message.parts.map((part, idx) => {
               if (part.type === 'text') {
                 return (
                   <div
-                    key={`md-${message.id ?? 'msg'}-${part.text.slice(0, 32)}`}
+                    key={`md-${message.id ?? 'msg'}-${idx}`}
                     className='rounded-2xl bg-muted/30 dark:bg-muted/20 px-4 py-3.5 prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-p:my-2.5 first:prose-p:mt-0 last:prose-p:mb-0 prose-ul:my-2.5 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2.5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-0.5 prose-pre:my-2.5 prose-pre:rounded-xl prose-pre:bg-muted/60 prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:border prose-pre:border-border/40 prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:before:content-none prose-code:after:content-none text-[0.9375rem] sm:text-base'
                     style={{ letterSpacing: '0.01em' }}
                   >

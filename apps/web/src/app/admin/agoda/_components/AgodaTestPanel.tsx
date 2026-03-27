@@ -488,7 +488,6 @@ function CitySearchForm({ pendingCityId }: { pendingCityId: number | null }) {
             <Label>어린이 나이 (0–17세)</Label>
             <div className='flex flex-wrap gap-2'>
               {childrenAges.map((age, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 인덱스가 어린이 순서를 의미함
                 <div key={i} className='flex items-center gap-1'>
                   <span className='text-xs text-muted-foreground'>#{i + 1}</span>
                   <Input
@@ -657,7 +656,6 @@ function HotelSearchForm({ pendingHotelIds }: { pendingHotelIds: number[] | null
             <Label>어린이 나이 (0–17세)</Label>
             <div className='flex flex-wrap gap-2'>
               {childrenAges.map((age, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 인덱스가 어린이 순서를 의미함
                 <div key={i} className='flex items-center gap-1'>
                   <span className='text-xs text-muted-foreground'>#{i + 1}</span>
                   <Input
