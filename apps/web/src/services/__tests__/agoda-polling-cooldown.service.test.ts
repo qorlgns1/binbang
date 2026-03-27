@@ -288,6 +288,62 @@ describe('agoda-polling: cooldown 쿨다운', () => {
     expect(result.vacancyVerifySkipped).toBe(false);
   });
 
+  it('오퍼가 있으면 snapshot을 저장하고 AVAILABLE 상태로 업데이트', async () => {
+    setupBaseAccommodation();
+
+    mockPollRunFindFirst.mockResolvedValue(null);
+    mockSnapshotFindMany.mockResolvedValue([]);
+
+    const currentOffer = makeAgodaOffer({
+      landingUrl: 'https://www.agoda.com/ko-kr/test-flat',
+    });
+    mockSearchAgodaAvailability.mockResolvedValue({ payload: { results: [{ hotelId: 1001 }] }, httpStatus: 200 });
+    mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
+
+    const result = await pollAccommodationOnce('acc_001');
+
+    expect(result.snapshotsInserted).toBe(1);
+    expect(mockSnapshotCreateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            accommodationId: 'acc_001',
+            propertyId: '1001',
+            roomId: '2001',
+            ratePlanId: '3001',
+          }),
+        ],
+      }),
+    );
+    expect(mockAccommodationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'acc_001' },
+        data: expect.objectContaining({ lastStatus: 'AVAILABLE' }),
+      }),
+    );
+  });
+
+  it('오퍼가 없으면 snapshot을 저장하지 않고 UNAVAILABLE 상태로 업데이트', async () => {
+    setupBaseAccommodation();
+
+    mockPollRunFindFirst.mockResolvedValue(null);
+    mockSnapshotFindMany.mockResolvedValue([]);
+
+    mockSearchAgodaAvailability.mockResolvedValue({ payload: { results: [] }, httpStatus: 200 });
+    mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [] });
+
+    const result = await pollAccommodationOnce('acc_001');
+
+    expect(result.snapshotsInserted).toBe(0);
+    expect(mockSnapshotCreateMany).not.toHaveBeenCalled();
+    expect(mockAccommodationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'acc_001' },
+        data: expect.objectContaining({ lastStatus: 'UNAVAILABLE' }),
+      }),
+    );
+  });
+
   it('isInCooldown 쿼리는 accommodationId + type + offerKey + status=detected 조건으로 조회', async () => {
     setupBaseAccommodation();
 

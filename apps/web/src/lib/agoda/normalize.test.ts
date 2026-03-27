@@ -221,4 +221,60 @@ describe('normalizeAgodaSearchResponse', () => {
     const result = normalizeAgodaSearchResponse(payload);
     expect(result.offers[0].landingUrl).toBe('https://www.agoda.com/rate-level');
   });
+
+  it('flat results 응답도 오퍼 1개로 정규화한다', () => {
+    const payload = {
+      results: [
+        {
+          hotelId: 63565,
+          hotelName: '시타딘 레 알 파리',
+          roomtypeName: '스튜디오룸',
+          currency: 'USD',
+          dailyRate: 240.56,
+          landingURL: 'https://www.agoda.com/ko-kr/test-flat',
+        },
+      ],
+    };
+
+    const result = normalizeAgodaSearchResponse(payload);
+    expect(result.offers).toHaveLength(1);
+    expect(result.offers[0].propertyId).toBe(63565n);
+    expect(result.offers[0].totalInclusive).toBe(240.56);
+    expect(result.offers[0].currency).toBe('USD');
+    expect(result.offers[0].landingUrl).toBe('https://www.agoda.com/ko-kr/test-flat');
+  });
+
+  it('flat results의 landingURL 대문자 필드도 읽는다', () => {
+    const payload = {
+      results: [
+        {
+          hotelId: 63565,
+          roomtypeName: '스튜디오룸',
+          dailyRate: 240.56,
+          currency: 'USD',
+          landingURL: 'https://www.agoda.com/ko-kr/upper-case-url',
+        },
+      ],
+    };
+
+    const result = normalizeAgodaSearchResponse(payload);
+    expect(result.offers[0].landingUrl).toBe('https://www.agoda.com/ko-kr/upper-case-url');
+  });
+
+  it('flat results의 가짜 roomId/ratePlanId는 가격이 바뀌어도 유지된다', () => {
+    const payloadA = {
+      results: [{ hotelId: 63565, roomtypeName: '스튜디오룸', dailyRate: 240.56, currency: 'USD' }],
+    };
+    const payloadB = {
+      results: [{ hotelId: 63565, roomtypeName: '스튜디오룸', dailyRate: 250.12, currency: 'USD' }],
+    };
+
+    const offerA = normalizeAgodaSearchResponse(payloadA).offers[0];
+    const offerB = normalizeAgodaSearchResponse(payloadB).offers[0];
+
+    expect(offerA.roomId).toBe(offerB.roomId);
+    expect(offerA.ratePlanId).toBe(offerB.ratePlanId);
+    expect(offerA.offerKey).toBe(offerB.offerKey);
+    expect(offerA.payloadHash).not.toBe(offerB.payloadHash);
+  });
 });
