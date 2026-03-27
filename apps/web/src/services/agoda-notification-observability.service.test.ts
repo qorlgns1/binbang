@@ -4,7 +4,7 @@ import {
   buildAgodaNotificationReasonBreakdown,
   encodeAgodaNotificationReason,
   parseAgodaNotificationReason,
-} from './agoda-notification-observability';
+} from './agoda-notification-observability.service';
 
 describe('agoda-notification-observability', () => {
   it('encodes and parses structured notification reasons', () => {
