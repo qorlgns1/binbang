@@ -425,10 +425,136 @@ export interface PriceHistoryResponse {
   stats: PriceStats | null;
 }
 
+async function getAgodaApiPriceHistory(params: {
+  accommodationId: string;
+  checkIn: Date;
+  checkOut: Date;
+  dateFilter: { gte?: Date; lte?: Date };
+}): Promise<PriceHistoryResponse> {
+  const snapshots = await prisma.agodaRoomSnapshot.findMany({
+    where: {
+      accommodationId: params.accommodationId,
+      totalInclusive: { not: null },
+      ...(Object.keys(params.dateFilter).length > 0 && { createdAt: params.dateFilter }),
+    },
+    select: { pollRunId: true, createdAt: true, totalInclusive: true, currency: true },
+    orderBy: { createdAt: 'asc' },
+    take: MAX_PRICE_RECORDS,
+  });
+
+  if (snapshots.length === 0) {
+    return { prices: [], stats: null };
+  }
+
+  // poll run당 최저가 스냅샷 하나만 사용
+  const byPollRun = new Map<bigint, (typeof snapshots)[0]>();
+  for (const snap of snapshots) {
+    const existing = byPollRun.get(snap.pollRunId);
+    if (!existing || Number(snap.totalInclusive) < Number(existing.totalInclusive)) {
+      byPollRun.set(snap.pollRunId, snap);
+    }
+  }
+
+  const pollData = [...byPollRun.values()].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  const nights = Math.round((params.checkOut.getTime() - params.checkIn.getTime()) / (1000 * 60 * 60 * 24));
+
+  const prices: PriceDataPoint[] = pollData.map((snap, idx): PriceDataPoint => {
+    const priceAmount = Number(snap.totalInclusive);
+    const currentTime = snap.createdAt.getTime();
+    const windowStart = currentTime - MOVING_AVG_WINDOW_MS;
+
+    let sum = 0;
+    let count = 0;
+    for (let j = idx; j >= 0; j--) {
+      if (pollData[j].createdAt.getTime() < windowStart) break;
+      sum += Number(pollData[j].totalInclusive);
+      count++;
+    }
+
+    return {
+      createdAt: snap.createdAt.toISOString(),
+      priceAmount,
+      priceCurrency: snap.currency ?? 'USD',
+      pricePerNight: nights > 0 ? Math.round(priceAmount / nights) : null,
+      movingAvg: count >= 2 ? Math.round(sum / count) : null,
+      isLegacy: false,
+    };
+  });
+
+  let min = Infinity;
+  let minDate = '';
+  let max = -Infinity;
+  let maxDate = '';
+  let sum = 0;
+
+  for (const p of prices) {
+    if (p.priceAmount < min) {
+      min = p.priceAmount;
+      minDate = p.createdAt;
+    }
+    if (p.priceAmount > max) {
+      max = p.priceAmount;
+      maxDate = p.createdAt;
+    }
+    sum += p.priceAmount;
+  }
+
+  const perNightPrices = prices.filter((p): boolean => p.pricePerNight != null);
+  let perNight: PriceStats['perNight'] = null;
+
+  if (perNightPrices.length > 0) {
+    let pnMin = Infinity;
+    let pnMinDate = '';
+    let pnMax = -Infinity;
+    let pnMaxDate = '';
+    let pnSum = 0;
+
+    for (const p of perNightPrices) {
+      const pn = p.pricePerNight as number;
+      if (pn < pnMin) {
+        pnMin = pn;
+        pnMinDate = p.createdAt;
+      }
+      if (pn > pnMax) {
+        pnMax = pn;
+        pnMaxDate = p.createdAt;
+      }
+      pnSum += pn;
+    }
+
+    const lastPerNight = perNightPrices[perNightPrices.length - 1];
+    perNight = {
+      min: pnMin,
+      minDate: pnMinDate,
+      max: pnMax,
+      maxDate: pnMaxDate,
+      avg: Math.round(pnSum / perNightPrices.length),
+      current: lastPerNight.pricePerNight,
+    };
+  }
+
+  const last = prices[prices.length - 1];
+  return {
+    prices,
+    stats: {
+      min,
+      minDate,
+      max,
+      maxDate,
+      avg: Math.round(sum / prices.length),
+      current: last.priceAmount,
+      currentCurrency: last.priceCurrency,
+      count: prices.length,
+      perNight,
+    },
+  };
+}
+
 export async function getAccommodationPriceHistory(input: GetPriceHistoryInput): Promise<PriceHistoryResponse | null> {
   const accommodation = await prisma.accommodation.findFirst({
     where: { id: input.accommodationId, userId: input.userId },
-    select: { id: true, checkIn: true, checkOut: true },
+    select: { id: true, checkIn: true, checkOut: true, platformId: true },
   });
 
   if (!accommodation) {
@@ -443,6 +569,15 @@ export async function getAccommodationPriceHistory(input: GetPriceHistoryInput):
   if (input.to) {
     const toDate = new Date(input.to);
     if (!Number.isNaN(toDate.getTime())) dateFilter.lte = toDate;
+  }
+
+  if (accommodation.platformId) {
+    return getAgodaApiPriceHistory({
+      accommodationId: accommodation.id,
+      checkIn: accommodation.checkIn,
+      checkOut: accommodation.checkOut,
+      dateFilter,
+    });
   }
 
   // 현재 일정과 일치하는 로그 + 레거시(일정 미기록) 로그만 조회
