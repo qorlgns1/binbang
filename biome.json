@@ -65,7 +65,7 @@
         "useImportType": "error",
         "useFilenamingConvention": "off"
       },
-      "suspicious": { "noExplicitAny": "error" }
+      "suspicious": { "noExplicitAny": "error", "noArrayIndexKey": "off" }
     }
   },
   "javascript": {

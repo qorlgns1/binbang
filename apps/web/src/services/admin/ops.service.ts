@@ -5,7 +5,7 @@ import {
   buildAgodaNotificationReasonBreakdown,
   parseAgodaNotificationReason,
   type AgodaNotificationReasonStat,
-} from '@/services/agoda-notification-observability';
+} from '@/services/agoda-notification-observability.service';
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { ensureRedisConnected, getRedisClient } from '@/lib/redis';
 

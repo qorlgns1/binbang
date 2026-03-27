@@ -12,8 +12,7 @@ export function LighthouseSpinner({ className, size = 'md' }: { className?: stri
   };
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: status role is appropriate for loading spinner
-    <div className={`relative ${sizeClasses[size]} ${className ?? ''}`} role='status' aria-label='로딩 중'>
+    <output className={`relative block ${sizeClasses[size]} ${className ?? ''}`} aria-label='로딩 중'>
       {/* 등대 본체 */}
       <div className='absolute inset-0 flex items-center justify-center'>
         <div className='h-full w-1/3 bg-primary rounded-t-lg' />
@@ -36,6 +35,6 @@ export function LighthouseSpinner({ className, size = 'md' }: { className?: stri
 
       {/* 등대 꼭대기 빛 */}
       <div className='absolute top-0 left-1/2 -translate-x-1/2 h-1 w-1 bg-brand-gold rounded-full animate-pulse' />
-    </div>
+    </output>
   );
 }

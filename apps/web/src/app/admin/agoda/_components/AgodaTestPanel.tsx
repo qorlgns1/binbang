@@ -23,6 +23,9 @@ type ApiResult = {
   error?: string;
   hint?: string;
   body?: unknown;
+  availability?: 'AVAILABLE' | 'UNAVAILABLE' | null;
+  normalizedOfferCount?: number | null;
+  landingUrlSample?: string | null;
 };
 
 async function parseResponse(res: Response): Promise<ApiResult> {
@@ -485,7 +488,6 @@ function CitySearchForm({ pendingCityId }: { pendingCityId: number | null }) {
             <Label>어린이 나이 (0–17세)</Label>
             <div className='flex flex-wrap gap-2'>
               {childrenAges.map((age, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 인덱스가 어린이 순서를 의미함
                 <div key={i} className='flex items-center gap-1'>
                   <span className='text-xs text-muted-foreground'>#{i + 1}</span>
                   <Input
@@ -654,7 +656,6 @@ function HotelSearchForm({ pendingHotelIds }: { pendingHotelIds: number[] | null
             <Label>어린이 나이 (0–17세)</Label>
             <div className='flex flex-wrap gap-2'>
               {childrenAges.map((age, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 인덱스가 어린이 순서를 의미함
                 <div key={i} className='flex items-center gap-1'>
                   <span className='text-xs text-muted-foreground'>#{i + 1}</span>
                   <Input
@@ -708,6 +709,9 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
     const b = result.body as { results?: unknown[] };
     return Array.isArray(b.results) ? b.results : null;
   })();
+  const hasNormalizedSummary = typeof result.normalizedOfferCount === 'number';
+  const availabilityLabel = result.availability === 'AVAILABLE' ? '예약 가능' : '예약 불가';
+  const availabilityVariant = result.availability === 'AVAILABLE' ? 'default' : 'secondary';
 
   return (
     <div className='space-y-4'>
@@ -726,6 +730,30 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
           {result.hint && <p className='mt-1 text-xs opacity-80'>{result.hint}</p>}
         </AlertDescription>
       </Alert>
+
+      {hasNormalizedSummary && (
+        <Card>
+          <CardContent className='space-y-3 pt-4'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <p className='text-sm font-medium'>폴링 기준 판정</p>
+              <Badge variant={availabilityVariant}>{availabilityLabel}</Badge>
+            </div>
+            <div className='flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
+              <span>정규화된 오퍼 수 {result.normalizedOfferCount}</span>
+              {result.landingUrlSample && (
+                <a
+                  href={result.landingUrlSample}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-primary hover:underline'
+                >
+                  랜딩 URL 열기
+                </a>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {hotelResults && hotelResults.length > 0 && (
         <div className='space-y-2'>
@@ -750,6 +778,8 @@ function ResultDisplay({ result }: { result: ApiResult | null }) {
 }
 
 function HotelCard({ hotel }: { hotel: Record<string, unknown> }) {
+  const landingUrl = hotel.landingURL ?? hotel.landingUrl;
+
   return (
     <Card className='text-sm'>
       <CardContent className='pt-4 pb-3'>
@@ -800,9 +830,9 @@ function HotelCard({ hotel }: { hotel: Record<string, unknown> }) {
               {hotel.includeBreakfast === true ? <Badge variant='secondary'>조식 포함</Badge> : null}
               {hotel.freeWifi === true ? <Badge variant='secondary'>무료 WiFi</Badge> : null}
             </div>
-            {hotel.landingURL != null && (
+            {landingUrl != null && (
               <a
-                href={String(hotel.landingURL)}
+                href={String(landingUrl)}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='mt-2 inline-block text-xs text-primary hover:underline'

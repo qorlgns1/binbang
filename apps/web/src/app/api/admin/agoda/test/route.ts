@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireAdmin } from '@/lib/admin';
-import { normalizeAgodaSearchResponse } from '@/lib/agoda/normalize';
 import { searchAgodaAvailability } from '@/lib/agoda/searchClient';
+import { summarizeAgodaPayload } from '@/lib/agoda/summary';
 import { handleServiceError, unauthorizedResponse, validationErrorResponse } from '@/lib/handleServiceError';
 
 const testSchema = z.object({
@@ -61,27 +61,18 @@ export async function POST(request: NextRequest): Promise<Response> {
     });
 
     const latencyMs = Date.now() - startedAt;
-    const normalized = normalizeAgodaSearchResponse(apiResult.payload);
+    const summary = summarizeAgodaPayload(apiResult.payload);
 
     return NextResponse.json({
       httpStatus: apiResult.httpStatus,
       latencyMs,
       requestedExtra: extra,
-      offerCount: normalized.offers.length,
-      landingUrlDetectedCount: normalized.offers.filter((o) => o.landingUrl != null).length,
-      landingUrlSample: normalized.offers.find((o) => o.landingUrl != null)?.landingUrl ?? null,
-      offers: normalized.offers.map((o) => ({
-        offerKey: o.offerKey,
-        propertyId: o.propertyId.toString(),
-        roomId: o.roomId.toString(),
-        ratePlanId: o.ratePlanId.toString(),
-        remainingRooms: o.remainingRooms,
-        totalInclusive: o.totalInclusive,
-        currency: o.currency,
-        freeCancellation: o.freeCancellation,
-        landingUrl: o.landingUrl,
-        payloadHash: o.payloadHash,
-      })),
+      availability: summary.availability,
+      offerCount: summary.normalizedOfferCount,
+      normalizedOfferCount: summary.normalizedOfferCount,
+      landingUrlDetectedCount: summary.landingUrlDetectedCount,
+      landingUrlSample: summary.landingUrlSample,
+      offers: summary.normalizedOffers,
     });
   } catch (error) {
     return handleServiceError(error, 'Agoda API 테스트 오류');

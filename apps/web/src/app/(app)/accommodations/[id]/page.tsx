@@ -65,6 +65,14 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
   today.setUTCHours(0, 0, 0, 0);
   const isCheckInExpired = accommodation.checkIn < today;
 
+  const displayUrl = accommodation.url
+    ? buildAccommodationUrl({ ...accommodation, url: accommodation.url })
+    : typeof accommodation.platformMetadata === 'object' &&
+        accommodation.platformMetadata !== null &&
+        !Array.isArray(accommodation.platformMetadata)
+      ? (((accommodation.platformMetadata as Record<string, unknown>).landingUrl as string | null | undefined) ?? null)
+      : null;
+
   return (
     <main className='mx-auto max-w-4xl px-4 py-8'>
       {/* 뒤로 가기 */}
@@ -125,14 +133,14 @@ export default async function AccommodationDetailPage({ params }: PageParams): P
               <ExternalLink className='size-4' />
               <span>URL</span>
             </div>
-            {accommodation.url ? (
+            {displayUrl ? (
               <a
-                href={buildAccommodationUrl({ ...accommodation, url: accommodation.url })}
+                href={displayUrl}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='break-all text-sm text-primary transition-colors hover:text-primary/80 hover:underline'
               >
-                {buildAccommodationUrl({ ...accommodation, url: accommodation.url })}
+                {displayUrl}
               </a>
             ) : (
               <span className='text-sm text-muted-foreground'>Agoda API 모니터링 (URL 없음)</span>

@@ -131,7 +131,6 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
           {selectedHotel.starRating && (
             <div className='mt-0.5 flex items-center gap-0.5'>
               {Array.from({ length: Math.round(selectedHotel.starRating) }).map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static render
                 <Star key={i} className='size-3 fill-amber-400 text-amber-400' />
               ))}
             </div>
