@@ -20,12 +20,12 @@ export async function findActiveAccommodations(): Promise<ActiveAccommodation[]>
     where: {
       isActive: true,
       checkIn: { gte: new Date() },
-      url: { not: null },
     },
     select: {
       id: true,
       name: true,
       url: true,
+      platformId: true,
       platform: true,
       checkIn: true,
       checkOut: true,
@@ -35,16 +35,15 @@ export async function findActiveAccommodations(): Promise<ActiveAccommodation[]>
     },
   });
 
-  return accommodations.flatMap((accommodation) =>
-    accommodation.url
-      ? [
-          {
-            ...accommodation,
-            url: accommodation.url,
-          },
-        ]
-      : [],
-  );
+  return accommodations.flatMap((accommodation) => {
+    const url =
+      accommodation.url ??
+      (accommodation.platform === 'AGODA' && accommodation.platformId
+        ? `https://www.agoda.com/hotel-detail/${accommodation.platformId}`
+        : null);
+
+    return url ? [{ ...accommodation, url }] : [];
+  });
 }
 
 export interface CreateCheckCycleInput {
