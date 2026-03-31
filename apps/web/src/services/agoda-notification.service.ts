@@ -8,7 +8,7 @@ import {
   buildAgodaNotificationReasonBreakdown,
   encodeAgodaNotificationReason,
   type AgodaNotificationReasonCode,
-} from '@/services/agoda-notification-observability';
+} from '@/services/agoda-notification-observability.service';
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
 import { buildAgodaUnsubscribeUrl, createAgodaUnsubscribeToken } from '@/services/agoda-unsubscribe.service';
 
