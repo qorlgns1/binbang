@@ -17,7 +17,7 @@
     "step1Title": "注册住宿",
     "step1Desc": "搜索并注册您想要的住宿。",
     "step2Title": "自动监控",
-    "step2Desc": "Binbang全天候不间断检查空房。Pro套餐每分钟检查一次。",
+    "step2Desc": "Binbang 全天候不间断检查空房。当前检查频率遵循 Beta 运营标准。",
     "step3Title": "即时提醒",
     "step3Desc": "一旦有空房，立即通过邮件通知您。"
   },
@@ -33,6 +33,6 @@
   "cta": {
     "title": "立即开始",
     "description": "将预订竞争交给Binbang，专注于规划您的下一次旅行。",
-    "button": "免费开始"
+    "button": "开始 Beta"
   }
 }

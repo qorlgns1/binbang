@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – Vacancy Alert Service | Real-Time Monitoring",
-    "description": "Sold-out accommodation? Binbang checks every minute and notifies you instantly when a room becomes available. Start monitoring for free.",
-    "twitterDescription": "Vacancy alerts every minute. Real-time accommodation monitoring."
+    "description": "Sold-out accommodation? Binbang is currently in beta and notifies you when a room becomes available.",
+    "twitterDescription": "A vacancy alert service currently running in beta."
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "Pricing",
+    "pricing": "Beta Guide",
     "faq": "FAQ",
     "about": "About",
     "login": "Login"
@@ -16,10 +16,10 @@
     "headlineMobile": ["So your rest", "never loses its way,"],
     "subheadline": "Binbang keeps the lighthouse on all night.",
     "subheadlineMobile": ["'Binbang' keeps the lighthouse", "on all night."],
-    "description": "Tired of endless refreshing? Binbang keeps watch while you sleep and catches the vacancy at your dream stay first.",
-    "cta": "Start Vacancy Alerts",
+    "description": "Tired of endless refreshing? Binbang is currently in beta and keeps watch while you sleep to catch the vacancy first.",
+    "cta": "Start Beta",
     "secondaryCta": "See Features",
-    "statusLabel": "Live System Status"
+    "statusLabel": "Open Beta"
   },
   "features": {
     "f1Title": "Brighter News, First",
@@ -46,7 +46,7 @@
   "footer": {
     "title": "We handle the complexity.",
     "description": "You can focus on planning your next trip.",
-    "cta": "Get Vacancy Updates",
+    "cta": "Start Beta Now",
     "copyright": "© 2026 Binbang. All rights reserved.",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"

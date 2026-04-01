@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – 空房提醒服务 | 实时监控",
-    "description": "心仪的住宿已满房？Binbang 每分钟自动检查，空房出现立即通知您。免费开始住宿监控。",
-    "twitterDescription": "每分钟空房提醒，实时住宿监控服务。"
+    "description": "心仪的住宿已满房？Binbang 目前处于 Beta 阶段，空房出现时会立即通知您。",
+    "twitterDescription": "目前以 Beta 形式运行的空房提醒服务。"
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "价格",
+    "pricing": "Beta 说明",
     "faq": "FAQ",
     "about": "关于",
     "login": "登录"
@@ -16,10 +16,10 @@
     "headlineMobile": ["让您的休息", "不迷路，"],
     "subheadline": "Binbang 彻夜为您点亮灯塔。",
     "subheadlineMobile": ["Binbang 彻夜", "为您点亮灯塔。"],
-    "description": "厌倦了无休止的刷新？Binbang 在您入睡时持续监控，抢先为您捕捉心仪住宿的空房。",
-    "cta": "开启空房提醒",
+    "description": "厌倦了无休止的刷新？Binbang 目前处于 Beta 阶段，会在你休息时持续监控空房。",
+    "cta": "开始使用 Beta",
     "secondaryCta": "了解功能",
-    "statusLabel": "实时系统状态"
+    "statusLabel": "开放 Beta"
   },
   "features": {
     "f1Title": "更快、更早",
@@ -46,7 +46,7 @@
   "footer": {
     "title": "复杂的事交给我们。",
     "description": "您只需专注规划下一次旅程。",
-    "cta": "获取空房动态",
+    "cta": "立即开始使用 Beta",
     "copyright": "© 2026 Binbang. 保留所有权利。",
     "privacy": "隐私政策",
     "terms": "服务条款"

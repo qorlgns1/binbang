@@ -54,9 +54,9 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props): React.R
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <Home className='size-5 text-primary' />
-          사용량
+          이용 현황
         </CardTitle>
-        <CardDescription>지금 불을 밝히고 있는 곳</CardDescription>
+        <CardDescription>지금 베타에서 사용 중인 범위입니다.</CardDescription>
       </CardHeader>
       <CardContent className='space-y-6'>
         <div className='space-y-3'>
@@ -75,10 +75,14 @@ export function UsageCard({ quotas, usage, isLoading, isError }: Props): React.R
             className={`h-2 ${isAtLimit ? '[&>div]:bg-destructive' : isNearLimit ? '[&>div]:bg-status-warning' : ''}`}
           />
           {isAtLimit && (
-            <p className='text-xs text-destructive'>숙소 한도에 도달했습니다. 플랜 업그레이드를 고려해보세요.</p>
+            <p className='text-xs text-destructive'>
+              등록 한도에 도달했습니다. 더 필요하면 베타 운영팀에 확대를 요청해주세요.
+            </p>
           )}
           {isNearLimit && !isAtLimit && (
-            <p className='text-xs text-status-warning-foreground'>숙소 한도에 거의 도달했습니다.</p>
+            <p className='text-xs text-status-warning-foreground'>
+              등록 한도에 거의 도달했습니다. 필요 시 운영팀에 미리 알려주세요.
+            </p>
           )}
         </div>
 

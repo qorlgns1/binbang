@@ -2,7 +2,7 @@
   "meta": {
     "title": "Binbang – Frequently Asked Questions",
     "description": "Find answers to frequently asked questions about Binbang vacancy alert service.",
-    "ogDescription": "Binbang FAQ – service, alerts, pricing and more."
+    "ogDescription": "Binbang FAQ – service, alerts, and beta operations."
   },
   "title": {
     "heading": "Frequently Asked Questions",
@@ -11,7 +11,7 @@
   "categories": {
     "service": "About the Service",
     "monitoring": "Alerts & Monitoring",
-    "account": "Account & Billing",
+    "account": "Account & Beta Access",
     "other": "Other"
   },
   "service": {
@@ -22,7 +22,7 @@
   },
   "monitoring": {
     "q1": "How often are vacancies checked?",
-    "a1": "It depends on your plan. The Free plan checks every 30 minutes, while the Pro plan checks every minute.",
+    "a1": "The current beta operating standard determines the default check cadence. You can review your current limits and check interval on the usage page, and they may change as operations stabilize.",
     "q2": "How will I receive alerts?",
     "a2": "Email alerts are included by default. You can also receive real-time KakaoTalk alerts by connecting your Kakao account.",
     "q3": "Does monitoring run 24/7?",
@@ -31,20 +31,20 @@
   "account": {
     "q1": "How do I sign up?",
     "a1": "You can sign up easily with your Google account. Your email is used only for account identification and sending alerts.",
-    "q2": "Can I change my plan?",
-    "a2": "Yes, you can upgrade or downgrade your plan at any time.",
-    "q3": "What is the refund policy?",
-    "a3": "Full refund if requested within 7 days of payment."
+    "q2": "Is there public pricing now?",
+    "a2": "Not yet. Public pricing and automatic billing are not active. The product is currently managed around beta access and usage scope.",
+    "q3": "What if I need a higher limit?",
+    "a3": "Contact us through the beta guide page or support email. We review expansion requests based on real usage context."
   },
   "other": {
     "q1": "Is my personal data safe?",
     "a1": "Binbang collects only minimal information through Google OAuth. Your email is used solely for account identification and sending alerts. Please see our Privacy Policy for details.",
     "q2": "How can I contact support?",
-    "a2": "Please email us at support@binbang.moodybeard.com and we'll get back to you promptly."
+    "a2": "Please contact us through the support email and we'll get back to you promptly."
   },
   "footer": {
     "stillHaveQuestions": "Still have questions? ",
     "privacyPolicy": "Privacy Policy",
-    "pricing": "Pricing"
+    "pricing": "Beta Guide"
   }
 }

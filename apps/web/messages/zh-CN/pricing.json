@@ -1,44 +1,60 @@
 {
-  "nav": { "brand": "Binbang", "login": "登录", "getStarted": "免费开始", "dashboard": "控制台" },
-  "title": {
-    "heading": "选择适合您的方案",
-    "subline1": "复杂的事交给我们。",
-    "subline2": "您只需专注规划下一次旅程。"
+  "nav": { "brand": "Binbang", "login": "登录", "getStarted": "开始 Beta", "dashboard": "控制台" },
+  "meta": {
+    "title": "Binbang – Beta 说明",
+    "description": "Binbang 目前处于 Beta 阶段。这里不展示公开价格，而是说明当前提供范围、加入方式和反馈渠道。",
+    "ogDescription": "Binbang Beta 说明。查看当前提供范围和加入方式。"
   },
-  "plan": {
-    "free": "免费",
-    "perMonth": "月",
-    "perYear": "年",
-    "popular": "热门",
-    "currentPlan": "当前方案",
-    "accommodations": "{count} 个住宿",
-    "checkInterval": "每 {minutes} 分钟检查价格",
-    "kakaoAlert": "实时 KakaoTalk 提醒",
-    "priceChart": "价格趋势图",
-    "prioritySupport": "优先支持",
-    "currentPlanButton": "当前方案",
-    "getStartedFree": "免费开始",
-    "upgradeInquiry": "咨询升级",
-    "upgradeInquirySubject": "{planName} 方案升级咨询",
-    "plans": {
-      "FREE": { "name": "免费方案", "description": "1 个住宿，30 分钟检查。适合入门体验。" },
-      "PRO": { "name": "Pro 方案", "description": "更多住宿与更快检查。适合深度使用。" },
-      "BIZ": { "name": "商业方案", "description": "批量登记与优先支持。适合团队与商户。" }
+  "hero": {
+    "eyebrow": "Open Beta",
+    "heading": "在展示价格前，我们先把 Beta 打磨好",
+    "subline1": "Binbang 目前以小规模 Beta 方式运行。",
+    "subline2": "在公开收费前，我们优先稳定真实使用流程和提醒质量。",
+    "description": "你现在就可以注册并开始核心监控流程。如果需要更大范围，我们会根据反馈和运营准备情况逐步扩展。"
+  },
+  "cards": {
+    "beta": {
+      "title": "先做开放 Beta",
+      "description": "相比价格表，我们先说明当前提供范围和使用规则。"
+    },
+    "coverage": {
+      "title": "当前提供内容",
+      "description": "我们优先验证空房提醒、基础使用上限和核心监控流程。"
+    },
+    "feedback": {
+      "title": "先看反馈再打包",
+      "description": "如果你需要更大容量或缺少功能，团队会结合真实使用场景来评估。"
     }
+  },
+  "process": {
+    "title": "Beta 使用方式",
+    "step1": {
+      "title": "注册后立即开始",
+      "description": "创建账号并登记你想监控的住宿后，就可以在当前 Beta 范围内立即使用。"
+    },
+    "step2": {
+      "title": "先看使用范围",
+      "description": "在正式收费前，我们先明确展示登记数量和检查频率等运营 기준。"
+    },
+    "step3": {
+      "title": "需要更多时再联系",
+      "description": "如果你需要更广的监控范围，可以联系团队，我们会根据 Beta 运营情况逐步调整。"
+    }
+  },
+  "cta": {
+    "title": "先试 Beta，再告诉我们哪里还不够",
+    "description": "现在的重点不是宣传套餐，而是把真实产品闭环打磨稳定。你可以马上开始，也可以直接联系团队。",
+    "primary": "开始 Beta",
+    "secondary": "联系团队"
   },
   "faq": {
     "title": "常见问题",
-    "q1": "可以随时更换方案吗？",
-    "a1": "可以，您可随时升级或降级方案。",
-    "q2": "如何付款？",
-    "a2": "目前请通过邮件联系我们。我们计划不久后推出自动扣款。",
-    "q3": "退款政策如何？",
-    "a3": "付款后 7 天内申请可全额退款。"
+    "q1": "现在需要付费吗？",
+    "a1": "不需要。公开价格和自动扣费尚未启用。目前按 Beta 参与和使用范围来运营。",
+    "q2": "可以马上使用 Beta 吗？",
+    "a2": "可以。注册后即可在当前范围内开始使用，但部分上限可能会随着运营稳定而调整。",
+    "q3": "如果我需要更大的监控容量怎么办？",
+    "a3": "可以使用本页的联系按钮或发送支持邮件。我们会根据真实使用场景评估是否扩展。"
   },
-  "footer": { "contact": "联系邮箱：{email}" },
-  "loadError": "无法加载方案信息。",
-  "meta": {
-    "description": "查看 Binbang 方案。免费开始，随时升级。分钟级检查、实时 KakaoTalk 通知、价格趋势分析。",
-    "ogDescription": "免费开始。分钟级检查，实时通知。"
-  }
+  "footer": { "contact": "联系邮箱：{email}" }
 }

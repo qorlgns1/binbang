@@ -17,7 +17,7 @@
     "step1Title": "Register Accommodation",
     "step1Desc": "Search and register your desired accommodation.",
     "step2Title": "Automatic Monitoring",
-    "step2Desc": "Binbang checks for vacancies around the clock. Pro plans check every minute.",
+    "step2Desc": "Binbang checks for vacancies around the clock. The current cadence follows the beta operating standard.",
     "step3Title": "Instant Alerts",
     "step3Desc": "When a room opens up, we notify you instantly via email."
   },
@@ -33,6 +33,6 @@
   "cta": {
     "title": "Get Started Today",
     "description": "Leave the booking race to Binbang and focus on planning your next trip.",
-    "button": "Start for Free"
+    "button": "Start Beta"
   }
 }

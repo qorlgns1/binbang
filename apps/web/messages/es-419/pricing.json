@@ -1,47 +1,60 @@
 {
-  "nav": { "brand": "Binbang", "login": "Iniciar sesión", "getStarted": "Comenzar gratis", "dashboard": "Panel" },
-  "title": {
-    "heading": "Elige el plan que te convenga",
-    "subline1": "Nosotros manejamos la complejidad.",
-    "subline2": "Tú puedes concentrarte en planear tu próximo viaje."
+  "nav": { "brand": "Binbang", "login": "Iniciar sesión", "getStarted": "Entrar a la beta", "dashboard": "Panel" },
+  "meta": {
+    "title": "Binbang – Guía beta",
+    "description": "Binbang está operando en beta. En lugar de precios públicos, revisa el alcance actual, cómo entrar y dónde dejar feedback.",
+    "ogDescription": "Guía beta de Binbang. Revisa el alcance actual y cómo entrar."
   },
-  "plan": {
-    "free": "Gratis",
-    "perMonth": "mes",
-    "perYear": "año",
-    "popular": "Popular",
-    "currentPlan": "Plan actual",
-    "accommodations": "{count} alojamientos",
-    "checkInterval": "Revisión de precio cada {minutes} min",
-    "kakaoAlert": "Alertas en tiempo real por KakaoTalk",
-    "priceChart": "Gráfico de tendencia de precios",
-    "prioritySupport": "Soporte prioritario",
-    "currentPlanButton": "Plan actual",
-    "getStartedFree": "Comenzar gratis",
-    "upgradeInquiry": "Consultar mejora",
-    "upgradeInquirySubject": "Consulta de mejora al plan {planName}",
-    "plans": {
-      "FREE": { "name": "Plan gratuito", "description": "1 alojamiento, revisión cada 30 min. Ideal para empezar." },
-      "PRO": { "name": "Plan Pro", "description": "Más alojamientos y revisiones más rápidas. Para uso serio." },
-      "BIZ": {
-        "name": "Plan Business",
-        "description": "Registro masivo y soporte prioritario. Para equipos y negocios."
-      }
+  "hero": {
+    "eyebrow": "Open Beta",
+    "heading": "Primero estamos afinando la beta antes de mostrar precios",
+    "subline1": "Binbang funciona hoy como una beta pequeña.",
+    "subline2": "Estamos estabilizando el flujo real y la calidad de las alertas antes del cobro público.",
+    "description": "Puedes registrarte y usar el flujo principal de monitoreo desde ahora. Si necesitas más alcance, lo ampliamos gradualmente según feedback y operación."
+  },
+  "cards": {
+    "beta": {
+      "title": "Beta abierta primero",
+      "description": "Antes de una tabla de precios, explicamos el alcance actual y las reglas de uso."
+    },
+    "coverage": {
+      "title": "Lo disponible ahora",
+      "description": "Estamos validando alertas de disponibilidad, límites base y el flujo principal de monitoreo."
+    },
+    "feedback": {
+      "title": "Feedback antes del empaque",
+      "description": "Si necesitas más capacidad o falta una función, el equipo lo revisa con base en uso real."
     }
+  },
+  "process": {
+    "title": "Cómo funciona la beta",
+    "step1": {
+      "title": "Regístrate y empieza",
+      "description": "Crea una cuenta, registra el alojamiento que quieres y usa el servicio dentro del alcance beta actual."
+    },
+    "step2": {
+      "title": "Primero el uso",
+      "description": "Mostramos límites de registro y frecuencia de revisión antes de hablar de cobro formal."
+    },
+    "step3": {
+      "title": "Pide más si lo necesitas",
+      "description": "Si necesitas más monitoreo, contacta al equipo y lo revisaremos según la operación beta."
+    }
+  },
+  "cta": {
+    "title": "Prueba la beta primero y cuéntanos qué falta",
+    "description": "La prioridad ahora es estabilizar el producto real, no promocionar planes. Puedes empezar ya o escribir al equipo.",
+    "primary": "Entrar a la beta",
+    "secondary": "Contactar al equipo"
   },
   "faq": {
     "title": "Preguntas frecuentes",
-    "q1": "¿Puedo cambiar de plan en cualquier momento?",
-    "a1": "Sí, puedes mejorar o bajar de plan cuando quieras.",
-    "q2": "¿Cómo pago?",
-    "a2": "Por ahora contáctanos por correo. Planeamos introducir facturación automática pronto.",
-    "q3": "¿Cuál es la política de reembolso?",
-    "a3": "Reembolso completo si se solicita dentro de los 7 días del pago."
+    "q1": "¿Debo pagar ahora?",
+    "a1": "No. Aún no hay precios públicos ni cobro automático. Hoy operamos con acceso beta y alcance de uso.",
+    "q2": "¿Puedo usar la beta de inmediato?",
+    "a2": "Sí. Puedes registrarte y empezar dentro del alcance actual, aunque algunos límites pueden cambiar mientras estabilizamos la operación.",
+    "q3": "¿Qué pasa si necesito más capacidad?",
+    "a3": "Usa el botón de contacto o escribe al soporte. Revisamos ampliaciones según los casos de uso reales."
   },
-  "footer": { "contact": "Contacto: {email}" },
-  "loadError": "No se pudo cargar la información del plan.",
-  "meta": {
-    "description": "Ver planes de Binbang. Empieza gratis, actualiza cuando quieras. Comprobación por minuto, alertas KakaoTalk en tiempo real, análisis de tendencias de precios.",
-    "ogDescription": "Empieza gratis. Comprobación por minuto, alertas en tiempo real."
-  }
+  "footer": { "contact": "Contacto: {email}" }
 }

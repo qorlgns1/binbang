@@ -315,7 +315,7 @@ export default function NewAccommodationPage(): React.ReactElement {
                 <p>{getUserMessage(createMutation.error)}</p>
                 {createMutation.error instanceof ApiError && createMutation.error.code === 'QUOTA_EXCEEDED' && (
                   <Button asChild variant='outline' size='sm' className='mt-3'>
-                    <Link href='/pricing'>플랜 업그레이드</Link>
+                    <Link href='/pricing'>베타 한도 안내</Link>
                   </Button>
                 )}
               </AlertDescription>

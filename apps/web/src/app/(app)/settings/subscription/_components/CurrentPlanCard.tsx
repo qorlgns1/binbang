@@ -31,11 +31,9 @@ function CardSkeleton(): React.ReactElement {
   );
 }
 
-function formatPrice(price: number, interval: string): string {
-  if (price === 0) return '무료';
-  const formatted = new Intl.NumberFormat('ko-KR').format(price);
-  const intervalLabel = interval === 'month' ? '월' : interval === 'year' ? '년' : interval;
-  return `₩${formatted}/${intervalLabel}`;
+function getAccessLabel(plan: SubscriptionPlanInfo): string {
+  if (plan.price === 0) return '베타 무료 이용 중';
+  return `${plan.name} 운영 플랜 사용 중`;
 }
 
 export function CurrentPlanCard({ plan, isLoading, isError }: Props): React.ReactElement {
@@ -54,6 +52,7 @@ export function CurrentPlanCard({ plan, isLoading, isError }: Props): React.Reac
   }
 
   const isFree = plan.price === 0;
+  const accessLabel = getAccessLabel(plan);
 
   return (
     <Card className='border-border/80 bg-card/90 shadow-sm backdrop-blur'>
@@ -61,17 +60,24 @@ export function CurrentPlanCard({ plan, isLoading, isError }: Props): React.Reac
         <div className='flex items-center justify-between'>
           <CardTitle className='flex items-center gap-2'>
             <Sparkles className='size-5 text-primary' />
-            현재 플랜
+            현재 이용 상태
           </CardTitle>
           <Badge variant={isFree ? 'secondary' : 'default'}>{plan.name}</Badge>
         </div>
-        <CardDescription>{plan.description ?? '필요한 만큼만, 편안하게'}</CardDescription>
+        <CardDescription>{plan.description ?? '현재 제공 범위를 기준으로 이용 상태를 안내합니다.'}</CardDescription>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <div className='text-3xl font-bold text-primary'>{formatPrice(plan.price, plan.interval)}</div>
+        <div>
+          <div className='text-2xl font-bold text-primary'>{accessLabel}</div>
+          <p className='mt-2 text-sm leading-7 text-muted-foreground'>
+            {isFree
+              ? '정식 결제 없이 핵심 모니터링 흐름을 먼저 검증하는 단계입니다.'
+              : '정식 유료화 전 단계라 가격보다 실제 사용 범위와 운영 기준을 우선 안내합니다.'}
+          </p>
+        </div>
         <Button asChild className='w-full bg-primary text-primary-foreground hover:bg-primary/90'>
           <Link href='/pricing'>
-            {isFree ? '플랜 업그레이드' : '플랜 변경'}
+            베타 운영 안내
             <ArrowUpRight className='size-4 ml-2' />
           </Link>
         </Button>

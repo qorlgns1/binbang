@@ -2,7 +2,7 @@
   "meta": {
     "title": "Binbang – Preguntas frecuentes",
     "description": "Encuentra respuestas a las preguntas más frecuentes sobre el servicio de alertas de disponibilidad de Binbang.",
-    "ogDescription": "Binbang FAQ – servicio, alertas, precios y más."
+    "ogDescription": "Binbang FAQ – servicio, alertas y operación beta."
   },
   "title": {
     "heading": "Preguntas frecuentes",
@@ -11,7 +11,7 @@
   "categories": {
     "service": "Sobre el servicio",
     "monitoring": "Alertas y monitoreo",
-    "account": "Cuenta y pagos",
+    "account": "Cuenta y beta",
     "other": "Otros"
   },
   "service": {
@@ -22,7 +22,7 @@
   },
   "monitoring": {
     "q1": "¿Con qué frecuencia se verifican las vacantes?",
-    "a1": "Depende de tu plan. El plan gratuito verifica cada 30 minutos y el plan Pro cada minuto.",
+    "a1": "La cadencia actual depende del estándar operativo de la beta. Puedes revisar tus límites y frecuencia en la página de uso, y estos pueden ajustarse mientras estabilizamos la operación.",
     "q2": "¿Cómo recibiré las alertas?",
     "a2": "Las alertas por correo están incluidas por defecto. También puedes recibir notificaciones en tiempo real por KakaoTalk al vincular tu cuenta de Kakao.",
     "q3": "¿El monitoreo funciona las 24 horas?",
@@ -31,20 +31,20 @@
   "account": {
     "q1": "¿Cómo me registro?",
     "a1": "Puedes registrarte fácilmente con tu cuenta de Google. Tu correo se usa solo para identificación y envío de alertas.",
-    "q2": "¿Puedo cambiar mi plan?",
-    "a2": "Sí, puedes actualizar o reducir tu plan en cualquier momento.",
-    "q3": "¿Cuál es la política de reembolso?",
-    "a3": "Reembolso completo si se solicita dentro de los 7 días posteriores al pago."
+    "q2": "¿Ya hay precios públicos?",
+    "a2": "Todavía no. Los precios públicos y el cobro automático no están activos. Hoy operamos con acceso beta y alcance de uso.",
+    "q3": "¿Qué hago si necesito más capacidad?",
+    "a3": "Contáctanos desde la guía beta o por correo de soporte. Revisamos ampliaciones según el uso real."
   },
   "other": {
     "q1": "¿Mis datos personales están seguros?",
     "a1": "Binbang solo recopila información mínima a través de Google OAuth. Tu correo se usa exclusivamente para identificación y alertas. Consulta nuestra Política de Privacidad para más detalles.",
     "q2": "¿Cómo puedo contactar al soporte?",
-    "a2": "Envíanos un correo a support@binbang.moodybeard.com y te responderemos a la brevedad."
+    "a2": "Escríbenos al correo de soporte y te responderemos a la brevedad."
   },
   "footer": {
     "stillHaveQuestions": "¿Aún tienes preguntas? ",
     "privacyPolicy": "Política de privacidad",
-    "pricing": "Precios"
+    "pricing": "Guía beta"
   }
 }

@@ -1,8 +1,8 @@
 import { SubscriptionOverview } from './_components/SubscriptionOverview';
 
 export const metadata = {
-  title: '구독 관리',
-  description: '빈방 구독 및 요금제 관리',
+  title: '베타 이용 정보',
+  description: '빈방 베타 이용 현황과 현재 제공 범위',
   robots: {
     index: false,
     follow: false,

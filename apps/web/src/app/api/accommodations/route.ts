@@ -113,7 +113,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         {
           error: {
             code: 'QUOTA_EXCEEDED',
-            message: `알림 등록 한도(${quota.max}개)에 도달했습니다. 플랜을 업그레이드해주세요.`,
+            message: `알림 등록 한도(${quota.max}개)에 도달했습니다. 더 필요한 경우 베타 운영팀에 확대를 요청해주세요.`,
             details: { max: quota.max, current: quota.current },
           },
         },

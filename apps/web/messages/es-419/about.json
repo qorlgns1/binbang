@@ -17,7 +17,7 @@
     "step1Title": "Registra el alojamiento",
     "step1Desc": "Busca y registra el alojamiento que deseas.",
     "step2Title": "Monitoreo automático",
-    "step2Desc": "Binbang verifica la disponibilidad las 24 horas. Los planes Pro verifican cada minuto.",
+    "step2Desc": "Binbang verifica la disponibilidad las 24 horas. La frecuencia actual sigue el estándar operativo de la beta.",
     "step3Title": "Alertas instantáneas",
     "step3Desc": "Cuando se abre una habitación, te notificamos al instante por correo."
   },
@@ -33,6 +33,6 @@
   "cta": {
     "title": "Comienza hoy",
     "description": "Deja la competencia de reservas a Binbang y enfócate en planificar tu próximo viaje.",
-    "button": "Comenzar gratis"
+    "button": "Entrar a la beta"
   }
 }

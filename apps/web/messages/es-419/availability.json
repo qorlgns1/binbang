@@ -62,8 +62,8 @@
   },
   "cta": {
     "title": "Recibe una alerta apenas se abra una habitación",
-    "description": "Crea una cuenta gratuita en Binbang y recibe alertas sin recargar páginas de reservas.",
-    "button": "Crear alerta gratis"
+    "description": "Crea una cuenta en Binbang y recibe alertas sin recargar páginas de reservas.",
+    "button": "Crear alerta"
   },
   "faq": {
     "title": "Preguntas frecuentes",
@@ -72,7 +72,7 @@
     "q2": "¿La disponibilidad y el precio cambian en tiempo real?",
     "a2": "Sí. El inventario y los precios pueden cambiar en cualquier momento, por eso recomendamos usar esta página como referencia y activar alertas.",
     "q3": "¿Configurar alertas es de pago?",
-    "a3": "Puedes empezar con un plan gratuito y mejorar solo si necesitas verificaciones más rápidas o más alojamientos monitoreados."
+    "a3": "Puedes empezar en beta de inmediato y, si necesitas verificaciones más rápidas o más alojamientos monitoreados, contactar al equipo."
   },
   "region": {
     "metaTitle": "Disponibilidad de Alojamiento {platform} {region} | Binbang",
@@ -89,7 +89,7 @@
     "cta": {
       "title": "Reciba Alertas para su Propiedad Deseada",
       "description": "Ahora que ha verificado las estadísticas regionales, registre su propiedad de interés y reciba alertas tan pronto como haya vacantes.",
-      "button": "Crear Alerta Gratis"
+      "button": "Crear alerta"
     }
   }
 }

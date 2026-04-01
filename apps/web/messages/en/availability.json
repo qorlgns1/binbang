@@ -62,8 +62,8 @@
   },
   "cta": {
     "title": "Get notified as soon as a room opens",
-    "description": "Create a free Binbang account and receive vacancy alerts without refreshing booking pages.",
-    "button": "Create free alert"
+    "description": "Create a Binbang account and receive vacancy alerts without refreshing booking pages.",
+    "button": "Create alert"
   },
   "faq": {
     "title": "FAQ",
@@ -72,7 +72,7 @@
     "q2": "Can price and availability change in real time?",
     "a2": "Yes. Booking platforms can update room inventory and prices at any time, so use this page as a trend reference and set an alert for immediate updates.",
     "q3": "Do I need to pay to create alerts?",
-    "a3": "You can start with a free plan and upgrade only when you need faster checks or more monitored listings."
+    "a3": "You can start in beta right away, and if you need faster checks or more monitored listings you can contact the team."
   },
   "region": {
     "metaTitle": "{platform} {region} Accommodation Availability | Binbang",
@@ -89,7 +89,7 @@
     "cta": {
       "title": "Get Alerts for Your Desired Property",
       "description": "Now that you have checked regional statistics, register your property of interest and receive alerts as soon as vacancies become available.",
-      "button": "Create Free Alert"
+      "button": "Create Alert"
     }
   }
 }
