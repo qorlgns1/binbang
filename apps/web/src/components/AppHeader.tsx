@@ -11,6 +11,7 @@ import { Home, LogOut, Menu, Settings, User } from 'lucide-react';
 
 import { LangToggle } from '@/components/landing/LangToggle';
 import { ThemeToggle } from '@/components/landing/ThemeToggle';
+import { BrandMark } from '@/components/BrandMark';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import type { Locale } from '@workspace/shared/i18n';
@@ -39,9 +40,7 @@ export function AppHeader({ userName, isAdmin, locale }: AppHeaderProps): React.
         {/* 좌측: 로고 + 데스크톱 네비게이션 */}
         <div className='flex items-center gap-6'>
           <Link href='/dashboard' className='flex items-center gap-2'>
-            <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
-              <span className='size-2 rounded-full bg-primary-foreground animate-ping' />
-            </span>
+            <BrandMark size='sm' dotSize='md' />
             <span className='text-sm font-semibold tracking-wide text-foreground md:text-base'>{t('brand')}</span>
           </Link>
 

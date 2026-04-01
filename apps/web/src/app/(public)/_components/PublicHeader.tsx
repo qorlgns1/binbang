@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 
 import { ArrowLeft } from 'lucide-react';
 
+import { BrandMark } from '@/components/BrandMark';
 import { Button } from '@/components/ui/button';
 import { LangToggle } from '@/components/landing/LangToggle';
 import { MobileMenu } from '@/components/landing/MobileMenu';
@@ -84,15 +85,10 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
         <div className='flex min-h-10 items-center gap-2'>
           <Link
             href={buildPublicPath(lang, '')}
-            className='flex items-center gap-2.5 rounded-md text-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+            className='group flex items-center gap-2.5 rounded-md text-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background'
             aria-label={tCommon('brand')}
           >
-            <span
-              className='flex size-9 shrink-0 items-center justify-center rounded-full bg-primary transition-transform hover:scale-105'
-              aria-hidden
-            >
-              <span className='size-2 rounded-full bg-primary-foreground' />
-            </span>
+            <BrandMark className='transition-transform group-hover:scale-105' />
             <span className='hidden text-sm font-semibold tracking-tight text-foreground sm:inline md:text-base'>
               {tCommon('brand')}
             </span>

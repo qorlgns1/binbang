@@ -29,6 +29,7 @@ import {
   Users,
 } from 'lucide-react';
 
+import { BrandMark } from '@/components/BrandMark';
 import { ThemeToggle } from '@/components/landing/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -169,12 +170,7 @@ export function AdminSidebar({ userName }: AdminSidebarProps) {
             className='mb-4 flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-sidebar-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar'
             aria-label='Home'
           >
-            <span
-              className='flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-primary'
-              aria-hidden
-            >
-              <span className='size-2 rounded-full bg-sidebar-primary-foreground' />
-            </span>
+            <BrandMark variant='sidebar' />
             <span className='text-sm font-semibold tracking-tight'>Admin</span>
           </Link>
           <div className='min-h-0 flex-1 overflow-y-auto'>{navLinks}</div>
@@ -189,9 +185,7 @@ export function AdminSidebar({ userName }: AdminSidebarProps) {
           className='flex items-center gap-2 rounded-md text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
           aria-label='Home'
         >
-          <span className='flex size-8 items-center justify-center rounded-full bg-primary'>
-            <span className='size-1.5 rounded-full bg-primary-foreground' />
-          </span>
+          <BrandMark size='sm' dotSize='sm' />
           <span className='text-sm font-semibold'>Admin</span>
         </Link>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
