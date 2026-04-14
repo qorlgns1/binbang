@@ -4,12 +4,7 @@ import { z } from 'zod';
 
 import { parseJsonBody } from '@/lib/apiRoute';
 import { authOptions } from '@/lib/auth';
-import {
-  forbiddenResponse,
-  handleServiceError,
-  notFoundResponse,
-  unauthorizedResponse,
-} from '@/lib/handleServiceError';
+import { forbiddenResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { jsonResponse } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
@@ -50,9 +45,21 @@ export async function POST(req: Request) {
   }
 
   if (body.conversationId) {
+    if (!session?.user?.id && !sessionId) {
+      return unauthorizedResponse();
+    }
+
     const conversation = await getConversationOwnership(body.conversationId);
     if (!conversation) {
-      return notFoundResponse('Conversation not found');
+      return jsonResponse(
+        {
+          ok: false,
+          skipped: true,
+          reason: 'conversation_not_ready',
+          requestId,
+        },
+        { status: 202 },
+      );
     }
 
     const isOwner = conversation.userId

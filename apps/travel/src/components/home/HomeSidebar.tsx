@@ -8,9 +8,10 @@ import { usePlaceStore } from '@/stores/usePlaceStore';
 
 interface HomeSidebarProps {
   authStatus: AuthStatus;
+  hideMapToggle?: boolean;
 }
 
-export function HomeSidebar({ authStatus }: HomeSidebarProps) {
+export function HomeSidebar({ authStatus, hideMapToggle = false }: HomeSidebarProps) {
   const { showMap, openChatView, openMapView } = usePlaceStore();
 
   return (
@@ -44,23 +45,25 @@ export function HomeSidebar({ authStatus }: HomeSidebarProps) {
             </span>
           </button>
         </li>
-        <li>
-          <button
-            type='button'
-            onClick={openMapView}
-            className={`flex w-full items-center py-2.5 text-sm font-medium transition-colors ${
-              showMap ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-            }`}
-            aria-current={showMap ? 'page' : undefined}
-          >
-            <span className='flex w-14 shrink-0 justify-center'>
-              <MapIcon className='h-5 w-5' aria-hidden />
-            </span>
-            <span className='whitespace-nowrap pr-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100'>
-              지도
-            </span>
-          </button>
-        </li>
+        {!hideMapToggle && (
+          <li>
+            <button
+              type='button'
+              onClick={openMapView}
+              className={`flex w-full items-center py-2.5 text-sm font-medium transition-colors ${
+                showMap ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+              }`}
+              aria-current={showMap ? 'page' : undefined}
+            >
+              <span className='flex w-14 shrink-0 justify-center'>
+                <MapIcon className='h-5 w-5' aria-hidden />
+              </span>
+              <span className='whitespace-nowrap pr-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100'>
+                지도
+              </span>
+            </button>
+          </li>
+        )}
       </ul>
 
       <div className='mt-auto border-t border-border/60'>

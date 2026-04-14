@@ -77,7 +77,7 @@ export default async function DestinationsPage({ params }: Props) {
             <div className='flex items-center gap-3'>
               <LanguageSwitcher />
               <Link
-                href={buildLocalePath(locale, '/chat')}
+                href={buildLocalePath(locale, '/planner')}
                 className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
               >
                 {t('landing.hero.cta')}

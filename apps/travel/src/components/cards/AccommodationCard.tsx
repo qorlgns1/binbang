@@ -2,6 +2,7 @@
 
 import { ExternalLink, MapPin, Tag } from 'lucide-react';
 import Image from 'next/image';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -16,6 +17,7 @@ import {
 import { resolveAccommodationAffiliateFallbackState } from '@/components/cards/affiliateFallbackState';
 import { StarRating } from '@/components/ui/StarRating';
 import { isAffiliateCtaEnabled } from '@/lib/featureFlags';
+import { isPlannerTrackedAccommodation, trackPlannerEvent } from '@/lib/plannerTracking';
 import type { AccommodationEntity } from '@/lib/types';
 
 interface AccommodationCardProps {
@@ -23,6 +25,64 @@ interface AccommodationCardProps {
   /** true = 광고주 링크가 생성됨 → CTA 활성 */
   ctaEnabled: boolean;
   trackingContext?: AffiliateTrackingContext;
+}
+
+interface AlertPrefillPayload {
+  hotelId: string;
+  name: string;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  rooms: number;
+  source: 'travel-planner';
+}
+
+const DEFAULT_WEB_APP_URL = 'http://localhost:3000';
+
+function isValidDateOnly(value: string | undefined): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function buildAlertPrefillPayload(accommodation: AccommodationEntity): AlertPrefillPayload | null {
+  if (!accommodation.hotelId || !accommodation.name.trim()) {
+    return null;
+  }
+
+  if (!isValidDateOnly(accommodation.checkIn) || !isValidDateOnly(accommodation.checkOut)) {
+    return null;
+  }
+
+  if (accommodation.checkOut <= accommodation.checkIn) {
+    return null;
+  }
+
+  const adults = accommodation.adults;
+
+  if (typeof adults !== 'number' || !Number.isInteger(adults) || adults < 1) {
+    return null;
+  }
+
+  return {
+    hotelId: accommodation.hotelId,
+    name: accommodation.name.trim(),
+    checkIn: accommodation.checkIn,
+    checkOut: accommodation.checkOut,
+    adults,
+    children: 0,
+    rooms: 1,
+    source: 'travel-planner',
+  };
+}
+
+function buildAlertRegistrationHref(accommodation: AccommodationEntity): string | null {
+  const payload = buildAlertPrefillPayload(accommodation);
+  if (!payload) {
+    return null;
+  }
+
+  const baseUrl = (process.env.NEXT_PUBLIC_WEB_URL ?? DEFAULT_WEB_APP_URL).trim().replace(/\/+$/, '');
+  return `${baseUrl}/accommodations/new?prefill=${encodeURIComponent(JSON.stringify(payload))}`;
 }
 
 function formatAffiliatePrice(amount: number, currency?: string): string {
@@ -41,10 +101,13 @@ function formatAffiliatePrice(amount: number, currency?: string): string {
 }
 
 export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }: AccommodationCardProps) {
+  const locale = useLocale();
   const [modalOpen, setModalOpen] = useState(false);
   const ctaFeatureEnabled = isAffiliateCtaEnabled();
   const showAffiliateBadge = accommodation.isAffiliate;
   const hasLink = Boolean(ctaFeatureEnabled && accommodation.isAffiliate && ctaEnabled && accommodation.affiliateLink);
+  const alertRegistrationHref = buildAlertRegistrationHref(accommodation);
+  const isPlannerTracked = isPlannerTrackedAccommodation(accommodation.placeId);
   const provider = trackingContext?.provider ?? 'agoda_pending:accommodation';
   const fallbackState = resolveAccommodationAffiliateFallbackState(provider, accommodation.isAvailable);
 
@@ -160,38 +223,70 @@ export function AccommodationCard({ accommodation, ctaEnabled, trackingContext }
         </div>
 
         {/* CTA 버튼 */}
-        {accommodation.isAffiliate && (
+        {(accommodation.isAffiliate || alertRegistrationHref) && (
           <div className='px-3 pb-3'>
-            {hasLink ? (
-              <a
-                href={accommodation.affiliateLink}
-                target='_blank'
-                rel='noopener noreferrer sponsored'
-                onClick={() => {
-                  trackAffiliateCardOutboundClick({
-                    trackingContext,
-                    provider,
-                    productId: accommodation.placeId,
-                    productName: accommodation.name,
-                    category: 'accommodation',
-                  });
-                }}
-                className='flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
-              >
-                <ExternalLink className='h-4 w-4' aria-hidden />
-                예약하기
-              </a>
-            ) : (
-              <button
-                type='button'
-                onClick={handleCtaClick}
-                className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed'
-                aria-haspopup='dialog'
-              >
-                {fallbackState.buttonLabel}
-              </button>
+            <div className='space-y-2'>
+              {accommodation.isAffiliate &&
+                (hasLink ? (
+                  <a
+                    href={accommodation.affiliateLink}
+                    target='_blank'
+                    rel='noopener noreferrer sponsored'
+                    onClick={() => {
+                      if (isPlannerTracked) {
+                        trackPlannerEvent({
+                          eventName: 'accommodation_clicked',
+                          locale,
+                          hotelId: accommodation.hotelId,
+                        });
+                      }
+                      trackAffiliateCardOutboundClick({
+                        trackingContext,
+                        provider,
+                        productId: accommodation.placeId,
+                        productName: accommodation.name,
+                        category: 'accommodation',
+                      });
+                    }}
+                    className='flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md active:scale-95'
+                  >
+                    <ExternalLink className='h-4 w-4' aria-hidden />
+                    예약하기
+                  </a>
+                ) : (
+                  <button
+                    type='button'
+                    onClick={handleCtaClick}
+                    className='flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted cursor-not-allowed'
+                    aria-haspopup='dialog'
+                  >
+                    {fallbackState.buttonLabel}
+                  </button>
+                ))}
+              {alertRegistrationHref && (
+                <a
+                  href={alertRegistrationHref}
+                  onClick={() => {
+                    if (!isPlannerTracked) {
+                      return;
+                    }
+
+                    trackPlannerEvent({
+                      eventName: 'alert_bridge_started',
+                      locale,
+                      hotelId: accommodation.hotelId,
+                    });
+                  }}
+                  className='flex w-full items-center justify-center rounded-xl border border-border bg-background py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/60'
+                  data-testid='accommodation-alert-cta'
+                >
+                  빈방 알림 설정
+                </a>
+              )}
+            </div>
+            {accommodation.isAffiliate && (
+              <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>{AFFILIATE_DISCLOSURE_TEXT}</p>
             )}
-            <p className='mt-1.5 text-center text-[10px] text-muted-foreground'>{AFFILIATE_DISCLOSURE_TEXT}</p>
           </div>
         )}
       </div>

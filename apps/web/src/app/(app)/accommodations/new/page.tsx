@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { ArrowLeft, Bell, Loader2, Search, Star, X } from 'lucide-react';
 
@@ -32,6 +32,70 @@ interface HotelSearchResult {
 }
 
 type FormField = 'platformId' | 'name' | 'checkIn' | 'checkOut' | 'adults' | 'children' | 'rooms' | 'consentOptIn';
+
+interface AccommodationPrefillPayload {
+  hotelId: string;
+  name: string;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children?: number;
+  rooms?: number;
+  source?: string;
+}
+
+function isValidDateOnly(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function toPositiveInteger(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function toNonNegativeInteger(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+function parseAccommodationPrefill(rawPrefill: string | null): AccommodationPrefillPayload | null {
+  if (!rawPrefill) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawPrefill) as AccommodationPrefillPayload;
+    const adults = toPositiveInteger(parsed.adults);
+    const children = parsed.children == null ? 0 : toNonNegativeInteger(parsed.children);
+    const rooms = parsed.rooms == null ? 1 : toPositiveInteger(parsed.rooms);
+
+    if (
+      typeof parsed.hotelId !== 'string' ||
+      !parsed.hotelId.trim() ||
+      typeof parsed.name !== 'string' ||
+      !parsed.name.trim() ||
+      !isValidDateOnly(parsed.checkIn) ||
+      !isValidDateOnly(parsed.checkOut) ||
+      parsed.checkOut <= parsed.checkIn ||
+      adults == null ||
+      children == null ||
+      rooms == null
+    ) {
+      return null;
+    }
+
+    return {
+      hotelId: parsed.hotelId.trim(),
+      name: parsed.name.trim(),
+      checkIn: parsed.checkIn,
+      checkOut: parsed.checkOut,
+      adults,
+      children,
+      rooms,
+      source: typeof parsed.source === 'string' ? parsed.source : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
 
 // ============================================================================
 // Hotel Search Component
@@ -211,7 +275,9 @@ function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSear
 
 export default function NewAccommodationPage(): React.ReactElement {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const createMutation = useCreateAgodaAlertMutation();
+  const hasAppliedPrefillRef = useRef(false);
 
   const [selectedHotel, setSelectedHotel] = useState<HotelSearchResult | null>(null);
 
@@ -225,6 +291,33 @@ export default function NewAccommodationPage(): React.ReactElement {
   const [rooms, setRooms] = useState(1);
   const [consentOptIn, setConsentOptIn] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FormField, string>>>({});
+
+  useEffect(() => {
+    if (hasAppliedPrefillRef.current) {
+      return;
+    }
+
+    hasAppliedPrefillRef.current = true;
+    const prefill = parseAccommodationPrefill(searchParams.get('prefill'));
+    if (!prefill) {
+      return;
+    }
+
+    setSelectedHotel({
+      hotelId: prefill.hotelId,
+      name: prefill.name,
+      nameEn: null,
+      city: null,
+      country: null,
+      starRating: null,
+      photoUrl: null,
+    });
+    setCheckIn(prefill.checkIn);
+    setCheckOut(prefill.checkOut);
+    setAdults(prefill.adults);
+    setChildren(prefill.children ?? 0);
+    setRooms(prefill.rooms ?? 1);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!createMutation.error) return;
