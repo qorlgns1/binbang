@@ -4,6 +4,8 @@ dist
 build
 .next
 out
+.turbo
+**/.turbo
 
 # logs
 npm-debug.log

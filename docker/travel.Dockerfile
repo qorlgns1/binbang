@@ -36,7 +36,7 @@ COPY . .
 
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
-RUN pnpm turbo run build --filter=@workspace/travel
+RUN pnpm turbo run build --force --filter=@workspace/travel
 
 # ============================================
 # Runner

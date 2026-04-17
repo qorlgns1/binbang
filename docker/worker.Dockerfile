@@ -34,7 +34,7 @@ COPY --from=deps /app/apps/worker/node_modules ./apps/worker/node_modules
 COPY . .
 
 # Build the worker and its workspace dependencies so runtime only loads compiled JS.
-RUN pnpm turbo run build --filter=@workspace/worker
+RUN pnpm turbo run build --force --filter=@workspace/worker
 
 # ============================================
 # Runner (compiled JavaScript runtime)

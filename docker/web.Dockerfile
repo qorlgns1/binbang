@@ -38,7 +38,7 @@ ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
 ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
 
-RUN pnpm turbo run build --filter=@workspace/web
+RUN pnpm turbo run build --force --filter=@workspace/web
 
 # ============================================
 # Runner
