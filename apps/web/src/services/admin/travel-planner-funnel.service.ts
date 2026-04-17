@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource } from '@workspace/db';
 import { addUtcDays, endOfUtcDay, startOfUtcDay } from '@workspace/shared/utils/date';
 
 import type { AdminTravelPlannerFunnelCounts, AdminTravelPlannerFunnelResponse } from '@/types/admin';
@@ -38,34 +38,34 @@ function emptyCounts(): AdminTravelPlannerFunnelCounts {
   };
 }
 
-function toCounts(rows: Array<{ eventName: string; _count: { _all: number } }>): AdminTravelPlannerFunnelCounts {
+function toCounts(rows: Array<{ eventName: string; count: number }>): AdminTravelPlannerFunnelCounts {
   const counts = emptyCounts();
 
   for (const row of rows) {
     switch (row.eventName as TravelPlannerFunnelEventName) {
       case 'landing_viewed':
-        counts.landingViewed = row._count._all;
+        counts.landingViewed = row.count;
         break;
       case 'planner_started':
-        counts.plannerStarted = row._count._all;
+        counts.plannerStarted = row.count;
         break;
       case 'planner_submitted':
-        counts.plannerSubmitted = row._count._all;
+        counts.plannerSubmitted = row.count;
         break;
       case 'planner_result_viewed':
-        counts.plannerResultViewed = row._count._all;
+        counts.plannerResultViewed = row.count;
         break;
       case 'planner_failed':
-        counts.plannerFailed = row._count._all;
+        counts.plannerFailed = row.count;
         break;
       case 'planner_empty_result':
-        counts.plannerEmptyResult = row._count._all;
+        counts.plannerEmptyResult = row.count;
         break;
       case 'accommodation_clicked':
-        counts.accommodationClicked = row._count._all;
+        counts.accommodationClicked = row.count;
         break;
       case 'alert_bridge_started':
-        counts.alertBridgeStarted = row._count._all;
+        counts.alertBridgeStarted = row.count;
         break;
     }
   }
@@ -79,21 +79,25 @@ export async function getAdminTravelPlannerFunnel(
   const now = input.now ?? new Date();
   const from = startOfUtcDay(addUtcDays(now, -6));
   const to = endOfUtcDay(now);
+  const ds = await getDataSource();
+  const eventNames = [...TRAVEL_PLANNER_FUNNEL_EVENT_NAMES];
+  const eventNamePlaceholders = eventNames.map((_, index) => `:${index + 2}`).join(', ');
 
-  const rows = await prisma.landingEvent.groupBy({
-    by: ['eventName'],
-    where: {
-      source: 'travel-planner',
-      eventName: { in: [...TRAVEL_PLANNER_FUNNEL_EVENT_NAMES] },
-      occurredAt: {
-        gte: from,
-        lte: to,
-      },
-    },
-    _count: {
-      _all: true,
-    },
-  });
+  const rawRows = await ds.query<Array<{ eventName: string; count: string | number }>>(
+    `SELECT "eventName", COUNT(*) AS "count"
+       FROM "LandingEvent"
+      WHERE "source" = :1
+        AND "eventName" IN (${eventNamePlaceholders})
+        AND "occurredAt" >= :${eventNames.length + 2}
+        AND "occurredAt" <= :${eventNames.length + 3}
+      GROUP BY "eventName"`,
+    ['travel-planner', ...eventNames, from, to],
+  );
+
+  const rows = rawRows.map((row) => ({
+    eventName: row.eventName,
+    count: Number(row.count),
+  }));
 
   const counts = toCounts(rows);
 

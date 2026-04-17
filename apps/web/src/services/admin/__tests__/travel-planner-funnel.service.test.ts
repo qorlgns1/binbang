@@ -11,11 +11,9 @@ const { mockLandingEventGroupBy } = vi.hoisted(
 );
 
 vi.mock('@workspace/db', () => ({
-  prisma: {
-    landingEvent: {
-      groupBy: mockLandingEventGroupBy,
-    },
-  },
+  getDataSource: vi.fn(async () => ({
+    query: mockLandingEventGroupBy,
+  })),
 }));
 
 describe('admin/travel-planner-funnel.service', (): void => {
@@ -26,14 +24,14 @@ describe('admin/travel-planner-funnel.service', (): void => {
 
   it('aggregates travel planner counts and conversion ratios for the last 7 days', async (): Promise<void> => {
     mockLandingEventGroupBy.mockResolvedValue([
-      { eventName: 'landing_viewed', _count: { _all: 20 } },
-      { eventName: 'planner_started', _count: { _all: 10 } },
-      { eventName: 'planner_submitted', _count: { _all: 8 } },
-      { eventName: 'planner_result_viewed', _count: { _all: 6 } },
-      { eventName: 'planner_failed', _count: { _all: 1 } },
-      { eventName: 'planner_empty_result', _count: { _all: 2 } },
-      { eventName: 'accommodation_clicked', _count: { _all: 3 } },
-      { eventName: 'alert_bridge_started', _count: { _all: 1 } },
+      { eventName: 'landing_viewed', count: 20 },
+      { eventName: 'planner_started', count: 10 },
+      { eventName: 'planner_submitted', count: 8 },
+      { eventName: 'planner_result_viewed', count: 6 },
+      { eventName: 'planner_failed', count: 1 },
+      { eventName: 'planner_empty_result', count: 2 },
+      { eventName: 'accommodation_clicked', count: 3 },
+      { eventName: 'alert_bridge_started', count: 1 },
     ]);
 
     const result = await getAdminTravelPlannerFunnel({
@@ -64,37 +62,27 @@ describe('admin/travel-planner-funnel.service', (): void => {
       now: new Date('2026-04-02T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventGroupBy).toHaveBeenCalledWith({
-      by: ['eventName'],
-      where: {
-        source: 'travel-planner',
-        eventName: {
-          in: [
-            'landing_viewed',
-            'planner_started',
-            'planner_submitted',
-            'planner_result_viewed',
-            'planner_failed',
-            'planner_empty_result',
-            'accommodation_clicked',
-            'alert_bridge_started',
-          ],
-        },
-        occurredAt: {
-          gte: new Date('2026-03-27T00:00:00.000Z'),
-          lte: new Date('2026-04-02T23:59:59.999Z'),
-        },
-      },
-      _count: {
-        _all: true,
-      },
-    });
+    expect(mockLandingEventGroupBy).toHaveBeenCalledTimes(1);
+    expect(mockLandingEventGroupBy.mock.calls[0]?.[0]).toContain('FROM "LandingEvent"');
+    expect(mockLandingEventGroupBy.mock.calls[0]?.[1]).toEqual([
+      'travel-planner',
+      'landing_viewed',
+      'planner_started',
+      'planner_submitted',
+      'planner_result_viewed',
+      'planner_failed',
+      'planner_empty_result',
+      'accommodation_clicked',
+      'alert_bridge_started',
+      new Date('2026-03-27T00:00:00.000Z'),
+      new Date('2026-04-02T23:59:59.999Z'),
+    ]);
   });
 
   it('returns zero-safe conversion ratios when the denominator is zero', async (): Promise<void> => {
     mockLandingEventGroupBy.mockResolvedValue([
-      { eventName: 'planner_failed', _count: { _all: 4 } },
-      { eventName: 'planner_empty_result', _count: { _all: 2 } },
+      { eventName: 'planner_failed', count: 4 },
+      { eventName: 'planner_empty_result', count: 2 },
     ]);
 
     const result = await getAdminTravelPlannerFunnel({
