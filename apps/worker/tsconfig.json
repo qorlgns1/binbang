@@ -7,7 +7,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {
-      "@workspace/db": ["../../packages/db/src"],
       "@workspace/shared": ["../../packages/shared/src"],
       "@workspace/worker-shared/browser": ["../../packages/worker-shared/src/browser/index.ts"],
       "@workspace/worker-shared/jobs": ["../../packages/worker-shared/src/jobs/index.ts"],

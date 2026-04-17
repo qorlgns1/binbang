@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "dotenv -e .env -e .env.local -- tsx watch src/main.ts",
+    "dev": "pnpm --filter @workspace/db build && dotenv -e .env -e .env.local -- tsx watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint .",
     "test": "vitest run --passWithNoTests",
-    "snapshot:public-availability": "tsx src/publicAvailabilitySnapshotOnce.ts",
+    "snapshot:public-availability": "pnpm --filter @workspace/db build && tsx src/publicAvailabilitySnapshotOnce.ts",
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {

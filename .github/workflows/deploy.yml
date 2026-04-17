@@ -130,6 +130,7 @@ jobs:
             git fetch origin "$BRANCH"
             git checkout -B "$BRANCH" "origin/$BRANCH"
             git reset --hard "origin/$BRANCH"
+            pnpm install --frozen-lockfile
 
             update_env_var() {
               key="$1"
