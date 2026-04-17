@@ -160,7 +160,6 @@ jobs:
 
             # --- DB 마이그레이션 ---
             pnpm db:migrate:deploy
-            pnpm db:generate
             pnpm db:seed:base
 
             # --- develop 전용: 테스트 데이터 seed ---

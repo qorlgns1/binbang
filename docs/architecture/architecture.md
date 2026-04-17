@@ -44,7 +44,7 @@ binbang/
 │   ├── travel/                     # Next.js 여행 AI + SEO/i18n 앱
 │   └── worker/                     # Worker entrypoint + composition
 ├── packages/
-│   ├── db/                         # Prisma schema/migrations + DB client
+│   ├── db/                         # TypeORM entities/migrations + DB client
 │   ├── shared/                     # Universal shared code (pure)
 │   └── worker-shared/              # Worker-only shared code
 ├── docker/
@@ -65,7 +65,7 @@ binbang/
 | `apps/web` | 운영 UI + App Router + Route Handler | 앱 내부 로컬 import | DB는 `apps/web/src/services/**`로만 접근, Route Handler 직접 DB 접근 금지 |
 | `apps/travel` | 여행 AI UI + Locale 라우팅 + SEO 페이지 + 제휴 이벤트 | 앱 내부 로컬 import | `apps/web`와 동일 레이어 규칙: DB는 `apps/travel/src/services/**`로만 접근 |
 | `apps/worker` | 프로세스 엔트리/조립(wiring) + 크론성 실행 | 앱 내부 로컬 import | 재사용 가능한 워커 로직은 `packages/worker-shared`로 승격 |
-| `packages/db` | Prisma 단일 소유자 | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | 외부에서 `@prisma/client` 직접 import 금지 |
+| `packages/db` | Oracle DataSource + entities/migrations 단일 소유자 | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | 서비스/worker runtime만 DB 접근, deep import 금지 |
 | `packages/shared` | 웹/트래블/워커 공용 순수 코드 | `@workspace/shared`, `@workspace/shared/types`, `@workspace/shared/checkers`, `@workspace/shared/url-parser`, `@workspace/shared/urlParser`, `@workspace/shared/i18n`, `@workspace/shared/utils/date`, `@workspace/shared/utils/timeout`, `@workspace/shared/utils/price`, `@workspace/shared/errors` | 네트워크/DB/Node built-in/process.env 금지 |
 | `packages/worker-shared` | 워커 전용 공용 로직 | `@workspace/worker-shared/browser`, `@workspace/worker-shared/jobs`, `@workspace/worker-shared/runtime`, `@workspace/worker-shared/observability` | Next.js 앱(`web`/`travel`)에서 import 금지, deep import 금지 |
 
@@ -135,21 +135,24 @@ apps/worker/src/
 
 ```text
 packages/db/
-├── prisma/
-│   ├── schema.prisma
-│   ├── migrations/
+├── src/
 │   ├── constants/
-│   └── seed*.ts
-└── src/
-    ├── client.ts
-    ├── enums.ts
-    └── index.ts
+│   ├── entities/
+│   ├── migrations/
+│   ├── client.ts
+│   ├── data-source.ts
+│   ├── enums.ts
+│   └── index.ts
+└── scripts/
+    ├── migrate-pg-to-oracle.ts
+    ├── seed-base.ts
+    └── seed.ts
 ```
 
 최근 확장 포인트:
 
-- `Destination` 모델 + seed-base 데이터 추가 (SEO/i18n 페이지용)
-- `AgodaHotel` 모델 + 검색 인덱스 추가 (대용량 CSV 임포트/검색용)
+- `Destination` entity + seed-base 데이터 추가 (SEO/i18n 페이지용)
+- `AgodaHotel` entity + 검색 인덱스 추가 (대용량 CSV 임포트/검색용)
 
 ### 5.5 `packages/shared`
 
@@ -203,7 +206,7 @@ packages/worker-shared/src/
 - deep import 금지: `packages/**/src/**`
 - Next.js 앱(`apps/web`, `apps/travel`)에서 `@workspace/worker-shared/*` import 금지
 - `packages/shared` -> DB/worker runtime 의존 금지
-- Prisma 직접 import(`@prisma/client`)는 `packages/db` 외부 금지
+- `@workspace/db` deep import 및 앱 레이어의 직접 DB 접근 금지
 - `apps/web` DB 접근은 `apps/web/src/services/**`로 단일화
 - `apps/travel` DB 접근은 `apps/travel/src/services/**`로 단일화
 - Route Handler 에러 응답은 `ErrorResponseBody` 스키마 유지
@@ -220,14 +223,14 @@ find apps packages -maxdepth 3 -type d | sort
 rg -n "from '@workspace/" apps packages
 
 # Route Handler 직접 DB 접근 위반 점검 (web + travel)
-rg -n "prisma\\.|from '@workspace/db'" apps/web/src/app/api apps/travel/src/app/api
+rg -n "getDataSource\\(|from '@workspace/db'" apps/web/src/app/api apps/travel/src/app/api
 
 # services 레이어 DB 접근 현황 점검
-rg -n "prisma\\.|from '@workspace/db'" apps/web/src/services apps/travel/src/services
+rg -n "getDataSource\\(|from '@workspace/db'" apps/web/src/services apps/travel/src/services
 
 # deep import 위반 점검
 rg -n "@workspace/(shared|worker-shared|db)/src" apps packages
 
-# 최근 확장 모델 점검
-rg -n "model (Destination|AgodaHotel)" packages/db/prisma/schema.prisma
+# 최근 확장 entity 점검
+rg -n "export class (Destination|AgodaHotel)" packages/db/src/entities
 ```

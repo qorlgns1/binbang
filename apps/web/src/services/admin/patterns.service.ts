@@ -1,4 +1,4 @@
-import { type PatternType, type Platform, prisma } from '@workspace/db';
+import { type PatternType, type Platform, PlatformPattern, SelectorChangeLog, getDataSource } from '@workspace/db';
 import { BadRequestError, ConflictError, NotFoundError } from '@workspace/shared/errors';
 import type {
   CreatePatternPayload,
@@ -68,26 +68,27 @@ function toPatternItem(p: {
 export async function getPatterns(input: GetPatternsInput): Promise<PlatformPatternsResponse> {
   const { platform, patternType, includeInactive = false } = input;
 
-  const patterns = await prisma.platformPattern.findMany({
-    where: {
-      ...(platform && { platform }),
-      ...(patternType && { patternType }),
-      ...(!includeInactive && { isActive: true }),
-    },
-    select: {
-      id: true,
-      platform: true,
-      patternType: true,
-      pattern: true,
-      locale: true,
-      isActive: true,
-      priority: true,
-      createdBy: { select: { id: true, name: true } },
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: [{ platform: 'asc' }, { patternType: 'asc' }, { priority: 'desc' }, { pattern: 'asc' }],
-  });
+  const ds = await getDataSource();
+  const qb = ds
+    .getRepository(PlatformPattern)
+    .createQueryBuilder('p')
+    .leftJoinAndSelect('p.createdBy', 'createdBy')
+    .orderBy('p.platform', 'ASC')
+    .addOrderBy('p.patternType', 'ASC')
+    .addOrderBy('p.priority', 'DESC')
+    .addOrderBy('p.pattern', 'ASC');
+
+  if (platform) {
+    qb.andWhere('p.platform = :platform', { platform });
+  }
+  if (patternType) {
+    qb.andWhere('p.patternType = :patternType', { patternType });
+  }
+  if (!includeInactive) {
+    qb.andWhere('p.isActive = :isActive', { isActive: true });
+  }
+
+  const patterns = await qb.getMany();
 
   return {
     patterns: patterns.map(toPatternItem),
@@ -98,15 +99,12 @@ export async function getPatterns(input: GetPatternsInput): Promise<PlatformPatt
 export async function createPattern(input: CreatePatternInput): Promise<PlatformPatternItem> {
   const { createdById, ...body } = input;
 
+  const ds = await getDataSource();
+  const patternRepo = ds.getRepository(PlatformPattern);
+
   // 중복 확인
-  const existing = await prisma.platformPattern.findUnique({
-    where: {
-      platform_patternType_pattern: {
-        platform: body.platform,
-        patternType: body.patternType,
-        pattern: body.pattern,
-      },
-    },
+  const existing = await patternRepo.findOne({
+    where: { platform: body.platform, patternType: body.patternType, pattern: body.pattern },
     select: { id: true },
   });
 
@@ -115,64 +113,43 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
   }
 
   // 생성
-  const pattern = await prisma.$transaction(
-    async (
-      tx,
-    ): Promise<{
-      id: string;
-      platform: Platform;
-      patternType: PatternType;
-      pattern: string;
-      locale: string;
-      isActive: boolean;
-      priority: number;
-      createdBy: { id: string; name: string | null } | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }> => {
-      const created = await tx.platformPattern.create({
-        data: {
-          platform: body.platform,
-          patternType: body.patternType,
-          pattern: body.pattern,
-          locale: body.locale ?? 'ko',
-          priority: body.priority ?? 0,
-          createdById,
-        },
-        select: {
-          id: true,
-          platform: true,
-          patternType: true,
-          pattern: true,
-          locale: true,
-          isActive: true,
-          priority: true,
-          createdBy: { select: { id: true, name: true } },
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+  const pattern = await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(PlatformPattern);
+    const logRepo = manager.getRepository(SelectorChangeLog);
 
-      // 변경 로그 기록
-      await tx.selectorChangeLog.create({
-        data: {
-          entityType: 'PlatformPattern',
-          entityId: created.id,
-          action: 'create',
-          newValue: JSON.stringify({
-            platform: body.platform,
-            patternType: body.patternType,
-            pattern: body.pattern,
-            locale: body.locale ?? 'ko',
-          }),
-          changedById: createdById,
-        },
-        select: { id: true },
-      });
+    const entity = repo.create({
+      platform: body.platform,
+      patternType: body.patternType,
+      pattern: body.pattern,
+      locale: body.locale ?? 'ko',
+      priority: body.priority ?? 0,
+      createdById,
+    });
+    await repo.save(entity);
 
-      return created;
-    },
-  );
+    // createdBy 관계 로드
+    const created = await repo.findOneOrFail({
+      where: { id: entity.id },
+      relations: { createdBy: true },
+    });
+
+    // 변경 로그 기록
+    const log = logRepo.create({
+      entityType: 'PlatformPattern',
+      entityId: created.id,
+      action: 'create',
+      newValue: JSON.stringify({
+        platform: body.platform,
+        patternType: body.patternType,
+        pattern: body.pattern,
+        locale: body.locale ?? 'ko',
+      }),
+      changedById: createdById,
+    });
+    await logRepo.save(log);
+
+    return created;
+  });
 
   return toPatternItem(pattern);
 }
@@ -180,8 +157,11 @@ export async function createPattern(input: CreatePatternInput): Promise<Platform
 export async function updatePattern(input: UpdatePatternInput): Promise<PlatformPatternItem> {
   const { id, updatedById, ...body } = input;
 
+  const ds = await getDataSource();
+  const patternRepo = ds.getRepository(PlatformPattern);
+
   // 기존 패턴 조회
-  const existing = await prisma.platformPattern.findUnique({
+  const existing = await patternRepo.findOne({
     where: { id },
     select: { id: true, pattern: true, isActive: true, priority: true, locale: true },
   });
@@ -211,62 +191,41 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
   }
 
   // 업데이트
-  const pattern = await prisma.$transaction(
-    async (
-      tx,
-    ): Promise<{
-      id: string;
-      platform: Platform;
-      patternType: PatternType;
-      pattern: string;
-      locale: string;
-      isActive: boolean;
-      priority: number;
-      createdBy: { id: string; name: string | null } | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }> => {
-      const updated = await tx.platformPattern.update({
-        where: { id },
-        data: {
-          ...(body.pattern !== undefined && { pattern: body.pattern }),
-          ...(body.isActive !== undefined && { isActive: body.isActive }),
-          ...(body.priority !== undefined && { priority: body.priority }),
-          ...(body.locale !== undefined && { locale: body.locale }),
-        },
-        select: {
-          id: true,
-          platform: true,
-          patternType: true,
-          pattern: true,
-          locale: true,
-          isActive: true,
-          priority: true,
-          createdBy: { select: { id: true, name: true } },
-          createdAt: true,
-          updatedAt: true,
-        },
+  const pattern = await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(PlatformPattern);
+    const logRepo = manager.getRepository(SelectorChangeLog);
+
+    await repo.update(
+      { id },
+      {
+        ...(body.pattern !== undefined && { pattern: body.pattern }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
+        ...(body.priority !== undefined && { priority: body.priority }),
+        ...(body.locale !== undefined && { locale: body.locale }),
+      },
+    );
+
+    const updated = await repo.findOneOrFail({
+      where: { id },
+      relations: { createdBy: true },
+    });
+
+    // 각 변경에 대해 로그 생성
+    for (const change of changes) {
+      const log = logRepo.create({
+        entityType: 'PlatformPattern',
+        entityId: id,
+        action: change.field === 'isActive' ? 'toggle' : 'update',
+        field: change.field,
+        oldValue: change.oldValue,
+        newValue: change.newValue,
+        changedById: updatedById,
       });
+      await logRepo.save(log);
+    }
 
-      // 각 변경에 대해 로그 생성
-      for (const change of changes) {
-        await tx.selectorChangeLog.create({
-          data: {
-            entityType: 'PlatformPattern',
-            entityId: id,
-            action: change.field === 'isActive' ? 'toggle' : 'update',
-            field: change.field,
-            oldValue: change.oldValue,
-            newValue: change.newValue,
-            changedById: updatedById,
-          },
-          select: { id: true },
-        });
-      }
-
-      return updated;
-    },
-  );
+    return updated;
+  });
 
   return toPatternItem(pattern);
 }
@@ -274,7 +233,10 @@ export async function updatePattern(input: UpdatePatternInput): Promise<Platform
 export async function deletePattern(input: DeletePatternInput): Promise<void> {
   const { id, deletedById } = input;
 
-  const existing = await prisma.platformPattern.findUnique({
+  const ds = await getDataSource();
+  const patternRepo = ds.getRepository(PlatformPattern);
+
+  const existing = await patternRepo.findOne({
     where: { id },
     select: { id: true, platform: true, patternType: true, pattern: true },
   });
@@ -283,26 +245,25 @@ export async function deletePattern(input: DeletePatternInput): Promise<void> {
     throw new NotFoundError('Pattern not found');
   }
 
-  await prisma.$transaction(async (tx): Promise<void> => {
+  await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(PlatformPattern);
+    const logRepo = manager.getRepository(SelectorChangeLog);
+
     // 변경 로그 기록
-    await tx.selectorChangeLog.create({
-      data: {
-        entityType: 'PlatformPattern',
-        entityId: id,
-        action: 'delete',
-        oldValue: JSON.stringify({
-          platform: existing.platform,
-          patternType: existing.patternType,
-          pattern: existing.pattern,
-        }),
-        changedById: deletedById,
-      },
-      select: { id: true },
+    const log = logRepo.create({
+      entityType: 'PlatformPattern',
+      entityId: id,
+      action: 'delete',
+      oldValue: JSON.stringify({
+        platform: existing.platform,
+        patternType: existing.patternType,
+        pattern: existing.pattern,
+      }),
+      changedById: deletedById,
     });
+    await logRepo.save(log);
 
     // 삭제
-    await tx.platformPattern.delete({
-      where: { id },
-    });
+    await repo.delete({ id });
   });
 }

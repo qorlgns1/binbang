@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { CaseNotification, User, getDataSource } from '@workspace/db';
 import {
   buildKakaoNotificationSender,
   prependKakaoNotificationSender,
@@ -51,10 +51,13 @@ export async function retryNotificationForCase(
       error,
     });
     try {
-      await prisma.caseNotification.updateMany({
-        where: { id: notificationId, status: 'PENDING' },
-        data: { status: 'FAILED', failReason },
-      });
+      const ds = await getDataSource();
+      await ds
+        .createQueryBuilder()
+        .update(CaseNotification)
+        .set({ status: 'FAILED', failReason })
+        .where('"id" = :id AND "status" = :status', { id: notificationId, status: 'PENDING' })
+        .execute();
     } catch (updateError) {
       logError('case_notification_retry_status_update_failed', {
         requestId,
@@ -66,23 +69,11 @@ export async function retryNotificationForCase(
   };
 
   try {
-    const notification = await prisma.caseNotification.findUnique({
+    const ds = await getDataSource();
+
+    const notification = await ds.getRepository(CaseNotification).findOne({
       where: { id: notificationId },
-      select: {
-        id: true,
-        caseId: true,
-        status: true,
-        payload: true,
-        retryCount: true,
-        maxRetries: true,
-        case: {
-          select: {
-            accommodation: {
-              select: { userId: true },
-            },
-          },
-        },
-      },
+      relations: { case: { accommodation: true } },
     });
 
     if (!notification) {
@@ -130,20 +121,18 @@ export async function retryNotificationForCase(
     }
 
     // 원자적 claim(중복 발송 방지): 읽은 retryCount와 동일할 때만 FAILED→PENDING 전이
-    const claimed = await prisma.caseNotification.updateMany({
-      where: {
+    const claimResult = await ds
+      .createQueryBuilder()
+      .update(CaseNotification)
+      .set({ status: 'PENDING', retryCount: () => '"retryCount" + 1', failReason: () => 'NULL' })
+      .where('"id" = :id AND "status" = :status AND "retryCount" = :retryCount', {
         id: notificationId,
         status: 'FAILED',
         retryCount: notification.retryCount,
-      },
-      data: {
-        status: 'PENDING',
-        retryCount: { increment: 1 },
-        failReason: null,
-      },
-    });
+      })
+      .execute();
 
-    if (claimed.count !== 1) {
+    if ((claimResult.affected ?? 0) !== 1) {
       logWarn('case_notification_retry_rejected', {
         requestId,
         notificationId,
@@ -164,10 +153,12 @@ export async function retryNotificationForCase(
 
     const userId = notification.case?.accommodation?.userId;
     if (!userId) {
-      await prisma.caseNotification.updateMany({
-        where: { id: notificationId, status: 'PENDING' },
-        data: { status: 'FAILED', failReason: 'No user linked to case accommodation' },
-      });
+      await ds
+        .createQueryBuilder()
+        .update(CaseNotification)
+        .set({ status: 'FAILED', failReason: 'No user linked to case accommodation' })
+        .where('"id" = :id AND "status" = :status', { id: notificationId, status: 'PENDING' })
+        .execute();
       logWarn('case_notification_retry_rejected', {
         requestId,
         notificationId,
@@ -183,10 +174,12 @@ export async function retryNotificationForCase(
       caseId: notification.caseId,
     });
     if (!context) {
-      await prisma.caseNotification.updateMany({
-        where: { id: notificationId, status: 'PENDING' },
-        data: { status: 'FAILED', failReason: '유효한 카카오 토큰 없음' },
-      });
+      await ds
+        .createQueryBuilder()
+        .update(CaseNotification)
+        .set({ status: 'FAILED', failReason: '유효한 카카오 토큰 없음' })
+        .where('"id" = :id AND "status" = :status', { id: notificationId, status: 'PENDING' })
+        .execute();
       logWarn('case_notification_retry_rejected', {
         requestId,
         notificationId,
@@ -204,10 +197,12 @@ export async function retryNotificationForCase(
       userId,
     });
 
-    await prisma.caseNotification.updateMany({
-      where: { id: notificationId, status: 'PENDING' },
-      data: sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '재시도 전송 실패' },
-    });
+    await ds
+      .createQueryBuilder()
+      .update(CaseNotification)
+      .set(sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '재시도 전송 실패' })
+      .where('"id" = :id AND "status" = :status', { id: notificationId, status: 'PENDING' })
+      .execute();
 
     if (sent) {
       logInfo('case_notification_retry_sent', {
@@ -248,7 +243,8 @@ async function getValidAccessToken(
   userId: string,
   logContext?: NotificationLogContext,
 ): Promise<KakaoNotificationContext | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: {
       name: true,
@@ -340,15 +336,15 @@ async function refreshKakaoToken(
       expires_in: number;
     };
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
+    const ds = await getDataSource();
+    await ds.getRepository(User).update(
+      { id: userId },
+      {
         kakaoAccessToken: data.access_token,
         kakaoRefreshToken: data.refresh_token || refreshToken,
         kakaoTokenExpiry: new Date(Date.now() + data.expires_in * 1000),
       },
-      select: { id: true },
-    });
+    );
 
     return data.access_token;
   } catch (error) {

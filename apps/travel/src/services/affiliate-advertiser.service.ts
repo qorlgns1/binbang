@@ -1,4 +1,4 @@
-import { type AffiliateAdvertiserCategory, prisma } from '@workspace/db';
+import { type AffiliateAdvertiserCategory, getDataSource, AffiliateAdvertiser } from '@workspace/db';
 
 export interface AffiliateAdvertiserInfo {
   advertiserId: number;
@@ -13,10 +13,11 @@ export interface AffiliateAdvertiserInfo {
 export async function getFirstAdvertiserByCategory(
   category: AffiliateAdvertiserCategory,
 ): Promise<AffiliateAdvertiserInfo | null> {
-  const row = await prisma.affiliateAdvertiser.findFirst({
+  const ds = await getDataSource();
+  const row = await ds.getRepository(AffiliateAdvertiser).findOne({
     where: { category },
     select: { advertiserId: true, name: true },
-    orderBy: { updatedAt: 'desc' },
+    order: { updatedAt: 'DESC' },
   });
   if (!row) return null;
   return { advertiserId: row.advertiserId, name: row.name };

@@ -1,4 +1,12 @@
-import { ConversationAffiliateOverride, prisma } from '@workspace/db';
+import {
+  AffiliatePreferenceAuditLog,
+  ConversationAffiliateOverride,
+  ConversationPreference,
+  LessThan,
+  TravelConversation,
+  User,
+  getDataSource,
+} from '@workspace/db';
 
 interface ResolveAffiliateLinksEnabledInput {
   conversationId?: string;
@@ -35,7 +43,8 @@ export async function resolveAffiliateLinksEnabled(
     return { enabled: true, source: 'default' };
   }
 
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: { affiliateLinksEnabled: true },
   });
@@ -46,7 +55,7 @@ export async function resolveAffiliateLinksEnabled(
     return { enabled: accountDefault, source: 'account' };
   }
 
-  const preference = await prisma.conversationPreference.findUnique({
+  const preference = await ds.getRepository(ConversationPreference).findOne({
     where: { conversationId },
     select: { affiliateOverride: true },
   });
@@ -66,24 +75,24 @@ export async function getConversationAffiliatePreference(
   conversationId: string,
   actorUserId: string,
 ): Promise<ConversationAffiliatePreferenceResult | null> {
-  const conversation = await prisma.travelConversation.findUnique({
+  const ds = await getDataSource();
+  const conversation = await ds.getRepository(TravelConversation).findOne({
     where: { id: conversationId },
     select: {
       id: true,
       userId: true,
       preference: {
-        select: {
-          affiliateOverride: true,
-        },
+        affiliateOverride: true,
       },
     },
+    relations: { preference: true },
   });
 
   if (!conversation || conversation.userId !== actorUserId) {
     return null;
   }
 
-  const account = await prisma.user.findUnique({
+  const account = await ds.getRepository(User).findOne({
     where: { id: actorUserId },
     select: { affiliateLinksEnabled: true },
   });
@@ -104,50 +113,54 @@ export async function upsertConversationAffiliatePreference(input: {
   actorUserId: string;
   nextOverride: ConversationAffiliateOverride;
 }): Promise<ConversationAffiliatePreferenceResult | null> {
-  return prisma.$transaction(async (tx) => {
-    const conversation = await tx.travelConversation.findUnique({
+  const ds = await getDataSource();
+  return ds.transaction(async (manager) => {
+    const convRepo = manager.getRepository(TravelConversation);
+    const prefRepo = manager.getRepository(ConversationPreference);
+    const auditRepo = manager.getRepository(AffiliatePreferenceAuditLog);
+
+    const conversation = await convRepo.findOne({
       where: { id: input.conversationId },
       select: {
         id: true,
         userId: true,
         preference: {
-          select: { affiliateOverride: true },
+          affiliateOverride: true,
         },
       },
+      relations: { preference: true },
     });
 
     if (!conversation || conversation.userId !== input.actorUserId) {
       return null;
     }
 
-    const account = await tx.user.findUnique({
+    const account = await manager.getRepository(User).findOne({
       where: { id: input.actorUserId },
       select: { affiliateLinksEnabled: true },
     });
 
     const previousOverride = conversation.preference?.affiliateOverride ?? ConversationAffiliateOverride.inherit;
 
-    await tx.conversationPreference.upsert({
-      where: { conversationId: input.conversationId },
-      create: {
+    let preference = await prefRepo.findOne({ where: { conversationId: input.conversationId } });
+    if (preference) {
+      preference.affiliateOverride = input.nextOverride;
+    } else {
+      preference = prefRepo.create({
         conversationId: input.conversationId,
         affiliateOverride: input.nextOverride,
-      },
-      update: {
-        affiliateOverride: input.nextOverride,
-      },
-      select: { conversationId: true },
-    });
+      });
+    }
+    await prefRepo.save(preference);
 
     if (previousOverride !== input.nextOverride) {
-      await tx.affiliatePreferenceAuditLog.create({
-        data: {
-          conversationId: input.conversationId,
-          actorUserId: input.actorUserId,
-          fromValue: previousOverride,
-          toValue: input.nextOverride,
-        },
+      const auditEntry = auditRepo.create({
+        conversationId: input.conversationId,
+        actorUserId: input.actorUserId,
+        fromValue: previousOverride,
+        toValue: input.nextOverride,
       });
+      await auditRepo.save(auditEntry);
     }
 
     const accountDefault = toAccountDefault(account?.affiliateLinksEnabled);
@@ -162,7 +175,8 @@ export async function upsertConversationAffiliatePreference(input: {
 }
 
 export async function getAccountAffiliateLinksEnabled(userId: string): Promise<boolean | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: { affiliateLinksEnabled: true },
   });
@@ -172,14 +186,10 @@ export async function getAccountAffiliateLinksEnabled(userId: string): Promise<b
 }
 
 export async function setAccountAffiliateLinksEnabled(userId: string, enabled: boolean): Promise<boolean | null> {
-  const updated = await prisma.user.updateMany({
-    where: { id: userId },
-    data: {
-      affiliateLinksEnabled: enabled,
-    },
-  });
+  const ds = await getDataSource();
+  const result = await ds.getRepository(User).update({ id: userId }, { affiliateLinksEnabled: enabled });
 
-  if (updated.count === 0) return null;
+  if ((result.affected ?? 0) === 0) return null;
   return enabled;
 }
 
@@ -187,13 +197,10 @@ export async function purgeExpiredAffiliatePreferenceAuditLogs(retentionDays: nu
   const days = Number.isFinite(retentionDays) ? Math.max(1, Math.floor(retentionDays)) : 365;
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  const result = await prisma.affiliatePreferenceAuditLog.deleteMany({
-    where: {
-      changedAt: {
-        lt: cutoff,
-      },
-    },
+  const ds = await getDataSource();
+  const result = await ds.getRepository(AffiliatePreferenceAuditLog).delete({
+    changedAt: LessThan(cutoff),
   });
 
-  return result.count;
+  return result.affected ?? 0;
 }

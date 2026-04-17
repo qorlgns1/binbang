@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import type { Platform } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { getDataSource, PublicProperty, PublicAvailabilitySnapshot } from '@workspace/db';
 import { MS_PER_DAY, startOfUtcDay, endOfUtcDay } from '@workspace/shared/utils/date';
 
 export const DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS = 7;
@@ -92,7 +92,7 @@ interface AggregatedAccommodationRow {
   lastPriceCurrency: string | null;
   sampleSize: number;
   priceCount: number;
-  priceSum: bigint;
+  priceSum: number;
   minPriceAmount: number | null;
   maxPriceAmount: number | null;
   availableCount: number;
@@ -151,8 +151,6 @@ function derivePlatformPropertyKey(accommodation: AccommodationSnapshotSource): 
 
 function buildSlug(nameCandidate: string, platformPropertyKey: string): string {
   const base = slugify(nameCandidate).slice(0, 80) || 'property';
-  // SHA256 12-char suffix for virtually zero collision probability
-  // 16^12 = 281 trillion combinations vs SHA1 8-char = 4 billion
   const suffix = createHash('sha256').update(platformPropertyKey).digest('hex').slice(0, 12);
   return `${base}-${suffix}`;
 }
@@ -309,6 +307,7 @@ export async function refreshPublicAvailabilitySnapshots(
   const snapshotDate = startOfUtcDay(now);
   const windowEndAt = endOfUtcDay(now);
   const windowStartAt = startOfUtcDay(new Date(snapshotDate.getTime() - (windowDays - 1) * MS_PER_DAY));
+  const ds = await getDataSource();
 
   const emptyResult: RefreshPublicAvailabilitySnapshotsResult = {
     snapshotDate: snapshotDate.toISOString(),
@@ -323,48 +322,55 @@ export async function refreshPublicAvailabilitySnapshots(
     upsertTimeMs: 0,
   };
 
-  // Step 1: Single SQL query – join CheckLog + Accommodation and aggregate per accommodation
+  // Step 1: Oracle SQL - CheckLog + Accommodation JOIN + GROUP BY
+  // Oracle은 GROUP BY에 모든 비집계 컬럼을 명시해야 함
   const queryStart = Date.now();
-  const rows = await prisma.$queryRaw<AggregatedAccommodationRow[]>`
-    SELECT
-      a."id"                  AS "accommodationId",
-      a."platform"::text      AS "platform",
-      a."platformId",
-      a."url",
-      a."name",
-      a."platformName",
-      a."platformImage",
-      a."platformDescription",
-      a."addressCountry",
-      a."addressRegion",
-      a."addressLocality",
-      a."ratingValue",
-      a."reviewCount",
-      a."latitude",
-      a."longitude",
-      a."lastPriceCurrency",
-      COUNT(cl."id")::int                                                          AS "sampleSize",
-      COUNT(cl."priceAmount")::int                                                 AS "priceCount",
-      COALESCE(SUM(cl."priceAmount"), 0)                                           AS "priceSum",
-      MIN(cl."priceAmount")                                                        AS "minPriceAmount",
-      MAX(cl."priceAmount")                                                        AS "maxPriceAmount",
-      SUM(CASE WHEN cl."status"::text = 'AVAILABLE'   THEN 1 ELSE 0 END)::int     AS "availableCount",
-      SUM(CASE WHEN cl."status"::text = 'UNAVAILABLE' THEN 1 ELSE 0 END)::int     AS "unavailableCount",
-      SUM(CASE WHEN cl."status"::text = 'ERROR'       THEN 1 ELSE 0 END)::int     AS "errorCount"
+  const rows = await ds.query<AggregatedAccommodationRow[]>(
+    `SELECT
+      a."id"                    AS "accommodationId",
+      a."platform"              AS "platform",
+      a."platformId"            AS "platformId",
+      a."url"                   AS "url",
+      a."name"                  AS "name",
+      a."platformName"          AS "platformName",
+      a."platformImage"         AS "platformImage",
+      a."platformDescription"   AS "platformDescription",
+      a."addressCountry"        AS "addressCountry",
+      a."addressRegion"         AS "addressRegion",
+      a."addressLocality"       AS "addressLocality",
+      a."ratingValue"           AS "ratingValue",
+      a."reviewCount"           AS "reviewCount",
+      a."latitude"              AS "latitude",
+      a."longitude"             AS "longitude",
+      a."lastPriceCurrency"     AS "lastPriceCurrency",
+      COUNT(cl."id")            AS "sampleSize",
+      COUNT(cl."priceAmount")   AS "priceCount",
+      COALESCE(SUM(cl."priceAmount"), 0) AS "priceSum",
+      MIN(cl."priceAmount")     AS "minPriceAmount",
+      MAX(cl."priceAmount")     AS "maxPriceAmount",
+      SUM(CASE WHEN cl."status" = 'AVAILABLE'   THEN 1 ELSE 0 END) AS "availableCount",
+      SUM(CASE WHEN cl."status" = 'UNAVAILABLE' THEN 1 ELSE 0 END) AS "unavailableCount",
+      SUM(CASE WHEN cl."status" = 'ERROR'       THEN 1 ELSE 0 END) AS "errorCount"
     FROM "CheckLog" cl
     JOIN "Accommodation" a ON a."id" = cl."accommodationId"
-    WHERE cl."createdAt" >= ${windowStartAt}
-      AND cl."createdAt" <= ${windowEndAt}
-      AND a."isActive" = true
-    GROUP BY a."id"
-  `;
+    WHERE cl."createdAt" >= :1
+      AND cl."createdAt" <= :2
+      AND a."isActive" = 1
+    GROUP BY
+      a."id", a."platform", a."platformId", a."url", a."name",
+      a."platformName", a."platformImage", a."platformDescription",
+      a."addressCountry", a."addressRegion", a."addressLocality",
+      a."ratingValue", a."reviewCount", a."latitude", a."longitude",
+      a."lastPriceCurrency"`,
+    [windowStartAt, windowEndAt],
+  );
   const queryTimeMs = Date.now() - queryStart;
 
   if (rows.length === 0) {
     return { ...emptyResult, queryTimeMs };
   }
 
-  // Step 2: In-memory grouping by platformPropertyKey (handles multi-accommodation merging)
+  // Step 2: In-memory grouping by platformPropertyKey
   const aggregationStart = Date.now();
   const aggregates = new Map<string, PropertyAggregate>();
   let skippedWithoutKey = 0;
@@ -383,12 +389,12 @@ export async function refreshPublicAvailabilitySnapshots(
     mergeMetadata(aggregate, accommodation);
     aggregate.lastObservedAt = now;
 
-    aggregate.sampleSize += row.sampleSize;
-    aggregate.priceCount += row.priceCount;
+    aggregate.sampleSize += Number(row.sampleSize);
+    aggregate.priceCount += Number(row.priceCount);
     aggregate.priceSum += Number(row.priceSum);
-    aggregate.availableCount += row.availableCount;
-    aggregate.unavailableCount += row.unavailableCount;
-    aggregate.errorCount += row.errorCount;
+    aggregate.availableCount += Number(row.availableCount);
+    aggregate.unavailableCount += Number(row.unavailableCount);
+    aggregate.errorCount += Number(row.errorCount);
 
     if (typeof row.minPriceAmount === 'number') {
       aggregate.minPriceAmount =
@@ -403,27 +409,30 @@ export async function refreshPublicAvailabilitySnapshots(
   }
   const aggregationTimeMs = Date.now() - aggregationStart;
 
-  // Step 3: Batch upserts via $transaction (BATCH_SIZE per transaction)
+  // Step 3: Upsert PublicProperty + PublicAvailabilitySnapshot
   const upsertStart = Date.now();
   let upsertedProperties = 0;
   let upsertedSnapshots = 0;
 
   const validAggregates = [...aggregates.values()].filter((a) => a.sampleSize > 0);
   const batches = chunk(validAggregates, BATCH_SIZE);
+  const propertyRepo = ds.getRepository(PublicProperty);
+  const snapshotRepo = ds.getRepository(PublicAvailabilitySnapshot);
 
   for (const batch of batches) {
-    const propertyResults = await prisma.$transaction(
-      batch.map((agg) =>
-        prisma.publicProperty.upsert({
-          where: {
-            platform_platformPropertyKey: {
-              platform: agg.platform,
-              platformPropertyKey: agg.platformPropertyKey,
-            },
-          },
-          create: {
-            platform: agg.platform,
-            platformPropertyKey: agg.platformPropertyKey,
+    // PublicProperty upsert
+    const propertyIds: string[] = [];
+
+    for (const agg of batch) {
+      const existing = await propertyRepo.findOne({
+        where: { platform: agg.platform, platformPropertyKey: agg.platformPropertyKey },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await propertyRepo.update(
+          { id: existing.id },
+          {
             slug: agg.slug,
             name: agg.name,
             sourceUrl: agg.sourceUrl,
@@ -440,75 +449,83 @@ export async function refreshPublicAvailabilitySnapshots(
             lastObservedAt: agg.lastObservedAt,
             isActive: true,
           },
-          update: {
-            slug: agg.slug,
-            name: agg.name,
-            sourceUrl: agg.sourceUrl,
-            imageUrl: agg.imageUrl,
-            description: agg.description,
-            countryKey: agg.countryKey,
-            cityKey: agg.cityKey,
-            addressRegion: agg.addressRegion,
-            addressLocality: agg.addressLocality,
-            ratingValue: agg.ratingValue,
-            reviewCount: agg.reviewCount,
-            latitude: agg.latitude,
-            longitude: agg.longitude,
-            lastObservedAt: agg.lastObservedAt,
-            isActive: true,
-          },
-          select: { id: true },
-        }),
-      ),
-    );
-    upsertedProperties += propertyResults.length;
-
-    await prisma.$transaction(
-      batch.map((agg, idx) => {
-        const propertyId = propertyResults[idx].id;
-        const avgPriceAmount = agg.priceCount > 0 ? Math.round(agg.priceSum / agg.priceCount) : null;
-        const openRate = safeOpenRate(agg.availableCount, agg.sampleSize);
-
-        return prisma.publicAvailabilitySnapshot.upsert({
-          where: {
-            publicPropertyId_snapshotDate: {
-              publicPropertyId: propertyId,
-              snapshotDate,
-            },
-          },
-          create: {
-            publicPropertyId: propertyId,
-            snapshotDate,
-            windowStartAt,
-            windowEndAt,
-            sampleSize: agg.sampleSize,
-            availableCount: agg.availableCount,
-            unavailableCount: agg.unavailableCount,
-            errorCount: agg.errorCount,
-            avgPriceAmount,
-            minPriceAmount: agg.minPriceAmount,
-            maxPriceAmount: agg.maxPriceAmount,
-            currency: agg.currency,
-            openRate,
-          },
-          update: {
-            windowStartAt,
-            windowEndAt,
-            sampleSize: agg.sampleSize,
-            availableCount: agg.availableCount,
-            unavailableCount: agg.unavailableCount,
-            errorCount: agg.errorCount,
-            avgPriceAmount,
-            minPriceAmount: agg.minPriceAmount,
-            maxPriceAmount: agg.maxPriceAmount,
-            currency: agg.currency,
-            openRate,
-          },
-          select: { id: true },
+        );
+        propertyIds.push(existing.id);
+      } else {
+        const entity = propertyRepo.create({
+          platform: agg.platform,
+          platformPropertyKey: agg.platformPropertyKey,
+          slug: agg.slug,
+          name: agg.name,
+          sourceUrl: agg.sourceUrl,
+          imageUrl: agg.imageUrl,
+          description: agg.description,
+          countryKey: agg.countryKey,
+          cityKey: agg.cityKey,
+          addressRegion: agg.addressRegion,
+          addressLocality: agg.addressLocality,
+          ratingValue: agg.ratingValue,
+          reviewCount: agg.reviewCount,
+          latitude: agg.latitude,
+          longitude: agg.longitude,
+          lastObservedAt: agg.lastObservedAt,
+          isActive: true,
         });
-      }),
-    );
-    upsertedSnapshots += batch.length;
+        await propertyRepo.save(entity);
+        propertyIds.push(entity.id);
+      }
+      upsertedProperties++;
+    }
+
+    // PublicAvailabilitySnapshot upsert
+    for (let idx = 0; idx < batch.length; idx++) {
+      const agg = batch[idx];
+      const propertyId = propertyIds[idx];
+      const avgPriceAmount = agg.priceCount > 0 ? Math.round(agg.priceSum / agg.priceCount) : null;
+      const openRate = safeOpenRate(agg.availableCount, agg.sampleSize);
+
+      const existingSnapshot = await snapshotRepo.findOne({
+        where: { publicPropertyId: propertyId, snapshotDate },
+        select: { id: true },
+      });
+
+      if (existingSnapshot) {
+        await snapshotRepo.update(
+          { id: existingSnapshot.id },
+          {
+            windowStartAt,
+            windowEndAt,
+            sampleSize: agg.sampleSize,
+            availableCount: agg.availableCount,
+            unavailableCount: agg.unavailableCount,
+            errorCount: agg.errorCount,
+            avgPriceAmount,
+            minPriceAmount: agg.minPriceAmount,
+            maxPriceAmount: agg.maxPriceAmount,
+            currency: agg.currency,
+            openRate,
+          },
+        );
+      } else {
+        const snapshotEntity = snapshotRepo.create({
+          publicPropertyId: propertyId,
+          snapshotDate,
+          windowStartAt,
+          windowEndAt,
+          sampleSize: agg.sampleSize,
+          availableCount: agg.availableCount,
+          unavailableCount: agg.unavailableCount,
+          errorCount: agg.errorCount,
+          avgPriceAmount,
+          minPriceAmount: agg.minPriceAmount,
+          maxPriceAmount: agg.maxPriceAmount,
+          currency: agg.currency,
+          openRate,
+        });
+        await snapshotRepo.save(snapshotEntity);
+      }
+      upsertedSnapshots++;
+    }
   }
   const upsertTimeMs = Date.now() - upsertStart;
 

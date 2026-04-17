@@ -1,4 +1,10 @@
-import { prisma } from '@workspace/db';
+import {
+  getDataSource,
+  AffiliateAuditJobState,
+  AffiliateAuditPurgeRun,
+  AffiliatePreferenceAuditLog,
+  LessThan,
+} from '@workspace/db';
 import { sendTelegramMessageHttp, type SendTelegramConfig } from '@workspace/worker-shared/observability';
 
 import { getAffiliateAuditPurgeConfig } from './settings/env';
@@ -71,6 +77,28 @@ const RUN_STATUS_STARTED = 'run_started';
 const RUN_STATUS_SUCCEEDED = 'succeeded';
 const RUN_STATUS_FAILED = 'failed';
 const REDIS_RUN_STARTED_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+const JOB_STATE_SELECT = {
+  jobName: true,
+  isFailing: true,
+  failedAt: true,
+  recoveredAt: true,
+  retryCount: true,
+  lastErrorCode: true,
+  lastErrorMessage: true,
+  lastAlertCause: true,
+  lastAlertSeverity: true,
+  lastAlertSentAt: true,
+  lastRunStartedAt: true,
+} as const;
+
+function requireJobState(state: JobStateSnapshot | null, context: string): JobStateSnapshot {
+  if (!state) {
+    throw new Error(`[affiliate-audit-purge] missing job state after ${context}`);
+  }
+
+  return state;
+}
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -165,21 +193,10 @@ function shouldDedupeAlert(
 }
 
 async function readJobState(): Promise<JobStateSnapshot | null> {
-  return prisma.affiliateAuditJobState.findUnique({
+  const ds = await getDataSource();
+  return ds.getRepository(AffiliateAuditJobState).findOne({
     where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
-    select: {
-      jobName: true,
-      isFailing: true,
-      failedAt: true,
-      recoveredAt: true,
-      retryCount: true,
-      lastErrorCode: true,
-      lastErrorMessage: true,
-      lastAlertCause: true,
-      lastAlertSeverity: true,
-      lastAlertSentAt: true,
-      lastRunStartedAt: true,
-    },
+    select: JOB_STATE_SELECT,
   });
 }
 
@@ -195,9 +212,11 @@ async function upsertJobState(update: {
   lastAlertSentAt?: Date | null;
   lastRunStartedAt?: Date | null;
 }): Promise<JobStateSnapshot> {
-  return prisma.affiliateAuditJobState.upsert({
-    where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
-    create: {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AffiliateAuditJobState);
+
+  await repo.upsert(
+    {
       jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME,
       isFailing: update.isFailing ?? false,
       failedAt: update.failedAt ?? null,
@@ -210,21 +229,14 @@ async function upsertJobState(update: {
       lastAlertSentAt: update.lastAlertSentAt ?? null,
       lastRunStartedAt: update.lastRunStartedAt ?? null,
     },
-    update,
-    select: {
-      jobName: true,
-      isFailing: true,
-      failedAt: true,
-      recoveredAt: true,
-      retryCount: true,
-      lastErrorCode: true,
-      lastErrorMessage: true,
-      lastAlertCause: true,
-      lastAlertSeverity: true,
-      lastAlertSentAt: true,
-      lastRunStartedAt: true,
-    },
+    { conflictPaths: ['jobName'] },
+  );
+
+  const state = await repo.findOne({
+    where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
+    select: JOB_STATE_SELECT,
   });
+  return requireJobState(state, 'job state upsert');
 }
 
 async function markAlertSent(cause: string, severity: AlertSeverity, now: Date): Promise<void> {
@@ -363,43 +375,32 @@ async function sendRecoveryAlert(
 }
 
 async function persistRunStarted(now: Date): Promise<{ runId: string; state: JobStateSnapshot }> {
-  return prisma.$transaction(async (tx) => {
-    const state = await tx.affiliateAuditJobState.upsert({
+  const ds = await getDataSource();
+
+  return ds.transaction(async (manager) => {
+    const jobStateRepo = manager.getRepository(AffiliateAuditJobState);
+    const purgeRunRepo = manager.getRepository(AffiliateAuditPurgeRun);
+
+    await jobStateRepo.upsert(
+      { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME, lastRunStartedAt: now },
+      { conflictPaths: ['jobName'] },
+    );
+
+    const state = await jobStateRepo.findOne({
       where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
-      create: {
-        jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME,
-        lastRunStartedAt: now,
-      },
-      update: {
-        lastRunStartedAt: now,
-      },
-      select: {
-        jobName: true,
-        isFailing: true,
-        failedAt: true,
-        recoveredAt: true,
-        retryCount: true,
-        lastErrorCode: true,
-        lastErrorMessage: true,
-        lastAlertCause: true,
-        lastAlertSeverity: true,
-        lastAlertSentAt: true,
-        lastRunStartedAt: true,
-      },
+      select: JOB_STATE_SELECT,
     });
 
-    const run = await tx.affiliateAuditPurgeRun.create({
-      data: {
-        jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME,
-        runStartedAt: now,
-        status: RUN_STATUS_STARTED,
-        deletedCount: 0,
-        retryCount: 0,
-      },
-      select: { id: true },
+    const run = purgeRunRepo.create({
+      jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME,
+      runStartedAt: now,
+      status: RUN_STATUS_STARTED,
+      deletedCount: 0,
+      retryCount: 0,
     });
+    await purgeRunRepo.save(run);
 
-    return { runId: run.id, state };
+    return { runId: run.id, state: requireJobState(state, 'persisting run start') };
   });
 }
 
@@ -417,10 +418,15 @@ async function markRunSuccess(input: {
   deletedCount: number;
   retryCount: number;
 }): Promise<JobStateSnapshot> {
-  return prisma.$transaction(async (tx) => {
-    await tx.affiliateAuditPurgeRun.update({
-      where: { id: input.runId },
-      data: {
+  const ds = await getDataSource();
+
+  return ds.transaction(async (manager) => {
+    const jobStateRepo = manager.getRepository(AffiliateAuditJobState);
+    const purgeRunRepo = manager.getRepository(AffiliateAuditPurgeRun);
+
+    await purgeRunRepo.update(
+      { id: input.runId },
+      {
         status: RUN_STATUS_SUCCEEDED,
         runFinishedAt: input.finishedAt,
         deletedCount: input.deletedCount,
@@ -428,12 +434,10 @@ async function markRunSuccess(input: {
         errorCode: null,
         errorMessage: null,
       },
-      select: { id: true },
-    });
+    );
 
-    return tx.affiliateAuditJobState.upsert({
-      where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
-      create: {
+    await jobStateRepo.upsert(
+      {
         jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME,
         isFailing: false,
         failedAt: null,
@@ -443,28 +447,14 @@ async function markRunSuccess(input: {
         lastErrorMessage: null,
         lastRunStartedAt: input.startedAt,
       },
-      update: {
-        isFailing: false,
-        recoveredAt: input.finishedAt,
-        retryCount: input.retryCount,
-        lastErrorCode: null,
-        lastErrorMessage: null,
-        lastRunStartedAt: input.startedAt,
-      },
-      select: {
-        jobName: true,
-        isFailing: true,
-        failedAt: true,
-        recoveredAt: true,
-        retryCount: true,
-        lastErrorCode: true,
-        lastErrorMessage: true,
-        lastAlertCause: true,
-        lastAlertSeverity: true,
-        lastAlertSentAt: true,
-        lastRunStartedAt: true,
-      },
+      { conflictPaths: ['jobName'] },
+    );
+
+    const state = await jobStateRepo.findOne({
+      where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
+      select: JOB_STATE_SELECT,
     });
+    return requireJobState(state, 'marking run success');
   });
 }
 
@@ -477,22 +467,25 @@ async function markRunFailure(input: {
   errorMessage: string;
   previousFailedAt: Date | null;
 }): Promise<JobStateSnapshot> {
-  return prisma.$transaction(async (tx) => {
-    await tx.affiliateAuditPurgeRun.update({
-      where: { id: input.runId },
-      data: {
+  const ds = await getDataSource();
+
+  return ds.transaction(async (manager) => {
+    const jobStateRepo = manager.getRepository(AffiliateAuditJobState);
+    const purgeRunRepo = manager.getRepository(AffiliateAuditPurgeRun);
+
+    await purgeRunRepo.update(
+      { id: input.runId },
+      {
         status: RUN_STATUS_FAILED,
         runFinishedAt: input.finishedAt,
         retryCount: input.retryCount,
         errorCode: input.errorCode,
         errorMessage: input.errorMessage.slice(0, 1000),
       },
-      select: { id: true },
-    });
+    );
 
-    return tx.affiliateAuditJobState.upsert({
-      where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
-      create: {
+    await jobStateRepo.upsert(
+      {
         jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME,
         isFailing: true,
         failedAt: input.previousFailedAt ?? input.finishedAt,
@@ -502,42 +495,24 @@ async function markRunFailure(input: {
         lastErrorMessage: input.errorMessage.slice(0, 1000),
         lastRunStartedAt: input.startedAt,
       },
-      update: {
-        isFailing: true,
-        failedAt: input.previousFailedAt ?? input.finishedAt,
-        recoveredAt: null,
-        retryCount: input.retryCount,
-        lastErrorCode: input.errorCode,
-        lastErrorMessage: input.errorMessage.slice(0, 1000),
-        lastRunStartedAt: input.startedAt,
-      },
-      select: {
-        jobName: true,
-        isFailing: true,
-        failedAt: true,
-        recoveredAt: true,
-        retryCount: true,
-        lastErrorCode: true,
-        lastErrorMessage: true,
-        lastAlertCause: true,
-        lastAlertSeverity: true,
-        lastAlertSentAt: true,
-        lastRunStartedAt: true,
-      },
+      { conflictPaths: ['jobName'] },
+    );
+
+    const state = await jobStateRepo.findOne({
+      where: { jobName: AFFILIATE_AUDIT_PURGE_JOB_NAME },
+      select: JOB_STATE_SELECT,
     });
+    return requireJobState(state, 'marking run failure');
   });
 }
 
 async function purgeExpiredLogs(now: Date, retentionDays: number): Promise<number> {
   const cutoff = getCutoffDate(now, retentionDays);
-  const result = await prisma.affiliatePreferenceAuditLog.deleteMany({
-    where: {
-      changedAt: {
-        lt: cutoff,
-      },
-    },
+  const ds = await getDataSource();
+  const result = await ds.getRepository(AffiliatePreferenceAuditLog).delete({
+    changedAt: LessThan(cutoff),
   });
-  return result.count;
+  return result.affected ?? 0;
 }
 
 export async function runAffiliateAuditPurge(

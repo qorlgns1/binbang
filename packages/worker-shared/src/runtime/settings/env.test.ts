@@ -4,7 +4,9 @@ import { getBinbangCronConfig, getEnv, getEnvNumber, getTravelCachePrewarmConfig
 
 const ORIGINAL_ENV = process.env;
 const REQUIRED_WORKER_ENV = {
-  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/accommodation_monitor',
+  ORACLE_USER: 'worker_user',
+  ORACLE_PASSWORD: 'worker_password',
+  ORACLE_CONNECT_STRING: 'tcps://localhost:1522/binbang_high.adb.oraclecloud.com',
   REDIS_URL: 'redis://localhost:6379',
 };
 
@@ -45,7 +47,7 @@ describe('getEnvNumber', (): void => {
 });
 
 describe('validateWorkerEnv', (): void => {
-  it('passes when DATABASE_URL and REDIS_URL are valid', (): void => {
+  it('passes when Oracle and Redis env values are valid', (): void => {
     setRequiredWorkerEnv();
     expect((): void => validateWorkerEnv()).not.toThrow();
   });

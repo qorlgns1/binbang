@@ -2,51 +2,68 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { completeTutorial, dismissTutorial, getTutorialStatus } from './user.service';
 
-const { mockFindUnique, mockUpdate } = vi.hoisted(
+const dbMock = vi.hoisted(
   (): {
-    mockFindUnique: ReturnType<typeof vi.fn>;
-    mockUpdate: ReturnType<typeof vi.fn>;
+    dataSource: unknown;
+    userRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
   } => ({
-    mockFindUnique: vi.fn(),
-    mockUpdate: vi.fn(),
+    dataSource: null,
+    userRepo: {
+      findOne: vi.fn(),
+      update: vi.fn(),
+    },
+    getDataSource: vi.fn(),
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    user: {
-      findUnique: mockFindUnique,
-      update: mockUpdate,
-    },
-  },
-  QuotaKey: { MAX_ACCOMMODATIONS: 'MAX_ACCOMMODATIONS', CHECK_INTERVAL_MIN: 'CHECK_INTERVAL_MIN' },
-}));
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../test-utils/mock-db.ts');
+
+  const userRepo = createMockRepository();
+  userRepo.update.mockImplementation((where, data) => ({ where, data }));
+  const dataSource = createMockDataSource({
+    repositories: [[actual.User, userRepo]],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.userRepo = userRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('user.service - tutorial', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
   });
 
   describe('getTutorialStatus', (): void => {
     it('returns shouldShow: true when both fields are null', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue({
+      dbMock.userRepo.findOne.mockResolvedValue({
         tutorialCompletedAt: null,
         tutorialDismissedAt: null,
       });
 
       const result = await getTutorialStatus('user-1');
 
-      expect(mockFindUnique).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'user-1' },
-          select: { tutorialCompletedAt: true, tutorialDismissedAt: true },
-        }),
-      );
+      expect(dbMock.userRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        select: { tutorialCompletedAt: true, tutorialDismissedAt: true },
+      });
       expect(result).toEqual({ shouldShow: true });
     });
 
     it('returns shouldShow: false when tutorialCompletedAt is set', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue({
+      dbMock.userRepo.findOne.mockResolvedValue({
         tutorialCompletedAt: new Date('2026-01-01'),
         tutorialDismissedAt: null,
       });
@@ -57,7 +74,7 @@ describe('user.service - tutorial', (): void => {
     });
 
     it('returns shouldShow: false when tutorialDismissedAt is set', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue({
+      dbMock.userRepo.findOne.mockResolvedValue({
         tutorialCompletedAt: null,
         tutorialDismissedAt: new Date('2026-01-01'),
       });
@@ -68,7 +85,7 @@ describe('user.service - tutorial', (): void => {
     });
 
     it('returns null when user is not found', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue(null);
+      dbMock.userRepo.findOne.mockResolvedValue(null);
 
       const result = await getTutorialStatus('user-1');
 
@@ -77,34 +94,18 @@ describe('user.service - tutorial', (): void => {
   });
 
   describe('completeTutorial', (): void => {
-    it('calls prisma.user.update with tutorialCompletedAt', async (): Promise<void> => {
-      mockUpdate.mockResolvedValue({ id: 'user-1' });
-
+    it('updates tutorialCompletedAt', async (): Promise<void> => {
       await completeTutorial('user-1');
 
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'user-1' },
-          data: { tutorialCompletedAt: expect.any(Date) },
-          select: { id: true },
-        }),
-      );
+      expect(dbMock.userRepo.update).toHaveBeenCalledWith({ id: 'user-1' }, { tutorialCompletedAt: expect.any(Date) });
     });
   });
 
   describe('dismissTutorial', (): void => {
-    it('calls prisma.user.update with tutorialDismissedAt', async (): Promise<void> => {
-      mockUpdate.mockResolvedValue({ id: 'user-1' });
-
+    it('updates tutorialDismissedAt', async (): Promise<void> => {
       await dismissTutorial('user-1');
 
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'user-1' },
-          data: { tutorialDismissedAt: expect.any(Date) },
-          select: { id: true },
-        }),
-      );
+      expect(dbMock.userRepo.update).toHaveBeenCalledWith({ id: 'user-1' }, { tutorialDismissedAt: expect.any(Date) });
     });
   });
 });

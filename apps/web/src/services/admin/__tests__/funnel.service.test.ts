@@ -33,32 +33,100 @@ const {
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    formSubmission: {
-      count: mockFormSubmissionCount,
-      findMany: mockFormSubmissionFindMany,
-      findFirst: mockFormSubmissionFindFirst,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    formSubmissionRepo: {
+      count: ReturnType<typeof vi.fn>;
+      find: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    caseRepo: {
+      count: ReturnType<typeof vi.fn>;
+      find: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    billingEventRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    formSubmissionRepo: {
+      count: vi.fn(),
+      find: vi.fn(),
+      findOne: vi.fn(),
     },
-    case: {
-      count: mockCaseCount,
-      findMany: mockCaseFindMany,
-      findFirst: mockCaseFindFirst,
+    caseRepo: {
+      count: vi.fn(),
+      find: vi.fn(),
+      findOne: vi.fn(),
     },
-    billingEvent: {
-      findMany: mockBillingEventFindMany,
-      findFirst: mockBillingEventFindFirst,
+    billingEventRepo: {
+      findOne: vi.fn(),
     },
-  },
-}));
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../../../test-utils/mock-db.ts');
+
+  const formSubmissionRepo = createMockRepository();
+  formSubmissionRepo.count.mockImplementation((...args) => callMock(mockFormSubmissionCount, ...args));
+  formSubmissionRepo.find.mockImplementation((...args) => callMock(mockFormSubmissionFindMany, ...args));
+  formSubmissionRepo.findOne.mockImplementation((...args) => callMock(mockFormSubmissionFindFirst, ...args));
+
+  const caseRepo = createMockRepository();
+  caseRepo.count.mockImplementation((...args) => callMock(mockCaseCount, ...args));
+  caseRepo.find.mockImplementation((...args) => callMock(mockCaseFindMany, ...args));
+  caseRepo.findOne.mockImplementation((...args) => callMock(mockCaseFindFirst, ...args));
+
+  const billingEventRepo = createMockRepository();
+  billingEventRepo.findOne.mockImplementation((...args) => callMock(mockBillingEventFindFirst, ...args));
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.FormSubmission, formSubmissionRepo],
+      [actual.Case, caseRepo],
+      [actual.BillingEvent, billingEventRepo],
+    ],
+    queryImplementation: async (sql: string) => {
+      if (sql.includes('SELECT DISTINCT "caseId"')) {
+        return callMock(mockBillingEventFindMany, { distinct: ['caseId'] });
+      }
+      return callMock(mockBillingEventFindMany, { select: { createdAt: true } });
+    },
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.formSubmissionRepo = formSubmissionRepo;
+  dbMock.caseRepo = caseRepo;
+  dbMock.billingEventRepo = billingEventRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 function setRangeMetricMocks(): void {
   mockFormSubmissionCount.mockImplementation(({ where }: { where: { status?: string } }) =>
     where.status === 'PROCESSED' ? 6 : 7,
   );
   mockCaseCount.mockResolvedValue(2);
-  mockBillingEventFindMany.mockImplementation(({ select }: { select: Record<string, boolean> }) =>
-    select.createdAt ? [{ caseId: 'case-1', createdAt: new Date('2026-02-02T00:00:00.000Z') }] : [{ caseId: 'case-1' }],
+  mockBillingEventFindMany.mockImplementation(
+    ({ select, distinct }: { select?: Record<string, boolean>; distinct?: string[] }) =>
+      select?.createdAt
+        ? [{ caseId: 'case-1', createdAt: new Date('2026-02-02T00:00:00.000Z') }]
+        : distinct
+          ? [{ caseId: 'case-1' }]
+          : [],
   );
   mockFormSubmissionFindMany.mockImplementation(({ where }: { where: { status?: string } }) =>
     where.status === 'PROCESSED'
@@ -89,6 +157,7 @@ function setRangeMetricMocks(): void {
 describe('admin/funnel.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockFormSubmissionCount.mockResolvedValue(0);
     mockCaseCount.mockResolvedValue(0);
     mockBillingEventFindMany.mockResolvedValue([]);

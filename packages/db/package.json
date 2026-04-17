@@ -5,47 +5,43 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "development": "./src/index.ts",
+      "types": "./dist/src/index.d.ts",
+      "development": "./dist/src/index.js",
       "default": "./dist/src/index.js"
     },
     "./client": {
-      "types": "./src/client.ts",
-      "development": "./src/client.ts",
+      "types": "./dist/src/client.d.ts",
+      "development": "./dist/src/client.js",
       "default": "./dist/src/client.js"
     },
     "./enums": {
-      "types": "./src/enums.ts",
-      "development": "./src/enums.ts",
+      "types": "./dist/src/enums.d.ts",
+      "development": "./dist/src/enums.js",
       "default": "./dist/src/enums.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed",
-    "db:seed:base": "tsx prisma/seed-base.ts",
-    "db:studio": "prisma studio",
+    "db:migrate": "tsx node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
+    "db:migrate:deploy": "tsx node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
+    "db:migrate:generate": "tsx node_modules/typeorm/cli.js migration:generate -d src/data-source.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:seed:base": "tsx scripts/seed-base.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf generated node_modules"
+    "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
-    "pg": "^8.20.0"
+    "@paralleldrive/cuid2": "^2.2.2",
+    "oracledb": "^6.7.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20"
   },
   "devDependencies": {
     "@types/node": "^24.10.9",
-    "@types/pg": "^8.20.0",
+    "@types/pg": "^8.15.5",
     "dotenv": "^17.3.1",
-    "prisma": "^7.5.0",
+    "pg": "^8.16.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }

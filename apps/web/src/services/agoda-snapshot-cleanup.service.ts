@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { AgodaPollRun, LessThan, getDataSource } from '@workspace/db';
 
 export interface CleanupAgodaSnapshotsInput {
   cutoff: Date;
@@ -11,11 +11,10 @@ export interface CleanupAgodaSnapshotsResult {
 export async function cleanupExpiredAgodaPollRuns(
   input: CleanupAgodaSnapshotsInput,
 ): Promise<CleanupAgodaSnapshotsResult> {
-  const { count } = await prisma.agodaPollRun.deleteMany({
-    where: { polledAt: { lt: input.cutoff } },
-  });
+  const ds = await getDataSource();
+  const result = await ds.getRepository(AgodaPollRun).delete({ polledAt: LessThan(input.cutoff) });
 
   return {
-    deletedPollRuns: count,
+    deletedPollRuns: result.affected ?? 0,
   };
 }

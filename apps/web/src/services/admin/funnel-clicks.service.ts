@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { Between, FormSubmission, In, LandingEvent, getDataSource } from '@workspace/db';
 import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
 import { BadRequestError } from '@workspace/shared/errors';
 
@@ -121,14 +121,16 @@ function applyEventCount(target: AdminFunnelClickTotals, eventName: LandingClick
 }
 
 async function resolveAllRangeStart(now: Date): Promise<Date> {
+  const ds = await getDataSource();
+
   const [firstLandingClick, firstSubmission] = await Promise.all([
-    prisma.landingEvent.findFirst({
-      where: { eventName: { in: [...LANDING_CLICK_EVENT_NAMES] } },
-      orderBy: { occurredAt: 'asc' },
+    ds.getRepository(LandingEvent).findOne({
+      where: { eventName: In([...LANDING_CLICK_EVENT_NAMES]) },
+      order: { occurredAt: 'ASC' },
       select: { occurredAt: true },
     }),
-    prisma.formSubmission.findFirst({
-      orderBy: { createdAt: 'asc' },
+    ds.getRepository(FormSubmission).findOne({
+      order: { createdAt: 'ASC' },
       select: { createdAt: true },
     }),
   ]);
@@ -185,22 +187,20 @@ export async function getAdminFunnelClicks(input: GetAdminFunnelClicksInput = {}
   const range = input.range ?? DEFAULT_RANGE;
   const now = input.now ?? new Date();
   const { from, to } = await resolveRange(range, now, input.from, input.to);
-  const rangeFilter = { gte: from, lte: to };
+
+  const ds = await getDataSource();
 
   const [submitted, clickRows] = await Promise.all([
-    prisma.formSubmission.count({
-      where: { createdAt: rangeFilter },
+    ds.getRepository(FormSubmission).count({
+      where: { createdAt: Between(from, to) },
     }),
-    prisma.landingEvent.findMany({
+    ds.getRepository(LandingEvent).find({
       where: {
-        eventName: { in: [...LANDING_CLICK_EVENT_NAMES] },
-        occurredAt: rangeFilter,
+        eventName: In([...LANDING_CLICK_EVENT_NAMES]),
+        occurredAt: Between(from, to),
       },
-      orderBy: { occurredAt: 'asc' },
-      select: {
-        eventName: true,
-        occurredAt: true,
-      },
+      order: { occurredAt: 'ASC' },
+      select: { eventName: true, occurredAt: true },
     }),
   ]);
 

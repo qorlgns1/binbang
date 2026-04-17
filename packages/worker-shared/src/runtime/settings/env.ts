@@ -14,11 +14,13 @@ interface EnvRule {
 }
 
 const HTTP_PROTOCOLS = new Set(['http:', 'https:']);
-const DATABASE_PROTOCOLS = new Set(['postgres:', 'postgresql:']);
+const ORACLE_CONNECT_PROTOCOLS = new Set(['tcp:', 'tcps:']);
 const REDIS_PROTOCOLS = new Set(['redis:', 'rediss:']);
 
 const WEB_ENV_RULES = [
-  { key: 'DATABASE_URL', validate: (value): string | null => validateUrl(value, DATABASE_PROTOCOLS) },
+  { key: 'ORACLE_USER' },
+  { key: 'ORACLE_PASSWORD' },
+  { key: 'ORACLE_CONNECT_STRING', validate: (value): string | null => validateUrl(value, ORACLE_CONNECT_PROTOCOLS) },
   { key: 'NEXTAUTH_URL', validate: (value): string | null => validateUrl(value, HTTP_PROTOCOLS) },
   { key: 'NEXTAUTH_SECRET' },
   { key: 'GOOGLE_CLIENT_ID' },
@@ -28,7 +30,9 @@ const WEB_ENV_RULES = [
 ] as const satisfies readonly EnvRule[];
 
 const WORKER_ENV_RULES = [
-  { key: 'DATABASE_URL', validate: (value): string | null => validateUrl(value, DATABASE_PROTOCOLS) },
+  { key: 'ORACLE_USER' },
+  { key: 'ORACLE_PASSWORD' },
+  { key: 'ORACLE_CONNECT_STRING', validate: (value): string | null => validateUrl(value, ORACLE_CONNECT_PROTOCOLS) },
   { key: 'REDIS_URL', validate: (value): string | null => validateUrl(value, REDIS_PROTOCOLS) },
 ] as const satisfies readonly EnvRule[];
 

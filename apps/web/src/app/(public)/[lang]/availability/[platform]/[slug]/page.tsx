@@ -122,6 +122,8 @@ function getConfidenceBadgeClass(confidence: PublicAvailabilityPredictionView['c
     case 'LOW':
       return 'bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400';
   }
+
+  return 'bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400';
 }
 
 function getHomeLabel(locale: Locale): string {

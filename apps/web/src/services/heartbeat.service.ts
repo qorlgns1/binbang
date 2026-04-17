@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { HeartbeatHistory, MoreThanOrEqual, getDataSource } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -26,7 +26,8 @@ export async function getHeartbeatHistory(hours: number = 24): Promise<Heartbeat
   const since = new Date();
   since.setHours(since.getHours() - hours);
 
-  return prisma.heartbeatHistory.findMany({
+  const ds = await getDataSource();
+  return ds.getRepository(HeartbeatHistory).find({
     select: {
       id: true,
       timestamp: true,
@@ -36,12 +37,10 @@ export async function getHeartbeatHistory(hours: number = 24): Promise<Heartbeat
       workerId: true,
     },
     where: {
-      timestamp: {
-        gte: since,
-      },
+      timestamp: MoreThanOrEqual(since),
     },
-    orderBy: {
-      timestamp: 'asc',
+    order: {
+      timestamp: 'ASC',
     },
   });
 }

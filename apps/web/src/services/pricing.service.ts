@@ -1,4 +1,4 @@
-import { type Prisma, prisma } from '@workspace/db';
+import { Case, PriceQuote, getDataSource } from '@workspace/db';
 import { BadRequestError, NotFoundError } from '@workspace/shared/errors';
 
 export const PRICING_POLICY_VERSION = 'v1';
@@ -109,35 +109,7 @@ const FREQUENCY_WEIGHT_BY_BUCKET: Record<FrequencyBucket, number> = {
   F60M_PLUS: -2000,
 };
 
-const PRICE_QUOTE_SELECT = {
-  id: true,
-  caseId: true,
-  pricingPolicyVersion: true,
-  computedAmountKrw: true,
-  roundedAmountKrw: true,
-  changeReason: true,
-  isActive: true,
-  createdBy: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const PRICE_QUOTE_HISTORY_SELECT = {
-  id: true,
-  caseId: true,
-  pricingPolicyVersion: true,
-  inputsSnapshot: true,
-  weightsSnapshot: true,
-  computedAmountKrw: true,
-  roundedAmountKrw: true,
-  changeReason: true,
-  isActive: true,
-  createdBy: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-function toPricingInputSnapshot(json: Prisma.JsonValue): PricingInputSnapshot {
+function toPricingInputSnapshot(json: unknown): PricingInputSnapshot {
   const snapshot = json as Partial<PricingInputSnapshot> | null;
   return {
     platform: snapshot?.platform ?? 'OTHER',
@@ -148,7 +120,7 @@ function toPricingInputSnapshot(json: Prisma.JsonValue): PricingInputSnapshot {
   };
 }
 
-function toPricingWeightSnapshot(json: Prisma.JsonValue): PricingWeightSnapshot {
+function toPricingWeightSnapshot(json: unknown): PricingWeightSnapshot {
   const snapshot = json as Partial<PricingWeightSnapshot> | null;
   return {
     baseFee: snapshot?.baseFee ?? 0,
@@ -169,26 +141,6 @@ function clamp(value: number, min: number, max: number): number {
 
 export function finalizeRoundedAmount(computedAmountKrw: number): number {
   return clamp(roundToUnit(computedAmountKrw, ROUNDING_UNIT_KRW), MIN_QUOTE_KRW, MAX_QUOTE_KRW);
-}
-
-function toInputJson(snapshot: PricingInputSnapshot): Prisma.InputJsonValue {
-  return {
-    platform: snapshot.platform,
-    durationBucket: snapshot.durationBucket,
-    difficulty: snapshot.difficulty,
-    urgencyBucket: snapshot.urgencyBucket,
-    frequencyBucket: snapshot.frequencyBucket,
-  };
-}
-
-function toWeightJson(snapshot: PricingWeightSnapshot): Prisma.InputJsonValue {
-  return {
-    baseFee: snapshot.baseFee,
-    duration: snapshot.duration,
-    difficulty: snapshot.difficulty,
-    urgency: snapshot.urgency,
-    frequency: snapshot.frequency,
-  };
 }
 
 export function computePriceQuote(inputsSnapshot: PricingInputSnapshot): PriceQuoteComputation {
@@ -218,7 +170,8 @@ export function computePriceQuote(inputsSnapshot: PricingInputSnapshot): PriceQu
 }
 
 export async function previewCasePriceQuote(input: PreviewCasePriceQuoteInput): Promise<PreviewCasePriceQuoteOutput> {
-  const caseRecord = await prisma.case.findUnique({
+  const ds = await getDataSource();
+  const caseRecord = await ds.getRepository(Case).findOne({
     where: { id: input.caseId },
     select: { id: true },
   });
@@ -240,9 +193,10 @@ export async function saveCasePriceQuote(input: SaveCasePriceQuoteInput): Promis
   }
 
   const computed = computePriceQuote(input.inputsSnapshot);
+  const ds = await getDataSource();
 
-  const created = await prisma.$transaction(async (tx) => {
-    const caseRecord = await tx.case.findUnique({
+  const created = await ds.transaction(async (manager) => {
+    const caseRecord = await manager.getRepository(Case).findOne({
       where: { id: input.caseId },
       select: { id: true },
     });
@@ -251,30 +205,26 @@ export async function saveCasePriceQuote(input: SaveCasePriceQuoteInput): Promis
       throw new NotFoundError('Case not found');
     }
 
-    await tx.priceQuote.updateMany({
-      where: {
-        caseId: input.caseId,
-        isActive: true,
-      },
-      data: {
-        isActive: false,
-      },
-    });
+    await manager
+      .createQueryBuilder()
+      .update(PriceQuote)
+      .set({ isActive: false })
+      .where('"caseId" = :caseId AND "isActive" = 1', { caseId: input.caseId })
+      .execute();
 
-    return tx.priceQuote.create({
-      data: {
-        caseId: input.caseId,
-        pricingPolicyVersion: computed.pricingPolicyVersion,
-        inputsSnapshot: toInputJson(computed.inputsSnapshot),
-        weightsSnapshot: toWeightJson(computed.weightsSnapshot),
-        computedAmountKrw: computed.computedAmountKrw,
-        roundedAmountKrw: computed.roundedAmountKrw,
-        changeReason,
-        isActive: true,
-        createdBy: input.createdBy,
-      },
-      select: PRICE_QUOTE_SELECT,
+    const quote = manager.getRepository(PriceQuote).create({
+      caseId: input.caseId,
+      pricingPolicyVersion: computed.pricingPolicyVersion,
+      inputsSnapshot: computed.inputsSnapshot as object,
+      weightsSnapshot: computed.weightsSnapshot as object,
+      computedAmountKrw: computed.computedAmountKrw,
+      roundedAmountKrw: computed.roundedAmountKrw,
+      changeReason,
+      isActive: true,
+      createdBy: input.createdBy,
     });
+    await manager.save(quote);
+    return quote;
   });
 
   return {
@@ -294,7 +244,9 @@ export async function saveCasePriceQuote(input: SaveCasePriceQuoteInput): Promis
 }
 
 export async function getCasePriceQuoteHistory(caseId: string, limit = 50): Promise<CasePriceQuoteHistoryItem[]> {
-  const caseRecord = await prisma.case.findUnique({
+  const ds = await getDataSource();
+
+  const caseRecord = await ds.getRepository(Case).findOne({
     where: { id: caseId },
     select: { id: true },
   });
@@ -303,11 +255,10 @@ export async function getCasePriceQuoteHistory(caseId: string, limit = 50): Prom
     throw new NotFoundError('Case not found');
   }
 
-  const rows = await prisma.priceQuote.findMany({
+  const rows = await ds.getRepository(PriceQuote).find({
     where: { caseId },
-    orderBy: { updatedAt: 'desc' },
+    order: { updatedAt: 'DESC' },
     take: Math.min(Math.max(limit, 1), 50),
-    select: PRICE_QUOTE_HISTORY_SELECT,
   });
 
   return rows.map(

@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, SystemSettings } from '@workspace/db';
 
 // ── 타입 정의 ──
 
@@ -192,7 +192,8 @@ export async function loadSettings(force = false): Promise<SystemSettingsCache> 
   }
 
   try {
-    const rows = await prisma.systemSettings.findMany();
+    const ds = await getDataSource();
+    const rows = await ds.getRepository(SystemSettings).find();
     const dbMap = new Map(rows.map((r): [string, string] => [r.key, r.value]));
     cache = buildCache(dbMap);
     lastLoadedAt = Date.now();

@@ -17,9 +17,12 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  allowedDevOrigins: ['127.0.0.1'],
 
   // Monorepo: transpile workspace packages
-  transpilePackages: ['@workspace/db', '@workspace/shared'],
+  transpilePackages: ['@workspace/shared'],
+
+  serverExternalPackages: ['@workspace/db', 'oracledb', 'reflect-metadata', 'typeorm'],
 
   // Monorepo: output file tracing for standalone build
   outputFileTracingRoot: path.join(__dirname, '../../'),
@@ -42,7 +45,8 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts', 'radix-ui', '@workspace/db'],
+    optimizePackageImports: ['lucide-react', 'recharts', 'radix-ui'],
+    webpackBuildWorker: false,
   },
 };
 

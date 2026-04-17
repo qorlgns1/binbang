@@ -1,7 +1,7 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, getQualifiedAgodaHotelsTable } from '@workspace/db';
 
 const MAX_RESULTS = 20;
-const MIN_QUERY_LENGTH = 1;
+const MIN_QUERY_LENGTH = 2;
 
 export interface AgodaHotelSearchResult {
   hotelId: string;
@@ -27,37 +27,61 @@ export async function searchAgodaHotels(query: string): Promise<AgodaHotelSearch
   const trimmedQuery = query.trim();
   if (trimmedQuery.length < MIN_QUERY_LENGTH) return [];
 
-  const likePattern = `%${trimmedQuery}%`;
+  const ds = await getDataSource();
+  const agodaHotelsTable = getQualifiedAgodaHotelsTable();
+  const exactPattern = trimmedQuery.toUpperCase();
 
-  // GIN trigram 인덱스를 직접 활용하기 위해 $queryRaw 사용.
-  // Prisma의 contains는 ILIKE '%...%'로 변환되지만 OR 절 전체에 걸쳐
-  // cityName/countryName에 인덱스가 없어 seq scan이 발생함.
-  // hotelName/hotelTranslatedName에만 검색을 한정하고 word_similarity로 정렬.
-  const hotels = await prisma.$queryRaw<AgodaHotelRow[]>`
-    SELECT
-      "hotelId",
-      "hotelName",
-      "hotelTranslatedName",
-      "cityName",
-      "countryName",
-      "starRating",
-      "photoUrl"
-    FROM agoda_hotels
-    WHERE "hotelName" ILIKE ${likePattern}
-       OR "hotelTranslatedName" ILIKE ${likePattern}
-    ORDER BY
-      word_similarity(${trimmedQuery}, COALESCE("hotelTranslatedName", "hotelName")) DESC,
-      "starRating" DESC NULLS LAST
-    LIMIT ${MAX_RESULTS}
-  `;
+  try {
+    // Oracle Text domain index를 우선 사용해 전체 스캔을 피한다.
+    const hotels = await ds.query<AgodaHotelRow[]>(
+      `SELECT "hotelId",
+              "hotelName",
+              "hotelTranslatedName",
+              "cityName",
+              "countryName",
+              "starRating",
+              "photoUrl"
+         FROM ${agodaHotelsTable}
+        WHERE CONTAINS("hotelTranslatedName", :1, 1) > 0
+           OR CONTAINS("hotelName", :2, 2) > 0
+        ORDER BY "starRating" DESC NULLS LAST,
+                 "hotelId" ASC
+        FETCH FIRST ${MAX_RESULTS} ROWS ONLY`,
+      [trimmedQuery, trimmedQuery],
+    );
 
-  return hotels.map((hotel) => ({
-    hotelId: hotel.hotelId.toString(),
-    name: hotel.hotelTranslatedName || hotel.hotelName,
-    nameEn: hotel.hotelName,
-    city: hotel.cityName,
-    country: hotel.countryName,
-    starRating: hotel.starRating,
-    photoUrl: hotel.photoUrl,
-  }));
+    return hotels.map((hotel) => ({
+      hotelId: hotel.hotelId.toString(),
+      name: hotel.hotelTranslatedName || hotel.hotelName,
+      nameEn: hotel.hotelName,
+      city: hotel.cityName,
+      country: hotel.countryName,
+      starRating: hotel.starRating,
+      photoUrl: hotel.photoUrl,
+    }));
+  } catch (error) {
+    // Oracle Text 쿼리 파서가 특수문자 입력을 거부하면 LIKE fallback으로만 처리한다.
+    console.warn('[agoda-hotels] Oracle Text search failed, falling back to LIKE search', error);
+
+    const likePattern = `%${exactPattern}%`;
+    const hotels = await ds.query<AgodaHotelRow[]>(
+      `SELECT "hotelId", "hotelName", "hotelTranslatedName", "cityName", "countryName", "starRating", "photoUrl"
+         FROM ${agodaHotelsTable}
+        WHERE UPPER("hotelName") LIKE :1
+           OR UPPER("hotelTranslatedName") LIKE :2
+        ORDER BY "starRating" DESC NULLS LAST
+        FETCH FIRST ${MAX_RESULTS} ROWS ONLY`,
+      [likePattern, likePattern],
+    );
+
+    return hotels.map((hotel) => ({
+      hotelId: hotel.hotelId.toString(),
+      name: hotel.hotelTranslatedName || hotel.hotelName,
+      nameEn: hotel.hotelName,
+      city: hotel.cityName,
+      country: hotel.countryName,
+      starRating: hotel.starRating,
+      photoUrl: hotel.photoUrl,
+    }));
+  }
 }

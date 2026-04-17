@@ -13,7 +13,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
 
-  transpilePackages: ['@workspace/db', '@workspace/shared'],
+  transpilePackages: ['@workspace/shared'],
+
+  serverExternalPackages: ['@workspace/db', 'oracledb', 'reflect-metadata', 'typeorm'],
 
   outputFileTracingRoot: path.join(__dirname, '../../'),
 
@@ -39,7 +41,8 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
-    optimizePackageImports: ['lucide-react', '@workspace/db'],
+    optimizePackageImports: ['lucide-react'],
+    webpackBuildWorker: false,
   },
 };
 

@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { LandingEvent, getDataSource } from '@workspace/db';
 
 import type { PlannerEventName } from '@/lib/plannerTracking';
 
@@ -27,24 +27,20 @@ export async function createPlannerEvent(input: CreatePlannerEventInput): Promis
     occurredAt = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   }
 
-  const created = await prisma.landingEvent.create({
-    data: {
-      eventName: input.eventName,
-      source: input.source,
-      sessionId: input.sessionId,
-      locale: input.locale,
-      path: input.path || '/chat',
-      referrer: input.referrer ?? null,
-      userAgent: input.userAgent ?? null,
-      ipAddress: input.ipAddress ?? null,
-      occurredAt,
-    },
-    select: {
-      id: true,
-      eventName: true,
-      occurredAt: true,
-    },
+  const ds = await getDataSource();
+  const eventRepo = ds.getRepository(LandingEvent);
+  const created = eventRepo.create({
+    eventName: input.eventName,
+    source: input.source ?? null,
+    sessionId: input.sessionId ?? null,
+    locale: input.locale ?? null,
+    path: input.path || '/chat',
+    referrer: input.referrer ?? null,
+    userAgent: input.userAgent ?? null,
+    ipAddress: input.ipAddress ?? null,
+    occurredAt,
   });
+  await eventRepo.save(created);
 
   return {
     eventId: created.id,

@@ -16,15 +16,62 @@ const { mockFindMany, mockUpdateMany, mockUpdate, mockSendKakaoNotification } = 
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    caseNotification: {
-      findMany: mockFindMany,
-      updateMany: mockUpdateMany,
-      update: mockUpdate,
-    },
-  },
-}));
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    notificationRepo: unknown;
+    claimQb: unknown;
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    notificationRepo: null,
+    claimQb: null,
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockQueryBuilder, createMockRepository } = await import('./test-utils/mockDb');
+
+  const claimQb = createMockQueryBuilder();
+  claimQb.execute.mockImplementation(async () => {
+    const where = claimQb.where.mock.calls.at(-1)?.[1] ?? {};
+    const result = await callMock<{ count?: number }>(mockUpdateMany, {
+      where: {
+        id: (where as Record<string, unknown>).id,
+        status: (where as Record<string, unknown>).status,
+        retryCount: (where as Record<string, unknown>).retryCount,
+      },
+      data: { status: 'PENDING', retryCount: { increment: 1 }, failReason: null },
+    });
+    return { affected: result?.count ?? 0 };
+  });
+
+  const notificationRepo = createMockRepository();
+  notificationRepo.find.mockImplementation((...args) => callMock(mockFindMany, ...args));
+  notificationRepo.update.mockImplementation((where, data) =>
+    callMock(mockUpdate, { where, data, select: { id: true } }),
+  );
+
+  const dataSource = createMockDataSource({
+    repositories: [[actual.CaseNotification, notificationRepo]],
+    queryBuilder: claimQb,
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.notificationRepo = notificationRepo;
+  dbMock.claimQb = claimQb;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 vi.mock('./notifications', () => ({
   sendKakaoNotification: mockSendKakaoNotification,
@@ -33,6 +80,7 @@ vi.mock('./notifications', () => ({
 describe('caseNotifications', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockUpdateMany.mockResolvedValue({ count: 1 });
     mockUpdate.mockResolvedValue({ id: 'n-1' });
   });

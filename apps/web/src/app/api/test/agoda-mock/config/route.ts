@@ -13,6 +13,6 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'scenario must be "sold_out" or "available"' }, { status: 400 });
   }
 
-  setAgodaMockScenario(body.scenario as AgodaMockScenario);
+  await setAgodaMockScenario(body.scenario as AgodaMockScenario);
   return NextResponse.json({ ok: true, scenario: body.scenario });
 }

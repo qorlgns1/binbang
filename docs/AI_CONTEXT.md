@@ -37,7 +37,7 @@ apps/
   worker/         # 워커 엔트리포인트 + wiring만 (로직은 packages 쪽으로)
 
 packages/
-  db/             # Prisma 스키마, 마이그레이션, DB 클라이언트 (단일 소유)
+  db/             # TypeORM entities/migrations, DB 클라이언트 (단일 소유)
   shared/         # 범용 공유 코드 (순수, 런타임 비의존)
   worker-shared/  # 워커 전용 (runtime / jobs / browser / observability)
 ```
@@ -45,7 +45,7 @@ packages/
 - **웹**: `apps/web` — Route Handler는 DB 직접 접근 금지, 반드시 `apps/web/src/services/**` 경유
 - **트래블**: `apps/travel` — `apps/web`와 동일 레이어 규칙, DB 접근은 `apps/travel/src/services/**`만 허용
 - **워커**: `apps/worker` — 엔트리포인트만 두고, 실제 로직은 `@workspace/worker-shared`의 public 진입점만 사용 (`/browser`, `/jobs`, `/runtime`, `/observability`)
-- **DB**: `packages/db`만 Prisma 소유. 다른 패키지는 `import { prisma } from "@workspace/db"` 만 허용
+- **DB**: `packages/db`가 Oracle DataSource/entity/migration을 소유. 앱은 `services/**`, 워커는 `runtime/**`를 통해서만 DB 접근
 - **공유**: `packages/shared`는 순수 코드만(네트워크/DB/Node 내장/process.env 금지). `packages/worker-shared`는 Next.js 앱(`apps/web`, `apps/travel`)에서 import 금지
 
 ---
@@ -99,7 +99,7 @@ binbang/
 │   ├── travel/                     # Next.js 여행 AI + SEO/i18n 앱
 │   └── worker/                     # Worker entrypoint + composition
 ├── packages/
-│   ├── db/                         # Prisma schema/migrations + DB client
+│   ├── db/                         # TypeORM entities/migrations + DB client
 │   ├── shared/                     # Universal shared code (pure)
 │   └── worker-shared/              # Worker-only shared code
 ├── docker/
@@ -120,7 +120,7 @@ binbang/
 | `apps/web` | 운영 UI + App Router + Route Handler | 앱 내부 로컬 import | DB는 `apps/web/src/services/**`로만 접근, Route Handler 직접 DB 접근 금지 |
 | `apps/travel` | 여행 AI UI + Locale 라우팅 + SEO 페이지 + 제휴 이벤트 | 앱 내부 로컬 import | `apps/web`와 동일 레이어 규칙: DB는 `apps/travel/src/services/**`로만 접근 |
 | `apps/worker` | 프로세스 엔트리/조립(wiring) + 크론성 실행 | 앱 내부 로컬 import | 재사용 가능한 워커 로직은 `packages/worker-shared`로 승격 |
-| `packages/db` | Prisma 단일 소유자 | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | 외부에서 `@prisma/client` 직접 import 금지 |
+| `packages/db` | Oracle DataSource + entities/migrations 단일 소유자 | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | 서비스/worker runtime만 DB 접근, deep import 금지 |
 | `packages/shared` | 웹/트래블/워커 공용 순수 코드 | `@workspace/shared`, `@workspace/shared/types`, `@workspace/shared/checkers`, `@workspace/shared/url-parser`, `@workspace/shared/urlParser`, `@workspace/shared/i18n`, `@workspace/shared/utils/date`, `@workspace/shared/utils/timeout`, `@workspace/shared/utils/price`, `@workspace/shared/errors` | 네트워크/DB/Node built-in/process.env 금지 |
 | `packages/worker-shared` | 워커 전용 공용 로직 | `@workspace/worker-shared/browser`, `@workspace/worker-shared/jobs`, `@workspace/worker-shared/runtime`, `@workspace/worker-shared/observability` | Next.js 앱(`web`/`travel`)에서 import 금지, deep import 금지 |
 
@@ -190,21 +190,24 @@ apps/worker/src/
 
 ```text
 packages/db/
-├── prisma/
-│   ├── schema.prisma
-│   ├── migrations/
+├── src/
 │   ├── constants/
-│   └── seed*.ts
-└── src/
-    ├── client.ts
-    ├── enums.ts
-    └── index.ts
+│   ├── entities/
+│   ├── migrations/
+│   ├── client.ts
+│   ├── data-source.ts
+│   ├── enums.ts
+│   └── index.ts
+└── scripts/
+    ├── migrate-pg-to-oracle.ts
+    ├── seed-base.ts
+    └── seed.ts
 ```
 
 최근 확장 포인트:
 
-- `Destination` 모델 + seed-base 데이터 추가 (SEO/i18n 페이지용)
-- `AgodaHotel` 모델 + 검색 인덱스 추가 (대용량 CSV 임포트/검색용)
+- `Destination` entity + seed-base 데이터 추가 (SEO/i18n 페이지용)
+- `AgodaHotel` entity + 검색 인덱스 추가 (대용량 CSV 임포트/검색용)
 
 ### 5.5 `packages/shared`
 
@@ -258,7 +261,7 @@ packages/worker-shared/src/
 - deep import 금지: `packages/**/src/**`
 - Next.js 앱(`apps/web`, `apps/travel`)에서 `@workspace/worker-shared/*` import 금지
 - `packages/shared` -> DB/worker runtime 의존 금지
-- Prisma 직접 import(`@prisma/client`)는 `packages/db` 외부 금지
+- `@workspace/db` deep import 및 앱 레이어의 직접 DB 접근 금지
 - `apps/web` DB 접근은 `apps/web/src/services/**`로 단일화
 - `apps/travel` DB 접근은 `apps/travel/src/services/**`로 단일화
 - Route Handler 에러 응답은 `ErrorResponseBody` 스키마 유지
@@ -275,16 +278,16 @@ find apps packages -maxdepth 3 -type d | sort
 rg -n "from '@workspace/" apps packages
 
 # Route Handler 직접 DB 접근 위반 점검 (web + travel)
-rg -n "prisma\\.|from '@workspace/db'" apps/web/src/app/api apps/travel/src/app/api
+rg -n "getDataSource\\(|from '@workspace/db'" apps/web/src/app/api apps/travel/src/app/api
 
 # services 레이어 DB 접근 현황 점검
-rg -n "prisma\\.|from '@workspace/db'" apps/web/src/services apps/travel/src/services
+rg -n "getDataSource\\(|from '@workspace/db'" apps/web/src/services apps/travel/src/services
 
 # deep import 위반 점검
 rg -n "@workspace/(shared|worker-shared|db)/src" apps packages
 
-# 최근 확장 모델 점검
-rg -n "model (Destination|AgodaHotel)" packages/db/prisma/schema.prisma
+# 최근 확장 entity 점검
+rg -n "export class (Destination|AgodaHotel)" packages/db/src/entities
 ```
 <!-- END INJECT -->
 
@@ -368,14 +371,15 @@ AI가 코드 제안/리팩터 시 참고하면 좋은 정보만 정리한 문서
 
 | 하려는 일 | 넣을 위치 | 참고 |
 | --- | --- | --- |
-| 운영 웹 API 엔드포인트 | `apps/web/src/app/api/**/route.ts` | DB 접근은 `apps/web/src/services/**`만. Route Handler에서 `prisma` 직접 호출 금지. |
+| 운영 웹 API 엔드포인트 | `apps/web/src/app/api/**/route.ts` | DB 접근은 `apps/web/src/services/**`만. Route Handler에서 `getDataSource()`/repository/query builder 직접 호출 금지. |
 | 여행 앱 API 엔드포인트 | `apps/travel/src/app/api/**/route.ts` | `apps/web`와 동일 규칙: DB는 `apps/travel/src/services/**`만. |
 | 웹 서비스(DB 사용) | `apps/web/src/services/*.service.ts` | Route Handler/Server Component는 서비스만 호출. |
 | 여행 서비스(DB 사용) | `apps/travel/src/services/*.service.ts` | 대화/제휴/여행지/캐시 로직은 여기서 관리. |
 | 여행 SEO/i18n 페이지 | `apps/travel/src/app/[locale]/**` | `middleware.ts`, `messages/*.json`, `services/destination.service.ts`와 함께 변경. |
 | Agoda 관리자 테스트 패널 | `apps/web/src/app/admin/agoda/**` | 서버 호출은 `apps/web/src/app/api/admin/agoda/**` + `services/admin/agoda*.service.ts`. |
 | Agoda CSV 처리 | `scripts/agoda-chunk-csv.mjs`, `scripts/agoda-import-csv.ts` | 대용량 처리이므로 Route Handler에 구현하지 말고 스크립트로 유지. |
-| DB 모델/마이그레이션 | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/**` | `prisma db push` 금지, `pnpm db:migrate`만 사용. |
+| DB entity/migration | `packages/db/src/entities/**`, `packages/db/src/migrations/**` | `synchronize: true` 금지, `pnpm db:migrate`/`pnpm --filter @workspace/db db:migrate:generate`만 사용. |
+| DB seed/이관 상수 | `packages/db/src/constants/**`, `packages/db/scripts/**` | base seed는 `pnpm db:seed:base`, 개발 seed는 `pnpm db:seed`, PG→Oracle 이관은 스크립트로만 수행. |
 | 공용 에러/파서/포맷 | `packages/shared/src/errors`, `packages/shared/src/i18n`, `packages/shared/src/utils` | 순수 코드만 허용 (네트워크/DB/env 금지). |
 | 워커 런타임/스케줄 | `packages/worker-shared/src/runtime/**`, `apps/worker/src/**` | 재사용 로직은 `worker-shared`로 올리고 엔트리는 `apps/worker`에 유지. |
 
@@ -383,13 +387,13 @@ AI가 코드 제안/리팩터 시 참고하면 좋은 정보만 정리한 문서
 
 ## 3. 자주 하는 실수 / 피할 것
 
-- Route Handler(`app/api/**/route.ts`)에서 `prisma` 또는 `@workspace/db` 직접 호출.
+- Route Handler(`app/api/**/route.ts`)에서 `@workspace/db`, `getDataSource()`, repository, query builder, raw SQL을 직접 호출.
 - Next.js 앱(`apps/web`, `apps/travel`)에서 `@workspace/worker-shared`를 직접 import.
 - API 에러를 임의 JSON으로 반환해 `ErrorResponseBody` 계약을 깨뜨리는 변경.
 - `packages/shared`에 `fetch`/`axios`/`process.env`/Node `fs` 등 런타임 의존 코드 추가.
 - `packages/**/src/**` deep import 사용.
 - 루트 `package.json`에 앱 런타임 의존성 추가.
-- `prisma db push` 사용 (`pnpm db:migrate`만 허용).
+- `synchronize: true`, `prisma db push`, `prisma migrate dev`, `DATABASE_URL` 전제를 되살리는 변경.
 - Agoda/내부 토큰을 URL query에 싣는 구현 (헤더 사용 + 비교는 timing-safe 방식 유지).
 - i18n 메시지 변경 후 `pnpm i18n:ci`를 생략해 키 불일치 상태로 커밋.
 
@@ -412,16 +416,21 @@ pnpm --filter @workspace/travel test:e2e:run
 
 # DB
 pnpm db:migrate
+pnpm db:migrate:deploy
+pnpm --filter @workspace/db db:migrate:generate
+pnpm db:seed
 pnpm db:seed:base
-pnpm db:studio
-pnpm db:generate
+
+# PG → Oracle 데이터 이관
+pnpm tsx packages/db/scripts/migrate-pg-to-oracle.ts --dry-run
+pnpm tsx packages/db/scripts/migrate-pg-to-oracle.ts --from=reference
 
 # Agoda 데이터 처리 (대용량 CSV)
 node scripts/agoda-chunk-csv.mjs <입력파일> --chunk-size 100000 --out-dir ~/Downloads/agoda-chunks
 pnpm tsx scripts/agoda-import-csv.ts --dir ~/Downloads/agoda-chunks --batch 1000
 
-# Docker (로컬 DB/Redis)
-pnpm local:docker up -d db redis
+# Docker (로컬 Redis / web / worker)
+pnpm local:docker up -d redis
 ```
 
 ---
@@ -430,7 +439,8 @@ pnpm local:docker up -d db redis
 
 값은 `.env.example`, `apps/web/.env.example`, `apps/travel/.env.example`, `apps/worker/.env.example`를 기준으로 확인.
 
-- **루트 공통**: `APP_ENV`, `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`
+- **루트 공통**: `APP_ENV`, `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_CONNECT_STRING`, `REDIS_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`
+- **루트 선택**: `PG_SOURCE_DATABASE_URL` (PG→Oracle 이관 리허설/실행 시에만 사용)
 - **웹 전용**: `NEXTAUTH_URL`, `WORKER_INTERNAL_URL`, `GOOGLE_FORM_WEBHOOK_SECRET`, `AGODA_AFFILIATE_SITE_ID`, `AGODA_AFFILIATE_API_KEY`, `AWIN_API_TOKEN`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`
 - **트래블 전용**: `NEXTAUTH_URL`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GOOGLE_MAPS_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`, `OPENWEATHERMAP_API_KEY`, `EXCHANGERATE_API_KEY`, `AWIN_API_TOKEN`, `AGODA_AFFILIATE_API_KEY`, `AGODA_AFFILIATE_SITE_ID`, `TRAVEL_INTERNAL_CRON_TOKEN`
 - **워커 전용**: `WORKER_CONTROL_PORT`, `TRAVEL_INTERNAL_URL`, `TRAVEL_CACHE_PREWARM_CRON`, `TRAVEL_CACHE_PREWARM_TIMEOUT_MS`, `AFFILIATE_AUDIT_*`
@@ -444,7 +454,7 @@ pnpm local:docker up -d db redis
 - **운영 웹 런타임**: `apps/web/package.json`
 - **여행 앱 런타임**: `apps/travel/package.json`
 - **워커 런타임**: `apps/worker` 또는 `packages/worker-shared`
-- **DB/Prisma**: `packages/db`
+- **DB/TypeORM**: `packages/db`
 - **범용 공유**: `packages/shared` (순수/런타임 비의존만)
 
 새 패키지 추가 시 기준: "어디서 실행되는 코드인가(웹/트래블/워커/DB/공용)"를 먼저 결정하고 그 워크스페이스에만 추가.
@@ -454,7 +464,7 @@ pnpm local:docker up -d db redis
 
 ## 기술 스택 & 주요 기능
 
-- **스택**: Node 24+, TypeScript 5.7, Next.js 15, Tailwind v4, Prisma, BullMQ(Redis), Playwright, NextAuth
+- **스택**: Node 24+, TypeScript 5.7, Next.js 15, Tailwind v4, TypeORM, Oracle ADB, BullMQ(Redis), Playwright, NextAuth
 - **기능**: 카카오/구글 로그인, 멀티 유저, 숙소 CRUD, 30분 주기 자동 모니터링, 카카오톡 알림, 체크 로그, 브라우저 풀, 관리자 설정/감사 로그, 하트비트·워커 재시작, 처리량 대시보드, API Rate Limiting, DB 기반 동적 셀렉터, shadcn/ui
 
 ---
@@ -463,12 +473,12 @@ pnpm local:docker up -d db redis
 
 - **규칙 문서**: 모든 구현/리팩터/리뷰는 `rules.md`와 `RULES_SUMMARY.md`를 따름. 충돌 시 `rules.md` 우선.
 - **경계**: 패키지 `exports`로만 import. deep import (`packages/**/src/**`) 금지.
-- **DB**: Route Handler는 `prisma` 직접 호출 금지 → `services/**`만 사용. 쿼리는 `select` 명시, 루프 내 쿼리 금지.
+- **DB**: Route Handler는 DB 직접 접근 금지 → `services/**`만 사용. `getDataSource()`/repository/query builder/raw SQL은 서비스/worker runtime에만 둔다.
 - **검증**: 코드 변경 후 반드시 루트에서 `pnpm ci:check` 실행 후 완료. 커밋/푸시 전에도 동일.
 
 ---
 
 ## 버전 및 최종 갱신
 
-- **프로젝트 버전**: 2.18.0
-- **이 문서 최종 갱신**: 2026-02-10
+- **프로젝트 버전**: 2.33.0
+- **이 문서 최종 갱신**: 2026-04-15

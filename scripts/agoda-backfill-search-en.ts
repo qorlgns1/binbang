@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
 
 import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
-import { prisma } from '../packages/db/src/index';
+import { getDataSource, getQualifiedAgodaHotelsSearchTable } from '../packages/db/src/index.js';
 
 type MissingPair = {
   cityNameKo: string;
   countryCode: string;
   countryNameKo: string | null;
-  rowCount: bigint;
+  rowCount: number;
 };
 
 type CountryMapping = {
@@ -27,11 +27,32 @@ type GeocodedPair = {
 const args = process.argv.slice(2);
 const batchSize = Number.parseInt(parseArg('--batch', '200'), 10);
 const concurrency = Number.parseInt(parseArg('--concurrency', '12'), 10);
+const SEARCH_TABLE = getQualifiedAgodaHotelsSearchTable();
 
 function parseArg(flag: string, defaultValue: string): string {
   const idx = args.indexOf(flag);
   if (idx !== -1 && args[idx + 1]) return args[idx + 1];
   return defaultValue;
+}
+
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+async function queryRows<T>(sql: string, params: unknown[] = []): Promise<T> {
+  const ds = await getDataSource();
+  return ds.query<T>(sql, params);
+}
+
+async function queryCount(sql: string, params: unknown[] = []): Promise<number> {
+  const rows = await queryRows<Array<{ count: unknown }>>(sql, params);
+  return parseNumber(rows[0]?.count);
 }
 
 function readEnvValue(filePath: string, key: string): string | null {
@@ -81,19 +102,21 @@ function getDisplayNameForCountryCode(countryCode: string): string | null {
 
 async function countMissing(): Promise<{ city: number; country: number }> {
   const [city, country] = await Promise.all([
-    prisma.agodaHotelSearch.count({ where: { cityNameEn: null } }),
-    prisma.agodaHotelSearch.count({ where: { countryNameEn: null } }),
+    queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "cityNameEn" IS NULL`),
+    queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "countryNameEn" IS NULL`),
   ]);
 
   return { city, country };
 }
 
 async function backfillCountryNames(): Promise<number> {
-  const missingCodes = await prisma.agodaHotelSearch.findMany({
-    where: { countryNameEn: null, countryCode: { not: null } },
-    select: { countryCode: true },
-    distinct: ['countryCode'],
-  });
+  const before = await queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "countryNameEn" IS NULL`);
+  const missingCodes = await queryRows<Array<{ countryCode: string | null }>>(
+    `SELECT DISTINCT "countryCode" AS "countryCode"
+       FROM ${SEARCH_TABLE}
+      WHERE "countryNameEn" IS NULL
+        AND "countryCode" IS NOT NULL`,
+  );
 
   const mappings: CountryMapping[] = missingCodes
     .map((row) => row.countryCode)
@@ -106,117 +129,134 @@ async function backfillCountryNames(): Promise<number> {
 
   if (mappings.length === 0) return 0;
 
-  return Number(
-    await prisma.$executeRawUnsafe(
-      `
-      WITH input AS (
-        SELECT *
-        FROM jsonb_to_recordset($1::jsonb)
-        AS x(
-          "countryCode" text,
-          "countryNameEn" text
+  await queryRows(
+    `
+    MERGE INTO ${SEARCH_TABLE} target
+    USING (
+      SELECT
+        countryCode,
+        countryNameEn
+      FROM JSON_TABLE(
+        :1,
+        '$[*]'
+        COLUMNS (
+          countryCode VARCHAR2(10) PATH '$.countryCode',
+          countryNameEn VARCHAR2(200) PATH '$.countryNameEn'
         )
       )
-      UPDATE "agoda_hotels_search" AS target
-      SET
-        "countryNameEn" = input."countryNameEn",
-        "updatedAt" = now()
-      FROM input
-      WHERE target."countryCode" = input."countryCode"
-        AND target."countryNameEn" IS NULL
-      `,
-      JSON.stringify(mappings),
-    ),
+    ) input
+      ON (target."countryCode" = input.countryCode)
+    WHEN MATCHED THEN
+      UPDATE SET
+        target."countryNameEn" = input.countryNameEn,
+        target."updatedAt" = SYSTIMESTAMP
+      WHERE target."countryNameEn" IS NULL
+    `,
+    [JSON.stringify(mappings)],
   );
+
+  const after = await queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "countryNameEn" IS NULL`);
+  return Math.max(0, before - after);
 }
 
 async function propagateCityNamesByCityId(): Promise<number> {
-  return Number(
-    await prisma.$executeRawUnsafe(`
-      WITH city_counts AS (
-        SELECT
-          "cityId",
-          "cityNameEn",
-          COUNT(*) AS occurrences
-        FROM "agoda_hotels_search"
-        WHERE "cityNameEn" IS NOT NULL
-        GROUP BY "cityId", "cityNameEn"
-      ),
-      ranked AS (
+  const before = await queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "cityNameEn" IS NULL`);
+
+  await queryRows(`
+    MERGE INTO ${SEARCH_TABLE} target
+    USING (
+      SELECT
+        "cityId",
+        "cityNameEn"
+      FROM (
         SELECT
           "cityId",
           "cityNameEn",
           ROW_NUMBER() OVER (
             PARTITION BY "cityId"
-            ORDER BY occurrences DESC, "cityNameEn" ASC
+            ORDER BY COUNT(*) DESC, "cityNameEn" ASC
           ) AS rn
-        FROM city_counts
+        FROM ${SEARCH_TABLE}
+        WHERE "cityNameEn" IS NOT NULL
+        GROUP BY "cityId", "cityNameEn"
       )
-      UPDATE "agoda_hotels_search" AS target
-      SET
-        "cityNameEn" = ranked."cityNameEn",
-        "updatedAt" = now()
-      FROM ranked
-      WHERE target."cityId" = ranked."cityId"
-        AND ranked.rn = 1
-        AND target."cityNameEn" IS NULL
-    `),
-  );
+      WHERE rn = 1
+    ) ranked
+      ON (target."cityId" = ranked."cityId")
+    WHEN MATCHED THEN
+      UPDATE SET
+        target."cityNameEn" = ranked."cityNameEn",
+        target."updatedAt" = SYSTIMESTAMP
+      WHERE target."cityNameEn" IS NULL
+  `);
+
+  const after = await queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "cityNameEn" IS NULL`);
+  return Math.max(0, before - after);
 }
 
 async function propagateCityNamesByPair(): Promise<number> {
-  return Number(
-    await prisma.$executeRawUnsafe(`
-      WITH pair_counts AS (
-        SELECT
-          "cityNameKo",
-          "countryCode",
-          "cityNameEn",
-          COUNT(*) AS occurrences
-        FROM "agoda_hotels_search"
-        WHERE "cityNameEn" IS NOT NULL
-          AND "cityNameKo" IS NOT NULL
-          AND "countryCode" IS NOT NULL
-        GROUP BY "cityNameKo", "countryCode", "cityNameEn"
-      ),
-      ranked AS (
+  const before = await queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "cityNameEn" IS NULL`);
+
+  await queryRows(`
+    MERGE INTO ${SEARCH_TABLE} target
+    USING (
+      SELECT
+        "cityNameKo",
+        "countryCode",
+        "cityNameEn"
+      FROM (
         SELECT
           "cityNameKo",
           "countryCode",
           "cityNameEn",
           ROW_NUMBER() OVER (
             PARTITION BY "cityNameKo", "countryCode"
-            ORDER BY occurrences DESC, "cityNameEn" ASC
+            ORDER BY COUNT(*) DESC, "cityNameEn" ASC
           ) AS rn
-        FROM pair_counts
+        FROM ${SEARCH_TABLE}
+        WHERE "cityNameEn" IS NOT NULL
+          AND "cityNameKo" IS NOT NULL
+          AND "countryCode" IS NOT NULL
+        GROUP BY "cityNameKo", "countryCode", "cityNameEn"
       )
-      UPDATE "agoda_hotels_search" AS target
-      SET
-        "cityNameEn" = ranked."cityNameEn",
-        "updatedAt" = now()
-      FROM ranked
-      WHERE target."cityNameKo" = ranked."cityNameKo"
+      WHERE rn = 1
+    ) ranked
+      ON (
+        target."cityNameKo" = ranked."cityNameKo"
         AND target."countryCode" = ranked."countryCode"
-        AND ranked.rn = 1
-        AND target."cityNameEn" IS NULL
-    `),
-  );
+      )
+    WHEN MATCHED THEN
+      UPDATE SET
+        target."cityNameEn" = ranked."cityNameEn",
+        target."updatedAt" = SYSTIMESTAMP
+      WHERE target."cityNameEn" IS NULL
+  `);
+
+  const after = await queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE} WHERE "cityNameEn" IS NULL`);
+  return Math.max(0, before - after);
 }
 
 async function getRemainingPairs(): Promise<MissingPair[]> {
-  return prisma.$queryRawUnsafe<MissingPair[]>(`
-    SELECT
-      "cityNameKo",
-      "countryCode",
-      "countryNameKo",
-      COUNT(*)::bigint AS "rowCount"
-    FROM "agoda_hotels_search"
-    WHERE "cityNameEn" IS NULL
-      AND "cityNameKo" IS NOT NULL
-      AND "countryCode" IS NOT NULL
-    GROUP BY "cityNameKo", "countryCode", "countryNameKo"
-    ORDER BY COUNT(*) DESC, "cityNameKo" ASC
-  `);
+  const rows = await queryRows<Array<MissingPair & { rowCount: unknown }>>(
+    `SELECT
+       "cityNameKo" AS "cityNameKo",
+       "countryCode" AS "countryCode",
+       "countryNameKo" AS "countryNameKo",
+       COUNT(*) AS "rowCount"
+     FROM ${SEARCH_TABLE}
+     WHERE "cityNameEn" IS NULL
+       AND "cityNameKo" IS NOT NULL
+       AND "countryCode" IS NOT NULL
+     GROUP BY "cityNameKo", "countryCode", "countryNameKo"
+     ORDER BY COUNT(*) DESC, "cityNameKo" ASC`,
+  );
+
+  return rows.map((row) => ({
+    cityNameKo: row.cityNameKo,
+    countryCode: row.countryCode,
+    countryNameKo: row.countryNameKo,
+    rowCount: parseNumber(row.rowCount),
+  }));
 }
 
 function extractGeocodedCity(result: Record<string, unknown>): string | null {
@@ -346,49 +386,60 @@ async function geocodePair(pair: MissingPair, apiKey: string): Promise<GeocodedP
 async function updateGeocodedBatch(rows: GeocodedPair[]): Promise<number> {
   if (rows.length === 0) return 0;
 
-  return Number(
-    await prisma.$executeRawUnsafe(
-      `
-      WITH input AS (
-        SELECT *
-        FROM jsonb_to_recordset($1::jsonb)
-        AS x(
-          "cityNameKo" text,
-          "countryCode" text,
-          "cityNameEn" text,
-          "countryNameEn" text
+  await queryRows(
+    `
+    MERGE INTO ${SEARCH_TABLE} target
+    USING (
+      SELECT
+        cityNameKo,
+        countryCode,
+        cityNameEn,
+        countryNameEn
+      FROM JSON_TABLE(
+        :1,
+        '$[*]'
+        COLUMNS (
+          cityNameKo VARCHAR2(200) PATH '$.cityNameKo',
+          countryCode VARCHAR2(10) PATH '$.countryCode',
+          cityNameEn VARCHAR2(200) PATH '$.cityNameEn',
+          countryNameEn VARCHAR2(200) PATH '$.countryNameEn'
         )
       )
-      UPDATE "agoda_hotels_search" AS target
-      SET
-        "cityNameEn" = COALESCE(input."cityNameEn", target."cityNameEn"),
-        "countryNameEn" = COALESCE(target."countryNameEn", input."countryNameEn"),
-        "updatedAt" = now()
-      FROM input
-      WHERE target."cityNameKo" = input."cityNameKo"
-        AND target."countryCode" = input."countryCode"
-        AND target."cityNameEn" IS NULL
-      `,
-      JSON.stringify(rows),
-    ),
+    ) input
+      ON (
+        target."cityNameKo" = input.cityNameKo
+        AND target."countryCode" = input.countryCode
+      )
+    WHEN MATCHED THEN
+      UPDATE SET
+        target."cityNameEn" = COALESCE(input.cityNameEn, target."cityNameEn"),
+        target."countryNameEn" = COALESCE(target."countryNameEn", input.countryNameEn),
+        target."updatedAt" = SYSTIMESTAMP
+      WHERE target."cityNameEn" IS NULL
+    `,
+    [JSON.stringify(rows)],
   );
+
+  return rows.length;
 }
 
 async function refreshSearchTextEn(): Promise<number> {
-  return Number(
-    await prisma.$executeRawUnsafe(`
-      UPDATE "agoda_hotels_search"
-      SET
-        "searchTextEn" = trim(regexp_replace(concat_ws(' ',
-          "hotelNameEn",
-          "hotelNameKo",
-          "cityNameEn",
-          "countryNameEn",
-          "countryCode"
-        ), '\\s+', ' ', 'g')),
-        "updatedAt" = now()
-    `),
-  );
+  await queryRows(`
+    UPDATE ${SEARCH_TABLE}
+    SET
+      "searchTextEn" = TRIM(REGEXP_REPLACE(
+        COALESCE("hotelNameEn", '') || ' ' ||
+        COALESCE("hotelNameKo", '') || ' ' ||
+        COALESCE("cityNameEn", '') || ' ' ||
+        COALESCE("countryNameEn", '') || ' ' ||
+        COALESCE("countryCode", ''),
+        '[[:space:]]+',
+        ' '
+      )),
+      "updatedAt" = SYSTIMESTAMP
+  `);
+
+  return queryCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE}`);
 }
 
 async function geocodeRemainingPairs(apiKey: string): Promise<{ resolvedPairs: number; updatedRows: number }> {
@@ -534,6 +585,7 @@ async function main() {
   console.log(
     `시작: missing cityNameEn=${before.city.toLocaleString()}, missing countryNameEn=${before.country.toLocaleString()}`,
   );
+  console.log(`target table: ${SEARCH_TABLE}`);
 
   const countryUpdated = await backfillCountryNames();
   console.log(`countryNameEn backfill: ${countryUpdated.toLocaleString()}행`);
@@ -574,11 +626,7 @@ async function main() {
   `);
 }
 
-main()
-  .catch((error) => {
-    console.error('❌ 오류:', error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((error) => {
+  console.error('❌ 오류:', error);
+  process.exit(1);
+});

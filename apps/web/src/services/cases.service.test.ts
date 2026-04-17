@@ -54,29 +54,152 @@ const {
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    case: {
-      create: mockCaseCreate,
-      findUnique: mockCaseFindUnique,
-      findUniqueOrThrow: mockCaseFindUniqueOrThrow,
-      findMany: mockCaseFindMany,
-      update: mockCaseUpdate,
-      count: mockCaseCount,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    caseRepo: {
+      createQueryBuilder: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    caseQb: {
+      getCount: ReturnType<typeof vi.fn>;
+      getMany: ReturnType<typeof vi.fn>;
+      where: ReturnType<typeof vi.fn>;
+    };
+    formSubmissionRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    caseStatusLogRepo: {
+      save: ReturnType<typeof vi.fn>;
+    };
+    accommodationRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    conditionMetEventRepo: {
+      count: ReturnType<typeof vi.fn>;
+    };
+    lastCaseLookup: { _count?: { conditionMetEvents?: number } } | null;
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    caseRepo: {
+      createQueryBuilder: vi.fn(),
+      findOne: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
     },
-    formSubmission: {
-      findUnique: mockSubmissionFindUnique,
-      update: mockSubmissionUpdate,
+    caseQb: {
+      getCount: vi.fn(),
+      getMany: vi.fn(),
+      where: vi.fn(),
     },
-    caseStatusLog: {
-      create: mockStatusLogCreate,
+    formSubmissionRepo: {
+      findOne: vi.fn(),
+      update: vi.fn(),
     },
-    accommodation: {
-      findUnique: mockAccommodationFindUnique,
+    caseStatusLogRepo: {
+      save: vi.fn(),
     },
-    $transaction: mockTransaction,
-  },
-}));
+    accommodationRepo: {
+      findOne: vi.fn(),
+    },
+    conditionMetEventRepo: {
+      count: vi.fn(),
+    },
+    lastCaseLookup: null,
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockQueryBuilder, createMockRepository } = await import(
+    '../../../../test-utils/mock-db.ts'
+  );
+
+  const caseQb = createMockQueryBuilder();
+  caseQb.getMany.mockImplementation(() => {
+    const status = caseQb.where.mock.calls.at(-1)?.[1]?.status;
+    return callMock(mockCaseFindMany, status ? { where: { status } } : {});
+  });
+  caseQb.getCount.mockImplementation(() => {
+    const status = caseQb.where.mock.calls.at(-1)?.[1]?.status;
+    return callMock(mockCaseCount, status ? { where: { status } } : {});
+  });
+
+  const caseRepo = createMockRepository();
+  caseRepo.findOne.mockImplementation(async (options: Record<string, unknown> & { relations?: unknown }) => {
+    if (options?.relations) {
+      const detailed = await callMock(mockCaseFindUniqueOrThrow, options);
+      if (detailed !== undefined) return detailed;
+      const fallback = await callMock(mockCaseFindUnique, options);
+      dbMock.lastCaseLookup = fallback ?? null;
+      return fallback;
+    }
+    const result = await callMock(mockCaseFindUnique, options);
+    dbMock.lastCaseLookup = result ?? null;
+    return result;
+  });
+  caseRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await callMock(mockCaseCreate, { data: entity });
+    if (created && typeof created === 'object') {
+      Object.assign(entity, created as object);
+    }
+    return created ?? entity;
+  });
+  caseRepo.update.mockImplementation((where, data) => callMock(mockCaseUpdate, { where, data }));
+  caseRepo.createQueryBuilder.mockImplementation(() => caseQb);
+
+  const formSubmissionRepo = createMockRepository();
+  formSubmissionRepo.findOne.mockImplementation((...args) => callMock(mockSubmissionFindUnique, ...args));
+  formSubmissionRepo.update.mockImplementation((where, data) => callMock(mockSubmissionUpdate, { where, data }));
+
+  const caseStatusLogRepo = createMockRepository();
+  caseStatusLogRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await callMock(mockStatusLogCreate, { data: entity });
+    if (created && typeof created === 'object') {
+      Object.assign(entity, created as object);
+    }
+    return created ?? entity;
+  });
+
+  const accommodationRepo = createMockRepository();
+  accommodationRepo.findOne.mockImplementation((...args) => callMock(mockAccommodationFindUnique, ...args));
+
+  const conditionMetEventRepo = createMockRepository();
+  conditionMetEventRepo.count.mockImplementation(async () => dbMock.lastCaseLookup?._count?.conditionMetEvents ?? 0);
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.Case, caseRepo],
+      [actual.FormSubmission, formSubmissionRepo],
+      [actual.CaseStatusLog, caseStatusLogRepo],
+      [actual.Accommodation, accommodationRepo],
+      [actual.ConditionMetEvent, conditionMetEventRepo],
+    ],
+    transactionImplementation: (...args) => callMock(mockTransaction, ...args),
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.caseRepo = caseRepo;
+  dbMock.caseQb = caseQb;
+  dbMock.formSubmissionRepo = formSubmissionRepo;
+  dbMock.caseStatusLogRepo = caseStatusLogRepo;
+  dbMock.accommodationRepo = accommodationRepo;
+  dbMock.conditionMetEventRepo = conditionMetEventRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 // ============================================================================
 // Helpers
@@ -142,27 +265,7 @@ function makeCaseDetailRow(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 function setupTransactionMock(): void {
-  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-    const tx = {
-      case: {
-        create: mockCaseCreate,
-        findUnique: mockCaseFindUnique,
-        findUniqueOrThrow: mockCaseFindUniqueOrThrow,
-        update: mockCaseUpdate,
-      },
-      formSubmission: {
-        findUnique: mockSubmissionFindUnique,
-        update: mockSubmissionUpdate,
-      },
-      caseStatusLog: {
-        create: mockStatusLogCreate,
-      },
-      accommodation: {
-        findUnique: mockAccommodationFindUnique,
-      },
-    };
-    return fn(tx);
-  });
+  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(dbMock.dataSource));
 }
 
 // ============================================================================
@@ -172,6 +275,9 @@ function setupTransactionMock(): void {
 describe('cases.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.lastCaseLookup = null;
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
+    mockCaseFindUniqueOrThrow.mockResolvedValue(undefined);
     setupTransactionMock();
   });
 

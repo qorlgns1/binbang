@@ -1,4 +1,4 @@
-import { QuotaKey, prisma } from '@workspace/db';
+import { Accommodation, In, QuotaKey, Subscription, SubscriptionStatus, User, getDataSource } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -45,37 +45,32 @@ export interface UserSubscriptionResponse {
 // ============================================================================
 
 export async function hasKakaoToken(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { kakaoAccessToken: true },
-  });
-  return !!user?.kakaoAccessToken;
+  const ds = await getDataSource();
+  const rows = await ds.query<Array<{ hasToken: number | string }>>(
+    `SELECT CASE WHEN "kakaoTokenExpiry" IS NOT NULL THEN 1 ELSE 0 END AS "hasToken"
+     FROM "User"
+     WHERE "id" = :1
+     FETCH FIRST 1 ROWS ONLY`,
+    [userId],
+  );
+
+  return Number(rows[0]?.hasToken ?? 0) === 1;
 }
 
 export async function getUserQuota(userId: string): Promise<UserQuotaResponse | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
-    select: {
-      plan: {
-        select: {
-          name: true,
-          quotas: {
-            select: { key: true, value: true },
-          },
-        },
-      },
-      _count: {
-        select: { accommodations: true },
-      },
-    },
+    relations: { plan: { quotas: true } },
   });
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  const maxAccommodations = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
-  const checkIntervalMin = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
+  const accommodationCount = await ds.getRepository(Accommodation).count({ where: { userId } });
+
+  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
+  const checkIntervalMin = user.plan?.quotas.find((q) => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
 
   return {
     planName: user.plan?.name ?? 'FREE',
@@ -84,51 +79,34 @@ export async function getUserQuota(userId: string): Promise<UserQuotaResponse | 
       checkIntervalMin,
     },
     usage: {
-      accommodations: user._count.accommodations,
+      accommodations: accommodationCount,
     },
   };
 }
 
 export async function getUserSubscription(userId: string): Promise<UserSubscriptionResponse | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
-    select: {
-      plan: {
-        select: {
-          name: true,
-          description: true,
-          price: true,
-          interval: true,
-          quotas: {
-            select: { key: true, value: true },
-          },
-        },
-      },
-      _count: {
-        select: { accommodations: true },
-      },
-      subscriptions: {
-        where: {
-          status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE'] },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        select: {
-          status: true,
-          currentPeriodEnd: true,
-          canceledAt: true,
-        },
-      },
-    },
+    relations: { plan: { quotas: true } },
   });
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  const maxAccommodations = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
-  const checkIntervalMin = user.plan?.quotas.find((q): boolean => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
-  const activeSubscription = user.subscriptions[0] ?? null;
+  const [accommodationCount, activeSubscription] = await Promise.all([
+    ds.getRepository(Accommodation).count({ where: { userId } }),
+    ds.getRepository(Subscription).findOne({
+      where: {
+        userId,
+        status: In([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING, SubscriptionStatus.PAST_DUE]),
+      },
+      order: { createdAt: 'DESC' },
+    }),
+  ]);
+
+  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
+  const checkIntervalMin = user.plan?.quotas.find((q) => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
 
   return {
     plan: {
@@ -142,7 +120,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
       checkIntervalMin,
     },
     usage: {
-      accommodations: user._count.accommodations,
+      accommodations: accommodationCount,
     },
     subscription: activeSubscription
       ? {
@@ -159,14 +137,13 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
 // ============================================================================
 
 export async function getTutorialStatus(userId: string): Promise<TutorialStatusResponse | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: { tutorialCompletedAt: true, tutorialDismissedAt: true },
   });
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return {
     shouldShow: user.tutorialCompletedAt === null && user.tutorialDismissedAt === null,
@@ -174,17 +151,11 @@ export async function getTutorialStatus(userId: string): Promise<TutorialStatusR
 }
 
 export async function completeTutorial(userId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { tutorialCompletedAt: new Date() },
-    select: { id: true },
-  });
+  const ds = await getDataSource();
+  await ds.getRepository(User).update({ id: userId }, { tutorialCompletedAt: new Date() });
 }
 
 export async function dismissTutorial(userId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { tutorialDismissedAt: new Date() },
-    select: { id: true },
-  });
+  const ds = await getDataSource();
+  await ds.getRepository(User).update({ id: userId }, { tutorialDismissedAt: new Date() });
 }

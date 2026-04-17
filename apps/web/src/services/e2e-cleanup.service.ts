@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { User, getDataSource } from '@workspace/db';
 
 /**
  * E2E 전용 계정 정리 결과.
@@ -21,6 +21,7 @@ export interface CleanupE2eUserResult {
  * @returns 삭제 수행 여부
  */
 export async function cleanupE2eUserById(userId: string): Promise<CleanupE2eUserResult> {
-  const { count } = await prisma.user.deleteMany({ where: { id: userId } });
-  return { deleted: count > 0 };
+  const ds = await getDataSource();
+  const result = await ds.getRepository(User).delete({ id: userId });
+  return { deleted: (result.affected ?? 0) > 0 };
 }

@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { AgodaHotel, getDataSource } from '@workspace/db';
 
 import { withAbortTimeout } from '@/lib/withTimeout';
 
@@ -282,7 +282,28 @@ function bestTerm(values: Array<string | null | undefined>): string | null {
   );
 }
 
+function mapHotelCandidate(hotel: AgodaHotel): AgodaHotelCandidate {
+  return {
+    hotelId: hotel.hotelId,
+    hotelNameKo: hotel.hotelTranslatedName,
+    hotelNameEn: hotel.hotelName,
+    cityNameKo: hotel.cityName,
+    cityNameEn: hotel.cityName,
+    countryNameKo: hotel.countryName,
+    countryNameEn: hotel.countryName,
+    starRating: hotel.starRating,
+    ratingAverage: hotel.ratingAverage,
+    reviewCount: hotel.reviewCount,
+    latitude: hotel.latitude,
+    longitude: hotel.longitude,
+    photoUrl: hotel.photoUrl,
+    url: hotel.url,
+  };
+}
+
 async function findCandidateHotels(params: SearchAgodaAccommodationParams): Promise<AgodaHotelCandidate[]> {
+  const ds = await getDataSource();
+  const hotelRepo = ds.getRepository(AgodaHotel);
   const [cityTermRaw, countryTermRaw] = (params.location ?? '')
     .split(',')
     .map((part) => part.trim())
@@ -294,96 +315,64 @@ async function findCandidateHotels(params: SearchAgodaAccommodationParams): Prom
 
   const rowsByHotelId = new Map<number, AgodaHotelCandidate>();
 
-  async function collectCandidates(where: object): Promise<void> {
+  async function collectCandidates(whereSql: string, whereParams: Record<string, string>): Promise<void> {
     if (rowsByHotelId.size >= MAX_CANDIDATE_HOTELS) return;
 
-    const rows = await prisma.agodaHotelSearch.findMany({
-      where,
-      select: {
-        hotelId: true,
-        hotelNameKo: true,
-        hotelNameEn: true,
-        cityNameKo: true,
-        cityNameEn: true,
-        countryNameKo: true,
-        countryNameEn: true,
-        starRating: true,
-        ratingAverage: true,
-        reviewCount: true,
-        latitude: true,
-        longitude: true,
-        photoUrl: true,
-        url: true,
-      },
-      orderBy: [{ reviewCount: 'desc' }, { ratingAverage: 'desc' }],
-      take: MAX_CANDIDATE_HOTELS,
-    });
+    const rows = await hotelRepo
+      .createQueryBuilder('hotel')
+      .where(whereSql, whereParams)
+      .orderBy('hotel.reviewCount', 'DESC')
+      .addOrderBy('hotel.ratingAverage', 'DESC')
+      .take(MAX_CANDIDATE_HOTELS)
+      .getMany();
 
     for (const row of rows) {
       if (rowsByHotelId.has(row.hotelId)) continue;
-      rowsByHotelId.set(row.hotelId, row);
+      rowsByHotelId.set(row.hotelId, mapHotelCandidate(row));
       if (rowsByHotelId.size >= MAX_CANDIDATE_HOTELS) break;
     }
   }
 
   if (cityTerm) {
-    await collectCandidates({
-      OR: [
+    const cityPattern = `%${cityTerm.toLowerCase()}%`;
+    if (countryTerm) {
+      await collectCandidates(
+        "(LOWER(COALESCE(hotel.cityName, '')) LIKE :cityPattern AND LOWER(COALESCE(hotel.countryName, '')) LIKE :countryPattern) OR LOWER(COALESCE(hotel.cityName, '')) LIKE :cityPattern",
         {
-          AND: [
-            {
-              OR: [
-                { cityNameKo: { contains: cityTerm, mode: 'insensitive' } },
-                { cityNameEn: { contains: cityTerm, mode: 'insensitive' } },
-              ],
-            },
-            ...(countryTerm
-              ? [
-                  {
-                    OR: [
-                      { countryNameKo: { contains: countryTerm, mode: 'insensitive' } },
-                      { countryNameEn: { contains: countryTerm, mode: 'insensitive' } },
-                    ],
-                  },
-                ]
-              : []),
-          ],
+          cityPattern,
+          countryPattern: `%${countryTerm.toLowerCase()}%`,
         },
-        {
-          OR: [
-            { cityNameKo: { contains: cityTerm, mode: 'insensitive' } },
-            { cityNameEn: { contains: cityTerm, mode: 'insensitive' } },
-          ],
-        },
-      ],
-    });
+      );
+    } else {
+      await collectCandidates("LOWER(COALESCE(hotel.cityName, '')) LIKE :cityPattern", { cityPattern });
+    }
   }
 
   if (rowsByHotelId.size < MAX_CANDIDATE_HOTELS && queryTerm) {
-    await collectCandidates({
-      OR: [
-        { hotelNameKo: { contains: queryTerm, mode: 'insensitive' } },
-        { hotelNameEn: { contains: queryTerm, mode: 'insensitive' } },
-        { searchTextKo: { contains: queryTerm, mode: 'insensitive' } },
-        { searchTextEn: { contains: queryTerm, mode: 'insensitive' } },
-      ],
-    });
+    const queryPattern = `%${queryTerm.toLowerCase()}%`;
+    await collectCandidates(
+      [
+        "LOWER(COALESCE(hotel.hotelName, '')) LIKE :queryPattern",
+        "LOWER(COALESCE(hotel.hotelTranslatedName, '')) LIKE :queryPattern",
+        "LOWER(COALESCE(hotel.cityName, '')) LIKE :queryPattern",
+        "LOWER(COALESCE(hotel.countryName, '')) LIKE :queryPattern",
+      ].join(' OR '),
+      { queryPattern },
+    );
   }
 
   if (rowsByHotelId.size < MAX_CANDIDATE_HOTELS) {
     for (const token of queryTokens.slice(0, 6)) {
-      await collectCandidates({
-        OR: [
-          { hotelNameKo: { contains: token, mode: 'insensitive' } },
-          { hotelNameEn: { contains: token, mode: 'insensitive' } },
-          { cityNameKo: { contains: token, mode: 'insensitive' } },
-          { cityNameEn: { contains: token, mode: 'insensitive' } },
-          { countryNameKo: { contains: token, mode: 'insensitive' } },
-          { countryNameEn: { contains: token, mode: 'insensitive' } },
-          { searchTextKo: { contains: token, mode: 'insensitive' } },
-          { searchTextEn: { contains: token, mode: 'insensitive' } },
-        ],
-      });
+      const tokenPattern = `%${token.toLowerCase()}%`;
+      await collectCandidates(
+        [
+          "LOWER(COALESCE(hotel.hotelName, '')) LIKE :tokenPattern",
+          "LOWER(COALESCE(hotel.hotelTranslatedName, '')) LIKE :tokenPattern",
+          "LOWER(COALESCE(hotel.cityName, '')) LIKE :tokenPattern",
+          "LOWER(COALESCE(hotel.countryName, '')) LIKE :tokenPattern",
+        ].join(' OR '),
+        { tokenPattern },
+      );
       if (rowsByHotelId.size >= MAX_CANDIDATE_HOTELS) break;
     }
   }

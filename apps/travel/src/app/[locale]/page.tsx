@@ -1,4 +1,3 @@
-import type { Destination } from '@workspace/db';
 import { Bot, Cloud, DollarSign, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -8,7 +7,7 @@ import Link from 'next/link';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { buildLocalePath } from '@/lib/localePath';
-import { getPublishedDestinations } from '@/services/destination.service';
+import { getPublishedDestinations, type DestinationRecord } from '@/services/destination.service';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
 
@@ -28,7 +27,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale });
-  const topDestinations = await getPublishedDestinations({ limit: 6 }).catch(() => [] as Destination[]);
+  const topDestinations = await getPublishedDestinations({ limit: 6 }).catch(() => [] as DestinationRecord[]);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -60,7 +59,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   );
 }
 
-function LandingPageClient({ locale, topDestinations }: { locale: string; topDestinations: Destination[] }) {
+function LandingPageClient({ locale, topDestinations }: { locale: string; topDestinations: DestinationRecord[] }) {
   const t = useTranslations();
 
   return (

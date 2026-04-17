@@ -1,4 +1,4 @@
-import { type AffiliateAdvertiserCategory, prisma } from '@workspace/db';
+import { type AffiliateAdvertiserCategory, AffiliateEvent, getDataSource } from '@workspace/db';
 import { addUtcDays, endOfUtcDay, startOfUtcDay } from '@workspace/shared/utils/date';
 import { BadRequestError } from '@workspace/shared/errors';
 
@@ -106,8 +106,9 @@ function assertValidRangePreset(range: FunnelRangePreset): FunnelRangePreset {
 }
 
 async function resolveAllRangeStart(now: Date): Promise<Date> {
-  const firstEvent = await prisma.affiliateEvent.findFirst({
-    orderBy: { occurredAt: 'asc' },
+  const ds = await getDataSource();
+  const firstEvent = await ds.getRepository(AffiliateEvent).findOne({
+    order: { occurredAt: 'ASC' },
     select: { occurredAt: true },
   });
 
@@ -370,31 +371,32 @@ export async function getAdminAffiliateFunnel(
     return cached;
   }
 
-  const where = {
-    occurredAt: {
-      gte: from,
-      lte: to,
-    },
-    ...(input.category ? { category: input.category } : {}),
-  };
+  const ds = await getDataSource();
 
-  const rows = await prisma.affiliateEvent.groupBy({
-    by: ['category', 'eventType'],
-    where,
-    _count: {
-      _all: true,
-    },
-  });
-  const providerRows = await prisma.affiliateEvent.groupBy({
-    by: ['provider', 'eventType'],
-    where,
-    _count: {
-      _all: true,
-    },
-  });
+  const params: unknown[] = [from, to];
+  let categoryClause = '';
+  if (input.category) {
+    categoryClause = ' AND "category" = :3';
+    params.push(input.category);
+  }
+
+  const [rows, providerRows] = await Promise.all([
+    ds.query<Array<{ category: string; eventType: string; cnt: string }>>(
+      `SELECT "category", "eventType", COUNT(*) AS cnt FROM "affiliate_events" WHERE "occurredAt" >= :1 AND "occurredAt" <= :2${categoryClause} GROUP BY "category", "eventType"`,
+      [...params],
+    ),
+    ds.query<Array<{ provider: string; eventType: string; cnt: string }>>(
+      `SELECT "provider", "eventType", COUNT(*) AS cnt FROM "affiliate_events" WHERE "occurredAt" >= :1 AND "occurredAt" <= :2${categoryClause} GROUP BY "provider", "eventType"`,
+      [...params],
+    ),
+  ]);
 
   const byCategory = buildGroupedFunnel(
-    rows.map((row) => ({ key: row.category, eventType: row.eventType, count: row._count._all })),
+    rows.map((row) => ({
+      key: row.category as AffiliateAdvertiserCategory,
+      eventType: row.eventType,
+      count: Number(row.cnt),
+    })),
     (category) => ({
       category,
       ...createEmptyMetrics(),
@@ -403,7 +405,7 @@ export async function getAdminAffiliateFunnel(
   );
 
   const byProvider = buildGroupedFunnel(
-    providerRows.map((row) => ({ key: row.provider, eventType: row.eventType, count: row._count._all })),
+    providerRows.map((row) => ({ key: row.provider, eventType: row.eventType, count: Number(row.cnt) })),
     (provider) => ({
       provider,
       ...createEmptyMetrics(),

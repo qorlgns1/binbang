@@ -10,42 +10,103 @@ import { dispatchAgodaNotifications } from '../agoda-notification.service';
 
 const {
   mockNotificationFindMany,
-  mockNotificationUpdateMany,
   mockNotificationUpdate,
   mockConsentLogFindFirst,
-  mockTransaction,
-  mockQueryRawUnsafe,
+  mockClaimSelect,
+  mockClaimUpdate,
   mockExecuteRaw,
   mockSendAgodaAlertEmail,
   mockCreateAgodaUnsubscribeToken,
   mockBuildAgodaUnsubscribeUrl,
 } = vi.hoisted(() => ({
   mockNotificationFindMany: vi.fn(),
-  mockNotificationUpdateMany: vi.fn(),
   mockNotificationUpdate: vi.fn(),
   mockConsentLogFindFirst: vi.fn(),
-  mockTransaction: vi.fn(),
-  mockQueryRawUnsafe: vi.fn(),
+  mockClaimSelect: vi.fn(),
+  mockClaimUpdate: vi.fn(),
   mockExecuteRaw: vi.fn(),
   mockSendAgodaAlertEmail: vi.fn(),
   mockCreateAgodaUnsubscribeToken: vi.fn().mockReturnValue('test_token'),
   mockBuildAgodaUnsubscribeUrl: vi.fn().mockReturnValue('https://example.com/unsubscribe?token=test_token'),
 }));
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    agodaNotification: {
-      findMany: mockNotificationFindMany,
-      updateMany: mockNotificationUpdateMany,
-      update: mockNotificationUpdate,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    notificationRepo: {
+      find: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    consentRepo: {
+      queryBuilder: {
+        getOne: ReturnType<typeof vi.fn>;
+      };
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    notificationRepo: {
+      find: vi.fn(),
+      update: vi.fn(),
     },
-    agodaConsentLog: {
-      findFirst: mockConsentLogFindFirst,
+    consentRepo: {
+      queryBuilder: {
+        getOne: vi.fn(),
+      },
     },
-    $transaction: mockTransaction,
-    $queryRawUnsafe: mockQueryRawUnsafe,
-    $executeRaw: mockExecuteRaw,
-  },
+    getDataSource: vi.fn(),
+  }),
+);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../../test-utils/mock-db.ts');
+
+  const notificationRepo = createMockRepository();
+  notificationRepo.find.mockImplementation((...args) => mockNotificationFindMany(...args));
+  notificationRepo.update.mockImplementation((where, data) => mockNotificationUpdate({ where, data }));
+
+  const consentRepo = createMockRepository();
+  consentRepo.queryBuilder.getOne.mockImplementation((...args) => mockConsentLogFindFirst(...args));
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.AgodaNotification, notificationRepo],
+      [actual.AgodaConsentLog, consentRepo],
+    ],
+    queryImplementation: async (sql: string, params?: unknown[]) => {
+      if (sql.includes(`FOR UPDATE SKIP LOCKED`)) {
+        return mockClaimSelect(sql, params);
+      }
+
+      if (sql.includes(`SET "status" = 'processing'`)) {
+        return mockClaimUpdate(sql, params);
+      }
+
+      if (sql.includes(`SET "status" = 'failed'`) || sql.includes(`SET "status" = 'queued'`)) {
+        return mockExecuteRaw(sql, params);
+      }
+
+      return mockExecuteRaw(sql, params);
+    },
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.notificationRepo = notificationRepo;
+  dbMock.consentRepo = consentRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
+
+vi.mock('@/services/binbang-runtime-settings.service', () => ({
+  getBinbangRuntimeSettings: vi.fn(async () => ({
+    notificationDispatchLimit: 50,
+    notificationMaxAttempts: 5,
+  })),
 }));
 
 vi.mock('../agoda-email.service', () => ({
@@ -57,13 +118,17 @@ vi.mock('../agoda-unsubscribe.service', () => ({
   buildAgodaUnsubscribeUrl: mockBuildAgodaUnsubscribeUrl,
 }));
 
+vi.mock('../agoda-kakao.service', () => ({
+  sendBinbangKakaoNotification: vi.fn().mockResolvedValue(undefined),
+}));
+
 // ============================================================================
 // Fixtures
 // ============================================================================
 
 function makeNotification(overrides: Record<string, unknown> = {}) {
   return {
-    id: 1n,
+    id: 1,
     status: 'queued',
     attempt: 0,
     updatedAt: new Date('2025-01-01T00:00:00Z'),
@@ -84,7 +149,7 @@ function makeNotification(overrides: Record<string, unknown> = {}) {
       user: { email: 'user@example.com' },
     },
     alertEvent: {
-      id: 100n,
+      id: 100,
       type: 'vacancy',
       status: 'detected',
       meta: {
@@ -125,11 +190,13 @@ function extractSqlTemplate(callArg: unknown): string {
 //   1. updateMany  (stale 'processing' 복구)
 //   2. findMany    → queued ID 목록 { id }[]
 //   3. findMany    → failed ID 목록 { id, updatedAt, attempt }[]
-//   4. $queryRawUnsafe → queued 클레임  ← ids.length > 0 일 때만 호출
-//   5. $queryRawUnsafe → failed 클레임  ← ids.length > 0 일 때만 호출
-//   6. findMany    → 클레임된 알림 전체 데이터 (claimedIds.length > 0 일 때만)
+//   4. SELECT ... FOR UPDATE SKIP LOCKED → queued 클레임 후보 잠금
+//   5. UPDATE ... SET status='processing' → queued 실제 클레임
+//   6. SELECT ... FOR UPDATE SKIP LOCKED → failed 클레임 후보 잠금
+//   7. UPDATE ... SET status='processing' → failed 실제 클레임
+//   8. findMany    → 클레임된 알림 전체 데이터 (claimedIds.length > 0 일 때만)
 //
-// claimNotifications(ids, ...) 은 ids.length === 0 이면 즉시 [] 반환 (no $queryRawUnsafe call).
+// claimNotifications(ids, ...) 은 ids.length === 0 이면 즉시 [] 반환 (no claim query call).
 // ============================================================================
 
 /** queued 알림만 있고 모두 이 워커가 클레임한 경우 */
@@ -140,8 +207,8 @@ function mockQueued(rows: ReturnType<typeof makeNotification>[]) {
     .mockResolvedValueOnce(rows); // full data for claimed
 
   // failedDueIds = [] 이므로 claimNotifications(failedDueIds, ...) 은 즉시 반환.
-  // $queryRawUnsafe 는 claimNotifications(queuedIds, ...) 에서만 호출된다.
-  mockQueryRawUnsafe.mockResolvedValueOnce(rows.map((r) => ({ id: r.id.toString() }))); // claim queued
+  mockClaimSelect.mockResolvedValueOnce(rows.map((r) => ({ id: r.id.toString() }))); // lock queued
+  mockClaimUpdate.mockResolvedValueOnce(rows.length); // mark queued as processing
 }
 
 /** failed 알림만 있고 아직 재시도 대기 중 (not due) — 클레임 없음 */
@@ -160,8 +227,8 @@ function mockFailedDue(rows: ReturnType<typeof makeNotification>[]) {
     .mockResolvedValueOnce(rows); // full data for claimed
 
   // queuedIds = [] 이므로 claimNotifications(queuedIds, ...) 는 즉시 반환.
-  // $queryRawUnsafe 는 claimNotifications(failedDueIds, ...) 에서만 호출된다.
-  mockQueryRawUnsafe.mockResolvedValueOnce(rows.map((r) => ({ id: r.id.toString() }))); // claim failed
+  mockClaimSelect.mockResolvedValueOnce(rows.map((r) => ({ id: r.id.toString() }))); // lock failed
+  mockClaimUpdate.mockResolvedValueOnce(rows.length); // mark failed as processing
 }
 
 // ============================================================================
@@ -170,13 +237,22 @@ function mockFailedDue(rows: ReturnType<typeof makeNotification>[]) {
 
 describe('dispatchAgodaNotifications', () => {
   beforeEach(() => {
-    // resetAllMocks: call history + once 큐 + mockReturnValue 구현 모두 초기화
-    vi.resetAllMocks();
+    vi.clearAllMocks();
+    mockNotificationFindMany.mockReset();
+    mockNotificationUpdate.mockReset();
+    mockConsentLogFindFirst.mockReset();
+    mockClaimSelect.mockReset();
+    mockClaimUpdate.mockReset();
+    mockExecuteRaw.mockReset();
+    mockSendAgodaAlertEmail.mockReset();
+    mockCreateAgodaUnsubscribeToken.mockReset();
+    mockBuildAgodaUnsubscribeUrl.mockReset();
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
-    mockTransaction.mockResolvedValue([]);
-    mockNotificationUpdateMany.mockResolvedValue({ count: 0 });
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
+    mockNotificationFindMany.mockResolvedValue([]);
     mockNotificationUpdate.mockResolvedValue({});
-    mockQueryRawUnsafe.mockResolvedValue([]); // 기본값: 클레임 없음
+    mockClaimSelect.mockResolvedValue([]); // 기본값: 클레임 없음
+    mockClaimUpdate.mockResolvedValue(0);
     mockExecuteRaw.mockResolvedValue(0); // stale processing 복구: 기본 0건
     mockCreateAgodaUnsubscribeToken.mockReturnValue('test_token');
     mockBuildAgodaUnsubscribeUrl.mockReturnValue('https://example.com/unsubscribe?token=test_token');
@@ -199,8 +275,8 @@ describe('dispatchAgodaNotifications', () => {
 
     expect(mockExecuteRaw).toHaveBeenCalledTimes(2);
     const sqlTexts = mockExecuteRaw.mock.calls.map((call) => extractSqlTemplate(call[0]));
-    expect(sqlTexts.some((sql) => sql.includes("SET status = 'failed'"))).toBe(true);
-    expect(sqlTexts.some((sql) => sql.includes("SET status = 'queued'"))).toBe(true);
+    expect(sqlTexts.some((sql) => sql.includes(`SET "status" = 'failed'`))).toBe(true);
+    expect(sqlTexts.some((sql) => sql.includes(`SET "status" = 'queued'`))).toBe(true);
   });
 
   it('동의(opt_in) 있는 사용자 → 이메일 전송 후 sent', async () => {
@@ -285,7 +361,7 @@ describe('dispatchAgodaNotifications', () => {
   it('price_drop 타입 알림도 전송', async () => {
     const priceDropNotification = makeNotification({
       alertEvent: {
-        id: 200n,
+        id: 200,
         type: 'price_drop',
         status: 'detected',
         meta: {
@@ -328,7 +404,7 @@ describe('dispatchAgodaNotifications', () => {
         user: { email: 'english@example.com' },
       },
       alertEvent: {
-        id: 201n,
+        id: 201,
         type: 'price_drop',
         status: 'detected',
         meta: {
@@ -440,12 +516,24 @@ describe('dispatchAgodaNotifications', () => {
     expect(result.skippedNotDue).toBe(0);
   });
 
+  it('queued/failed 조회 모두 maxAttempts 미만만 대상으로 삼는다', async () => {
+    mockNotificationFindMany.mockResolvedValue([]);
+
+    await dispatchAgodaNotifications();
+
+    const queuedQuery = mockNotificationFindMany.mock.calls[0]?.[0] as { where?: Record<string, unknown> };
+    const failedQuery = mockNotificationFindMany.mock.calls[1]?.[0] as { where?: Record<string, unknown> };
+
+    expect(queuedQuery.where).toHaveProperty('attempt');
+    expect(failedQuery.where).toHaveProperty('attempt');
+  });
+
   it('동시 실행 시 다른 워커가 먼저 클레임하면 picked=0', async () => {
-    // 두 개의 queued ID가 선택됐지만 $queryRawUnsafe가 [] 반환 (다른 워커가 먼저 클레임)
+    // 두 개의 queued ID가 선택됐지만 lock 대상이 0건이면 다른 워커가 먼저 클레임한 것이다.
     mockNotificationFindMany
-      .mockResolvedValueOnce([{ id: 1n }, { id: 2n }]) // queued IDs
+      .mockResolvedValueOnce([{ id: 1 }, { id: 2 }]) // queued IDs
       .mockResolvedValueOnce([]); // failed IDs
-    mockQueryRawUnsafe.mockResolvedValueOnce([]); // claim queued → 0개 클레임
+    mockClaimSelect.mockResolvedValueOnce([]); // lock queued → 0개 클레임
 
     const result = await dispatchAgodaNotifications();
     expect(result.picked).toBe(0);
@@ -455,9 +543,9 @@ describe('dispatchAgodaNotifications', () => {
 
   it('여러 알림 혼합 처리', async () => {
     const notifications = [
-      makeNotification({ id: 1n }),
+      makeNotification({ id: 1 }),
       makeNotification({
-        id: 2n,
+        id: 2,
         accommodation: {
           id: 'acc_002',
           name: '호텔2',
@@ -476,7 +564,7 @@ describe('dispatchAgodaNotifications', () => {
         },
       }),
       makeNotification({
-        id: 3n,
+        id: 3,
         accommodation: {
           id: 'acc_003',
           name: '호텔3',

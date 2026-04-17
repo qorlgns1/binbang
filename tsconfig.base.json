@@ -12,6 +12,8 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
     "incremental": true,
     "declaration": true,
     "declarationMap": true,

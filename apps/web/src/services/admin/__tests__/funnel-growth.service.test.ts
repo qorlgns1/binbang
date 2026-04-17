@@ -13,18 +13,53 @@ const { mockLandingEventFindMany, mockLandingEventFindFirst } = vi.hoisted(
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    landingEvent: {
-      findMany: mockLandingEventFindMany,
-      findFirst: mockLandingEventFindFirst,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    landingEventRepo: {
+      find: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    landingEventRepo: {
+      find: vi.fn(),
+      findOne: vi.fn(),
     },
-  },
-}));
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../../../test-utils/mock-db.ts');
+
+  const landingEventRepo = createMockRepository();
+  landingEventRepo.find.mockImplementation((...args) => callMock(mockLandingEventFindMany, ...args));
+  landingEventRepo.findOne.mockImplementation((...args) => callMock(mockLandingEventFindFirst, ...args));
+
+  const dataSource = createMockDataSource({
+    repositories: [[actual.LandingEvent, landingEventRepo]],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.landingEventRepo = landingEventRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('admin/funnel-growth.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockLandingEventFindFirst.mockResolvedValue(null);
     mockLandingEventFindMany.mockResolvedValue([]);
   });

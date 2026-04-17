@@ -1,5 +1,5 @@
 import type { AffiliateAdvertiserCategory, AffiliateEventType } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { AffiliateEvent, QueryFailedError, User, getDataSource } from '@workspace/db';
 
 export type { AffiliateCategoryFunnelItem, AggregateAffiliateFunnelResult } from './affiliate-funnel.service';
 export { aggregateAffiliateFunnel } from './affiliate-funnel.service';
@@ -65,7 +65,8 @@ async function resolveUserTimezone(
   const fallback = isValidIanaTimezone(fallbackTimezone) ? fallbackTimezone : null;
   if (!userId) return fallback;
 
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: { timezone: true },
   });
@@ -95,6 +96,13 @@ function buildClickIdempotencyKey(
   return `${eventType}:${conversationId ?? 'guest'}:${productId}:${minuteSlot}`;
 }
 
+function isUniqueConstraintViolation(error: unknown): boolean {
+  if (!(error instanceof QueryFailedError)) return false;
+  // Oracle unique constraint violation code is ORA-00001
+  const driverError = (error as QueryFailedError & { driverError?: { errorNum?: number } }).driverError;
+  return driverError?.errorNum === 1;
+}
+
 export async function createAffiliateEvent(input: CreateAffiliateEventInput): Promise<CreateAffiliateEventResult> {
   const occurredAt = input.occurredAt ?? new Date();
   const resolvedTimezone = await resolveUserTimezone(input.userId, input.userTimezone);
@@ -109,35 +117,33 @@ export async function createAffiliateEvent(input: CreateAffiliateEventInput): Pr
         : null;
 
   try {
-    const created = await prisma.affiliateEvent.create({
-      data: {
-        conversationId: input.conversationId,
-        userId: input.userId ?? null,
-        userTimezone: resolvedTimezone,
-        provider: input.provider,
-        eventType: input.eventType,
-        reasonCode: input.reasonCode ?? null,
-        idempotencyKey,
-        productId: input.productId,
-        productName: input.productName,
-        category: input.category,
-        isCtaEnabled: input.isCtaEnabled,
-        occurredAt,
-      },
-      select: { id: true },
+    const ds = await getDataSource();
+    const repo = ds.getRepository(AffiliateEvent);
+    const event = repo.create({
+      conversationId: input.conversationId ?? null,
+      userId: input.userId ?? null,
+      userTimezone: resolvedTimezone,
+      provider: input.provider,
+      eventType: input.eventType,
+      reasonCode: input.reasonCode ?? null,
+      idempotencyKey,
+      productId: input.productId,
+      productName: input.productName,
+      category: input.category,
+      isCtaEnabled: input.isCtaEnabled,
+      occurredAt,
     });
+    await repo.save(event);
 
     return {
-      id: created.id,
+      id: event.id,
       created: true,
       deduped: false,
       resolvedTimezone,
       localOrUtcDay,
     };
   } catch (error) {
-    const isUniqueConstraintError =
-      typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2002';
-    if (idempotencyKey && isUniqueConstraintError) {
+    if (idempotencyKey && isUniqueConstraintViolation(error)) {
       return {
         id: null,
         created: false,

@@ -1,6 +1,5 @@
 'use client';
 
-import type { Destination } from '@workspace/db';
 import { MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -8,11 +7,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { buildLocalePath } from '@/lib/localePath';
+import type { DestinationRecord } from '@/services/destination.service';
 
 const ITEMS_PER_PAGE = 12;
 
 type DestinationGridProps = {
-  destinations: Destination[];
+  destinations: DestinationRecord[];
   locale: string;
 };
 

@@ -1,5 +1,11 @@
-import type { Prisma } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import {
+  Accommodation,
+  AgodaAlertEvent,
+  AgodaNotification,
+  AgodaPollRun,
+  AgodaRoomSnapshot,
+  getDataSource,
+} from '@workspace/db';
 
 import { normalizeAgodaSearchResponse } from '@/lib/agoda/normalize';
 import { searchAgodaAvailability } from '@/lib/agoda/searchClient';
@@ -54,17 +60,13 @@ function toAgodaLanguageCode(locale: string): string {
   return normalized;
 }
 
-function toJsonValue(value: unknown): Prisma.InputJsonValue {
-  return value as Prisma.InputJsonValue;
-}
-
 function buildSnapshotSeed(
   rows: Array<{
     propertyId: string;
     roomId: string;
     ratePlanId: string;
     remainingRooms: number | null;
-    totalInclusive: Prisma.Decimal | number | null;
+    totalInclusive: number | null;
     payloadHash: string;
   }>,
 ): OfferSnapshotSeed[] {
@@ -91,7 +93,8 @@ function normalizeErrorMessage(error: unknown): string {
 
 function isUniqueConstraintError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
-  return 'code' in error && (error as { code?: string }).code === 'P2002';
+  const message = 'message' in error ? String((error as { message: unknown }).message) : '';
+  return message.includes('ORA-00001');
 }
 
 async function isInCooldown(params: {
@@ -101,19 +104,21 @@ async function isInCooldown(params: {
   cooldownHours: number;
 }): Promise<boolean> {
   const cooldownFrom = new Date(Date.now() - params.cooldownHours * 60 * 60 * 1000);
+  const ds = await getDataSource();
 
-  const existing = await prisma.agodaAlertEvent.findFirst({
+  const existing = await ds.getRepository(AgodaAlertEvent).findOne({
     where: {
       accommodationId: params.accommodationId,
       type: params.type,
       offerKey: params.offerKey,
       status: 'detected',
-      detectedAt: { gte: cooldownFrom },
     },
-    select: { id: true },
+    select: { id: true, detectedAt: true },
+    order: { detectedAt: 'DESC' },
   });
 
-  return existing != null;
+  if (!existing) return false;
+  return existing.detectedAt >= cooldownFrom;
 }
 
 async function createAlertEventWithDedupe(params: {
@@ -124,24 +129,23 @@ async function createAlertEventWithDedupe(params: {
   status: string;
   beforeHash: string | null;
   afterHash: string | null;
-  meta: Prisma.InputJsonValue;
-}): Promise<bigint | null> {
+  meta: object;
+}): Promise<number | null> {
   try {
-    const created = await prisma.agodaAlertEvent.create({
-      data: {
-        accommodationId: params.accommodationId,
-        type: params.type,
-        eventKey: params.eventKey,
-        offerKey: params.offerKey,
-        status: params.status,
-        beforeHash: params.beforeHash,
-        afterHash: params.afterHash,
-        meta: params.meta,
-      },
-      select: { id: true },
+    const ds = await getDataSource();
+    const repo = ds.getRepository(AgodaAlertEvent);
+    const entity = repo.create({
+      accommodationId: params.accommodationId,
+      type: params.type,
+      eventKey: params.eventKey,
+      offerKey: params.offerKey ?? null,
+      status: params.status,
+      beforeHash: params.beforeHash,
+      afterHash: params.afterHash,
+      meta: params.meta,
     });
-
-    return created.id;
+    await repo.save(entity);
+    return entity.id;
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       return null;
@@ -189,34 +193,34 @@ async function verifyVacancyCandidates(params: {
 
   const verifyOffers = normalizeAgodaSearchResponse(verifyApiResult.payload).offers;
 
-  // lt_v1 API는 remainingRooms를 반환하지 않으므로, 호텔이 결과에 존재하는지 여부로 판단한다.
   if (verifyOffers.length > 0) {
     return { confirmed: params.candidates, rejected: [] };
   }
   return { confirmed: [], rejected: params.candidates };
 }
 
-async function enqueueNotifications(params: { accommodationId: string; alertEventIds: bigint[] }): Promise<number> {
+async function enqueueNotifications(params: { accommodationId: string; alertEventIds: number[] }): Promise<number> {
   if (params.alertEventIds.length === 0) return 0;
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AgodaNotification);
 
-  const created = await prisma.agodaNotification.createMany({
-    data: params.alertEventIds.map((alertEventId) => ({
+  const entities = params.alertEventIds.map((alertEventId) =>
+    repo.create({
       accommodationId: params.accommodationId,
       alertEventId,
-      // 현재 큐는 email 채널 단일 모델이며, Kakao는 dispatch 단계에서 병행 발송한다.
-      // 향후 kakao-only 사용자를 지원할 때는 채널별 큐 분리가 필요하다.
       channel: 'email',
       status: 'queued',
       attempt: 0,
-    })),
-  });
-
-  return created.count;
+    }),
+  );
+  await repo.save(entities);
+  return entities.length;
 }
 
 export async function pollAccommodationOnce(accommodationId: string): Promise<PollAccommodationResult> {
+  const ds = await getDataSource();
   const runtimeSettings = await getBinbangRuntimeSettings();
-  const accommodation = await prisma.accommodation.findUnique({
+  const accommodation = await ds.getRepository(Accommodation).findOne({
     where: { id: accommodationId },
     select: {
       id: true,
@@ -247,25 +251,21 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     throw new Error('accommodation is not an AGODA API accommodation (missing platformId)');
   }
 
-  const pollRun = await prisma.agodaPollRun.create({
-    data: {
-      accommodationId,
-      status: 'started',
-    },
-    select: { id: true, polledAt: true },
-  });
+  const pollRunRepo = ds.getRepository(AgodaPollRun);
+  const pollRun = pollRunRepo.create({ accommodationId, status: 'started' });
+  await pollRunRepo.save(pollRun);
 
   const pipelineStartedAt = Date.now();
 
   try {
-    const latestSuccessfulRun = await prisma.agodaPollRun.findFirst({
+    const latestSuccessfulRun = await pollRunRepo.findOne({
       where: { accommodationId, status: 'success' },
-      orderBy: { polledAt: 'desc' },
+      order: { polledAt: 'DESC' },
       select: { id: true },
     });
 
     const previousRows = latestSuccessfulRun
-      ? await prisma.agodaRoomSnapshot.findMany({
+      ? await ds.getRepository(AgodaRoomSnapshot).find({
           where: { accommodationId, pollRunId: latestSuccessfulRun.id },
           select: {
             propertyId: true,
@@ -302,8 +302,9 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     const normalized = normalizeAgodaSearchResponse(apiResult.payload);
 
     if (normalized.offers.length > 0) {
-      await prisma.agodaRoomSnapshot.createMany({
-        data: normalized.offers.map((offer) => ({
+      const snapshotRepo = ds.getRepository(AgodaRoomSnapshot);
+      const snapshots = normalized.offers.map((offer) =>
+        snapshotRepo.create({
           pollRunId: pollRun.id,
           accommodationId,
           propertyId: offer.propertyId.toString(),
@@ -315,9 +316,10 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
           totalInclusive: offer.totalInclusive,
           currency: offer.currency,
           payloadHash: offer.payloadHash,
-          raw: toJsonValue(offer.raw),
-        })),
-      });
+          raw: offer.raw as object,
+        }),
+      );
+      await snapshotRepo.save(snapshots);
     }
 
     const vacancyEvents = detectVacancyEvents({
@@ -344,15 +346,6 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         candidates: vacancyEvents,
       });
     } catch (verifyError) {
-      // verify API 호출 실패 시 후보를 rejected로 처리하지 않고 스킵한다.
-      // rejected로 처리하면 DB에 'rejected_verify_failed' 이벤트가 기록되어
-      // 실제 verify 실패인지 API 오류인지 구분이 어려워진다.
-      //
-      // vacancy 후보가 있었는데 verify에 실패한 경우, 이 run을 'partial'로 마킹해
-      // latestSuccessfulRun 쿼리에서 제외한다. 그래야 다음 poll 주기에서
-      // 이전 baseline(스냅샷 없음 = sold out)을 다시 참조하여 vacancy를 재감지할 수 있다.
-      // 'success'로 마킹하면 이 run의 스냅샷이 baseline이 되어
-      // previousSnapshots.length > 0 → vacancy 감지가 영구적으로 불가능해진다.
       console.warn(
         '[polling] vacancy verify API failed, skipping candidates:',
         verifyError instanceof Error ? verifyError.message : String(verifyError),
@@ -371,7 +364,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
           : runtimeSettings.priceDropThreshold,
     });
 
-    const alertEventIdsToNotify: bigint[] = [];
+    const alertEventIdsToNotify: number[] = [];
     let vacancyEventsInserted = 0;
     let vacancyEventsSkippedByCooldown = 0;
     let priceDropEventsInserted = 0;
@@ -398,7 +391,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         status: 'detected',
         beforeHash: event.beforeHash,
         afterHash: event.afterHash,
-        meta: toJsonValue(event.meta),
+        meta: event.meta as object,
       });
 
       if (insertedId != null) {
@@ -416,7 +409,7 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         status: 'rejected_verify_failed',
         beforeHash: event.beforeHash,
         afterHash: event.afterHash,
-        meta: toJsonValue(event.meta),
+        meta: event.meta as object,
       });
     }
 
@@ -441,13 +434,13 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         status: 'detected',
         beforeHash: event.beforeHash,
         afterHash: event.afterHash,
-        meta: toJsonValue({
+        meta: {
           offerKey: event.offerKey,
           beforePrice: event.beforePrice,
           afterPrice: event.afterPrice,
           dropRatio: event.dropRatio,
           ...event.meta,
-        }),
+        } as object,
       });
 
       if (insertedId != null) {
@@ -463,55 +456,48 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         alertEventIds: alertEventIdsToNotify,
       });
     } catch (err) {
-      // 알림 큐잉 실패 시 이벤트는 DB에 'detected' 상태로 보존된다.
-      // dispatch cron이 다음 주기에 queued 상태로 전환해 재처리한다.
       console.warn('[agoda-polling] enqueueNotifications 실패, 다음 dispatch 주기에서 재처리됩니다:', err);
     }
 
     const now = new Date();
     const latencyMs = Date.now() - pipelineStartedAt;
 
-    // metaSearch extra에서 받은 landingUrl 저장 (첫 번째 오퍼의 hotel-level URL)
     const discoveredLandingUrl = normalized.offers.find((o) => o.landingUrl != null)?.landingUrl ?? null;
-
-    // vacancy 후보가 있었지만 verify API가 실패해 스킵된 경우 'partial'로 마킹한다.
-    // 'partial' run은 latestSuccessfulRun 쿼리(status: 'success')에 매칭되지 않으므로,
-    // 다음 poll 주기에서 이전의 진짜 'success' run을 baseline으로 사용해
-    // sold-out → available 전환을 다시 감지할 수 있다.
     const pollRunStatus = vacancyVerifySkipped ? 'partial' : 'success';
 
-    await prisma.$transaction([
-      prisma.agodaPollRun.update({
-        where: { id: pollRun.id },
-        data: {
+    await ds.transaction(async (manager) => {
+      await manager.getRepository(AgodaPollRun).update(
+        { id: pollRun.id },
+        {
           status: pollRunStatus,
           httpStatus: apiResult.httpStatus,
           latencyMs,
           polledAt: now,
           error: vacancyVerifySkipped ? 'vacancy verify API failed, will retry next cycle' : null,
         },
-      }),
-      prisma.accommodation.update({
-        where: { id: accommodationId },
-        data: {
+      );
+
+      await manager.getRepository(Accommodation).update(
+        { id: accommodationId },
+        {
           lastPolledAt: now,
           lastStatus: normalized.offers.length > 0 ? 'AVAILABLE' : 'UNAVAILABLE',
           ...(vacancyEventsInserted > 0 || priceDropEventsInserted > 0 ? { lastEventAt: now } : {}),
           ...(discoveredLandingUrl
             ? {
-                platformMetadata: toJsonValue({
+                platformMetadata: {
                   ...(typeof accommodation.platformMetadata === 'object' &&
                   accommodation.platformMetadata != null &&
                   !Array.isArray(accommodation.platformMetadata)
                     ? (accommodation.platformMetadata as Record<string, unknown>)
                     : {}),
                   landingUrl: discoveredLandingUrl,
-                }),
+                } as object,
               }
             : {}),
         },
-      }),
-    ]);
+      );
+    });
 
     return {
       accommodationId,
@@ -534,21 +520,20 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
     const failedAt = new Date();
     const errorMessage = normalizeErrorMessage(error);
 
-    await prisma.$transaction([
-      prisma.agodaPollRun.update({
-        where: { id: pollRun.id },
-        data: {
+    await ds.transaction(async (manager) => {
+      await manager.getRepository(AgodaPollRun).update(
+        { id: pollRun.id },
+        {
           status: 'failed',
           latencyMs: Date.now() - pipelineStartedAt,
           polledAt: failedAt,
           error: errorMessage,
         },
-      }),
-      prisma.accommodation.update({
-        where: { id: accommodationId },
-        data: { lastPolledAt: failedAt, lastStatus: 'ERROR' },
-      }),
-    ]);
+      );
+      await manager
+        .getRepository(Accommodation)
+        .update({ id: accommodationId }, { lastPolledAt: failedAt, lastStatus: 'ERROR' });
+    });
 
     throw error;
   }
@@ -559,29 +544,28 @@ function buildDueThreshold(now: Date, pollIntervalMinutes: number): Date {
 }
 
 export async function findDueAccommodationIds(limit?: number): Promise<string[]> {
+  const ds = await getDataSource();
   const runtimeSettings = await getBinbangRuntimeSettings();
   const now = new Date();
   const dueThreshold = buildDueThreshold(now, runtimeSettings.pollIntervalMinutes);
   const take = limit ?? runtimeSettings.duePollLimit;
 
-  // 체크인 당일 자정(UTC)을 기준으로 필터한다.
-  // new Date()를 쓰면 당일 오전 1시에 이미 "지난 날"로 판단해 폴링이 멈추는 버그가 생긴다.
   const todayStart = new Date(now);
   todayStart.setUTCHours(0, 0, 0, 0);
 
-  const dueAccommodations = await prisma.accommodation.findMany({
-    where: {
-      platform: 'AGODA',
-      isActive: true,
-      platformId: { not: null },
-      // 오늘 자정(UTC) 이후 체크인인 경우만 폴링 대상
-      checkIn: { gte: todayStart },
-      OR: [{ lastPolledAt: null }, { lastPolledAt: { lte: dueThreshold } }],
-    },
-    orderBy: [{ lastPolledAt: { sort: 'asc', nulls: 'first' } }, { updatedAt: 'asc' }],
-    take,
-    select: { id: true },
-  });
+  const dueAccommodations = await ds
+    .getRepository(Accommodation)
+    .createQueryBuilder('a')
+    .select(['a.id'])
+    .where('a.platform = :platform', { platform: 'AGODA' })
+    .andWhere('a.isActive = 1')
+    .andWhere('a.platformId IS NOT NULL')
+    .andWhere('a.checkIn >= :todayStart', { todayStart })
+    .andWhere('(a.lastPolledAt IS NULL OR a.lastPolledAt <= :dueThreshold)', { dueThreshold })
+    .orderBy('a.lastPolledAt', 'ASC', 'NULLS FIRST')
+    .addOrderBy('a.updatedAt', 'ASC')
+    .take(take)
+    .getMany();
 
   return dueAccommodations.map((a) => a.id);
 }

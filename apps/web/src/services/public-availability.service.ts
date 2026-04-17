@@ -1,4 +1,13 @@
-import { type Platform, type PredictionConfidence, type Prisma, prisma } from '@workspace/db';
+import {
+  In,
+  Not,
+  type Platform,
+  type PredictionConfidence,
+  PublicAvailabilityPrediction,
+  PublicAvailabilitySnapshot,
+  PublicProperty,
+  getDataSource,
+} from '@workspace/db';
 import type { Locale } from '@workspace/shared/i18n';
 
 const PLATFORM_SEGMENT_TO_DB = {
@@ -149,7 +158,6 @@ export interface GetRegionalSitemapItemsInput {
 
 /**
  * Locale → preferred country keys mapping.
- * Properties in preferred countries are boosted in list results.
  */
 const LOCALE_PREFERRED_COUNTRIES: Record<Locale, readonly string[]> = {
   ko: ['kr', 'south korea', 'korea'],
@@ -194,106 +202,6 @@ function computeLocaleScore(
   return score;
 }
 
-function isMissingPublicPropertyTableError(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false;
-  const maybeCode = 'code' in error ? (error.code as string | undefined) : undefined;
-  return maybeCode === 'P2021';
-}
-
-const SNAPSHOT_SELECT = {
-  snapshotDate: true,
-  windowStartAt: true,
-  windowEndAt: true,
-  sampleSize: true,
-  availableCount: true,
-  unavailableCount: true,
-  errorCount: true,
-  avgPriceAmount: true,
-  minPriceAmount: true,
-  maxPriceAmount: true,
-  currency: true,
-  openRate: true,
-} as const satisfies Prisma.PublicAvailabilitySnapshotSelect;
-
-const PROPERTY_WITH_SNAPSHOTS_SELECT = {
-  id: true,
-  platform: true,
-  slug: true,
-  name: true,
-  sourceUrl: true,
-  imageUrl: true,
-  description: true,
-  countryKey: true,
-  cityKey: true,
-  addressRegion: true,
-  addressLocality: true,
-  ratingValue: true,
-  reviewCount: true,
-  lastObservedAt: true,
-  snapshots: {
-    orderBy: { snapshotDate: 'desc' as const },
-    take: 2,
-    select: SNAPSHOT_SELECT,
-  },
-} as const satisfies Prisma.PublicPropertySelect;
-
-const ALTERNATIVE_SELECT = {
-  id: true,
-  platform: true,
-  slug: true,
-  name: true,
-  sourceUrl: true,
-  imageUrl: true,
-  description: true,
-  countryKey: true,
-  cityKey: true,
-  addressRegion: true,
-  addressLocality: true,
-  ratingValue: true,
-  reviewCount: true,
-  lastObservedAt: true,
-  snapshots: {
-    orderBy: { snapshotDate: 'desc' as const },
-    take: 1,
-    select: SNAPSHOT_SELECT,
-  },
-} as const satisfies Prisma.PublicPropertySelect;
-
-const LIST_ITEM_SELECT = {
-  id: true,
-  platform: true,
-  slug: true,
-  name: true,
-  imageUrl: true,
-  countryKey: true,
-  cityKey: true,
-  addressRegion: true,
-  addressLocality: true,
-  ratingValue: true,
-  reviewCount: true,
-  lastObservedAt: true,
-  snapshots: {
-    orderBy: { snapshotDate: 'desc' as const },
-    take: 1,
-    select: SNAPSHOT_SELECT,
-  },
-} as const satisfies Prisma.PublicPropertySelect;
-
-type SnapshotRecord = {
-  snapshotDate: Date;
-  windowStartAt: Date;
-  windowEndAt: Date;
-  sampleSize: number;
-  availableCount: number;
-  unavailableCount: number;
-  errorCount: number;
-  avgPriceAmount: number | null;
-  minPriceAmount: number | null;
-  maxPriceAmount: number | null;
-  currency: string | null;
-  openRate: number | null;
-};
-
 function resolveAlternativesLimit(value: number | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_ALTERNATIVES_LIMIT;
   const rounded = Math.floor(value);
@@ -316,7 +224,6 @@ function buildSlugLookupCandidates(slug: string): string[] {
   const base = normalizeSlug(slug);
   if (base.length === 0) return [];
 
-  // Allow lookups across common Unicode normalization forms.
   return Array.from(
     new Set([base, base.normalize('NFC'), base.normalize('NFD'), base.normalize('NFKC'), base.normalize('NFKD')]),
   );
@@ -339,6 +246,21 @@ function resolveSitemapItemsOffset(value: number | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return 0;
   return Math.floor(value);
 }
+
+type SnapshotRecord = {
+  snapshotDate: Date;
+  windowStartAt: Date;
+  windowEndAt: Date;
+  sampleSize: number;
+  availableCount: number;
+  unavailableCount: number;
+  errorCount: number;
+  avgPriceAmount: number | null;
+  minPriceAmount: number | null;
+  maxPriceAmount: number | null;
+  currency: string | null;
+  openRate: number | null;
+};
 
 function mapSnapshot(snapshot: SnapshotRecord | null | undefined): PublicAvailabilitySnapshotView | null {
   if (!snapshot) return null;
@@ -393,15 +315,6 @@ function mapProperty(property: {
   };
 }
 
-function buildAreaFilter(input: {
-  cityKey: string | null;
-  countryKey: string | null;
-}): Prisma.PublicPropertyWhereInput {
-  if (input.cityKey) return { cityKey: input.cityKey };
-  if (input.countryKey) return { countryKey: input.countryKey };
-  return {};
-}
-
 export function parsePublicPlatformSegment(platformSegment: string): Platform | null {
   const normalized = platformSegment.trim().toLowerCase();
   if (!(normalized in PLATFORM_SEGMENT_TO_DB)) return null;
@@ -410,6 +323,41 @@ export function parsePublicPlatformSegment(platformSegment: string): Platform | 
 
 export function toPublicPlatformSegment(platform: Platform): 'airbnb' | 'agoda' {
   return DB_PLATFORM_TO_SEGMENT[platform];
+}
+
+async function loadLatestSnapshots(
+  ds: Awaited<ReturnType<typeof getDataSource>>,
+  propertyId: string,
+  take: number,
+): Promise<PublicAvailabilitySnapshot[]> {
+  return ds.getRepository(PublicAvailabilitySnapshot).find({
+    where: { publicPropertyId: propertyId },
+    order: { snapshotDate: 'DESC' },
+    take,
+  });
+}
+
+async function loadLatestSnapshotsBulk(
+  ds: Awaited<ReturnType<typeof getDataSource>>,
+  propertyIds: string[],
+): Promise<Map<string, PublicAvailabilitySnapshot>> {
+  if (propertyIds.length === 0) return new Map();
+
+  // Oracle ROW_NUMBER() to get latest snapshot per property
+  const rows = await ds.query<PublicAvailabilitySnapshot[]>(
+    `SELECT * FROM (
+      SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s."publicPropertyId" ORDER BY s."snapshotDate" DESC) AS rn
+      FROM "PublicAvailabilitySnapshot" s
+      WHERE s."publicPropertyId" IN (${propertyIds.map((_, i) => `:${i + 1}`).join(', ')})
+    ) WHERE rn = 1`,
+    propertyIds,
+  );
+
+  const map = new Map<string, PublicAvailabilitySnapshot>();
+  for (const row of rows) {
+    map.set(row.publicPropertyId, row);
+  }
+  return map;
 }
 
 export async function getPublicAvailabilityPageData(
@@ -422,82 +370,80 @@ export async function getPublicAvailabilityPageData(
   if (!platform || slugCandidates.length === 0) return null;
 
   const alternativesLimit = resolveAlternativesLimit(input.alternativesLimit);
+  const ds = await getDataSource();
+  const propertyRepo = ds.getRepository(PublicProperty);
 
-  return prisma.$transaction(async (tx): Promise<PublicAvailabilityPageData | null> => {
-    let property = await tx.publicProperty.findFirst({
-      where: {
-        platform,
-        slug: { in: slugCandidates },
-        isActive: true,
-      },
-      select: PROPERTY_WITH_SNAPSHOTS_SELECT,
-    });
-
-    if (!property && slugHashSuffix) {
-      // Fallback: match by deterministic slug hash suffix to absorb Unicode normalization drifts.
-      property = await tx.publicProperty.findFirst({
-        where: {
-          platform,
-          isActive: true,
-          slug: { endsWith: `-${slugHashSuffix}` },
-        },
-        orderBy: { updatedAt: 'desc' },
-        select: PROPERTY_WITH_SNAPSHOTS_SELECT,
-      });
-    }
-
-    if (!property) return null;
-
-    const [alternatives, latestPrediction] = await Promise.all([
-      tx.publicProperty.findMany({
-        where: {
-          platform: property.platform,
-          isActive: true,
-          id: { not: property.id },
-          ...buildAreaFilter(property),
-        },
-        orderBy: [{ lastObservedAt: 'desc' }, { updatedAt: 'desc' }],
-        take: alternativesLimit,
-        select: ALTERNATIVE_SELECT,
-      }),
-      tx.publicAvailabilityPrediction.findFirst({
-        where: { publicPropertyId: property.id },
-        orderBy: { predictedAt: 'desc' },
-        select: {
-          nextLikelyAvailableAt: true,
-          confidence: true,
-          reasoning: true,
-          predictedAt: true,
-          algorithmVersion: true,
-        },
-      }),
-    ]);
-
-    const prediction: PublicAvailabilityPredictionView | null = latestPrediction
-      ? {
-          nextLikelyAvailableAt: latestPrediction.nextLikelyAvailableAt?.toISOString() ?? null,
-          confidence: latestPrediction.confidence,
-          reasoning: latestPrediction.reasoning,
-          predictedAt: latestPrediction.predictedAt.toISOString(),
-          algorithmVersion: latestPrediction.algorithmVersion,
-        }
-      : null;
-
-    return {
-      platform: property.platform,
-      platformSegment: toPublicPlatformSegment(property.platform),
-      property: mapProperty(property),
-      latestSnapshot: mapSnapshot(property.snapshots[0]),
-      previousSnapshot: mapSnapshot(property.snapshots[1]),
-      prediction,
-      alternatives: alternatives.map(
-        (alternative): PublicAvailabilityAlternativeView => ({
-          ...mapProperty(alternative),
-          latestSnapshot: mapSnapshot(alternative.snapshots[0]),
-        }),
-      ),
-    };
+  let property = await propertyRepo.findOne({
+    where: { platform, slug: In(slugCandidates), isActive: true },
   });
+
+  if (!property && slugHashSuffix) {
+    // Fallback: match by slug hash suffix
+    const candidates = await propertyRepo
+      .createQueryBuilder('p')
+      .where('p."platform" = :platform AND p."isActive" = 1 AND p."slug" LIKE :suffix', {
+        platform,
+        suffix: `%-${slugHashSuffix}`,
+      })
+      .orderBy('p."updatedAt"', 'DESC')
+      .take(1)
+      .getMany();
+    property = candidates[0] ?? null;
+  }
+
+  if (!property) return null;
+
+  const [propertySnapshots, alternatives, latestPrediction] = await Promise.all([
+    loadLatestSnapshots(ds, property.id, 2),
+    propertyRepo.find({
+      where: {
+        platform: property.platform,
+        isActive: true,
+        id: Not(property.id),
+        ...(property.cityKey
+          ? { cityKey: property.cityKey }
+          : property.countryKey
+            ? { countryKey: property.countryKey }
+            : {}),
+      },
+      order: { lastObservedAt: 'DESC', updatedAt: 'DESC' },
+      take: alternativesLimit,
+    }),
+    ds.getRepository(PublicAvailabilityPrediction).findOne({
+      where: { publicPropertyId: property.id },
+      order: { predictedAt: 'DESC' },
+    }),
+  ]);
+
+  const alternativeSnapshotMap = await loadLatestSnapshotsBulk(
+    ds,
+    alternatives.map((a) => a.id),
+  );
+
+  const prediction: PublicAvailabilityPredictionView | null = latestPrediction
+    ? {
+        nextLikelyAvailableAt: latestPrediction.nextLikelyAvailableAt?.toISOString() ?? null,
+        confidence: latestPrediction.confidence,
+        reasoning: latestPrediction.reasoning,
+        predictedAt: latestPrediction.predictedAt.toISOString(),
+        algorithmVersion: latestPrediction.algorithmVersion,
+      }
+    : null;
+
+  return {
+    platform: property.platform,
+    platformSegment: toPublicPlatformSegment(property.platform),
+    property: mapProperty(property),
+    latestSnapshot: mapSnapshot(propertySnapshots[0]),
+    previousSnapshot: mapSnapshot(propertySnapshots[1]),
+    prediction,
+    alternatives: alternatives.map(
+      (alternative): PublicAvailabilityAlternativeView => ({
+        ...mapProperty(alternative),
+        latestSnapshot: mapSnapshot(alternativeSnapshotMap.get(alternative.id)),
+      }),
+    ),
+  };
 }
 
 export async function getPublicAvailabilityList(
@@ -515,38 +461,16 @@ export async function getPublicAvailabilityList(
 
   const fetchLimit = hasLocaleBoost ? Math.min(limit * 2, MAX_LIST_ITEMS_LIMIT) : limit;
 
-  let properties: Array<{
-    id: string;
-    platform: Platform;
-    slug: string;
-    name: string;
-    imageUrl: string | null;
-    countryKey: string | null;
-    cityKey: string | null;
-    addressRegion: string | null;
-    addressLocality: string | null;
-    ratingValue: number | null;
-    reviewCount: number | null;
-    lastObservedAt: Date | null;
-    snapshots: SnapshotRecord[];
-  }> = [];
+  const ds = await getDataSource();
 
-  try {
-    properties = await prisma.publicProperty.findMany({
-      where: {
-        isActive: true,
-        ...(platform ? { platform } : {}),
-      },
-      orderBy: [{ lastObservedAt: 'desc' }, { updatedAt: 'desc' }],
-      take: fetchLimit,
-      select: LIST_ITEM_SELECT,
-    });
-  } catch (error) {
-    if (isMissingPublicPropertyTableError(error)) {
-      return [];
-    }
-    throw error;
-  }
+  const properties = await ds.getRepository(PublicProperty).find({
+    where: {
+      isActive: true,
+      ...(platform ? { platform } : {}),
+    },
+    order: { lastObservedAt: 'DESC', updatedAt: 'DESC' },
+    take: fetchLimit,
+  });
 
   let filtered = properties.filter((property): boolean => property.slug.trim().length > 0);
 
@@ -558,6 +482,11 @@ export async function getPublicAvailabilityList(
     scored.sort((a, b): number => b.score - a.score);
     filtered = scored.slice(0, limit).map((entry) => entry.item);
   }
+
+  const snapshotMap = await loadLatestSnapshotsBulk(
+    ds,
+    filtered.map((p) => p.id),
+  );
 
   return filtered.map(
     (property): PublicAvailabilityListItem => ({
@@ -571,7 +500,7 @@ export async function getPublicAvailabilityList(
       addressRegion: property.addressRegion,
       addressLocality: property.addressLocality,
       lastObservedAt: property.lastObservedAt?.toISOString() ?? null,
-      latestSnapshot: mapSnapshot(property.snapshots[0]),
+      latestSnapshot: mapSnapshot(snapshotMap.get(property.id)),
     }),
   );
 }
@@ -581,35 +510,19 @@ export async function getPublicAvailabilitySitemapItems(
 ): Promise<PublicAvailabilitySitemapItem[]> {
   const limit = resolveSitemapItemsLimit(input.limit);
   const offset = resolveSitemapItemsOffset(input.offset);
-  let properties: Array<{
-    platform: Platform;
-    slug: string;
-    lastObservedAt: Date | null;
-    updatedAt: Date;
-  }> = [];
 
-  try {
-    properties = await prisma.publicProperty.findMany({
-      where: {
-        isActive: true,
-        slug: { not: '' },
-      },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      skip: offset,
-      take: limit,
-      select: {
-        platform: true,
-        slug: true,
-        lastObservedAt: true,
-        updatedAt: true,
-      },
-    });
-  } catch (error) {
-    if (isMissingPublicPropertyTableError(error)) {
-      return [];
-    }
-    throw error;
-  }
+  const ds = await getDataSource();
+
+  const properties = await ds.getRepository(PublicProperty).find({
+    where: {
+      isActive: true,
+      slug: Not(''),
+    },
+    order: { updatedAt: 'DESC', id: 'DESC' },
+    skip: offset,
+    take: limit,
+    select: { platform: true, slug: true, lastObservedAt: true, updatedAt: true },
+  });
 
   return properties.map(
     (property): PublicAvailabilitySitemapItem => ({
@@ -621,19 +534,13 @@ export async function getPublicAvailabilitySitemapItems(
 }
 
 export async function getPublicAvailabilitySitemapTotalCount(): Promise<number> {
-  try {
-    return await prisma.publicProperty.count({
-      where: {
-        isActive: true,
-        slug: { not: '' },
-      },
-    });
-  } catch (error) {
-    if (isMissingPublicPropertyTableError(error)) {
-      return 0;
-    }
-    throw error;
-  }
+  const ds = await getDataSource();
+  return ds.getRepository(PublicProperty).count({
+    where: {
+      isActive: true,
+      slug: Not(''),
+    },
+  });
 }
 
 export async function getRegionalAvailabilityData(
@@ -645,140 +552,119 @@ export async function getRegionalAvailabilityData(
 
   if (!platform || regionKey.length === 0) return null;
 
-  try {
-    const properties = await prisma.publicProperty.findMany({
-      where: {
-        platform,
-        cityKey: regionKey,
-        isActive: true,
-      },
-      include: {
-        snapshots: {
-          orderBy: { snapshotDate: 'desc' },
-          take: 1,
-          select: SNAPSHOT_SELECT,
-        },
-      },
-      orderBy: [{ lastObservedAt: 'desc' }, { reviewCount: 'desc' }],
-      take: limit,
-    });
+  const ds = await getDataSource();
 
-    if (properties.length === 0) return null;
+  const properties = await ds.getRepository(PublicProperty).find({
+    where: { platform, cityKey: regionKey, isActive: true },
+    order: { lastObservedAt: 'DESC', reviewCount: 'DESC' },
+    take: limit,
+  });
 
-    // 집계 계산
-    let totalOpenRate = 0;
-    let totalPrice = 0;
-    let totalSampleSize = 0;
-    let minPrice: number | null = null;
-    let maxPrice: number | null = null;
-    let currency: string | null = null;
-    let validCount = 0;
-    let priceValidCount = 0;
+  if (properties.length === 0) return null;
 
-    for (const property of properties) {
-      const snapshot = property.snapshots[0];
-      if (!snapshot) continue;
+  const snapshotMap = await loadLatestSnapshotsBulk(
+    ds,
+    properties.map((p) => p.id),
+  );
 
-      totalSampleSize += snapshot.sampleSize;
+  let totalOpenRate = 0;
+  let totalPrice = 0;
+  let totalSampleSize = 0;
+  let minPrice: number | null = null;
+  let maxPrice: number | null = null;
+  let currency: string | null = null;
+  let validCount = 0;
+  let priceValidCount = 0;
 
-      if (typeof snapshot.openRate === 'number') {
-        totalOpenRate += snapshot.openRate;
-        validCount += 1;
+  for (const property of properties) {
+    const snapshot = snapshotMap.get(property.id);
+    if (!snapshot) continue;
+
+    totalSampleSize += snapshot.sampleSize;
+
+    if (typeof snapshot.openRate === 'number') {
+      totalOpenRate += snapshot.openRate;
+      validCount += 1;
+    }
+
+    if (typeof snapshot.avgPriceAmount === 'number') {
+      totalPrice += snapshot.avgPriceAmount;
+      priceValidCount += 1;
+
+      if (minPrice === null || snapshot.avgPriceAmount < minPrice) {
+        minPrice = snapshot.avgPriceAmount;
       }
-
-      if (typeof snapshot.avgPriceAmount === 'number') {
-        totalPrice += snapshot.avgPriceAmount;
-        priceValidCount += 1;
-
-        if (minPrice === null || snapshot.avgPriceAmount < minPrice) {
-          minPrice = snapshot.avgPriceAmount;
-        }
-        if (maxPrice === null || snapshot.avgPriceAmount > maxPrice) {
-          maxPrice = snapshot.avgPriceAmount;
-        }
-      }
-
-      if (snapshot.currency && !currency) {
-        currency = snapshot.currency;
+      if (maxPrice === null || snapshot.avgPriceAmount > maxPrice) {
+        maxPrice = snapshot.avgPriceAmount;
       }
     }
 
-    const avgOpenRate = validCount > 0 ? totalOpenRate / validCount : 0;
-    const avgPriceAmount = priceValidCount > 0 ? Math.round(totalPrice / priceValidCount) : null;
-
-    return {
-      region: {
-        key: regionKey,
-        name: regionKey, // Will be formatted in UI
-        propertyCount: properties.length,
-      },
-      platform,
-      platformSegment: toPublicPlatformSegment(platform),
-      aggregateStats: {
-        avgOpenRate,
-        avgPriceAmount,
-        minPriceAmount: minPrice,
-        maxPriceAmount: maxPrice,
-        currency,
-        totalSampleSize,
-      },
-      topProperties: properties
-        .filter((property): boolean => property.slug.trim().length > 0)
-        .map(
-          (property): PublicAvailabilityListItem => ({
-            id: property.id,
-            platform: property.platform,
-            platformSegment: toPublicPlatformSegment(property.platform),
-            slug: property.slug,
-            name: property.name,
-            imageUrl: property.imageUrl,
-            cityKey: property.cityKey,
-            addressRegion: property.addressRegion,
-            addressLocality: property.addressLocality,
-            lastObservedAt: property.lastObservedAt?.toISOString() ?? null,
-            latestSnapshot: mapSnapshot(property.snapshots[0]),
-          }),
-        ),
-    };
-  } catch (error) {
-    if (isMissingPublicPropertyTableError(error)) {
-      return null;
+    if (snapshot.currency && !currency) {
+      currency = snapshot.currency;
     }
-    throw error;
   }
+
+  const avgOpenRate = validCount > 0 ? totalOpenRate / validCount : 0;
+  const avgPriceAmount = priceValidCount > 0 ? Math.round(totalPrice / priceValidCount) : null;
+
+  return {
+    region: {
+      key: regionKey,
+      name: regionKey,
+      propertyCount: properties.length,
+    },
+    platform,
+    platformSegment: toPublicPlatformSegment(platform),
+    aggregateStats: {
+      avgOpenRate,
+      avgPriceAmount,
+      minPriceAmount: minPrice,
+      maxPriceAmount: maxPrice,
+      currency,
+      totalSampleSize,
+    },
+    topProperties: properties
+      .filter((property): boolean => property.slug.trim().length > 0)
+      .map(
+        (property): PublicAvailabilityListItem => ({
+          id: property.id,
+          platform: property.platform,
+          platformSegment: toPublicPlatformSegment(property.platform),
+          slug: property.slug,
+          name: property.name,
+          imageUrl: property.imageUrl,
+          cityKey: property.cityKey,
+          addressRegion: property.addressRegion,
+          addressLocality: property.addressLocality,
+          lastObservedAt: property.lastObservedAt?.toISOString() ?? null,
+          latestSnapshot: mapSnapshot(snapshotMap.get(property.id)),
+        }),
+      ),
+  };
 }
 
 export async function getRegionalSitemapItems(
   input: GetRegionalSitemapItemsInput = {},
 ): Promise<RegionalSitemapItem[]> {
   const limit = input.limit ?? 50;
+  const ds = await getDataSource();
 
-  try {
-    const regions = await prisma.publicProperty.groupBy({
-      by: ['platform', 'cityKey'],
-      where: {
-        isActive: true,
-        cityKey: { not: null },
-      },
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: limit,
-    });
+  const rows = await ds.query<{ platform: Platform; cityKey: string; cnt: string }[]>(
+    `SELECT "platform", "cityKey", COUNT("id") AS "cnt"
+    FROM "PublicProperty"
+    WHERE "isActive" = 1 AND "cityKey" IS NOT NULL
+    GROUP BY "platform", "cityKey"
+    ORDER BY "cnt" DESC
+    FETCH FIRST :1 ROWS ONLY`,
+    [limit],
+  );
 
-    return regions
-      .filter((region): region is typeof region & { cityKey: string } => region.cityKey !== null)
-      .map(
-        (region): RegionalSitemapItem => ({
-          platform: region.platform,
-          platformSegment: toPublicPlatformSegment(region.platform),
-          regionKey: region.cityKey,
-          propertyCount: region._count.id,
-        }),
-      );
-  } catch (error) {
-    if (isMissingPublicPropertyTableError(error)) {
-      return [];
-    }
-    throw error;
-  }
+  return rows.map(
+    (row): RegionalSitemapItem => ({
+      platform: row.platform,
+      platformSegment: toPublicPlatformSegment(row.platform),
+      regionKey: row.cityKey,
+      propertyCount: Number(row.cnt),
+    }),
+  );
 }

@@ -2,39 +2,111 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { refreshPublicAvailabilitySnapshots } from './publicAvailabilitySnapshots';
 
-const { mockQueryRaw, mockTransaction, mockPublicPropertyUpsert, mockSnapshotUpsert } = vi.hoisted(
+const { mockQueryRaw, mockPublicPropertyUpsert, mockSnapshotUpsert } = vi.hoisted(
   (): {
     mockQueryRaw: ReturnType<typeof vi.fn>;
-    mockTransaction: ReturnType<typeof vi.fn>;
     mockPublicPropertyUpsert: ReturnType<typeof vi.fn>;
     mockSnapshotUpsert: ReturnType<typeof vi.fn>;
   } => ({
     mockQueryRaw: vi.fn(),
-    mockTransaction: vi.fn(),
     mockPublicPropertyUpsert: vi.fn(),
     mockSnapshotUpsert: vi.fn(),
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    $queryRaw: mockQueryRaw,
-    $transaction: mockTransaction,
-    publicProperty: {
-      upsert: mockPublicPropertyUpsert,
+interface PublicAvailabilitySnapshotsDbMock {
+  dataSource: unknown;
+  propertyRepo: {
+    findOne: ReturnType<typeof vi.fn>;
+  };
+  snapshotRepo: {
+    findOne: ReturnType<typeof vi.fn>;
+  };
+  getDataSource: ReturnType<typeof vi.fn>;
+}
+
+const dbMock = vi.hoisted(
+  (): PublicAvailabilitySnapshotsDbMock => ({
+    dataSource: null,
+    propertyRepo: {
+      findOne: vi.fn(),
     },
-    publicAvailabilitySnapshot: {
-      upsert: mockSnapshotUpsert,
+    snapshotRepo: {
+      findOne: vi.fn(),
     },
-  },
-}));
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('./test-utils/mockDb');
+
+  const propertyRepo = createMockRepository();
+  propertyRepo.findOne.mockResolvedValue(null);
+  propertyRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await callMock<Record<string, unknown>>(mockPublicPropertyUpsert, {
+      where: {
+        platform_platformPropertyKey: {
+          platform: entity.platform,
+          platformPropertyKey: entity.platformPropertyKey,
+        },
+      },
+      create: entity,
+      update: entity,
+    });
+    if (created && typeof created === 'object') Object.assign(entity, created);
+    return entity;
+  });
+  propertyRepo.update.mockImplementation((where, data) => callMock(mockPublicPropertyUpsert, { where, update: data }));
+
+  const snapshotRepo = createMockRepository();
+  snapshotRepo.findOne.mockResolvedValue(null);
+  snapshotRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    await callMock(mockSnapshotUpsert, {
+      where: {
+        publicPropertyId_snapshotDate: {
+          publicPropertyId: entity.publicPropertyId,
+          snapshotDate: entity.snapshotDate,
+        },
+      },
+      create: entity,
+      update: entity,
+    });
+    return entity;
+  });
+  snapshotRepo.update.mockImplementation((where, data) => callMock(mockSnapshotUpsert, { where, update: data }));
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.PublicProperty, propertyRepo],
+      [actual.PublicAvailabilitySnapshot, snapshotRepo],
+    ],
+    queryImplementation: (sql: string, params?: unknown[]) => callMock(mockQueryRaw, sql, params),
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.propertyRepo = propertyRepo;
+  dbMock.snapshotRepo = snapshotRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('publicAvailabilitySnapshots', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
+    dbMock.propertyRepo.findOne.mockResolvedValue(null);
+    dbMock.snapshotRepo.findOne.mockResolvedValue(null);
     mockPublicPropertyUpsert.mockResolvedValue({ id: 'pub_1' });
     mockSnapshotUpsert.mockResolvedValue({ id: 'snap_1' });
-    mockTransaction.mockImplementation(async (queries: Promise<unknown>[]) => Promise.all(queries));
   });
 
   it('aggregates accommodations by platform property key and upserts one snapshot per public property', async (): Promise<void> => {
@@ -139,8 +211,6 @@ describe('publicAvailabilitySnapshots', (): void => {
         }),
       }),
     );
-
-    expect(mockTransaction).toHaveBeenCalledTimes(2);
   });
 
   it('skips rows that cannot derive a public property key', async (): Promise<void> => {
@@ -183,7 +253,6 @@ describe('publicAvailabilitySnapshots', (): void => {
     expect(result.upsertedSnapshots).toBe(0);
     expect(mockPublicPropertyUpsert).not.toHaveBeenCalled();
     expect(mockSnapshotUpsert).not.toHaveBeenCalled();
-    expect(mockTransaction).not.toHaveBeenCalled();
   });
 
   it('returns zeros with timing metrics when no rows found', async (): Promise<void> => {
@@ -200,7 +269,6 @@ describe('publicAvailabilitySnapshots', (): void => {
     expect(result.queryTimeMs).toBeGreaterThanOrEqual(0);
     expect(result.aggregationTimeMs).toBe(0);
     expect(result.upsertTimeMs).toBe(0);
-    expect(mockTransaction).not.toHaveBeenCalled();
   });
 
   it('batches upserts into groups of 100', async (): Promise<void> => {
@@ -244,7 +312,7 @@ describe('publicAvailabilitySnapshots', (): void => {
 
     expect(result.upsertedProperties).toBe(150);
     expect(result.upsertedSnapshots).toBe(150);
-    // 150 properties → 2 batches (100 + 50) × 2 phases (property + snapshot) = 4 transactions
-    expect(mockTransaction).toHaveBeenCalledTimes(4);
+    expect(mockPublicPropertyUpsert).toHaveBeenCalledTimes(150);
+    expect(mockSnapshotUpsert).toHaveBeenCalledTimes(150);
   });
 });

@@ -1,4 +1,15 @@
-import { type Accommodation, type CheckLog, QuotaKey, prisma } from '@workspace/db';
+import {
+  type Accommodation,
+  type CheckLog,
+  Accommodation as AccommodationEntity,
+  AgodaConsentLog,
+  CheckLog as CheckLogEntity,
+  In,
+  PlanQuota,
+  QuotaKey,
+  User,
+  getDataSource,
+} from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -60,220 +71,172 @@ export interface GetLogsResult {
 }
 
 // ============================================================================
-// Shared select (Prisma Accommodation 필드 일괄 선택)
-// ============================================================================
-
-const ACCOMMODATION_SELECT = {
-  id: true,
-  userId: true,
-  name: true,
-  platform: true,
-  url: true,
-  checkIn: true,
-  checkOut: true,
-  adults: true,
-  rooms: true,
-  children: true,
-  currency: true,
-  locale: true,
-  isActive: true,
-  priceDropThreshold: true,
-  lastPolledAt: true,
-  lastEventAt: true,
-  lastCheck: true,
-  lastStatus: true,
-  lastPrice: true,
-  lastPriceAmount: true,
-  lastPriceCurrency: true,
-  platformId: true,
-  platformName: true,
-  platformImage: true,
-  platformDescription: true,
-  addressCountry: true,
-  addressRegion: true,
-  addressLocality: true,
-  postalCode: true,
-  streetAddress: true,
-  ratingValue: true,
-  reviewCount: true,
-  latitude: true,
-  longitude: true,
-  platformMetadata: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const ACCOMMODATION_LIST_SELECT = {
-  ...ACCOMMODATION_SELECT,
-  checkLogs: {
-    where: {
-      status: 'ERROR',
-      errorMessage: { not: null },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 1,
-    select: {
-      errorMessage: true,
-      createdAt: true,
-    },
-  },
-  agodaPollRuns: {
-    where: {
-      status: 'failed',
-      error: { not: null },
-    },
-    orderBy: { polledAt: 'desc' },
-    take: 1,
-    select: {
-      error: true,
-      polledAt: true,
-    },
-  },
-} as const;
-
-const CHECK_LOG_SELECT = {
-  id: true,
-  accommodationId: true,
-  userId: true,
-  status: true,
-  price: true,
-  priceAmount: true,
-  priceCurrency: true,
-  errorMessage: true,
-  notificationSent: true,
-  checkIn: true,
-  checkOut: true,
-  pricePerNight: true,
-  cycleId: true,
-  durationMs: true,
-  retryCount: true,
-  previousStatus: true,
-  createdAt: true,
-} as const;
-
-// ============================================================================
 // Service Functions
 // ============================================================================
 
 export async function getAccommodationsByUserId(userId: string): Promise<Accommodation[]> {
-  const rows = await prisma.accommodation.findMany({
+  const ds = await getDataSource();
+  const rows = await ds.getRepository(AccommodationEntity).find({
     where: { userId },
-    select: ACCOMMODATION_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
+    order: { createdAt: 'DESC' },
   });
 
+  // 각 숙소의 최신 에러 로그 가져오기 (check errors)
+  if (rows.length === 0) return rows;
+
+  const accommodationIds = rows.map((r) => r.id);
+
+  const checkErrors = await ds.query<{ accommodationId: string; errorMessage: string; createdAt: Date }[]>(
+    `SELECT * FROM (
+      SELECT cl."accommodationId", cl."errorMessage", cl."createdAt",
+             ROW_NUMBER() OVER (PARTITION BY cl."accommodationId" ORDER BY cl."createdAt" DESC) AS rn
+      FROM "CheckLog" cl
+      WHERE cl."accommodationId" IN (${accommodationIds.map((_, i) => `:${i + 1}`).join(', ')})
+        AND cl."status" = 'ERROR' AND cl."errorMessage" IS NOT NULL
+    ) WHERE rn = 1`,
+    accommodationIds,
+  );
+
+  let pollErrors: { accommodationId: string; error: string; polledAt: Date }[] = [];
+  try {
+    pollErrors = await ds.query<{ accommodationId: string; error: string; polledAt: Date }[]>(
+      `SELECT * FROM (
+        SELECT pr."accommodationId",
+               pr."error" AS "error",
+               pr."polledAt",
+               ROW_NUMBER() OVER (PARTITION BY pr."accommodationId" ORDER BY pr."polledAt" DESC) AS rn
+        FROM "agoda_poll_runs" pr
+        WHERE pr."accommodationId" IN (${accommodationIds.map((_, i) => `:${i + 1}`).join(', ')})
+          AND pr."status" = 'failed' AND pr."error" IS NOT NULL
+      ) WHERE rn = 1`,
+      accommodationIds,
+    );
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes('ORA-00942') || error.message.includes('ERR_BUFFER_OUT_OF_BOUNDS'))
+    ) {
+      console.warn('[accommodations] poll error lookup skipped due to Oracle query issue');
+      pollErrors = [];
+    } else {
+      throw error;
+    }
+  }
+
+  const checkErrorMap = new Map(checkErrors.map((e) => [e.accommodationId, e]));
+  const pollErrorMap = new Map(pollErrors.map((e) => [e.accommodationId, e]));
+
   return rows.map((row) => {
-    const latestCheckError = row.checkLogs?.[0];
-    const latestPollError = row.agodaPollRuns?.[0];
+    const checkErr = checkErrorMap.get(row.id);
+    const pollErr = pollErrorMap.get(row.id);
 
     const latestError =
-      latestCheckError && latestPollError
-        ? latestCheckError.createdAt >= latestPollError.polledAt
-          ? { message: latestCheckError.errorMessage, at: latestCheckError.createdAt }
-          : { message: latestPollError.error, at: latestPollError.polledAt }
-        : latestCheckError
-          ? { message: latestCheckError.errorMessage, at: latestCheckError.createdAt }
-          : latestPollError
-            ? { message: latestPollError.error, at: latestPollError.polledAt }
+      checkErr && pollErr
+        ? new Date(checkErr.createdAt) >= new Date(pollErr.polledAt)
+          ? { message: checkErr.errorMessage, at: new Date(checkErr.createdAt) }
+          : { message: pollErr.error, at: new Date(pollErr.polledAt) }
+        : checkErr
+          ? { message: checkErr.errorMessage, at: new Date(checkErr.createdAt) }
+          : pollErr
+            ? { message: pollErr.error, at: new Date(pollErr.polledAt) }
             : null;
 
-    const { checkLogs: _checkLogs, agodaPollRuns: _agodaPollRuns, ...base } = row;
-
-    return {
-      ...base,
+    return Object.assign(row, {
       lastErrorMessage: latestError?.message ?? null,
       lastErrorAt: latestError?.at ?? null,
-    };
+    });
   });
 }
 
 export async function getAccommodationById(id: string, userId: string): Promise<AccommodationWithLogs | null> {
-  return prisma.accommodation.findFirst({
+  const ds = await getDataSource();
+  const accommodation = await ds.getRepository(AccommodationEntity).findOne({
     where: { id, userId },
-    select: {
-      ...ACCOMMODATION_SELECT,
-      checkLogs: {
-        select: CHECK_LOG_SELECT,
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      },
-    },
   });
+
+  if (!accommodation) return null;
+
+  const checkLogs = await ds.getRepository(CheckLogEntity).find({
+    where: { accommodationId: id },
+    order: { createdAt: 'DESC' },
+    take: 50,
+  });
+
+  return Object.assign(accommodation, { checkLogs });
 }
 
 export async function checkUserQuota(userId: string): Promise<QuotaCheckResult> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
-    select: {
-      plan: {
-        select: {
-          quotas: {
-            where: { key: QuotaKey.MAX_ACCOMMODATIONS },
-            select: { value: true },
-          },
-        },
-      },
-      _count: { select: { accommodations: true } },
-    },
+    select: { planId: true },
   });
 
-  const max = user?.plan?.quotas[0]?.value ?? 5;
-  const current = user?._count.accommodations ?? 0;
+  const max = user?.planId
+    ? ((
+        await ds.getRepository(PlanQuota).findOne({
+          where: { planId: user.planId, key: QuotaKey.MAX_ACCOMMODATIONS },
+          select: { value: true },
+        })
+      )?.value ?? 5)
+    : 5;
 
-  return {
-    allowed: current < max,
-    max,
-    current,
-  };
+  const current = await ds.getRepository(AccommodationEntity).count({ where: { userId } });
+
+  return { allowed: current < max, max, current };
 }
 
 export async function createAccommodation(input: CreateAccommodationInput): Promise<Accommodation> {
-  return prisma.accommodation.create({
-    data: {
-      userId: input.userId,
-      name: input.name,
-      platform: input.platform,
-      url: input.url,
-      checkIn: input.checkIn,
-      checkOut: input.checkOut,
-      adults: input.adults,
-    },
-    select: ACCOMMODATION_SELECT,
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AccommodationEntity);
+  const accommodation = repo.create({
+    userId: input.userId,
+    name: input.name,
+    platform: input.platform,
+    url: input.url,
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    adults: input.adults,
+    isActive: true,
   });
+  await repo.save(accommodation);
+  return accommodation;
 }
 
 export async function createAgodaApiAccommodation(input: CreateAgodaApiAccommodationInput): Promise<Accommodation> {
-  const [accommodation] = await prisma.$transaction(async (tx) => {
-    const created = await tx.accommodation.create({
-      data: {
-        userId: input.userId,
-        name: input.name,
-        platform: 'AGODA',
-        platformId: input.platformId,
-        url: null, // Agoda API 방식은 URL 불필요
-        checkIn: input.checkIn,
-        checkOut: input.checkOut,
-        adults: input.adults,
-        children: input.children,
-        rooms: input.rooms,
-        currency: input.currency,
-        locale: input.locale,
-      },
-      select: ACCOMMODATION_SELECT,
+  const ds = await getDataSource();
+
+  const accommodation = await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(AccommodationEntity);
+    const created = repo.create({
+      userId: input.userId,
+      name: input.name,
+      platform: 'AGODA',
+      platformId: input.platformId,
+      url: null,
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+      adults: input.adults,
+      children: input.children,
+      rooms: input.rooms,
+      currency: input.currency,
+      locale: input.locale,
+      isActive: true,
     });
+    await repo.save(created);
 
     // 알림 등록 시 수신동의(opt_in)를 consent log에 기록한다.
-    // dispatch 시 hasActiveConsent() 체크에 사용된다.
-    await tx.agodaConsentLog.create({
-      data: {
-        userId: input.userId,
-        accommodationId: created.id,
-        email: input.userEmail.trim().toLowerCase(),
-        type: 'opt_in',
-      },
+    const consentRepo = manager.getRepository(AgodaConsentLog);
+    const consent = consentRepo.create({
+      userId: input.userId,
+      accommodationId: created.id,
+      email: input.userEmail.trim().toLowerCase(),
+      type: 'opt_in',
     });
+    await consentRepo.save(consent);
 
-    return [created];
+    return created;
   });
 
   return accommodation;
@@ -284,72 +247,120 @@ export async function updateAccommodation(
   userId: string,
   input: UpdateAccommodationInput,
 ): Promise<Accommodation | null> {
-  // 소유권 확인
-  const existing = await prisma.accommodation.findFirst({
-    where: { id, userId },
-    select: { id: true },
-  });
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AccommodationEntity);
 
-  if (!existing) {
-    return null;
-  }
+  const existing = await repo.findOne({ where: { id, userId }, select: { id: true } });
+  if (!existing) return null;
 
-  return prisma.accommodation.update({
-    where: { id },
-    data: {
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.url !== undefined && { url: input.url }),
-      ...(input.checkIn !== undefined && { checkIn: input.checkIn }),
-      ...(input.checkOut !== undefined && { checkOut: input.checkOut }),
-      ...(input.adults !== undefined && { adults: input.adults }),
-      ...(input.isActive !== undefined && { isActive: input.isActive }),
-      ...(input.priceDropThreshold !== undefined && { priceDropThreshold: input.priceDropThreshold }),
-    },
-    select: ACCOMMODATION_SELECT,
-  });
+  const updateData: Partial<AccommodationEntity> = {};
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.url !== undefined) updateData.url = input.url;
+  if (input.checkIn !== undefined) updateData.checkIn = input.checkIn;
+  if (input.checkOut !== undefined) updateData.checkOut = input.checkOut;
+  if (input.adults !== undefined) updateData.adults = input.adults;
+  if (input.isActive !== undefined) updateData.isActive = input.isActive;
+  if (input.priceDropThreshold !== undefined) updateData.priceDropThreshold = input.priceDropThreshold;
+
+  await repo.update({ id }, updateData);
+  return repo.findOne({ where: { id } });
 }
 
 export async function deleteAccommodation(id: string, userId: string): Promise<boolean> {
-  // 소유권 확인
-  const existing = await prisma.accommodation.findFirst({
-    where: { id, userId },
-    select: { id: true },
-  });
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AccommodationEntity);
 
-  if (!existing) {
-    return false;
-  }
+  const existing = await repo.findOne({ where: { id, userId }, select: { id: true } });
+  if (!existing) return false;
 
-  await prisma.accommodation.delete({
-    where: { id },
-    select: { id: true },
-  });
-
+  await repo.delete({ id });
   return true;
 }
 
 export async function deleteAccommodations(ids: string[], userId: string): Promise<number> {
-  const { count } = await prisma.accommodation.deleteMany({
-    where: { id: { in: ids }, userId },
-  });
-  return count;
+  const ds = await getDataSource();
+  const result = await ds.getRepository(AccommodationEntity).delete({ id: In(ids), userId });
+  return result.affected ?? 0;
 }
 
 export async function getAccommodationLogs(input: GetLogsInput): Promise<GetLogsResult> {
-  const logs = await prisma.checkLog.findMany({
-    where: { accommodationId: input.accommodationId },
-    select: CHECK_LOG_SELECT,
-    orderBy: { createdAt: 'desc' },
-    take: input.limit + 1,
-    ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-  });
+  const ds = await getDataSource();
+  let cursorDate: Date | string | null = null;
+
+  if (input.cursor) {
+    const cursorRows = (await ds.query(
+      `SELECT cl."createdAt" AS "createdAt"
+         FROM "CheckLog" cl
+        WHERE cl."id" = :1
+        FETCH FIRST 1 ROWS ONLY`,
+      [input.cursor],
+    )) as Array<{ createdAt?: Date | string | null }>;
+
+    cursorDate = cursorRows[0]?.createdAt ?? null;
+  }
+
+  const parameters: unknown[] = [input.accommodationId];
+  const whereClauses = ['cl."accommodationId" = :1'];
+
+  if (cursorDate) {
+    parameters.push(cursorDate, input.cursor);
+    whereClauses.push('(cl."createdAt" < :2 OR (cl."createdAt" = :2 AND cl."id" < :3))');
+  }
+
+  const rawLogs = (await ds.query(
+    `SELECT cl."id" AS "id",
+            cl."accommodationId" AS "accommodationId",
+            cl."userId" AS "userId",
+            cl."status" AS "status",
+            cl."price" AS "price",
+            cl."priceAmount" AS "priceAmount",
+            cl."priceCurrency" AS "priceCurrency",
+            cl."errorMessage" AS "errorMessage",
+            cl."notificationSent" AS "notificationSent",
+            cl."checkIn" AS "checkIn",
+            cl."checkOut" AS "checkOut",
+            cl."pricePerNight" AS "pricePerNight",
+            cl."cycleId" AS "cycleId",
+            cl."durationMs" AS "durationMs",
+            cl."retryCount" AS "retryCount",
+            cl."previousStatus" AS "previousStatus",
+            cl."createdAt" AS "createdAt"
+       FROM "CheckLog" cl
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY cl."createdAt" DESC, cl."id" DESC
+      FETCH NEXT ${input.limit + 1} ROWS ONLY`,
+    parameters,
+  )) as Array<Record<string, unknown>>;
+
+  const logs = rawLogs.map(
+    (row) =>
+      ({
+        id: String(row.id),
+        accommodationId: String(row.accommodationId),
+        userId: String(row.userId),
+        status: row.status as CheckLog['status'],
+        price: (row.price as string | null) ?? null,
+        priceAmount: row.priceAmount == null ? null : Number(row.priceAmount),
+        priceCurrency: (row.priceCurrency as string | null) ?? null,
+        errorMessage: (row.errorMessage as string | null) ?? null,
+        notificationSent: Number(row.notificationSent ?? 0) === 1,
+        checkIn: row.checkIn ? new Date(String(row.checkIn)) : null,
+        checkOut: row.checkOut ? new Date(String(row.checkOut)) : null,
+        pricePerNight: row.pricePerNight == null ? null : Number(row.pricePerNight),
+        cycleId: (row.cycleId as string | null) ?? null,
+        durationMs: row.durationMs == null ? null : Number(row.durationMs),
+        retryCount: row.retryCount == null ? 0 : Number(row.retryCount),
+        previousStatus: (row.previousStatus as CheckLog['previousStatus']) ?? null,
+        createdAt: new Date(String(row.createdAt)),
+      }) as CheckLog,
+  );
 
   const hasMore = logs.length > input.limit;
   const items = hasMore ? logs.slice(0, input.limit) : logs;
 
   return {
     logs: items,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
+    nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
   };
 }
 
@@ -357,24 +368,26 @@ export async function pauseExpiredAccommodations(userId: string): Promise<number
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
-  const result = await prisma.accommodation.updateMany({
-    where: {
-      userId,
-      isActive: true,
-      checkIn: { lt: today },
-    },
-    data: { isActive: false },
-  });
+  const ds = await getDataSource();
+  const result = (await ds.query(
+    `UPDATE "Accommodation"
+     SET "isActive" = 0,
+         "updatedAt" = CURRENT_TIMESTAMP
+     WHERE "userId" = :1
+       AND "isActive" = 1
+       AND "checkIn" < :2`,
+    [userId, today],
+  )) as { rowsAffected?: number } | undefined;
 
-  return result.count;
+  return result?.rowsAffected ?? 0;
 }
 
 export async function verifyAccommodationOwnership(id: string, userId: string): Promise<boolean> {
-  const accommodation = await prisma.accommodation.findFirst({
+  const ds = await getDataSource();
+  const accommodation = await ds.getRepository(AccommodationEntity).findOne({
     where: { id, userId },
     select: { id: true },
   });
-
   return accommodation !== null;
 }
 
@@ -431,49 +444,71 @@ async function getAgodaApiPriceHistory(params: {
   checkOut: Date;
   dateFilter: { gte?: Date; lte?: Date };
 }): Promise<PriceHistoryResponse> {
-  const snapshots = await prisma.agodaRoomSnapshot.findMany({
-    where: {
-      accommodationId: params.accommodationId,
-      totalInclusive: { not: null },
-      ...(Object.keys(params.dateFilter).length > 0 && { createdAt: params.dateFilter }),
-    },
-    select: { pollRunId: true, createdAt: true, totalInclusive: true, currency: true },
-    orderBy: { createdAt: 'asc' },
-    take: MAX_PRICE_RECORDS,
-  });
+  const ds = await getDataSource();
 
-  if (snapshots.length === 0) {
-    return { prices: [], stats: null };
+  const parameters: unknown[] = [params.accommodationId];
+  const whereClauses = ['s."accommodationId" = :1', 's."totalInclusive" IS NOT NULL'];
+
+  if (params.dateFilter.gte) {
+    parameters.push(params.dateFilter.gte);
+    whereClauses.push(`s."createdAt" >= :${parameters.length}`);
   }
 
+  if (params.dateFilter.lte) {
+    parameters.push(params.dateFilter.lte);
+    whereClauses.push(`s."createdAt" <= :${parameters.length}`);
+  }
+
+  const snapshots = (await ds.query(
+    `SELECT s."pollRunId" AS "pollRunId",
+            s."createdAt" AS "createdAt",
+            s."totalInclusive" AS "totalInclusive",
+            s."currency" AS "currency"
+       FROM "agoda_room_snapshots" s
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY s."createdAt" ASC
+      FETCH NEXT ${MAX_PRICE_RECORDS} ROWS ONLY`,
+    parameters,
+  )) as Array<{
+    pollRunId: bigint | number | string;
+    createdAt: Date | string;
+    totalInclusive: number | string;
+    currency: string | null;
+  }>;
+
+  if (snapshots.length === 0) return { prices: [], stats: null };
+
   // poll run당 최저가 스냅샷 하나만 사용
-  const byPollRun = new Map<bigint, (typeof snapshots)[0]>();
+  const byPollRun = new Map<string, (typeof snapshots)[0]>();
   for (const snap of snapshots) {
-    const existing = byPollRun.get(snap.pollRunId);
+    const key = String(snap.pollRunId);
+    const existing = byPollRun.get(key);
     if (!existing || Number(snap.totalInclusive) < Number(existing.totalInclusive)) {
-      byPollRun.set(snap.pollRunId, snap);
+      byPollRun.set(key, snap);
     }
   }
 
-  const pollData = [...byPollRun.values()].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const pollData = [...byPollRun.values()].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 
   const nights = Math.round((params.checkOut.getTime() - params.checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
   const prices: PriceDataPoint[] = pollData.map((snap, idx): PriceDataPoint => {
     const priceAmount = Number(snap.totalInclusive);
-    const currentTime = snap.createdAt.getTime();
+    const currentTime = new Date(snap.createdAt).getTime();
     const windowStart = currentTime - MOVING_AVG_WINDOW_MS;
 
     let sum = 0;
     let count = 0;
     for (let j = idx; j >= 0; j--) {
-      if (pollData[j].createdAt.getTime() < windowStart) break;
+      if (new Date(pollData[j].createdAt).getTime() < windowStart) break;
       sum += Number(pollData[j].totalInclusive);
       count++;
     }
 
     return {
-      createdAt: snap.createdAt.toISOString(),
+      createdAt: new Date(snap.createdAt).toISOString(),
       priceAmount,
       priceCurrency: snap.currency ?? 'USD',
       pricePerNight: nights > 0 ? Math.round(priceAmount / nights) : null,
@@ -481,6 +516,12 @@ async function getAgodaApiPriceHistory(params: {
       isLegacy: false,
     };
   });
+
+  return buildPriceStats(prices);
+}
+
+function buildPriceStats(prices: PriceDataPoint[]): PriceHistoryResponse {
+  if (prices.length === 0) return { prices: [], stats: null };
 
   let min = Infinity;
   let minDate = '';
@@ -535,6 +576,7 @@ async function getAgodaApiPriceHistory(params: {
   }
 
   const last = prices[prices.length - 1];
+
   return {
     prices,
     stats: {
@@ -552,14 +594,13 @@ async function getAgodaApiPriceHistory(params: {
 }
 
 export async function getAccommodationPriceHistory(input: GetPriceHistoryInput): Promise<PriceHistoryResponse | null> {
-  const accommodation = await prisma.accommodation.findFirst({
+  const ds = await getDataSource();
+  const accommodation = await ds.getRepository(AccommodationEntity).findOne({
     where: { id: input.accommodationId, userId: input.userId },
     select: { id: true, checkIn: true, checkOut: true, platformId: true },
   });
 
-  if (!accommodation) {
-    return null;
-  }
+  if (!accommodation) return null;
 
   const dateFilter: { gte?: Date; lte?: Date } = {};
   if (input.from) {
@@ -581,32 +622,26 @@ export async function getAccommodationPriceHistory(input: GetPriceHistoryInput):
   }
 
   // 현재 일정과 일치하는 로그 + 레거시(일정 미기록) 로그만 조회
-  const logs = await prisma.checkLog.findMany({
-    where: {
-      accommodationId: input.accommodationId,
-      priceAmount: { not: null },
-      OR: [{ checkIn: accommodation.checkIn, checkOut: accommodation.checkOut }, { checkIn: null }],
-      ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
-    },
-    select: {
-      createdAt: true,
-      priceAmount: true,
-      priceCurrency: true,
-      pricePerNight: true,
-      checkIn: true,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: MAX_PRICE_RECORDS,
-  });
+  let qb = ds
+    .getRepository(CheckLogEntity)
+    .createQueryBuilder('cl')
+    .where('cl."accommodationId" = :id AND cl."priceAmount" IS NOT NULL', { id: input.accommodationId })
+    .andWhere('(cl."checkIn" = :checkIn AND cl."checkOut" = :checkOut) OR cl."checkIn" IS NULL', {
+      checkIn: accommodation.checkIn,
+      checkOut: accommodation.checkOut,
+    })
+    .orderBy('cl."createdAt"', 'DESC')
+    .take(MAX_PRICE_RECORDS);
 
-  if (logs.length === 0) {
-    return { prices: [], stats: null };
-  }
+  if (dateFilter.gte) qb = qb.andWhere('cl."createdAt" >= :gte', { gte: dateFilter.gte });
+  if (dateFilter.lte) qb = qb.andWhere('cl."createdAt" <= :lte', { lte: dateFilter.lte });
 
-  // 최신순 → 시간순 정렬
-  logs.reverse();
+  const logs = await qb.getMany();
 
-  // 이동평균 계산 + 데이터 포인트 생성
+  if (logs.length === 0) return { prices: [], stats: null };
+
+  logs.reverse(); // 시간순으로
+
   const prices: PriceDataPoint[] = logs.map((log, idx): PriceDataPoint => {
     const currentTime = log.createdAt.getTime();
     const windowStart = currentTime - MOVING_AVG_WINDOW_MS;
@@ -629,75 +664,5 @@ export async function getAccommodationPriceHistory(input: GetPriceHistoryInput):
     };
   });
 
-  // 전체 가격 통계
-  let min = Infinity;
-  let minDate = '';
-  let max = -Infinity;
-  let maxDate = '';
-  let sum = 0;
-
-  for (const p of prices) {
-    if (p.priceAmount < min) {
-      min = p.priceAmount;
-      minDate = p.createdAt;
-    }
-    if (p.priceAmount > max) {
-      max = p.priceAmount;
-      maxDate = p.createdAt;
-    }
-    sum += p.priceAmount;
-  }
-
-  // 박당 가격 통계
-  const perNightPrices = prices.filter((p): boolean => p.pricePerNight != null);
-  let perNight: PriceStats['perNight'] = null;
-
-  if (perNightPrices.length > 0) {
-    let pnMin = Infinity;
-    let pnMinDate = '';
-    let pnMax = -Infinity;
-    let pnMaxDate = '';
-    let pnSum = 0;
-
-    for (const p of perNightPrices) {
-      const pn = p.pricePerNight as number;
-      if (pn < pnMin) {
-        pnMin = pn;
-        pnMinDate = p.createdAt;
-      }
-      if (pn > pnMax) {
-        pnMax = pn;
-        pnMaxDate = p.createdAt;
-      }
-      pnSum += pn;
-    }
-
-    const lastPerNight = perNightPrices[perNightPrices.length - 1];
-
-    perNight = {
-      min: pnMin,
-      minDate: pnMinDate,
-      max: pnMax,
-      maxDate: pnMaxDate,
-      avg: Math.round(pnSum / perNightPrices.length),
-      current: lastPerNight.pricePerNight,
-    };
-  }
-
-  const lastLog = logs[logs.length - 1];
-
-  return {
-    prices,
-    stats: {
-      min,
-      minDate,
-      max,
-      maxDate,
-      avg: Math.round(sum / prices.length),
-      current: lastLog.priceAmount,
-      currentCurrency: lastLog.priceCurrency ?? 'KRW',
-      count: prices.length,
-      perNight,
-    },
-  };
+  return buildPriceStats(prices);
 }

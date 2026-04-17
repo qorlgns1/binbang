@@ -4,7 +4,14 @@
  * 플랫폼별 셀렉터/패턴을 DB에서 로드하고 캐싱합니다.
  * browser/는 DB에 접근하지 않고, runtime이 로드한 데이터를 주입받습니다.
  */
-import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
+import {
+  PatternType,
+  Platform,
+  type SelectorCategory,
+  getDataSource,
+  PlatformSelector,
+  PlatformPattern,
+} from '@workspace/db';
 import type { PlatformSelectorCache } from '@workspace/shared/types';
 import { AGODA_PATTERNS, AIRBNB_PATTERNS } from '@workspace/shared';
 
@@ -20,7 +27,7 @@ const cache = new Map<Platform, PlatformSelectorCache>();
 // ============================================
 
 function getHardcodedFallback(platform: Platform): PlatformSelectorCache {
-  const patterns = platform === 'AIRBNB' ? AIRBNB_PATTERNS : AGODA_PATTERNS;
+  const patterns = platform === Platform.AIRBNB ? AIRBNB_PATTERNS : AGODA_PATTERNS;
 
   return {
     selectors: {
@@ -201,7 +208,7 @@ export function buildExtractorCode(_platform: Platform, selectorCache: PlatformS
   for (const pattern of availablePatterns) {
     if (bodyText.includes(pattern)) {
       hasAvailablePattern = true;
-      matchedPatterns.push({ type: 'AVAILABLE', pattern, matched: true });
+      matchedPatterns.push({ type: PatternType.AVAILABLE, pattern, matched: true });
       break;
     }
   }
@@ -209,7 +216,7 @@ export function buildExtractorCode(_platform: Platform, selectorCache: PlatformS
   for (const pattern of unavailablePatterns) {
     if (bodyText.includes(pattern)) {
       hasUnavailablePattern = true;
-      matchedPatterns.push({ type: 'UNAVAILABLE', pattern, matched: true });
+      matchedPatterns.push({ type: PatternType.UNAVAILABLE, pattern, matched: true });
       break;
     }
   }
@@ -301,14 +308,16 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
   }
 
   try {
-    const dbSelectors = await prisma.platformSelector.findMany({
+    const ds = await getDataSource();
+
+    const dbSelectors = await ds.getRepository(PlatformSelector).find({
       where: { platform, isActive: true },
-      orderBy: { priority: 'desc' },
+      order: { priority: 'DESC' },
     });
 
-    const dbPatterns = await prisma.platformPattern.findMany({
+    const dbPatterns = await ds.getRepository(PlatformPattern).find({
       where: { platform, isActive: true },
-      orderBy: { priority: 'desc' },
+      order: { priority: 'DESC' },
     });
 
     const selectors: PlatformSelectorCache['selectors'] = {
@@ -334,8 +343,12 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
 
     const patterns: PlatformSelectorCache['patterns'] = hasPatterns
       ? {
-          available: dbPatterns.filter((p): boolean => p.patternType === 'AVAILABLE').map((p): string => p.pattern),
-          unavailable: dbPatterns.filter((p): boolean => p.patternType === 'UNAVAILABLE').map((p): string => p.pattern),
+          available: dbPatterns
+            .filter((p): boolean => p.patternType === PatternType.AVAILABLE)
+            .map((p): string => p.pattern),
+          unavailable: dbPatterns
+            .filter((p): boolean => p.patternType === PatternType.UNAVAILABLE)
+            .map((p): string => p.pattern),
         }
       : fallback.patterns;
 
@@ -393,7 +406,7 @@ export function invalidateSelectorCache(platform?: Platform): Platform[] {
  * 모든 플랫폼 셀렉터 캐시를 미리 로드합니다.
  */
 export async function preloadSelectorCache(): Promise<void> {
-  const platforms: Platform[] = ['AIRBNB', 'AGODA'];
+  const platforms: Platform[] = [Platform.AIRBNB, Platform.AGODA];
 
   await Promise.all(platforms.map((p): Promise<PlatformSelectorCache> => loadPlatformSelectors(p, true)));
 

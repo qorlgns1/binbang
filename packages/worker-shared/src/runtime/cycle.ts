@@ -1,5 +1,5 @@
 import type { AvailabilityStatus, Platform } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { getDataSource, Accommodation, CheckCycle, IsNull, Not } from '@workspace/db';
 
 import { updateHeartbeat } from './heartbeat';
 
@@ -16,11 +16,12 @@ export interface ActiveAccommodation {
 }
 
 export async function findActiveAccommodations(): Promise<ActiveAccommodation[]> {
-  const accommodations = await prisma.accommodation.findMany({
+  const ds = await getDataSource();
+  const accommodations = await ds.getRepository(Accommodation).find({
     where: {
       isActive: true,
-      checkIn: { gte: new Date() },
-      url: { not: null },
+      checkIn: Not(IsNull()),
+      url: Not(IsNull()),
     },
     select: {
       id: true,
@@ -31,20 +32,31 @@ export async function findActiveAccommodations(): Promise<ActiveAccommodation[]>
       checkOut: true,
       adults: true,
       lastStatus: true,
-      user: { select: { id: true, kakaoAccessToken: true } },
     },
+    relations: { user: true },
   });
 
-  return accommodations.flatMap((accommodation) =>
-    accommodation.url
-      ? [
-          {
-            ...accommodation,
-            url: accommodation.url,
-          },
-        ]
-      : [],
-  );
+  // checkIn >= now 필터 (TypeORM에서는 MoreThanOrEqual을 사용하거나 앱 레벨 필터)
+  const now = new Date();
+  return accommodations.flatMap((a) => {
+    if (!a.url || a.checkIn < now) {
+      return [];
+    }
+
+    return [
+      {
+        id: a.id,
+        name: a.name,
+        url: a.url,
+        platform: a.platform,
+        checkIn: a.checkIn,
+        checkOut: a.checkOut,
+        adults: a.adults,
+        lastStatus: a.lastStatus,
+        user: { id: a.user.id, kakaoAccessToken: a.user.kakaoAccessToken },
+      },
+    ];
+  });
 }
 
 export interface CreateCheckCycleInput {
@@ -58,29 +70,39 @@ export interface CreateCheckCycleInput {
 }
 
 export async function createCheckCycle(input: CreateCheckCycleInput): Promise<string> {
-  const cycle = await prisma.checkCycle.create({
-    data: input,
-    select: { id: true },
-  });
+  const ds = await getDataSource();
+  const repo = ds.getRepository(CheckCycle);
+  const cycle = repo.create(input);
+  await repo.save(cycle);
   return cycle.id;
 }
 
 export async function finalizeCycleCounter(cycleId: string, success: boolean): Promise<void> {
-  const cycleDurationMs = await prisma.$transaction(async (tx): Promise<number | null> => {
-    const updatedCycle = await tx.checkCycle.update({
+  const ds = await getDataSource();
+
+  const cycleDurationMs = await ds.transaction(async (manager): Promise<number | null> => {
+    const cycleRepo = manager.getRepository(CheckCycle);
+
+    // 카운터 원자적 증가
+    await manager
+      .createQueryBuilder()
+      .update(CheckCycle)
+      .set(success ? { successCount: () => '"successCount" + 1' } : { errorCount: () => '"errorCount" + 1' })
+      .where('id = :id', { id: cycleId })
+      .execute();
+
+    // 완료 여부 확인을 위해 갱신된 값 조회
+    const updatedCycle = await cycleRepo.findOne({
       where: { id: cycleId },
-      data: success ? { successCount: { increment: 1 } } : { errorCount: { increment: 1 } },
       select: { successCount: true, errorCount: true, totalCount: true, completedAt: true, startedAt: true },
     });
+
+    if (!updatedCycle) return null;
 
     const completedCount = (updatedCycle.successCount ?? 0) + (updatedCycle.errorCount ?? 0);
     if (updatedCycle.totalCount && completedCount >= updatedCycle.totalCount && !updatedCycle.completedAt) {
       const durationMs = Date.now() - new Date(updatedCycle.startedAt).getTime();
-      await tx.checkCycle.update({
-        where: { id: cycleId },
-        data: { completedAt: new Date(), durationMs },
-        select: { id: true },
-      });
+      await cycleRepo.update({ id: cycleId }, { completedAt: new Date(), durationMs });
       return durationMs;
     }
 

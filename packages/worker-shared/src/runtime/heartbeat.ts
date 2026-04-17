@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, WorkerHeartbeat, HeartbeatHistory, User, LessThan, Not } from '@workspace/db';
 
 import { sendAlertNotification } from './notifications';
 import { getSettings } from './settings';
@@ -25,19 +25,21 @@ const lastAlertTime = new Map<string, number>();
  */
 export async function updateHeartbeat(isProcessing = false): Promise<void> {
   try {
-    await prisma.workerHeartbeat.upsert({
-      where: { id: 'singleton' },
-      update: {
-        lastHeartbeatAt: new Date(),
-        isProcessing,
-      },
-      create: {
+    const ds = await getDataSource();
+    const repo = ds.getRepository(WorkerHeartbeat);
+
+    const existing = await repo.findOne({ where: { id: 'singleton' } });
+    if (existing) {
+      await repo.update({ id: 'singleton' }, { lastHeartbeatAt: new Date(), isProcessing });
+    } else {
+      const entity = repo.create({
         id: 'singleton',
         startedAt: new Date(),
         lastHeartbeatAt: new Date(),
         isProcessing,
-      },
-    });
+      });
+      await repo.save(entity);
+    }
   } catch (error) {
     console.error('Heartbeat update failed:', error);
   }
@@ -45,32 +47,33 @@ export async function updateHeartbeat(isProcessing = false): Promise<void> {
 
 // ── Heartbeat History ──
 
+let lastHeartbeatCleanupAt = 0;
+const HEARTBEAT_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1시간
+
 export async function recordHeartbeatHistory(
   status: 'healthy' | 'unhealthy' | 'processing',
   isProcessing: boolean,
   uptime?: number,
 ): Promise<void> {
   try {
-    await prisma.heartbeatHistory.create({
-      data: {
-        status,
-        isProcessing,
-        uptime,
-        workerId: 'singleton',
-      },
-    });
+    const ds = await getDataSource();
+    const repo = ds.getRepository(HeartbeatHistory);
 
-    // 24시간 이전 데이터 자동 정리
-    const oneDayAgo = new Date();
-    oneDayAgo.setHours(oneDayAgo.getHours() - 24);
-
-    await prisma.heartbeatHistory.deleteMany({
-      where: {
-        timestamp: {
-          lt: oneDayAgo,
-        },
-      },
+    const entity = repo.create({
+      status,
+      isProcessing,
+      uptime,
+      workerId: 'singleton',
     });
+    await repo.save(entity);
+
+    // 24시간 이전 데이터 정리 (1시간에 한 번만 실행)
+    if (Date.now() - lastHeartbeatCleanupAt > HEARTBEAT_CLEANUP_INTERVAL_MS) {
+      const oneDayAgo = new Date();
+      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+      await repo.delete({ timestamp: LessThan(oneDayAgo) });
+      lastHeartbeatCleanupAt = Date.now();
+    }
   } catch (error) {
     console.error('Heartbeat history record failed:', error);
   }
@@ -80,16 +83,11 @@ export async function getHeartbeatHistory(hours: number = 24): Promise<Heartbeat
   try {
     const since = new Date();
     since.setHours(since.getHours() - hours);
+    const ds = await getDataSource();
 
-    return (await prisma.heartbeatHistory.findMany({
-      where: {
-        timestamp: {
-          gte: since,
-        },
-      },
-      orderBy: {
-        timestamp: 'asc',
-      },
+    return (await ds.getRepository(HeartbeatHistory).find({
+      where: { timestamp: Not(LessThan(since)) },
+      order: { timestamp: 'ASC' },
     })) as HeartbeatHistoryItem[];
   } catch (error) {
     console.error('Heartbeat history fetch failed:', error);
@@ -104,9 +102,8 @@ export async function getHeartbeatHistory(hours: number = 24): Promise<Heartbeat
  */
 async function checkWorker(): Promise<void> {
   try {
-    const heartbeat = await prisma.workerHeartbeat.findUnique({
-      where: { id: 'singleton' },
-    });
+    const ds = await getDataSource();
+    const heartbeat = await ds.getRepository(WorkerHeartbeat).findOne({ where: { id: 'singleton' } });
 
     if (!heartbeat) {
       await sendAlert('Worker heartbeat not found', 'Worker has not started or DB connection issue.');
@@ -172,13 +169,15 @@ async function sendAlert(title: string, description: string): Promise<void> {
   console.log(`Alert: ${title}: ${description}`);
 
   try {
-    const admins = await prisma.user.findMany({
-      where: {
-        roles: { some: { name: 'ADMIN' } },
-        kakaoAccessToken: { not: null },
-      },
-      select: { id: true, name: true, email: true },
-    });
+    const ds = await getDataSource();
+    // 관리자 조회: roles에 ADMIN이 있고 kakaoAccessToken이 있는 사용자
+    const admins = await ds
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.roles', 'role', 'role.name = :roleName', { roleName: 'ADMIN' })
+      .where('user.kakaoAccessToken IS NOT NULL')
+      .select(['user.id', 'user.name', 'user.email'])
+      .getMany();
 
     if (admins.length === 0) {
       console.warn('No admin to receive alert.');

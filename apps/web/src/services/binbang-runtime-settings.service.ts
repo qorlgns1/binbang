@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { In, SystemSettings, getDataSource } from '@workspace/db';
 
 const CACHE_TTL_MS = 60_000;
 
@@ -150,11 +150,12 @@ function applyDbOverrides(base: BinbangRuntimeSettings, map: Map<string, string>
 
 async function readDbSettingsMap(): Promise<Map<string, string>> {
   try {
-    const rows = await prisma.systemSettings?.findMany({
-      where: { key: { in: Object.values(BINBANG_SETTING_KEYS) } },
+    const ds = await getDataSource();
+    const rows = await ds.getRepository(SystemSettings).find({
+      where: { key: In(Object.values(BINBANG_SETTING_KEYS)) },
       select: { key: true, value: true },
     });
-    return new Map((rows ?? []).map((row) => [row.key, row.value]));
+    return new Map(rows.map((row) => [row.key, row.value]));
   } catch (err) {
     console.warn('[binbang-runtime-settings] DB 조회 실패, 기본값으로 폴백합니다:', err);
     return new Map();

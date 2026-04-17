@@ -1,4 +1,5 @@
-import { prisma } from '@workspace/db';
+import { SettingsChangeLog, SystemSettings, getDataSource } from '@workspace/db';
+import type { Repository } from '@workspace/db';
 import { BadRequestError, ValidationError } from '@workspace/shared/errors';
 import { BINBANG_SETTING_KEYS, clearBinbangRuntimeSettingsCache } from '@/services/binbang-runtime-settings.service';
 import { WEB_SETTING_KEYS, clearWebSettingsCache } from '@/services/web-settings.service';
@@ -24,17 +25,6 @@ export interface GetSettingsHistoryInput {
 // ============================================================================
 // Constants
 // ============================================================================
-
-const SETTING_SELECT = {
-  key: true,
-  value: true,
-  type: true,
-  category: true,
-  description: true,
-  minValue: true,
-  maxValue: true,
-  updatedAt: true,
-} as const;
 
 const BINBANG_SETTINGS_DEFAULTS = [
   {
@@ -279,40 +269,46 @@ function isValidRatioText(value: string): boolean {
   return Number.isFinite(parsed) && parsed > 0 && parsed < 1;
 }
 
+async function ensureSettingRow(
+  repo: Repository<SystemSettings>,
+  setting: {
+    key: string;
+    value: string;
+    type: string;
+    category: string;
+    description: string | null;
+    minValue: string | null;
+    maxValue: string | null;
+  },
+): Promise<void> {
+  const exists = await repo.findOne({ where: { key: setting.key }, select: { key: true } });
+  if (!exists) {
+    const entity = repo.create(setting);
+    await repo.save(entity);
+  } else {
+    await repo.update(
+      { key: setting.key },
+      {
+        type: setting.type,
+        category: setting.category,
+        description: setting.description,
+        minValue: setting.minValue,
+        maxValue: setting.maxValue,
+      },
+    );
+  }
+}
+
 async function ensureBinbangSettingsRows(): Promise<void> {
-  await Promise.all(
-    BINBANG_SETTINGS_DEFAULTS.map((setting) =>
-      prisma.systemSettings.upsert({
-        where: { key: setting.key },
-        update: {
-          type: setting.type,
-          category: setting.category,
-          description: setting.description,
-          minValue: setting.minValue,
-          maxValue: setting.maxValue,
-        },
-        create: setting,
-      }),
-    ),
-  );
+  const ds = await getDataSource();
+  const repo = ds.getRepository(SystemSettings);
+  await Promise.all(BINBANG_SETTINGS_DEFAULTS.map((setting) => ensureSettingRow(repo, setting)));
 }
 
 async function ensureWebMonitoringHeartbeatRows(): Promise<void> {
-  await Promise.all(
-    WEB_MONITORING_HEARTBEAT_SETTINGS_DEFAULTS.map((setting) =>
-      prisma.systemSettings.upsert({
-        where: { key: setting.key },
-        update: {
-          type: setting.type,
-          category: setting.category,
-          description: setting.description,
-          minValue: setting.minValue,
-          maxValue: setting.maxValue,
-        },
-        create: setting,
-      }),
-    ),
-  );
+  const ds = await getDataSource();
+  const repo = ds.getRepository(SystemSettings);
+  await Promise.all(WEB_MONITORING_HEARTBEAT_SETTINGS_DEFAULTS.map((setting) => ensureSettingRow(repo, setting)));
 }
 
 let settingsRowsInitialized = false;
@@ -330,9 +326,9 @@ async function ensureSettingsRows(): Promise<void> {
 export async function getSettings(): Promise<SystemSettingsResponse> {
   await ensureSettingsRows();
 
-  const rows = await prisma.systemSettings.findMany({
-    orderBy: [{ category: 'asc' }, { key: 'asc' }],
-    select: SETTING_SELECT,
+  const ds = await getDataSource();
+  const rows = await ds.getRepository(SystemSettings).find({
+    order: { category: 'ASC', key: 'ASC' },
   });
 
   return {
@@ -345,15 +341,14 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
 
   await ensureSettingsRows();
 
+  const ds = await getDataSource();
+
   // 전체 설정 1회 조회 (검증 + 응답 베이스 겸용)
-  const allSettings = await prisma.systemSettings.findMany({
-    orderBy: [{ category: 'asc' }, { key: 'asc' }],
-    select: SETTING_SELECT,
+  const allSettings = await ds.getRepository(SystemSettings).find({
+    order: { category: 'ASC', key: 'ASC' },
   });
 
-  const settingMap = new Map(
-    allSettings.map((s: (typeof allSettings)[0]): [string, (typeof allSettings)[0]] => [s.key, s]),
-  );
+  const settingMap = new Map(allSettings.map((s): [string, SystemSettings] => [s.key, s]));
 
   // 키 존재 여부, 타입 검증, 범위 검증
   for (const update of updates) {
@@ -472,7 +467,7 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
   }
 
   // 실제로 값이 바뀐 항목만 필터 (value, minValue, maxValue 중 하나라도 변경)
-  const actualChanges = updates.filter((u: (typeof updates)[0]): boolean => {
+  const actualChanges = updates.filter((u): boolean => {
     const existing = settingMap.get(u.key);
     if (!existing) return false;
     if (existing.value !== u.value) return true;
@@ -483,38 +478,38 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
 
   // 설정 업데이트 + 변경 로그를 하나의 트랜잭션으로 처리
   if (actualChanges.length > 0) {
-    const updatedRows = await prisma.$transaction(async (tx): Promise<SettingRow[]> => {
-      const updates = await Promise.all(
-        actualChanges.map(
-          (u): ReturnType<typeof tx.systemSettings.update> =>
-            tx.systemSettings.update({
-              where: { key: u.key },
-              data: {
-                value: u.value,
-                ...(u.minValue !== undefined ? { minValue: u.minValue } : {}),
-                ...(u.maxValue !== undefined ? { maxValue: u.maxValue } : {}),
-              },
-              select: SETTING_SELECT,
-            }),
-        ),
-      );
+    const updatedRows = await ds.transaction(async (manager): Promise<SystemSettings[]> => {
+      const settingsRepo = manager.getRepository(SystemSettings);
+      const logRepo = manager.getRepository(SettingsChangeLog);
 
-      await Promise.all(
-        actualChanges.map((change): Promise<{ id: string }> => {
-          const existing = settingMap.get(change.key);
-          return tx.settingsChangeLog.create({
-            data: {
-              settingKey: change.key,
-              oldValue: existing?.value ?? '',
-              newValue: change.value,
-              changedById,
+      const updated = await Promise.all(
+        actualChanges.map(async (u) => {
+          await settingsRepo.update(
+            { key: u.key },
+            {
+              value: u.value,
+              ...(u.minValue !== undefined ? { minValue: u.minValue } : {}),
+              ...(u.maxValue !== undefined ? { maxValue: u.maxValue } : {}),
             },
-            select: { id: true },
-          });
+          );
+          return settingsRepo.findOneOrFail({ where: { key: u.key } });
         }),
       );
 
-      return updates;
+      await Promise.all(
+        actualChanges.map((change) => {
+          const existing = settingMap.get(change.key);
+          const logEntity = logRepo.create({
+            settingKey: change.key,
+            oldValue: existing?.value ?? '',
+            newValue: change.value,
+            changedById,
+          });
+          return logRepo.save(logEntity);
+        }),
+      );
+
+      return updated;
     });
 
     for (const row of updatedRows) {
@@ -531,46 +526,48 @@ export async function updateSettings(input: UpdateSettingsInput): Promise<System
   }
 
   return {
-    settings: allSettings.map(
-      (s: (typeof allSettings)[0]): SystemSettingItem => toSettingItem(settingMap.get(s.key) ?? s),
-    ),
+    settings: allSettings.map((s): SystemSettingItem => toSettingItem(settingMap.get(s.key) ?? s)),
   };
 }
 
 export async function getSettingsHistory(input: GetSettingsHistoryInput): Promise<SettingsChangeLogsResponse> {
   const { settingKey, from, to, cursor, limit } = input;
 
-  const where: {
-    settingKey?: string;
-    createdAt?: { gte?: Date; lte?: Date };
-  } = {};
+  const ds = await getDataSource();
+
+  const qb = ds
+    .getRepository(SettingsChangeLog)
+    .createQueryBuilder('l')
+    .leftJoinAndSelect('l.changedBy', 'changedBy')
+    .orderBy('l.createdAt', 'DESC')
+    .take(limit + 1);
 
   if (settingKey) {
-    where.settingKey = settingKey;
+    qb.andWhere('l.settingKey = :settingKey', { settingKey });
   }
 
-  if (from || to) {
-    where.createdAt = {};
-    if (from) where.createdAt.gte = new Date(from);
-    if (to) where.createdAt.lte = new Date(to);
+  if (from) {
+    qb.andWhere('l.createdAt >= :from', { from: new Date(from) });
   }
 
-  const logs = await prisma.settingsChangeLog.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: {
-      id: true,
-      settingKey: true,
-      oldValue: true,
-      newValue: true,
-      createdAt: true,
-      changedBy: {
-        select: { id: true, name: true },
-      },
-    },
-  });
+  if (to) {
+    qb.andWhere('l.createdAt <= :to', { to: new Date(to) });
+  }
+
+  if (cursor) {
+    const cursorItem = await ds.getRepository(SettingsChangeLog).findOne({
+      where: { id: cursor },
+      select: { id: true, createdAt: true },
+    });
+    if (cursorItem) {
+      qb.andWhere('(l.createdAt < :cursorDate OR (l.createdAt = :cursorDate AND l.id < :cursorId))', {
+        cursorDate: cursorItem.createdAt,
+        cursorId: cursor,
+      });
+    }
+  }
+
+  const logs = await qb.getMany();
 
   const hasMore = logs.length > limit;
   const items = hasMore ? logs.slice(0, limit) : logs;

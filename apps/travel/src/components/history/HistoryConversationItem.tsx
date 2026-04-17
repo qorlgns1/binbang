@@ -85,7 +85,7 @@ export function HistoryConversationItem({
           ) : (
             <h3 className='font-medium text-sm truncate'>{conversation.title || '제목 없음'}</h3>
           )}
-          <HistoryConversationMeta messageCount={conversation._count.messages} updatedAt={conversation.updatedAt} />
+          <HistoryConversationMeta messageCount={conversation.messageCount} updatedAt={conversation.updatedAt} />
         </div>
 
         <div className='flex items-center gap-1'>

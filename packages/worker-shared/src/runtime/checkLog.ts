@@ -1,5 +1,5 @@
 import type { AvailabilityStatus } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { getDataSource, CheckLog } from '@workspace/db';
 import { parsePrice } from '@workspace/shared';
 
 import { nightsBetween } from './status';
@@ -27,26 +27,26 @@ export async function saveCheckLog(
   const nights = nightsBetween(checkIn, checkOut);
   const pricePerNight = parsed && nights > 0 ? Math.round(parsed.amount / nights) : null;
 
-  const log = await prisma.checkLog.create({
-    data: {
-      accommodationId: input.accommodationId,
-      userId: input.userId,
-      status,
-      price: result.price,
-      priceAmount: parsed?.amount ?? null,
-      priceCurrency: parsed?.currency ?? null,
-      errorMessage: result.error,
-      notificationSent: false,
-      checkIn,
-      checkOut,
-      pricePerNight,
-      cycleId: input.cycleId,
-      durationMs: extra.durationMs,
-      retryCount: extra.retryCount,
-      previousStatus: extra.previousStatus,
-    },
-    select: { id: true },
+  const ds = await getDataSource();
+  const repo = ds.getRepository(CheckLog);
+  const log = repo.create({
+    accommodationId: input.accommodationId,
+    userId: input.userId,
+    status,
+    price: result.price,
+    priceAmount: parsed?.amount ?? null,
+    priceCurrency: parsed?.currency ?? null,
+    errorMessage: result.error,
+    notificationSent: false,
+    checkIn,
+    checkOut,
+    pricePerNight,
+    cycleId: input.cycleId,
+    durationMs: extra.durationMs,
+    retryCount: extra.retryCount,
+    previousStatus: extra.previousStatus,
   });
+  await repo.save(log);
 
   return log.id;
 }

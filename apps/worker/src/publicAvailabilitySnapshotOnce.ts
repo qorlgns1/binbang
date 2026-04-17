@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { AppDataSource } from '@workspace/db';
 import { refreshPublicAvailabilitySnapshots } from '@workspace/worker-shared/runtime';
 import 'dotenv/config';
 
@@ -57,5 +57,7 @@ main()
     process.exitCode = 1;
   })
   .finally(async (): Promise<void> => {
-    await prisma.$disconnect();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
   });

@@ -10,17 +10,54 @@ const { mockLandingEventUpdateMany } = vi.hoisted(
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    landingEvent: {
-      updateMany: mockLandingEventUpdateMany,
-    },
-  },
-}));
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    qb: unknown;
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    qb: null,
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockQueryBuilder } = await import('./test-utils/mockDb');
+
+  const qb = createMockQueryBuilder();
+  qb.execute.mockImplementation(async () => {
+    const whereParams = (qb.where.mock.calls.at(-1)?.[1] ?? {}) as { cutoff?: Date };
+    const result = await callMock<{ count?: number }>(mockLandingEventUpdateMany, {
+      where: {
+        occurredAt: { lt: whereParams.cutoff },
+        OR: [{ ipAddress: { not: null } }, { userAgent: { not: null } }],
+      },
+      data: { ipAddress: null, userAgent: null },
+    });
+
+    return { affected: result?.count ?? 0 };
+  });
+
+  const dataSource = createMockDataSource({ queryBuilder: qb });
+  dbMock.dataSource = dataSource;
+  dbMock.qb = qb;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('landingEventRetention', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockLandingEventUpdateMany.mockResolvedValue({ count: 4 });
   });
 

@@ -11,49 +11,99 @@ import {
   verifyAccommodationOwnership,
 } from './accommodations.service';
 
-const { mockFindMany, mockFindFirst, mockFindUnique, mockCreate, mockUpdate, mockDelete, mockCheckLogFindMany } =
-  vi.hoisted(
-    (): {
-      mockFindMany: ReturnType<typeof vi.fn>;
-      mockFindFirst: ReturnType<typeof vi.fn>;
-      mockFindUnique: ReturnType<typeof vi.fn>;
-      mockCreate: ReturnType<typeof vi.fn>;
-      mockUpdate: ReturnType<typeof vi.fn>;
-      mockDelete: ReturnType<typeof vi.fn>;
-      mockCheckLogFindMany: ReturnType<typeof vi.fn>;
-    } => ({
-      mockFindMany: vi.fn(),
-      mockFindFirst: vi.fn(),
-      mockFindUnique: vi.fn(),
-      mockCreate: vi.fn(),
-      mockUpdate: vi.fn(),
-      mockDelete: vi.fn(),
-      mockCheckLogFindMany: vi.fn(),
-    }),
-  );
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: {
+      query: ReturnType<typeof vi.fn>;
+    };
+    accommodationRepo: {
+      count: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
+      delete: ReturnType<typeof vi.fn>;
+      find: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    userRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    planQuotaRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    checkLogRepo: {
+      createQueryBuilder: ReturnType<typeof vi.fn>;
+      find: ReturnType<typeof vi.fn>;
+      queryBuilder: {
+        getMany: ReturnType<typeof vi.fn>;
+      };
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: {
+      query: vi.fn(),
+    },
+    accommodationRepo: {
+      count: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+      find: vi.fn(),
+      findOne: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
+    },
+    userRepo: {
+      findOne: vi.fn(),
+    },
+    planQuotaRepo: {
+      findOne: vi.fn(),
+    },
+    checkLogRepo: {
+      createQueryBuilder: vi.fn(),
+      find: vi.fn(),
+      queryBuilder: {
+        getMany: vi.fn(),
+      },
+    },
+    getDataSource: vi.fn(),
+  }),
+);
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    accommodation: {
-      findMany: mockFindMany,
-      findFirst: mockFindFirst,
-      create: mockCreate,
-      update: mockUpdate,
-      delete: mockDelete,
-    },
-    user: {
-      findUnique: mockFindUnique,
-    },
-    checkLog: {
-      findMany: mockCheckLogFindMany,
-    },
-  },
-  QuotaKey: { MAX_ACCOMMODATIONS: 'MAX_ACCOMMODATIONS' },
-}));
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../test-utils/mock-db.ts');
+
+  const accommodationRepo = createMockRepository();
+  const userRepo = createMockRepository();
+  const planQuotaRepo = createMockRepository();
+  const checkLogRepo = createMockRepository();
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.Accommodation, accommodationRepo],
+      [actual.User, userRepo],
+      [actual.PlanQuota, planQuotaRepo],
+      [actual.CheckLog, checkLogRepo],
+    ],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.accommodationRepo = accommodationRepo;
+  dbMock.userRepo = userRepo;
+  dbMock.planQuotaRepo = planQuotaRepo;
+  dbMock.checkLogRepo = checkLogRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('accommodations.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
+    dbMock.dataSource.query.mockResolvedValue([]);
   });
 
   describe('getAccommodationsByUserId', (): void => {
@@ -94,16 +144,12 @@ describe('accommodations.service', (): void => {
           updatedAt: new Date(),
         },
       ];
-      mockFindMany.mockResolvedValue(list);
+      dbMock.accommodationRepo.find.mockResolvedValue(list);
 
       const result = await getAccommodationsByUserId(userId);
 
-      expect(mockFindMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-        }),
-      );
+      expect(dbMock.accommodationRepo.find).toHaveBeenCalledWith({ where: { userId }, order: { createdAt: 'DESC' } });
+      expect(dbMock.dataSource.query).toHaveBeenCalledTimes(2);
       expect(result).toEqual([
         expect.objectContaining({
           ...list[0],
@@ -116,15 +162,16 @@ describe('accommodations.service', (): void => {
 
   describe('getAccommodationById', (): void => {
     it('returns null when not found', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValue(null);
+      dbMock.accommodationRepo.findOne.mockResolvedValue(null);
 
       const result = await getAccommodationById('acc-1', 'user-1');
 
-      expect(mockFindFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'acc-1', userId: 'user-1' } }));
+      expect(dbMock.accommodationRepo.findOne).toHaveBeenCalledWith({ where: { id: 'acc-1', userId: 'user-1' } });
       expect(result).toBeNull();
     });
 
     it('returns accommodation with checkLogs when found', async (): Promise<void> => {
+      const checkLogs: unknown[] = [];
       const acc = {
         id: 'acc-1',
         userId: 'user-1',
@@ -157,22 +204,26 @@ describe('accommodations.service', (): void => {
         platformMetadata: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-        checkLogs: [],
       };
-      mockFindFirst.mockResolvedValue(acc);
+      dbMock.accommodationRepo.findOne.mockResolvedValue(acc);
+      dbMock.checkLogRepo.find.mockResolvedValue(checkLogs);
 
       const result = await getAccommodationById('acc-1', 'user-1');
 
-      expect(result).toEqual(acc);
+      expect(dbMock.checkLogRepo.find).toHaveBeenCalledWith({
+        where: { accommodationId: 'acc-1' },
+        order: { createdAt: 'DESC' },
+        take: 50,
+      });
+      expect(result).toEqual({ ...acc, checkLogs });
     });
   });
 
   describe('checkUserQuota', (): void => {
     it('allows when current < max', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue({
-        plan: { quotas: [{ value: 10 }] },
-        _count: { accommodations: 3 },
-      });
+      dbMock.userRepo.findOne.mockResolvedValue({ planId: 'plan_1' });
+      dbMock.planQuotaRepo.findOne.mockResolvedValue({ value: 10 });
+      dbMock.accommodationRepo.count.mockResolvedValue(3);
 
       const result = await checkUserQuota('user-1');
 
@@ -180,10 +231,9 @@ describe('accommodations.service', (): void => {
     });
 
     it('denies when current >= max', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue({
-        plan: { quotas: [{ value: 5 }] },
-        _count: { accommodations: 5 },
-      });
+      dbMock.userRepo.findOne.mockResolvedValue({ planId: 'plan_1' });
+      dbMock.planQuotaRepo.findOne.mockResolvedValue({ value: 5 });
+      dbMock.accommodationRepo.count.mockResolvedValue(5);
 
       const result = await checkUserQuota('user-1');
 
@@ -191,11 +241,13 @@ describe('accommodations.service', (): void => {
     });
 
     it('uses default max 5 when user/plan missing', async (): Promise<void> => {
-      mockFindUnique.mockResolvedValue(null);
+      dbMock.userRepo.findOne.mockResolvedValue(null);
+      dbMock.accommodationRepo.count.mockResolvedValue(0);
 
       const result = await checkUserQuota('user-1');
 
       expect(result).toEqual({ allowed: true, max: 5, current: 0 });
+      expect(dbMock.planQuotaRepo.findOne).not.toHaveBeenCalled();
     });
   });
 
@@ -237,39 +289,37 @@ describe('accommodations.service', (): void => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      mockCreate.mockResolvedValue(created);
+      dbMock.accommodationRepo.create.mockReturnValue(created);
 
       const result = await createAccommodation(input);
 
-      expect(mockCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: {
-            userId: input.userId,
-            name: input.name,
-            platform: input.platform,
-            url: input.url,
-            checkIn: input.checkIn,
-            checkOut: input.checkOut,
-            adults: input.adults,
-          },
-        }),
-      );
+      expect(dbMock.accommodationRepo.create).toHaveBeenCalledWith({
+        userId: input.userId,
+        name: input.name,
+        platform: input.platform,
+        url: input.url,
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        adults: input.adults,
+        isActive: true,
+      });
+      expect(dbMock.accommodationRepo.save).toHaveBeenCalledWith(created);
       expect(result).toEqual(created);
     });
   });
 
   describe('updateAccommodation', (): void => {
     it('returns null when accommodation not found for user', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValue(null);
+      dbMock.accommodationRepo.findOne.mockResolvedValue(null);
 
       const result = await updateAccommodation('acc-1', 'user-1', { name: 'New Name' });
 
       expect(result).toBeNull();
-      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(dbMock.accommodationRepo.update).not.toHaveBeenCalled();
     });
 
     it('updates and returns accommodation when found', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValueOnce({ id: 'acc-1' });
+      dbMock.accommodationRepo.findOne.mockResolvedValueOnce({ id: 'acc-1' });
       const updated = {
         id: 'acc-1',
         userId: 'user-1',
@@ -303,43 +353,39 @@ describe('accommodations.service', (): void => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      mockUpdate.mockResolvedValue(updated);
+      dbMock.accommodationRepo.findOne.mockResolvedValueOnce(updated);
 
       const result = await updateAccommodation('acc-1', 'user-1', { name: 'New Name' });
 
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'acc-1' },
-          data: { name: 'New Name' },
-        }),
-      );
+      expect(dbMock.accommodationRepo.update).toHaveBeenCalledWith({ id: 'acc-1' }, { name: 'New Name' });
       expect(result).toEqual(updated);
     });
   });
 
   describe('deleteAccommodation', (): void => {
     it('returns false when accommodation not found for user', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValue(null);
+      dbMock.accommodationRepo.findOne.mockResolvedValue(null);
 
       const result = await deleteAccommodation('acc-1', 'user-1');
 
       expect(result).toBe(false);
-      expect(mockDelete).not.toHaveBeenCalled();
+      expect(dbMock.accommodationRepo.delete).not.toHaveBeenCalled();
     });
 
     it('deletes and returns true when found', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValue({ id: 'acc-1' });
-      mockDelete.mockResolvedValue({ id: 'acc-1' });
+      dbMock.accommodationRepo.findOne.mockResolvedValue({ id: 'acc-1' });
+      dbMock.accommodationRepo.delete.mockResolvedValue({ affected: 1 });
 
       const result = await deleteAccommodation('acc-1', 'user-1');
 
-      expect(mockDelete).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'acc-1' } }));
+      expect(dbMock.accommodationRepo.delete).toHaveBeenCalledWith({ id: 'acc-1' });
       expect(result).toBe(true);
     });
   });
 
   describe('getAccommodationLogs', (): void => {
     it('returns logs and nextCursor when more than limit', async (): Promise<void> => {
+      const createdAt = new Date('2026-04-15T00:00:00.000Z');
       const logs = Array.from({ length: 11 }, (_, i) => ({
         id: `log-${i}`,
         accommodationId: 'acc-1',
@@ -357,21 +403,22 @@ describe('accommodations.service', (): void => {
         durationMs: 1000,
         retryCount: 0,
         previousStatus: null,
-        createdAt: new Date(),
+        createdAt: createdAt.toISOString(),
       }));
-      mockCheckLogFindMany.mockResolvedValue(logs);
+      dbMock.dataSource.query.mockResolvedValue(logs);
 
       const result = await getAccommodationLogs({
         accommodationId: 'acc-1',
         limit: 10,
       });
 
+      expect(dbMock.dataSource.query).toHaveBeenCalledWith(expect.stringContaining('FROM "CheckLog" cl'), ['acc-1']);
       expect(result.logs).toHaveLength(10);
       expect(result.nextCursor).toBe('log-9');
     });
 
     it('returns nextCursor null when no more', async (): Promise<void> => {
-      mockCheckLogFindMany.mockResolvedValue([
+      dbMock.dataSource.query.mockResolvedValue([
         {
           id: 'log-1',
           accommodationId: 'acc-1',
@@ -389,7 +436,7 @@ describe('accommodations.service', (): void => {
           durationMs: 0,
           retryCount: 0,
           previousStatus: null,
-          createdAt: new Date(),
+          createdAt: '2026-04-15T00:00:00.000Z',
         },
       ]);
 
@@ -405,7 +452,7 @@ describe('accommodations.service', (): void => {
 
   describe('verifyAccommodationOwnership', (): void => {
     it('returns true when accommodation exists for user', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValue({ id: 'acc-1' });
+      dbMock.accommodationRepo.findOne.mockResolvedValue({ id: 'acc-1' });
 
       const result = await verifyAccommodationOwnership('acc-1', 'user-1');
 
@@ -413,7 +460,7 @@ describe('accommodations.service', (): void => {
     });
 
     it('returns false when not found', async (): Promise<void> => {
-      mockFindFirst.mockResolvedValue(null);
+      dbMock.accommodationRepo.findOne.mockResolvedValue(null);
 
       const result = await verifyAccommodationOwnership('acc-1', 'user-1');
 

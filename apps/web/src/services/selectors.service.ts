@@ -2,7 +2,7 @@
  * Platform Selector utilities for web app API routes
  * Direct DB access implementation - does not import from @workspace/worker-shared
  */
-import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
+import { type Platform, type SelectorCategory, PlatformPattern, PlatformSelector, getDataSource } from '@workspace/db';
 import { AGODA_PATTERNS, AIRBNB_PATTERNS } from '@workspace/shared';
 
 // ============================================
@@ -98,9 +98,11 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
   }
 
   try {
-    const dbSelectors = await prisma.platformSelector.findMany({
+    const ds = await getDataSource();
+
+    const dbSelectors = await ds.getRepository(PlatformSelector).find({
       where: { platform, isActive: true },
-      orderBy: { priority: 'desc' },
+      order: { priority: 'DESC' },
       select: {
         id: true,
         name: true,
@@ -111,9 +113,9 @@ export async function loadPlatformSelectors(platform: Platform, force = false): 
       },
     });
 
-    const dbPatterns = await prisma.platformPattern.findMany({
+    const dbPatterns = await ds.getRepository(PlatformPattern).find({
       where: { platform, isActive: true },
-      orderBy: { priority: 'desc' },
+      order: { priority: 'DESC' },
       select: {
         pattern: true,
         patternType: true,

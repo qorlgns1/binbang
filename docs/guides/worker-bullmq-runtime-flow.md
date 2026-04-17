@@ -107,7 +107,7 @@ check worker들이 check job 병렬 처리
 3. `concurrency = min(worker.concurrency, worker.browserPoolSize)` 계산
 4. `redisUrl`, `schedule`, `startupDelay` 등 런타임 값 확정
 
-중요: 필수 env는 현재 `DATABASE_URL`, `REDIS_URL`입니다.
+중요: 필수 env는 현재 `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_CONNECT_STRING`, `REDIS_URL`입니다.
 
 ### 1-2. 브라우저 풀 초기화
 
@@ -368,7 +368,7 @@ SIGINT/SIGTERM 수신 시:
 2. cycle/check queue close
 3. Redis 연결 quit
 4. browser pool close
-5. Prisma disconnect
+5. TypeORM DataSource close
 6. `process.exit(0)`
 
 기존 코드의 “현재 작업 완료까지 대기” 루프는 제거되고, 큐/워커 단위 종료로 단순화되었습니다.
@@ -402,10 +402,12 @@ SIGINT/SIGTERM 수신 시:
 
 ### 9-1. 필수 env
 
-- `DATABASE_URL`
+- `ORACLE_USER`
+- `ORACLE_PASSWORD`
+- `ORACLE_CONNECT_STRING`
 - `REDIS_URL`
 
-`.env.example`에도 `REDIS_URL=redis://localhost:6379`가 추가되었습니다.
+`.env.example`에는 Oracle 연결용 `ORACLE_*`, Redis용 `REDIS_URL`, 일회성 이관용 `PG_SOURCE_DATABASE_URL`이 정의되어 있습니다.
 
 ### 9-2. Docker 구성
 
@@ -413,7 +415,7 @@ SIGINT/SIGTERM 수신 시:
 - `docker/docker-compose.develop.yml`: `redis` 서비스 + worker 의존성 추가
 - `docker/docker-compose.production.yml`: `redis` 서비스 + worker 의존성 추가
 
-즉, 워커를 정상 구동하려면 이제 DB뿐 아니라 Redis가 반드시 살아 있어야 합니다.
+즉, 워커를 정상 구동하려면 외부 Oracle 연결과 Redis가 모두 정상이어야 합니다.
 
 ---
 

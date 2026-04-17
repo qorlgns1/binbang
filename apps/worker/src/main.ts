@@ -1,6 +1,6 @@
 // Worker Entry Point
 // ============================================
-import { prisma } from '@workspace/db';
+import { getDataSource, AppDataSource, WorkerHeartbeat } from '@workspace/db';
 import {
   type CheckerRuntimeConfig,
   checkAgoda,
@@ -86,19 +86,24 @@ async function main(): Promise<void> {
   startHeartbeatMonitoring();
 
   // 7. Worker Heartbeat 기록
-  prisma.workerHeartbeat
-    .upsert({
-      where: { id: 'singleton' },
-      update: {
-        startedAt: new Date(),
-        lastHeartbeatAt: new Date(),
-        schedule: config.schedule,
-      },
-      create: {
-        id: 'singleton',
-        startedAt: new Date(),
-        schedule: config.schedule,
-      },
+  getDataSource()
+    .then(async (ds) => {
+      const repo = ds.getRepository(WorkerHeartbeat);
+      const existing = await repo.findOne({ where: { id: 'singleton' } });
+      if (existing) {
+        await repo.update(
+          { id: 'singleton' },
+          { startedAt: new Date(), lastHeartbeatAt: new Date(), schedule: config.schedule },
+        );
+      } else {
+        const entity = repo.create({
+          id: 'singleton',
+          startedAt: new Date(),
+          lastHeartbeatAt: new Date(),
+          schedule: config.schedule,
+        });
+        await repo.save(entity);
+      }
     })
     .catch((error): void => {
       console.error('Error starting worker heartbeat:', error);
@@ -133,7 +138,9 @@ async function main(): Promise<void> {
     await closeBrowserPool();
     console.log('   - Browser pool closed');
 
-    await prisma.$disconnect();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
     console.log('   - DB disconnected');
     console.log('Worker stopped\n');
 

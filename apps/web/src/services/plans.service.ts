@@ -1,4 +1,4 @@
-import { QuotaKey, prisma } from '@workspace/db';
+import { Plan, QuotaKey, getDataSource } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -23,18 +23,10 @@ export interface PublicPlanItem {
 // ============================================================================
 
 export async function getPublicPlans(): Promise<PublicPlanItem[]> {
-  const plans = await prisma.plan.findMany({
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      price: true,
-      interval: true,
-      quotas: {
-        select: { key: true, value: true },
-      },
-    },
-    orderBy: { price: 'asc' },
+  const ds = await getDataSource();
+  const plans = await ds.getRepository(Plan).find({
+    relations: { quotas: true },
+    order: { price: 'ASC' },
   });
 
   return plans.map((plan): PublicPlanItem => {

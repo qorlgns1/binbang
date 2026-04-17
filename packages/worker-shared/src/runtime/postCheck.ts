@@ -1,5 +1,5 @@
 import type { AvailabilityStatus } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { getDataSource, Accommodation, CheckLog, IsNull, Not } from '@workspace/db';
 import { type AccommodationMetadata, parsePrice } from '@workspace/shared';
 
 import { notifyAvailable } from './notifications';
@@ -35,18 +35,22 @@ export async function sendNotificationIfNeeded(
   }
 
   let effectiveLastStatus: AvailabilityStatus | null = input.lastStatus;
+  const ds = await getDataSource();
 
-  const lastLog = await prisma.checkLog.findFirst({
+  // 두 번째 최근 로그 조회 (skip: 1)
+  const recentLogs = await ds.getRepository(CheckLog).find({
     where: {
       accommodationId: input.accommodationId,
       userId: input.userId,
-      checkIn: { not: null },
-      checkOut: { not: null },
+      checkIn: Not(IsNull()),
+      checkOut: Not(IsNull()),
     },
-    orderBy: { createdAt: 'desc' },
+    order: { createdAt: 'DESC' },
     select: { checkIn: true, checkOut: true },
+    take: 1,
     skip: 1,
   });
+  const lastLog = recentLogs[0] ?? null;
 
   if (lastLog?.checkIn && lastLog?.checkOut) {
     const datesChanged = !isSameStayDates(
@@ -67,18 +71,15 @@ export async function sendNotificationIfNeeded(
   const sent = await notifyAvailable(input.userId, input.name, checkIn, checkOut, input.price, input.checkUrl);
 
   if (sent) {
-    await prisma.checkLog.updateMany({
-      where: {
-        accommodationId: input.accommodationId,
-        userId: input.userId,
-        checkIn,
-        checkOut,
-        notificationSent: false,
-      },
-      data: {
-        notificationSent: true,
-      },
-    });
+    await ds
+      .createQueryBuilder()
+      .update(CheckLog)
+      .set({ notificationSent: true })
+      .where(
+        '"accommodationId" = :accommodationId AND "userId" = :userId AND "checkIn" = :checkIn AND "checkOut" = :checkOut AND "notificationSent" = 0',
+        { accommodationId: input.accommodationId, userId: input.userId, checkIn, checkOut },
+      )
+      .execute();
   }
 }
 
@@ -115,9 +116,6 @@ export async function updateAccommodationStatus(
     if (metadata.rawJsonLd) updateData.platformMetadata = metadata.rawJsonLd;
   }
 
-  await prisma.accommodation.update({
-    where: { id: accommodationId },
-    data: updateData,
-    select: { id: true },
-  });
+  const ds = await getDataSource();
+  await ds.getRepository(Accommodation).update({ id: accommodationId }, updateData);
 }

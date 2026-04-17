@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { Between, In, LandingEvent, getDataSource } from '@workspace/db';
 import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
 import { BadRequestError } from '@workspace/shared/errors';
 
@@ -122,9 +122,10 @@ function applyGrowthEvent(target: AdminFunnelGrowthKpis, eventName: LandingGrowt
 }
 
 async function resolveAllRangeStart(now: Date): Promise<Date> {
-  const firstGrowthEvent = await prisma.landingEvent.findFirst({
-    where: { eventName: { in: [...LANDING_GROWTH_EVENT_NAMES] } },
-    orderBy: { occurredAt: 'asc' },
+  const ds = await getDataSource();
+  const firstGrowthEvent = await ds.getRepository(LandingEvent).findOne({
+    where: { eventName: In([...LANDING_GROWTH_EVENT_NAMES]) },
+    order: { occurredAt: 'ASC' },
     select: { occurredAt: true },
   });
 
@@ -176,20 +177,16 @@ export async function getAdminFunnelGrowth(input: GetAdminFunnelGrowthInput = {}
   const range = input.range ?? DEFAULT_RANGE;
   const now = input.now ?? new Date();
   const { from, to } = await resolveRange(range, now, input.from, input.to);
-  const rangeFilter = { gte: from, lte: to };
 
-  const rows = await prisma.landingEvent.findMany({
+  const ds = await getDataSource();
+
+  const rows = await ds.getRepository(LandingEvent).find({
     where: {
-      eventName: { in: [...LANDING_GROWTH_EVENT_NAMES] },
-      occurredAt: rangeFilter,
+      eventName: In([...LANDING_GROWTH_EVENT_NAMES]),
+      occurredAt: Between(from, to),
     },
-    orderBy: { occurredAt: 'asc' },
-    select: {
-      id: true,
-      eventName: true,
-      occurredAt: true,
-      sessionId: true,
-    },
+    order: { occurredAt: 'ASC' },
+    select: { id: true, eventName: true, occurredAt: true, sessionId: true },
   });
 
   const totals = emptyGrowthKpis();

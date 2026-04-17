@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { LandingEvent, getDataSource } from '@workspace/db';
 
 import type { LandingEventName } from '@/lib/analytics/clickEventNames';
 
@@ -27,29 +27,25 @@ export async function createLandingEvent(input: CreateLandingClickEventInput): P
     occurredAt = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   }
 
-  const created = await prisma.landingEvent.create({
-    data: {
-      eventName: input.eventName,
-      source: input.source,
-      sessionId: input.sessionId,
-      locale: input.locale,
-      path: input.path || '/',
-      referrer: input.referrer ?? null,
-      userAgent: input.userAgent ?? null,
-      ipAddress: input.ipAddress ?? null,
-      occurredAt,
-    },
-    select: {
-      id: true,
-      eventName: true,
-      occurredAt: true,
-    },
+  const ds = await getDataSource();
+  const repo = ds.getRepository(LandingEvent);
+  const entity = repo.create({
+    eventName: input.eventName,
+    source: input.source,
+    sessionId: input.sessionId,
+    locale: input.locale,
+    path: input.path || '/',
+    referrer: input.referrer ?? null,
+    userAgent: input.userAgent ?? null,
+    ipAddress: input.ipAddress ?? null,
+    occurredAt,
   });
+  await repo.save(entity);
 
   return {
-    eventId: created.id,
-    eventName: created.eventName as LandingEventName,
-    occurredAt: created.occurredAt.toISOString(),
+    eventId: entity.id,
+    eventName: entity.eventName as LandingEventName,
+    occurredAt: entity.occurredAt.toISOString(),
   };
 }
 

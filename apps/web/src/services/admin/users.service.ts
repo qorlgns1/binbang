@@ -1,4 +1,4 @@
-import { type Prisma, prisma } from '@workspace/db';
+import { Accommodation, AuditLog, CheckLog, Plan, Role, User, getDataSource } from '@workspace/db';
 import { NotFoundError } from '@workspace/shared/errors';
 import { createAuditLog } from '@/services/admin/audit-logs.service';
 import type { ActivityType, UserActivityItem, UserActivityResponse } from '@/types/activity';
@@ -58,56 +58,105 @@ export interface UserDetailResponse {
 export async function getUsers(input: GetUsersInput): Promise<AdminUsersResponse> {
   const { search, role, cursor, limit } = input;
 
-  const where: Prisma.UserWhereInput = {};
+  const ds = await getDataSource();
+
+  const qb = ds
+    .getRepository(User)
+    .createQueryBuilder('u')
+    .leftJoinAndSelect('u.roles', 'role')
+    .leftJoinAndSelect('u.plan', 'plan')
+    .orderBy('u.createdAt', 'DESC')
+    .take(limit + 1);
 
   if (role) {
-    where.roles = { some: { name: role } };
+    qb.andWhere((sub) => {
+      const roleQb = sub
+        .subQuery()
+        .select('1')
+        .from('UserRole', 'ur')
+        .innerJoin(Role, 'r', 'r.id = ur.roleId')
+        .where('ur.userId = u.id')
+        .andWhere('r.name = :roleName')
+        .getQuery();
+      return `EXISTS ${roleQb}`;
+    });
+    qb.setParameter('roleName', role);
   }
 
   if (search) {
-    where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-    ];
+    qb.andWhere('(UPPER(u.name) LIKE :search OR UPPER(u.email) LIKE :search)', {
+      search: `%${search.toUpperCase()}%`,
+    });
   }
 
-  const users = await prisma.user.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      roles: { select: { name: true } },
-      plan: { select: { name: true } },
-      createdAt: true,
-      _count: {
-        select: {
-          accommodations: true,
-        },
-      },
-    },
-  });
+  if (cursor) {
+    const cursorItem = await ds
+      .getRepository(User)
+      .findOne({ where: { id: cursor }, select: { id: true, createdAt: true } });
+    if (cursorItem) {
+      qb.andWhere('(u.createdAt < :cursorDate OR (u.createdAt = :cursorDate AND u.id < :cursorId))', {
+        cursorDate: cursorItem.createdAt,
+        cursorId: cursor,
+      });
+    }
+  }
 
-  const total = cursor ? undefined : await prisma.user.count({ where });
+  const users = await qb.getMany();
+
+  let total: number | undefined;
+  if (!cursor) {
+    const countQb = ds.getRepository(User).createQueryBuilder('u').leftJoin('u.roles', 'role');
+    if (role) {
+      countQb.andWhere((sub) => {
+        const roleQb = sub
+          .subQuery()
+          .select('1')
+          .from('UserRole', 'ur')
+          .innerJoin(Role, 'r', 'r.id = ur.roleId')
+          .where('ur.userId = u.id')
+          .andWhere('r.name = :roleName')
+          .getQuery();
+        return `EXISTS ${roleQb}`;
+      });
+      countQb.setParameter('roleName', role);
+    }
+    if (search) {
+      countQb.andWhere('(UPPER(u.name) LIKE :search OR UPPER(u.email) LIKE :search)', {
+        search: `%${search.toUpperCase()}%`,
+      });
+    }
+    total = await countQb.getCount();
+  }
 
   const hasMore = users.length > limit;
   const items = hasMore ? users.slice(0, limit) : users;
 
+  // accommodation counts
+  const userIds = items.map((u) => u.id);
+  const accCounts =
+    userIds.length > 0
+      ? await ds
+          .getRepository(Accommodation)
+          .createQueryBuilder('a')
+          .select('a.userId', 'userId')
+          .addSelect('COUNT(*)', 'cnt')
+          .where('a.userId IN (:...userIds)', { userIds })
+          .groupBy('a.userId')
+          .getRawMany<{ userId: string; cnt: string }>()
+      : [];
+  const accCountMap = new Map(accCounts.map((r) => [r.userId, Number(r.cnt)]));
+
   return {
     users: items.map(
-      (user: (typeof items)[0]): AdminUserInfo => ({
+      (user): AdminUserInfo => ({
         id: user.id,
         name: user.name,
         email: user.email,
         image: user.image,
-        roles: user.roles.map((r: { name: string }): string => r.name),
+        roles: user.roles.map((r) => r.name),
         planName: user.plan?.name ?? null,
         createdAt: user.createdAt.toISOString(),
-        _count: user._count,
+        _count: { accommodations: accCountMap.get(user.id) ?? 0 },
       }),
     ),
     nextCursor: hasMore ? items[items.length - 1].id : null,
@@ -116,37 +165,22 @@ export async function getUsers(input: GetUsersInput): Promise<AdminUsersResponse
 }
 
 export async function getUserDetail(userId: string): Promise<UserDetailResponse | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      roles: { select: { id: true, name: true } },
-      plan: { select: { id: true, name: true } },
-      createdAt: true,
-      _count: {
-        select: {
-          accommodations: true,
-        },
-      },
-    },
+    relations: { roles: true, plan: true },
   });
 
   if (!user) {
     return null;
   }
 
+  const accCount = await ds.getRepository(Accommodation).count({ where: { userId } });
+
   const [allRoles, allPlans] = await Promise.all([
-    prisma.role.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.plan.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
+    ds.getRepository(Role).find({ order: { name: 'ASC' } }),
+    ds.getRepository(Plan).find({ order: { name: 'ASC' } }),
   ]);
 
   return {
@@ -155,13 +189,13 @@ export async function getUserDetail(userId: string): Promise<UserDetailResponse 
       name: user.name,
       email: user.email,
       image: user.image,
-      roles: user.roles,
-      plan: user.plan,
+      roles: user.roles.map((r) => ({ id: r.id, name: r.name })),
+      plan: user.plan ? { id: user.plan.id, name: user.plan.name } : null,
       createdAt: user.createdAt.toISOString(),
-      _count: user._count,
+      _count: { accommodations: accCount },
     },
-    allRoles,
-    allPlans,
+    allRoles: allRoles.map((r) => ({ id: r.id, name: r.name })),
+    allPlans: allPlans.map((p) => ({ id: p.id, name: p.name })),
   };
 }
 
@@ -179,39 +213,37 @@ export interface UpdateUserRolesResult {
 export async function updateUserRoles(input: UpdateUserRolesInput): Promise<UpdateUserRolesResult> {
   const { userId, roles, changedById } = input;
 
-  const oldUser = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const userRepo = ds.getRepository(User);
+
+  const oldUser = await userRepo.findOne({
     where: { id: userId },
-    select: { roles: { select: { name: true } } },
+    relations: { roles: true },
   });
 
   if (!oldUser) {
     throw new NotFoundError('User not found');
   }
 
-  const oldRoles = oldUser.roles.map((r: { name: string }): string => r.name);
+  const oldRoles = oldUser.roles.map((r) => r.name);
 
-  const user = await prisma.user.update({
+  // Load Role entities by name
+  const roleEntities =
+    roles.length > 0
+      ? await ds.getRepository(Role).createQueryBuilder('r').where('r.name IN (:...names)', { names: roles }).getMany()
+      : [];
+
+  oldUser.roles = roleEntities;
+  await userRepo.save(oldUser);
+
+  // Reload to get plan info
+  const user = await userRepo.findOne({
     where: { id: userId },
-    data: {
-      roles: {
-        set: roles.map((name: string): { name: string } => ({ name })),
-      },
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      roles: { select: { name: true } },
-      plan: { select: { name: true } },
-      createdAt: true,
-      _count: {
-        select: {
-          accommodations: true,
-        },
-      },
-    },
+    relations: { roles: true, plan: true },
   });
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
 
   await createAuditLog({
     actorId: changedById,
@@ -222,15 +254,17 @@ export async function updateUserRoles(input: UpdateUserRolesInput): Promise<Upda
     newValue: roles,
   });
 
+  const accCount = await ds.getRepository(Accommodation).count({ where: { userId } });
+
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     image: user.image,
-    roles: user.roles.map((r: { name: string }): string => r.name),
+    roles: user.roles.map((r) => r.name),
     planName: user.plan?.name ?? null,
     createdAt: user.createdAt.toISOString(),
-    _count: user._count,
+    _count: { accommodations: accCount },
   };
 }
 
@@ -248,34 +282,32 @@ export interface UpdateUserPlanResult {
 export async function updateUserPlan(input: UpdateUserPlanInput): Promise<UpdateUserPlanResult> {
   const { userId, planName, changedById } = input;
 
-  const plan = await prisma.plan.findUnique({ where: { name: planName }, select: { id: true } });
+  const ds = await getDataSource();
+
+  const plan = await ds.getRepository(Plan).findOne({ where: { name: planName }, select: { id: true } });
   if (!plan) {
     throw new NotFoundError('Plan not found');
   }
 
-  const oldUser = await prisma.user.findUnique({
+  const oldUser = await ds.getRepository(User).findOne({
     where: { id: userId },
-    select: { plan: { select: { name: true } } },
+    relations: { plan: true },
+    select: { id: true, plan: { name: true } },
   });
 
   if (!oldUser) {
     throw new NotFoundError('User not found');
   }
 
-  const user = await prisma.user.update({
+  await ds.getRepository(User).update({ id: userId }, { planId: plan.id });
+
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
-    data: { planId: plan.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      roles: { select: { name: true } },
-      plan: { select: { name: true } },
-      createdAt: true,
-      _count: { select: { accommodations: true } },
-    },
+    relations: { roles: true, plan: true },
   });
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
 
   await createAuditLog({
     actorId: changedById,
@@ -286,20 +318,23 @@ export async function updateUserPlan(input: UpdateUserPlanInput): Promise<Update
     newValue: planName,
   });
 
+  const accCount = await ds.getRepository(Accommodation).count({ where: { userId } });
+
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     image: user.image,
-    roles: user.roles.map((r: { name: string }): string => r.name),
+    roles: user.roles.map((r) => r.name),
     planName: user.plan?.name ?? null,
     createdAt: user.createdAt.toISOString(),
-    _count: user._count,
+    _count: { accommodations: accCount },
   };
 }
 
 export async function checkUserExists(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: { id: true },
   });
@@ -309,6 +344,7 @@ export async function checkUserExists(userId: string): Promise<boolean> {
 export async function getUserActivity(input: GetUserActivityInput): Promise<UserActivityResponse> {
   const { userId, type: typeFilter, cursor, limit } = input;
 
+  const ds = await getDataSource();
   const activities: UserActivityItem[] = [];
 
   let cursorDate: Date | null = null;
@@ -328,30 +364,25 @@ export async function getUserActivity(input: GetUserActivityInput): Promise<User
   const shouldFetchAccommodation = !typeFilter || typeFilter === 'all' || typeFilter === 'accommodation';
 
   if (shouldFetchAudit) {
-    const auditLogs = await prisma.auditLog.findMany({
-      where: {
-        targetId: userId,
-        ...(cursorDate && cursorType === 'audit' && cursorId
-          ? {
-              OR: [{ createdAt: { lt: cursorDate } }, { createdAt: cursorDate, id: { lt: cursorId } }],
-            }
-          : cursorDate
-            ? { createdAt: { lte: cursorDate } }
-            : {}),
-      },
-      take: limit + 1,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      select: {
-        id: true,
-        action: true,
-        oldValue: true,
-        newValue: true,
-        createdAt: true,
-        actor: {
-          select: { id: true, name: true, email: true, image: true },
-        },
-      },
-    });
+    const qb = ds
+      .getRepository(AuditLog)
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.actor', 'actor')
+      .where('a.targetId = :userId', { userId })
+      .orderBy('a.createdAt', 'DESC')
+      .addOrderBy('a.id', 'DESC')
+      .take(limit + 1);
+
+    if (cursorDate && cursorType === 'audit' && cursorId) {
+      qb.andWhere('(a.createdAt < :cursorDate OR (a.createdAt = :cursorDate AND a.id < :cursorId))', {
+        cursorDate,
+        cursorId,
+      });
+    } else if (cursorDate) {
+      qb.andWhere('a.createdAt <= :cursorDate', { cursorDate });
+    }
+
+    const auditLogs = await qb.getMany();
 
     for (const log of auditLogs) {
       activities.push({
@@ -359,7 +390,9 @@ export async function getUserActivity(input: GetUserActivityInput): Promise<User
         type: 'audit',
         action: log.action,
         createdAt: log.createdAt.toISOString(),
-        actor: log.actor,
+        actor: log.actor
+          ? { id: log.actor.id, name: log.actor.name, email: log.actor.email, image: log.actor.image }
+          : null,
         oldValue: log.oldValue,
         newValue: log.newValue,
       });
@@ -367,29 +400,25 @@ export async function getUserActivity(input: GetUserActivityInput): Promise<User
   }
 
   if (shouldFetchCheck) {
-    const checkLogs = await prisma.checkLog.findMany({
-      where: {
-        userId,
-        ...(cursorDate && cursorType === 'check' && cursorId
-          ? {
-              OR: [{ createdAt: { lt: cursorDate } }, { createdAt: cursorDate, id: { lt: cursorId } }],
-            }
-          : cursorDate
-            ? { createdAt: { lte: cursorDate } }
-            : {}),
-      },
-      take: limit + 1,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      select: {
-        id: true,
-        status: true,
-        price: true,
-        createdAt: true,
-        accommodation: {
-          select: { id: true, name: true, platform: true },
-        },
-      },
-    });
+    const qb = ds
+      .getRepository(CheckLog)
+      .createQueryBuilder('c')
+      .innerJoinAndSelect('c.accommodation', 'acc')
+      .where('c.userId = :userId', { userId })
+      .orderBy('c.createdAt', 'DESC')
+      .addOrderBy('c.id', 'DESC')
+      .take(limit + 1);
+
+    if (cursorDate && cursorType === 'check' && cursorId) {
+      qb.andWhere('(c.createdAt < :cursorDate OR (c.createdAt = :cursorDate AND c.id < :cursorId))', {
+        cursorDate,
+        cursorId,
+      });
+    } else if (cursorDate) {
+      qb.andWhere('c.createdAt <= :cursorDate', { cursorDate });
+    }
+
+    const checkLogs = await qb.getMany();
 
     for (const log of checkLogs) {
       activities.push({
@@ -399,32 +428,34 @@ export async function getUserActivity(input: GetUserActivityInput): Promise<User
         createdAt: log.createdAt.toISOString(),
         status: log.status,
         price: log.price,
-        accommodation: log.accommodation,
+        accommodation: {
+          id: log.accommodation.id,
+          name: log.accommodation.name,
+          platform: log.accommodation.platform,
+        },
       });
     }
   }
 
   if (shouldFetchAccommodation) {
-    const accommodations = await prisma.accommodation.findMany({
-      where: {
-        userId,
-        ...(cursorDate && cursorType === 'accommodation' && cursorId
-          ? {
-              OR: [{ createdAt: { lt: cursorDate } }, { createdAt: cursorDate, id: { lt: cursorId } }],
-            }
-          : cursorDate
-            ? { createdAt: { lte: cursorDate } }
-            : {}),
-      },
-      take: limit + 1,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      select: {
-        id: true,
-        name: true,
-        platform: true,
-        createdAt: true,
-      },
-    });
+    const qb = ds
+      .getRepository(Accommodation)
+      .createQueryBuilder('a')
+      .where('a.userId = :userId', { userId })
+      .orderBy('a.createdAt', 'DESC')
+      .addOrderBy('a.id', 'DESC')
+      .take(limit + 1);
+
+    if (cursorDate && cursorType === 'accommodation' && cursorId) {
+      qb.andWhere('(a.createdAt < :cursorDate OR (a.createdAt = :cursorDate AND a.id < :cursorId))', {
+        cursorDate,
+        cursorId,
+      });
+    } else if (cursorDate) {
+      qb.andWhere('a.createdAt <= :cursorDate', { cursorDate });
+    }
+
+    const accommodations = await qb.getMany();
 
     for (const acc of accommodations) {
       activities.push({
@@ -457,9 +488,9 @@ export async function getUserActivity(input: GetUserActivityInput): Promise<User
   let total: number | undefined;
   if (!cursor) {
     const [auditCount, checkCount, accCount] = await Promise.all([
-      shouldFetchAudit ? prisma.auditLog.count({ where: { targetId: userId } }) : 0,
-      shouldFetchCheck ? prisma.checkLog.count({ where: { userId } }) : 0,
-      shouldFetchAccommodation ? prisma.accommodation.count({ where: { userId } }) : 0,
+      shouldFetchAudit ? ds.getRepository(AuditLog).count({ where: { targetId: userId } }) : 0,
+      shouldFetchCheck ? ds.getRepository(CheckLog).count({ where: { userId } }) : 0,
+      shouldFetchAccommodation ? ds.getRepository(Accommodation).count({ where: { userId } }) : 0,
     ]);
     total = auditCount + checkCount + accCount;
   }

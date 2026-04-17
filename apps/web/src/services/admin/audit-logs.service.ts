@@ -1,4 +1,4 @@
-import { type Prisma, prisma } from '@workspace/db';
+import { AuditLog, getDataSource } from '@workspace/db';
 
 // ============================================================================
 // Create
@@ -9,25 +9,25 @@ interface CreateAuditLogParams {
   targetId: string;
   entityType: string;
   action: string;
-  oldValue?: Prisma.InputJsonValue;
-  newValue?: Prisma.InputJsonValue;
+  oldValue?: unknown;
+  newValue?: unknown;
   ipAddress?: string;
 }
 
 export async function createAuditLog(params: CreateAuditLogParams): Promise<void> {
   try {
-    await prisma.auditLog.create({
-      data: {
-        actorId: params.actorId,
-        targetId: params.targetId,
-        entityType: params.entityType,
-        action: params.action,
-        oldValue: params.oldValue ?? undefined,
-        newValue: params.newValue ?? undefined,
-        ipAddress: params.ipAddress ?? undefined,
-      },
-      select: { id: true },
+    const ds = await getDataSource();
+    const repo = ds.getRepository(AuditLog);
+    const entity = repo.create({
+      actorId: params.actorId,
+      targetId: params.targetId,
+      entityType: params.entityType,
+      action: params.action,
+      oldValue: params.oldValue !== undefined ? (params.oldValue as object) : null,
+      newValue: params.newValue !== undefined ? (params.newValue as object) : null,
+      ipAddress: params.ipAddress ?? null,
     });
+    await repo.save(entity);
   } catch (error) {
     console.error('AuditLog 기록 실패:', error);
   }
@@ -80,49 +80,44 @@ export interface GetAuditLogsInput {
 export async function getAuditLogs(input: GetAuditLogsInput): Promise<AuditLogsResponse> {
   const { action, entityType, from, to, cursor, limit } = input;
 
-  const where: Prisma.AuditLogWhereInput = {};
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AuditLog);
+
+  const qb = repo
+    .createQueryBuilder('l')
+    .leftJoinAndSelect('l.actor', 'actor')
+    .leftJoinAndSelect('l.targetUser', 'targetUser')
+    .orderBy('l.createdAt', 'DESC')
+    .addOrderBy('l.id', 'DESC')
+    .take(limit + 1);
 
   if (action) {
-    where.action = action;
+    qb.andWhere('l.action = :action', { action });
   }
 
   if (entityType) {
-    where.entityType = entityType;
+    qb.andWhere('l.entityType = :entityType', { entityType });
   }
 
-  if (from || to) {
-    where.createdAt = {};
-    if (from) {
-      where.createdAt.gte = new Date(from);
-    }
-    if (to) {
-      where.createdAt.lte = new Date(to);
+  if (from) {
+    qb.andWhere('l.createdAt >= :from', { from: new Date(from) });
+  }
+
+  if (to) {
+    qb.andWhere('l.createdAt <= :to', { to: new Date(to) });
+  }
+
+  if (cursor) {
+    const cursorItem = await repo.findOne({ where: { id: cursor }, select: { id: true, createdAt: true } });
+    if (cursorItem) {
+      qb.andWhere('(l.createdAt < :cursorDate OR (l.createdAt = :cursorDate AND l.id < :cursorId))', {
+        cursorDate: cursorItem.createdAt,
+        cursorId: cursor,
+      });
     }
   }
 
-  const auditLogs = await prisma.auditLog.findMany({
-    where,
-    take: limit + 1,
-    ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      actorId: true,
-      actor: {
-        select: { id: true, name: true, email: true, image: true },
-      },
-      targetId: true,
-      targetUser: {
-        select: { id: true, name: true, email: true, image: true },
-      },
-      entityType: true,
-      action: true,
-      oldValue: true,
-      newValue: true,
-      ipAddress: true,
-      createdAt: true,
-    },
-  });
+  const auditLogs = await qb.getMany();
 
   const hasNextPage = auditLogs.length > limit;
   const logs = hasNextPage ? auditLogs.slice(0, limit) : auditLogs;
@@ -130,7 +125,12 @@ export async function getAuditLogs(input: GetAuditLogsInput): Promise<AuditLogsR
 
   let total: number | undefined;
   if (!cursor) {
-    total = await prisma.auditLog.count({ where });
+    const countQb = repo.createQueryBuilder('l');
+    if (action) countQb.andWhere('l.action = :action', { action });
+    if (entityType) countQb.andWhere('l.entityType = :entityType', { entityType });
+    if (from) countQb.andWhere('l.createdAt >= :from', { from: new Date(from) });
+    if (to) countQb.andWhere('l.createdAt <= :to', { to: new Date(to) });
+    total = await countQb.getCount();
   }
 
   return {

@@ -2,11 +2,15 @@
 
 import { spawn } from 'node:child_process';
 import { readdirSync } from 'node:fs';
-import { createInterface } from 'node:readline';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 
-import { prisma } from '../packages/db/src/index';
+import {
+  getDataSource,
+  getQualifiedAgodaHotelsSearchTable,
+  getQualifiedAgodaHotelsTable,
+} from '../packages/db/src/index.js';
 
 type EnHotelRow = {
   hotelId: number;
@@ -22,11 +26,23 @@ type ChunkSummary = {
 };
 
 const args = process.argv.slice(2);
+const SEARCH_TABLE = getQualifiedAgodaHotelsSearchTable();
+const HOTELS_TABLE = getQualifiedAgodaHotelsTable();
 
 function parseArg(flag: string, defaultValue: string): string {
   const idx = args.indexOf(flag);
   if (idx !== -1 && args[idx + 1]) return args[idx + 1];
   return defaultValue;
+}
+
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }
 
 const enChunkDir = resolve(
@@ -65,11 +81,19 @@ with open(file_path, newline='', encoding='utf-8-sig') as f:
 print(json.dumps({'__meta__': True, 'count': count, 'skipped': skipped}), flush=True)
 `;
 
-async function rebuildKoBase(): Promise<number> {
-  await prisma.$executeRawUnsafe(`TRUNCATE TABLE "agoda_hotels_search"`);
+async function fetchCount(sql: string, params: unknown[] = []): Promise<number> {
+  const ds = await getDataSource();
+  const rows = await ds.query<Array<{ count: unknown }>>(sql, params);
+  return parseNumber(rows[0]?.count);
+}
 
-  const inserted = await prisma.$executeRawUnsafe(`
-    INSERT INTO "agoda_hotels_search" (
+async function rebuildKoBase(): Promise<number> {
+  const ds = await getDataSource();
+
+  await ds.query(`TRUNCATE TABLE ${SEARCH_TABLE}`);
+
+  await ds.query(`
+    INSERT INTO ${SEARCH_TABLE} (
       "hotelId",
       "cityId",
       "countryCode",
@@ -111,68 +135,82 @@ async function rebuildKoBase(): Promise<number> {
       "longitude",
       "photoUrl",
       "url",
-      trim(regexp_replace(concat_ws(' ',
-        COALESCE("hotelTranslatedName", "hotelName"),
-        "hotelName",
-        "cityName",
-        "countryName",
-        "countryCode"
-      ), '\\s+', ' ', 'g')),
-      trim(regexp_replace(concat_ws(' ',
-        "hotelName",
-        COALESCE("hotelTranslatedName", "hotelName"),
-        "countryCode"
-      ), '\\s+', ' ', 'g')),
-      true,
-      false,
-      false,
-      now(),
-      now()
-    FROM "agoda_hotels"
+      TRIM(REGEXP_REPLACE(
+        COALESCE("hotelTranslatedName", "hotelName", '') || ' ' ||
+        COALESCE("hotelName", '') || ' ' ||
+        COALESCE("cityName", '') || ' ' ||
+        COALESCE("countryName", '') || ' ' ||
+        COALESCE("countryCode", ''),
+        '[[:space:]]+',
+        ' '
+      )),
+      TRIM(REGEXP_REPLACE(
+        COALESCE("hotelName", '') || ' ' ||
+        COALESCE("hotelTranslatedName", "hotelName", '') || ' ' ||
+        COALESCE("countryCode", ''),
+        '[[:space:]]+',
+        ' '
+      )),
+      1,
+      0,
+      0,
+      SYSTIMESTAMP,
+      SYSTIMESTAMP
+    FROM ${HOTELS_TABLE}
   `);
 
-  return Number(inserted);
+  return fetchCount(`SELECT COUNT(*) AS "count" FROM ${SEARCH_TABLE}`);
 }
 
 async function updateEnBatch(rows: EnHotelRow[]): Promise<number> {
   if (rows.length === 0) return 0;
 
+  const ds = await getDataSource();
   const payload = JSON.stringify(rows);
 
-  const updated = await prisma.$executeRawUnsafe(
+  await ds.query(
     `
-    WITH input AS (
-      SELECT *
-      FROM jsonb_to_recordset($1::jsonb)
-      AS x(
-        "hotelId" int,
-        "hotelNameEn" text,
-        "cityNameEn" text,
-        "countryNameEn" text
+    MERGE INTO ${SEARCH_TABLE} target
+    USING (
+      SELECT
+        hotelId,
+        hotelNameEn,
+        cityNameEn,
+        countryNameEn
+      FROM JSON_TABLE(
+        :1,
+        '$[*]'
+        COLUMNS (
+          hotelId NUMBER PATH '$.hotelId',
+          hotelNameEn VARCHAR2(500) PATH '$.hotelNameEn',
+          cityNameEn VARCHAR2(200) PATH '$.cityNameEn',
+          countryNameEn VARCHAR2(200) PATH '$.countryNameEn'
+        )
       )
-    )
-    UPDATE "agoda_hotels_search" AS target
-    SET
-      "hotelNameEn" = COALESCE(input."hotelNameEn", target."hotelNameEn"),
-      "cityNameEn" = COALESCE(input."cityNameEn", target."cityNameEn"),
-      "countryNameEn" = COALESCE(input."countryNameEn", target."countryNameEn"),
-      "enSourcePresent" = true,
-      "searchTextEn" = trim(regexp_replace(concat_ws(' ',
-        COALESCE(input."hotelNameEn", target."hotelNameEn"),
-        target."hotelNameKo",
-        COALESCE(input."cityNameEn", target."cityNameEn"),
-        COALESCE(input."countryNameEn", target."countryNameEn"),
-        target."countryCode"
-      ), '\\s+', ' ', 'g')),
-      "mergedAt" = now(),
-      "updatedAt" = now()
-    FROM input
-    WHERE target."hotelId" = input."hotelId"
+    ) input
+      ON (target."hotelId" = input.hotelId)
+    WHEN MATCHED THEN
+      UPDATE SET
+        target."hotelNameEn" = COALESCE(input.hotelNameEn, target."hotelNameEn"),
+        target."cityNameEn" = COALESCE(input.cityNameEn, target."cityNameEn"),
+        target."countryNameEn" = COALESCE(input.countryNameEn, target."countryNameEn"),
+        target."enSourcePresent" = 1,
+        target."searchTextEn" = TRIM(REGEXP_REPLACE(
+          COALESCE(input.hotelNameEn, target."hotelNameEn", '') || ' ' ||
+          COALESCE(target."hotelNameKo", '') || ' ' ||
+          COALESCE(input.cityNameEn, target."cityNameEn", '') || ' ' ||
+          COALESCE(input.countryNameEn, target."countryNameEn", '') || ' ' ||
+          COALESCE(target."countryCode", ''),
+          '[[:space:]]+',
+          ' '
+        )),
+        target."mergedAt" = SYSTIMESTAMP,
+        target."updatedAt" = SYSTIMESTAMP
     `,
-    payload,
+    [payload],
   );
 
-  return Number(updated);
+  return rows.length;
 }
 
 function processChunk(filePath: string, onBatch: (rows: EnHotelRow[]) => Promise<number>): Promise<ChunkSummary> {
@@ -206,7 +244,7 @@ function processChunk(filePath: string, onBatch: (rows: EnHotelRow[]) => Promise
       try {
         const obj = JSON.parse(line) as Record<string, unknown>;
         if (obj.__meta__) {
-          meta = { parsed: Number(obj.count), skipped: Number(obj.skipped) };
+          meta = { parsed: parseNumber(obj.count), skipped: parseNumber(obj.skipped) };
           return;
         }
         buffer.push(obj as unknown as EnHotelRow);
@@ -274,7 +312,10 @@ async function mergeEnChunks(): Promise<{ parsed: number; skipped: number; updat
 async function main() {
   const globalStart = Date.now();
 
-  console.log(`KO 베이스 재생성 시작`);
+  console.log(`공용 Agoda 검색 테이블 재생성 시작`);
+  console.log(`source table : ${HOTELS_TABLE}`);
+  console.log(`target table : ${SEARCH_TABLE}`);
+
   const koInserted = await rebuildKoBase();
   console.log(`KO 베이스 적재 완료: ${koInserted.toLocaleString()}행`);
 
@@ -295,11 +336,7 @@ async function main() {
   `);
 }
 
-main()
-  .catch((error) => {
-    console.error('❌ 오류:', error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((error) => {
+  console.error('❌ 오류:', error);
+  process.exit(1);
+});

@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, Case, CaseStatus, CaseStatusLog } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -40,15 +40,14 @@ export async function expireOverdueCases(input: ExpireOverdueCasesInput = {}): P
   const now = input.now ?? new Date();
   const batchSize = input.batchSize ?? DEFAULT_BATCH_SIZE;
   const startMs = Date.now();
+  const ds = await getDataSource();
 
-  const activeCases = await prisma.case.findMany({
-    where: { status: 'ACTIVE_MONITORING' },
-    orderBy: { id: 'asc' },
+  const activeCases = await ds.getRepository(Case).find({
+    where: { status: CaseStatus.ACTIVE_MONITORING },
+    order: { id: 'ASC' },
     take: batchSize,
-    select: {
-      id: true,
-      submission: { select: { extractedFields: true } },
-    },
+    select: { id: true },
+    relations: { submission: true },
   });
 
   let expiredCount = 0;
@@ -68,28 +67,24 @@ export async function expireOverdueCases(input: ExpireOverdueCasesInput = {}): P
       continue;
     }
 
-    await prisma.$transaction(async (tx): Promise<void> => {
-      const updateResult = await tx.case.updateMany({
-        where: { id: c.id, status: 'ACTIVE_MONITORING' },
-        data: {
-          status: 'EXPIRED',
-          statusChangedAt: now,
-          statusChangedBy: SYSTEM_ACTOR_ID,
-        },
-      });
+    await ds.transaction(async (manager): Promise<void> => {
+      const result = await manager
+        .createQueryBuilder()
+        .update(Case)
+        .set({ status: CaseStatus.EXPIRED, statusChangedAt: now, statusChangedBy: SYSTEM_ACTOR_ID })
+        .where('"id" = :id AND "status" = :status', { id: c.id, status: CaseStatus.ACTIVE_MONITORING })
+        .execute();
 
-      if (updateResult.count === 0) return;
+      if ((result.affected ?? 0) === 0) return;
 
-      await tx.caseStatusLog.create({
-        data: {
-          caseId: c.id,
-          fromStatus: 'ACTIVE_MONITORING',
-          toStatus: 'EXPIRED',
-          changedById: SYSTEM_ACTOR_ID,
-          reason: EXPIRATION_REASON,
-        },
-        select: { id: true },
+      const statusLog = manager.getRepository(CaseStatusLog).create({
+        caseId: c.id,
+        fromStatus: CaseStatus.ACTIVE_MONITORING,
+        toStatus: CaseStatus.EXPIRED,
+        changedById: SYSTEM_ACTOR_ID,
+        reason: EXPIRATION_REASON,
       });
+      await manager.save(statusLog);
     });
 
     expiredCount++;

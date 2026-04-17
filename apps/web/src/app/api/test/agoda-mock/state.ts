@@ -1,15 +1,36 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 // 테스트 전용 — production에서는 사용되지 않음
 export type AgodaMockScenario = 'sold_out' | 'available';
 
-// Next.js dev 서버 프로세스 내 모듈 싱글턴으로 시나리오 공유
-const mockState = {
-  scenario: 'sold_out' as AgodaMockScenario,
-};
+const DEFAULT_SCENARIO: AgodaMockScenario = 'sold_out';
+const STATE_DIR = join(tmpdir(), 'binbang-agoda-mock');
+const STATE_FILE = join(STATE_DIR, 'scenario.json');
 
-export function getAgodaMockScenario(): AgodaMockScenario {
-  return mockState.scenario;
+interface AgodaMockStatePayload {
+  scenario?: string;
 }
 
-export function setAgodaMockScenario(scenario: AgodaMockScenario): void {
-  mockState.scenario = scenario;
+function normalizeScenario(value: unknown): AgodaMockScenario {
+  return value === 'available' ? 'available' : DEFAULT_SCENARIO;
+}
+
+export async function getAgodaMockScenario(): Promise<AgodaMockScenario> {
+  try {
+    const raw = await readFile(STATE_FILE, 'utf8');
+    const payload = JSON.parse(raw) as AgodaMockStatePayload;
+    return normalizeScenario(payload.scenario);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return DEFAULT_SCENARIO;
+    }
+    throw error;
+  }
+}
+
+export async function setAgodaMockScenario(scenario: AgodaMockScenario): Promise<void> {
+  await mkdir(STATE_DIR, { recursive: true });
+  await writeFile(STATE_FILE, JSON.stringify({ scenario }), 'utf8');
 }

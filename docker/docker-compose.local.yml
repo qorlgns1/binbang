@@ -1,22 +1,4 @@
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: binbang-db-local
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-accommodation_monitor}
-    ports:
-      - '${DB_PORT:-5432}:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-accommodation_monitor}']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:7-alpine
     command: redis-server --maxmemory-policy noeviction
@@ -47,12 +29,8 @@ services:
       NODE_ENV: local
       DOCKER_ENV: 'true'
       WORKER_INTERNAL_URL: http://worker:3500
-      # Containers always reach Postgres over the service DNS/port; only credentials and DB name should follow DB_*.
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor}}
       REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -70,15 +48,11 @@ services:
     environment:
       NODE_ENV: local
       DOCKER_ENV: 'true'
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor}}
       REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
       WEB_INTERNAL_URL: http://web:3000
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
 volumes:
-  postgres_data:
   redis_data:
