@@ -19,7 +19,7 @@ interface ChatMessageListProps {
   status: string;
   scrollAreaRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  onPlannerSubmit: (query: string) => boolean | void;
+  onPlannerSubmit: (query: string) => boolean | undefined;
 }
 
 export function ChatMessageList({

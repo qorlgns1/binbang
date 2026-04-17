@@ -118,6 +118,10 @@ export function ChatPanel({ entryMode, onPlannerStageChange }: ChatPanelProps) {
   }, [messages, setEntities]);
 
   useEffect(() => {
+    if (!currentConversationId) {
+      return;
+    }
+
     clearPlannerTrackedAccommodationIds();
     plannerCycleRef.current = null;
   }, [currentConversationId]);

@@ -54,7 +54,7 @@ export function ChatPanelRestoreBanner({ restoreStatus, onRetryRestore, onOpenHi
 }
 
 interface ChatPanelEmptyStateProps {
-  onPlannerSubmit: (query: string) => boolean | void;
+  onPlannerSubmit: (query: string) => boolean | undefined;
 }
 
 export function ChatPanelPlannerEmptyState({ onPlannerSubmit }: ChatPanelEmptyStateProps) {

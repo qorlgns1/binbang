@@ -30,7 +30,7 @@ export function ChatWorkspacePage({ entryMode }: ChatWorkspacePageProps) {
 
   useEffect(() => {
     openChatView();
-  }, [entryMode, openChatView]);
+  }, [openChatView]);
 
   return (
     <div className='flex h-screen overflow-hidden bg-background'>

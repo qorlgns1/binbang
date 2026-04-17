@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { trackPlannerEvent, trackPlannerEventOnce } from '@/lib/plannerTracking';
 
 interface PlannerStartFormProps {
-  onSubmitPrompt: (prompt: string) => boolean | void;
+  onSubmitPrompt: (prompt: string) => boolean | undefined;
 }
 
 type PlannerField = 'destination' | 'checkIn' | 'checkOut' | 'adults';
