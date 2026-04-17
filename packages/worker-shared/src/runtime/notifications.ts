@@ -8,8 +8,8 @@ import {
   sendEmailHttp,
   sendKakaoMessageHttp,
 } from '@workspace/worker-shared/observability';
-import { getSettings } from './settings/index.js';
-import { getEmailConfig, getEnv } from './settings/env.js';
+import { getSettings } from './settings/index';
+import { getEmailConfig, getEnv } from './settings/env';
 
 // ── Types ──
 

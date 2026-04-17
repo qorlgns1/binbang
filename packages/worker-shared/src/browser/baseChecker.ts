@@ -9,8 +9,8 @@ import {
   type TestableElement,
 } from '@workspace/shared';
 
-import { type PageSetupConfig, setupPage } from './browser.js';
-import { acquireBrowser, releaseBrowser } from './browserPool.js';
+import { type PageSetupConfig, setupPage } from './browser';
+import { acquireBrowser, releaseBrowser } from './browserPool';
 
 interface PlatformPatterns {
   available: string[];

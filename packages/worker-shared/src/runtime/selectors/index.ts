@@ -9,4 +9,4 @@ export {
   invalidateSelectorCache,
   preloadSelectorCache,
   buildExtractorCode,
-} from './loader.js';
+} from './loader';

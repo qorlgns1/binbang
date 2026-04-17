@@ -11,8 +11,8 @@ import {
   QueryFailedError,
 } from '@workspace/db';
 
-import { type StructuredNotificationPayload, getUserLocale, renderNotification } from './i18n/index.js';
-import { sendKakaoNotification } from './notifications.js';
+import { type StructuredNotificationPayload, getUserLocale, renderNotification } from './i18n/index';
+import { sendKakaoNotification } from './notifications';
 
 // ============================================================================
 // Types

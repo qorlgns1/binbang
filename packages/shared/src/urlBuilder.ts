@@ -1,6 +1,6 @@
-import type { Platform } from './types/enums.js';
+import type { Platform } from './types/enums';
 
-import { calculateNights, formatDate } from './checkers/utils.js';
+import { calculateNights, formatDate } from './checkers/utils';
 
 interface BuildUrlParams {
   url: string;

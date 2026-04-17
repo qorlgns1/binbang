@@ -5,20 +5,20 @@ export {
   isSupportedLocale,
   mapToSupportedLocale,
   normalizeLocale,
-} from './locale.js';
+} from './locale';
 
 export {
   type LocaleSource,
   type ResolveLocaleInput,
   type ResolveLocaleResult,
   resolveLocale,
-} from './resolveLocale.js';
+} from './resolveLocale';
 
-export type { Messages, MessageLoader, MissingKeyPolicy, I18nOptions } from './loaderTypes.js';
+export type { Messages, MessageLoader, MissingKeyPolicy, I18nOptions } from './loaderTypes';
 
-export { MissingKeyError, MessageFormatError } from './errors.js';
+export { MissingKeyError, MessageFormatError } from './errors';
 
-export { type TranslateFunction, type I18nInstance, createI18n } from './createI18n.js';
+export { type TranslateFunction, type I18nInstance, createI18n } from './createI18n';
 
 export {
   type DateToken,
@@ -28,4 +28,4 @@ export {
   formatNumber,
   formatCurrency,
   formatRelativeTime,
-} from './format.js';
+} from './format';

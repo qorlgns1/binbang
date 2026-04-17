@@ -1,4 +1,4 @@
-import { AppError } from './base.js';
+import { AppError } from './base';
 
 /** 500 — expected server-side failure mapped to an internal server error response. */
 export class InternalServerError extends AppError {

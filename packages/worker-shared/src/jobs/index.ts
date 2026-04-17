@@ -1,1 +1,1 @@
-export type { CycleJobPayload, CheckJobPayload } from './types.js';
+export type { CycleJobPayload, CheckJobPayload } from './types';

@@ -1,4 +1,4 @@
-import type { Platform } from './enums.js';
+import type { Platform } from './enums';
 
 export interface ParsedAccommodationUrl {
   platform: Platform | null;

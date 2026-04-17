@@ -1,4 +1,4 @@
-import type { ParsedAccommodationUrl } from './types/url.js';
+import type { ParsedAccommodationUrl } from './types/url';
 
 /**
  * 숙소 URL을 파싱하여 정보 추출

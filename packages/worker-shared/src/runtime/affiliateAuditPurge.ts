@@ -7,7 +7,7 @@ import {
 } from '@workspace/db';
 import { sendTelegramMessageHttp, type SendTelegramConfig } from '@workspace/worker-shared/observability';
 
-import { getAffiliateAuditPurgeConfig } from './settings/env.js';
+import { getAffiliateAuditPurgeConfig } from './settings/env';
 
 type AlertSeverity = 'critical' | 'warning';
 

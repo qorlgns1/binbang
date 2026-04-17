@@ -1,7 +1,7 @@
 import type { AvailabilityStatus, Platform } from '@workspace/db';
 import { getDataSource, Accommodation, CheckCycle, IsNull, Not } from '@workspace/db';
 
-import { updateHeartbeat } from './heartbeat.js';
+import { updateHeartbeat } from './heartbeat';
 
 export interface ActiveAccommodation {
   id: string;

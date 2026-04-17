@@ -1,10 +1,10 @@
 // Kakao
-export { sendKakaoMessageHttp } from './kakao/message.js';
-export type { SendMessageParams } from './kakao/message.js';
+export { sendKakaoMessageHttp } from './kakao/message';
+export type { SendMessageParams } from './kakao/message';
 
 // Email
-export { sendEmailHttp, buildNotificationEmailHtml } from './email/sender.js';
+export { sendEmailHttp, buildNotificationEmailHtml } from './email/sender';
 
 // Telegram
-export { sendTelegramMessageHttp } from './telegram/sender.js';
-export type { SendTelegramConfig, SendTelegramMessageParams, SendTelegramMessageResult } from './telegram/sender.js';
+export { sendTelegramMessageHttp } from './telegram/sender';
+export type { SendTelegramConfig, SendTelegramMessageParams, SendTelegramMessageResult } from './telegram/sender';

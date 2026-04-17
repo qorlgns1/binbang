@@ -1,5 +1,5 @@
 // Settings
-export { getSettings, loadSettings } from './settings/index.js';
+export { getSettings, loadSettings } from './settings/index';
 export {
   validateWorkerEnv,
   validateWebEnv,
@@ -8,56 +8,56 @@ export {
   getAffiliateAuditPurgeConfig,
   getTravelCachePrewarmConfig,
   getBinbangCronConfig,
-} from './settings/env.js';
-export type { SystemSettingsCache } from './settings/index.js';
+} from './settings/env';
+export type { SystemSettingsCache } from './settings/index';
 export type {
   AffiliateAuditPurgeConfig,
   AffiliateAuditTelegramConfig,
   TravelCachePrewarmConfig,
   BinbangCronConfig,
-} from './settings/env.js';
+} from './settings/env';
 
 // Redis & Queue
-export { createRedisConnection } from './connection.js';
-export { createCycleQueue, createCheckQueue, QUEUE_NAMES } from './queues.js';
-export { createCycleWorker, createCheckWorker } from './workers.js';
-export type { CreateWorkerOptions } from './workers.js';
-export { setupRepeatableJobs, removeRepeatableJobs } from './scheduler.js';
-export { buildQueueSnapshot } from './queueSnapshot.js';
-export type { QueueSnapshotResponse, QueueStats, QueueJobState, QueueJobSummary } from './queueSnapshot.js';
+export { createRedisConnection } from './connection';
+export { createCycleQueue, createCheckQueue, QUEUE_NAMES } from './queues';
+export { createCycleWorker, createCheckWorker } from './workers';
+export type { CreateWorkerOptions } from './workers';
+export { setupRepeatableJobs, removeRepeatableJobs } from './scheduler';
+export { buildQueueSnapshot } from './queueSnapshot';
+export type { QueueSnapshotResponse, QueueStats, QueueJobState, QueueJobSummary } from './queueSnapshot';
 export {
   anonymizeExpiredLandingEventPii,
   DEFAULT_LANDING_EVENT_PII_RETENTION_DAYS,
-} from './landingEventRetention.js';
-export type { LandingEventPiiRetentionInput, LandingEventPiiRetentionResult } from './landingEventRetention.js';
+} from './landingEventRetention';
+export type { LandingEventPiiRetentionInput, LandingEventPiiRetentionResult } from './landingEventRetention';
 export {
   refreshPublicAvailabilitySnapshots,
   DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS,
-} from './publicAvailabilitySnapshots.js';
+} from './publicAvailabilitySnapshots';
 export type {
   RefreshPublicAvailabilitySnapshotsInput,
   RefreshPublicAvailabilitySnapshotsResult,
-} from './publicAvailabilitySnapshots.js';
-export { generatePredictions, DEFAULT_PREDICTION_WINDOW_DAYS } from './availabilityPredictor.js';
-export type { GeneratePredictionsInput, GeneratePredictionsResult } from './availabilityPredictor.js';
+} from './publicAvailabilitySnapshots';
+export { generatePredictions, DEFAULT_PREDICTION_WINDOW_DAYS } from './availabilityPredictor';
+export type { GeneratePredictionsInput, GeneratePredictionsResult } from './availabilityPredictor';
 export {
   runAffiliateAuditPurge,
   checkAffiliateAuditPurgeCronMiss,
   AFFILIATE_AUDIT_PURGE_JOB_NAME,
-} from './affiliateAuditPurge.js';
+} from './affiliateAuditPurge';
 export type {
   RunAffiliateAuditPurgeOptions,
   RunAffiliateAuditPurgeResult,
   CheckAffiliateAuditPurgeCronMissOptions,
   CheckAffiliateAuditPurgeCronMissResult,
-} from './affiliateAuditPurge.js';
-export { triggerTravelCachePrewarm } from './travelCachePrewarm.js';
-export type { TriggerTravelCachePrewarmResult, TravelCachePrewarmMetrics } from './travelCachePrewarm.js';
+} from './affiliateAuditPurge';
+export { triggerTravelCachePrewarm } from './travelCachePrewarm';
+export type { TriggerTravelCachePrewarmResult, TravelCachePrewarmMetrics } from './travelCachePrewarm';
 export {
   triggerBinbangPollDue,
   triggerBinbangDispatch,
   triggerBinbangSnapshotCleanup,
-} from './binbangCron.js';
+} from './binbangCron';
 
 // Heartbeat
 export {
@@ -66,8 +66,8 @@ export {
   stopHeartbeatMonitoring,
   recordHeartbeatHistory,
   getHeartbeatHistory,
-} from './heartbeat.js';
-export type { HeartbeatHistoryItem } from './heartbeat.js';
+} from './heartbeat';
+export type { HeartbeatHistoryItem } from './heartbeat';
 
 // Notifications
 export {
@@ -76,8 +76,8 @@ export {
   sendAlertNotification,
   sendEmailNotification,
   sendNotificationWithFallback,
-} from './notifications.js';
-export type { NotificationFallbackResult } from './notifications.js';
+} from './notifications';
+export type { NotificationFallbackResult } from './notifications';
 
 // Selectors (DB-backed loader; browser receives data via injection)
 export {
@@ -86,53 +86,53 @@ export {
   invalidateSelectorCache,
   preloadSelectorCache,
   buildExtractorCode,
-} from './selectors/index.js';
-export type { PlatformSelectorCache, SelectorConfig } from './selectors/index.js';
+} from './selectors/index';
+export type { PlatformSelectorCache, SelectorConfig } from './selectors/index';
 
 // Evidence
-export { createConditionMetEvent } from './evidence.js';
-export type { CreateConditionMetEventInput } from './evidence.js';
+export { createConditionMetEvent } from './evidence';
+export type { CreateConditionMetEventInput } from './evidence';
 
 // Condition trigger (atomic billing + notification)
-export { triggerConditionMet } from './conditionTrigger.js';
-export type { TriggerConditionMetInput, TriggerConditionMetResult } from './conditionTrigger.js';
+export { triggerConditionMet } from './conditionTrigger';
+export type { TriggerConditionMetInput, TriggerConditionMetResult } from './conditionTrigger';
 
 // Case notifications (retry queue)
-export { retryStaleCaseNotifications } from './caseNotifications.js';
-export type { RetryCaseNotificationsOptions, RetryCaseNotificationsResult } from './caseNotifications.js';
+export { retryStaleCaseNotifications } from './caseNotifications';
+export type { RetryCaseNotificationsOptions, RetryCaseNotificationsResult } from './caseNotifications';
 
 // Cases
-export { findActiveCaseLinks } from './cases.js';
-export type { ActiveCaseLink } from './cases.js';
+export { findActiveCaseLinks } from './cases';
+export type { ActiveCaseLink } from './cases';
 
 // Case expiration
-export { expireOverdueCases } from './caseExpiration.js';
-export type { ExpireOverdueCasesInput, ExpireOverdueCasesResult } from './caseExpiration.js';
+export { expireOverdueCases } from './caseExpiration';
+export type { ExpireOverdueCasesInput, ExpireOverdueCasesResult } from './caseExpiration';
 
 // Travel guest cleanup
 export {
   cleanupTravelGuestConversations,
   DEFAULT_TRAVEL_GUEST_RETENTION_DAYS,
-} from './travelGuestCleanup.js';
+} from './travelGuestCleanup';
 export type {
   CleanupTravelGuestConversationsInput,
   CleanupTravelGuestConversationsResult,
-} from './travelGuestCleanup.js';
+} from './travelGuestCleanup';
 
 // Status utilities
-export { determineStatus, nightsBetween, isSameStayDates, shouldSendAvailabilityNotification } from './status.js';
+export { determineStatus, nightsBetween, isSameStayDates, shouldSendAvailabilityNotification } from './status';
 
 // Check log
-export { saveCheckLog } from './checkLog.js';
-export type { SaveCheckLogInput } from './checkLog.js';
+export { saveCheckLog } from './checkLog';
+export type { SaveCheckLogInput } from './checkLog';
 
 // Post-check operations
-export { sendNotificationIfNeeded, updateAccommodationStatus } from './postCheck.js';
-export type { SendNotificationInput } from './postCheck.js';
+export { sendNotificationIfNeeded, updateAccommodationStatus } from './postCheck';
+export type { SendNotificationInput } from './postCheck';
 
 // Cycle management
-export { findActiveAccommodations, createCheckCycle, finalizeCycleCounter } from './cycle.js';
-export type { ActiveAccommodation, CreateCheckCycleInput } from './cycle.js';
+export { findActiveAccommodations, createCheckCycle, finalizeCycleCounter } from './cycle';
+export type { ActiveAccommodation, CreateCheckCycleInput } from './cycle';
 
 // BullMQ types (re-exported for consumer convenience)
 export type { Queue, Worker, Job } from 'bullmq';
