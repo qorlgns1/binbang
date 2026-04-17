@@ -2,7 +2,7 @@ import type { AvailabilityStatus } from '@workspace/db';
 import { getDataSource, CheckLog } from '@workspace/db';
 import { parsePrice } from '@workspace/shared';
 
-import { nightsBetween } from './status';
+import { nightsBetween } from './status.js';
 
 export interface SaveCheckLogInput {
   accommodationId: string;

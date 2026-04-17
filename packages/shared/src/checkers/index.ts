@@ -5,9 +5,9 @@
  * No browser automation, DB access, or network I/O.
  */
 
-export { parsePrice } from './priceParser';
-export type { ParsedPrice } from './priceParser';
+export { parsePrice } from './priceParser.js';
+export type { ParsedPrice } from './priceParser.js';
 
-export { isRetryableError, formatDate, delay, calculateNights } from './utils';
+export { isRetryableError, formatDate, delay, calculateNights } from './utils.js';
 
-export { AGODA_PATTERNS, AIRBNB_PATTERNS, PRICE_PATTERN, RETRYABLE_ERRORS } from './constants';
+export { AGODA_PATTERNS, AIRBNB_PATTERNS, PRICE_PATTERN, RETRYABLE_ERRORS } from './constants.js';

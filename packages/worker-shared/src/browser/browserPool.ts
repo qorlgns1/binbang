@@ -1,6 +1,6 @@
 import type { Browser } from 'playwright';
 
-import { type BrowserLaunchConfig, createBrowser } from './browser';
+import { type BrowserLaunchConfig, createBrowser } from './browser.js';
 
 type Waiter = {
   resolve: (browser: Browser) => void;

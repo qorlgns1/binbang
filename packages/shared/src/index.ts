@@ -18,22 +18,22 @@
  */
 
 // Types
-export * from './types';
+export * from './types/index.js';
 
 // URL Parser / Builder (pure)
-export { parseAccommodationUrl } from './urlParser';
-export { buildAccommodationUrl } from './urlBuilder';
+export { parseAccommodationUrl } from './urlParser.js';
+export { buildAccommodationUrl } from './urlBuilder.js';
 
 // Checker utilities (pure)
-export { parsePrice } from './checkers/priceParser';
-export type { ParsedPrice } from './checkers/priceParser';
-export { isRetryableError, formatDate, delay, calculateNights } from './checkers/utils';
-export { AGODA_PATTERNS, AIRBNB_PATTERNS, PRICE_PATTERN, RETRYABLE_ERRORS } from './checkers/constants';
+export { parsePrice } from './checkers/priceParser.js';
+export type { ParsedPrice } from './checkers/priceParser.js';
+export { isRetryableError, formatDate, delay, calculateNights } from './checkers/utils.js';
+export { AGODA_PATTERNS, AIRBNB_PATTERNS, PRICE_PATTERN, RETRYABLE_ERRORS } from './checkers/constants.js';
 
 // Notification utilities (pure)
 export {
   buildKakaoNotificationSender,
   prependKakaoNotificationLabel,
   prependKakaoNotificationSender,
-} from './utils/kakaoNotification';
-export type { KakaoNotificationContext } from './utils/kakaoNotification';
+} from './utils/kakaoNotification.js';
+export type { KakaoNotificationContext } from './utils/kakaoNotification.js';

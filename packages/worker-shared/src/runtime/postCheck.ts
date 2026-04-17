@@ -2,8 +2,8 @@ import type { AvailabilityStatus } from '@workspace/db';
 import { getDataSource, Accommodation, CheckLog, IsNull, Not } from '@workspace/db';
 import { type AccommodationMetadata, parsePrice } from '@workspace/shared';
 
-import { notifyAvailable } from './notifications';
-import { isSameStayDates, shouldSendAvailabilityNotification } from './status';
+import { notifyAvailable } from './notifications.js';
+import { isSameStayDates, shouldSendAvailabilityNotification } from './status.js';
 
 export interface SendNotificationInput {
   accommodationId: string;

@@ -1,19 +1,19 @@
 import type { AccommodationToCheck, CheckResult } from '@workspace/shared';
 
-import { checkAgoda } from './agoda';
-import { checkAirbnb } from './airbnb';
-import type { CheckerRuntimeConfig } from './baseChecker';
-import type { PlatformSelectorCache } from './selectors';
+import { checkAgoda } from './agoda.js';
+import { checkAirbnb } from './airbnb.js';
+import type { CheckerRuntimeConfig } from './baseChecker.js';
+import type { PlatformSelectorCache } from './selectors/index.js';
 
-export { checkAgoda } from './agoda';
-export { checkAirbnb } from './airbnb';
-export { initBrowserPool, closeBrowserPool, acquireBrowser, releaseBrowser } from './browserPool';
-export type { PlatformSelectorCache, SelectorConfig } from './selectors';
+export { checkAgoda } from './agoda.js';
+export { checkAirbnb } from './airbnb.js';
+export { initBrowserPool, closeBrowserPool, acquireBrowser, releaseBrowser } from './browserPool.js';
+export type { PlatformSelectorCache, SelectorConfig } from './selectors/index.js';
 
 export type { AccommodationToCheck, CheckResult };
-export type { CheckerRuntimeConfig } from './baseChecker';
-export type { BrowserLaunchConfig, PageSetupConfig } from './browser';
-export type { BrowserPoolConfig } from './browserPool';
+export type { CheckerRuntimeConfig } from './baseChecker.js';
+export type { BrowserLaunchConfig, PageSetupConfig } from './browser.js';
+export type { BrowserPoolConfig } from './browserPool.js';
 
 export interface CheckAccommodationOptions {
   runtimeConfig: CheckerRuntimeConfig;

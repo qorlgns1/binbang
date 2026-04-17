@@ -1,8 +1,8 @@
 import { buildAccommodationUrl, type AccommodationToCheck, type CheckResult } from '@workspace/shared';
 
-import type { CheckerRuntimeConfig } from './baseChecker';
-import { baseCheck } from './baseChecker';
-import type { PlatformSelectorCache } from './selectors';
+import type { CheckerRuntimeConfig } from './baseChecker.js';
+import { baseCheck } from './baseChecker.js';
+import type { PlatformSelectorCache } from './selectors/index.js';
 
 /**
  * Airbnb data-testid 및 JSON-LD 기반 추출기

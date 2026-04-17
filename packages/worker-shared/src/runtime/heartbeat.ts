@@ -1,8 +1,8 @@
 import { getDataSource, WorkerHeartbeat, HeartbeatHistory, User, LessThan, Not } from '@workspace/db';
 
-import { sendAlertNotification } from './notifications';
-import { getSettings } from './settings';
-import { getEnv } from './settings/env';
+import { sendAlertNotification } from './notifications.js';
+import { getSettings } from './settings/index.js';
+import { getEnv } from './settings/env.js';
 
 // ── Types ──
 

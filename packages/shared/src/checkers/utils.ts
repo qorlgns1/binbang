@@ -1,4 +1,4 @@
-import { RETRYABLE_ERRORS } from './constants';
+import { RETRYABLE_ERRORS } from './constants.js';
 
 export function isRetryableError(errorMessage: string): boolean {
   if (errorMessage.includes('Navigation timeout')) {

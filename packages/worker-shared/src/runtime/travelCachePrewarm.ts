@@ -1,4 +1,4 @@
-import { getTravelCachePrewarmConfig } from './settings/env';
+import { getTravelCachePrewarmConfig } from './settings/env.js';
 
 export interface TravelCachePrewarmMetrics {
   targets: number;

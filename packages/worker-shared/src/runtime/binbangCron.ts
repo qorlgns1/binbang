@@ -1,4 +1,4 @@
-import { getBinbangCronConfig } from './settings/env';
+import { getBinbangCronConfig } from './settings/env.js';
 
 function joinUrl(baseUrl: string, pathname: string): string {
   const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;

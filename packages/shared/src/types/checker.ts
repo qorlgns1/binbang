@@ -1,4 +1,4 @@
-import type { Platform } from './enums';
+import type { Platform } from './enums.js';
 
 // JSON-LD 기반 숙소 메타데이터
 export interface AccommodationMetadata {

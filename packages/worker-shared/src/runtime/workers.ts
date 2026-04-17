@@ -1,7 +1,7 @@
 import { type Job, Worker } from 'bullmq';
 import type Redis from 'ioredis';
 
-import { QUEUE_NAMES } from './queues';
+import { QUEUE_NAMES } from './queues.js';
 
 export interface CreateWorkerOptions {
   concurrency?: number;

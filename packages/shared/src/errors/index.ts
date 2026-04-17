@@ -1,7 +1,7 @@
-export { AppError } from './base';
-export { NotFoundError, ConflictError, ForbiddenError, UnauthorizedError } from './resource';
-export { ValidationError, BadRequestError } from './validation';
-export { InternalServerError } from './system';
-export type { ValidationDetail } from './validation';
-export { ApiError, parseApiError } from './apiError';
-export type { ErrorResponseBody } from './apiError';
+export { AppError } from './base.js';
+export { NotFoundError, ConflictError, ForbiddenError, UnauthorizedError } from './resource.js';
+export { ValidationError, BadRequestError } from './validation.js';
+export { InternalServerError } from './system.js';
+export type { ValidationDetail } from './validation.js';
+export { ApiError, parseApiError } from './apiError.js';
+export type { ErrorResponseBody } from './apiError.js';

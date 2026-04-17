@@ -1,4 +1,4 @@
-import { AppError } from './base';
+import { AppError } from './base.js';
 
 /** 404 — requested resource does not exist. */
 export class NotFoundError extends AppError {

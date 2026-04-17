@@ -6,7 +6,7 @@
  */
 import type { Locale } from '@workspace/shared/i18n';
 
-import { createWorkerI18n } from './loader';
+import { createWorkerI18n } from './loader.js';
 
 /** 구조화된 알림 페이로드 (DB에 저장되는 형태) */
 export interface StructuredNotificationPayload {

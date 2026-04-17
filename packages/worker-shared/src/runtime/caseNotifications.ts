@@ -1,7 +1,7 @@
 import { getDataSource, CaseNotification, NotificationStatus, LessThan } from '@workspace/db';
 
-import { getUserLocale, isStructuredPayload, renderNotification } from './i18n';
-import { sendKakaoNotification } from './notifications';
+import { getUserLocale, isStructuredPayload, renderNotification } from './i18n/index.js';
+import { sendKakaoNotification } from './notifications.js';
 
 export interface RetryCaseNotificationsOptions {
   /**

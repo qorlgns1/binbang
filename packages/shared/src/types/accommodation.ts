@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, Platform } from './enums';
+import type { AvailabilityStatus, Platform } from './enums.js';
 
 /** API/클라이언트용 숙소 타입 (JSON 직렬화로 Date → string) */
 export interface Accommodation {

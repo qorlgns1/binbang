@@ -1,4 +1,4 @@
-import { AppError } from './base';
+import { AppError } from './base.js';
 
 /** 단일 필드 검증 실패 항목 (필드명, 메시지). */
 export interface ValidationDetail {

@@ -4,11 +4,11 @@
  * 이 디렉터리는 runtime/** 내부에서만 사용한다.
  * public entrypoint로 노출하지 않는다.
  */
-export { createWorkerI18n, loadWorkerMessages, clearMessageCache } from './loader';
-export { getUserLocale } from './userLocale';
+export { createWorkerI18n, loadWorkerMessages, clearMessageCache } from './loader.js';
+export { getUserLocale } from './userLocale.js';
 export {
   type StructuredNotificationPayload,
   type RenderedNotification,
   renderNotification,
   isStructuredPayload,
-} from './templates';
+} from './templates.js';
