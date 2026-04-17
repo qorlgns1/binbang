@@ -115,6 +115,25 @@ vi.mock('@workspace/db', async (importOriginal) => {
   };
 });
 
+function expectBetweenOperator(value: unknown, from: Date, to: Date): void {
+  expect(value).toEqual(
+    expect.objectContaining({
+      _type: 'between',
+      _value: [from, to],
+    }),
+  );
+}
+
+function expectSubmittedRangeCountCall(from: Date, to: Date): void {
+  const [options] = mockFormSubmissionCount.mock.calls[0] as [{ where: { createdAt: unknown } }];
+  expect(options.where).toEqual(
+    expect.objectContaining({
+      createdAt: expect.any(Object),
+    }),
+  );
+  expectBetweenOperator(options.where.createdAt, from, to);
+}
+
 function setRangeMetricMocks(): void {
   mockFormSubmissionCount.mockImplementation(({ where }: { where: { status?: string } }) =>
     where.status === 'PROCESSED' ? 6 : 7,
@@ -196,16 +215,7 @@ describe('admin/funnel.service', (): void => {
       now: new Date('2026-02-14T18:40:00.000Z'),
     });
 
-    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          createdAt: {
-            gte: new Date('2026-02-14T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        },
-      }),
-    );
+    expectSubmittedRangeCountCall(new Date('2026-02-14T00:00:00.000Z'), new Date('2026-02-14T23:59:59.999Z'));
   });
 
   it('resolves 7d range with inclusive UTC window', async (): Promise<void> => {
@@ -214,16 +224,7 @@ describe('admin/funnel.service', (): void => {
       now: new Date('2026-02-14T18:40:00.000Z'),
     });
 
-    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          createdAt: {
-            gte: new Date('2026-02-08T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        },
-      }),
-    );
+    expectSubmittedRangeCountCall(new Date('2026-02-08T00:00:00.000Z'), new Date('2026-02-14T23:59:59.999Z'));
   });
 
   it('resolves 30d range with inclusive UTC window', async (): Promise<void> => {
@@ -232,16 +233,7 @@ describe('admin/funnel.service', (): void => {
       now: new Date('2026-02-14T18:40:00.000Z'),
     });
 
-    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          createdAt: {
-            gte: new Date('2026-01-16T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        },
-      }),
-    );
+    expectSubmittedRangeCountCall(new Date('2026-01-16T00:00:00.000Z'), new Date('2026-02-14T23:59:59.999Z'));
   });
 
   it('uses earliest metric timestamp as all-range start', async (): Promise<void> => {
@@ -256,16 +248,7 @@ describe('admin/funnel.service', (): void => {
       now: new Date('2026-02-14T18:40:00.000Z'),
     });
 
-    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          createdAt: {
-            gte: new Date('2026-01-15T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        },
-      }),
-    );
+    expectSubmittedRangeCountCall(new Date('2026-01-15T00:00:00.000Z'), new Date('2026-02-14T23:59:59.999Z'));
   });
 
   it('falls back to current day when all-range has no historical data', async (): Promise<void> => {
@@ -274,16 +257,7 @@ describe('admin/funnel.service', (): void => {
       now: new Date('2026-02-14T18:40:00.000Z'),
     });
 
-    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          createdAt: {
-            gte: new Date('2026-02-14T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        },
-      }),
-    );
+    expectSubmittedRangeCountCall(new Date('2026-02-14T00:00:00.000Z'), new Date('2026-02-14T23:59:59.999Z'));
   });
 
   it('applies distinct caseId rule to conditionMet aggregation', async (): Promise<void> => {
@@ -307,16 +281,7 @@ describe('admin/funnel.service', (): void => {
       now: new Date('2026-02-14T18:40:00.000Z'),
     });
 
-    expect(mockFormSubmissionCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          createdAt: {
-            gte: new Date('2026-02-01T00:00:00.000Z'),
-            lte: new Date('2026-02-07T23:59:59.999Z'),
-          },
-        },
-      }),
-    );
+    expectSubmittedRangeCountCall(new Date('2026-02-01T00:00:00.000Z'), new Date('2026-02-07T23:59:59.999Z'));
   });
 
   it('throws on invalid custom from date', async (): Promise<void> => {

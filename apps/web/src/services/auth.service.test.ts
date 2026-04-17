@@ -36,6 +36,9 @@ const dbMock = vi.hoisted(
     accountRepo: {
       findOne: ReturnType<typeof vi.fn>;
     };
+    sessionRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
     dataSourceQuery: ReturnType<typeof vi.fn>;
     getDataSource: ReturnType<typeof vi.fn>;
   } => ({
@@ -55,6 +58,9 @@ const dbMock = vi.hoisted(
     accountRepo: {
       findOne: vi.fn(),
     },
+    sessionRepo: {
+      findOne: vi.fn(),
+    },
     dataSourceQuery: vi.fn(),
     getDataSource: vi.fn(),
   }),
@@ -70,9 +76,11 @@ vi.mock('@workspace/db', async (importOriginal) => {
   const planRepo = createMockRepository();
   const roleRepo = createMockRepository();
   const accountRepo = createMockRepository();
+  const sessionRepo = createMockRepository();
   const dataSource = createMockDataSource({
     repositories: [
       [actual.Account, accountRepo],
+      [actual.Session, sessionRepo],
       [actual.User, userRepo],
       [actual.Plan, planRepo],
       [actual.Role, roleRepo],
@@ -84,6 +92,7 @@ vi.mock('@workspace/db', async (importOriginal) => {
   dbMock.planRepo = planRepo;
   dbMock.roleRepo = roleRepo;
   dbMock.accountRepo = accountRepo;
+  dbMock.sessionRepo = sessionRepo;
   dbMock.dataSourceQuery = dataSource.query;
   dbMock.getDataSource.mockResolvedValue(dataSource);
 
@@ -105,6 +114,7 @@ describe('auth.service', (): void => {
     vi.clearAllMocks();
     dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     dbMock.dataSourceQuery.mockResolvedValue([]);
+    dbMock.sessionRepo.findOne.mockResolvedValue(null);
   });
 
   describe('createUserWithCredentials', (): void => {
@@ -268,21 +278,21 @@ describe('auth.service', (): void => {
         image: null,
         planId: 'plan-free',
       });
-      dbMock.dataSourceQuery
-        .mockResolvedValueOnce([
-          {
-            id: 'session-1',
-            sessionToken: 'token-1',
-            userId: 'user-1',
-            expires: expires.toISOString(),
-          },
-        ])
-        .mockResolvedValueOnce([{ name: 'ADMIN' }, { name: 'USER' }]);
+      dbMock.sessionRepo.findOne.mockResolvedValue({
+        id: 'session-1',
+        sessionToken: 'token-1',
+        userId: 'user-1',
+        expires,
+      });
+      dbMock.dataSourceQuery.mockResolvedValueOnce([{ name: 'ADMIN' }, { name: 'USER' }]);
       dbMock.planRepo.findOne.mockResolvedValue({ name: 'FREE' });
 
       const result = await getSessionAndUserByToken('token-1');
 
-      expect(dbMock.dataSourceQuery).toHaveBeenNthCalledWith(1, expect.stringContaining('FROM "Session"'), ['token-1']);
+      expect(dbMock.sessionRepo.findOne).toHaveBeenCalledWith({
+        where: { sessionToken: 'token-1' },
+        select: { id: true, sessionToken: true, userId: true, expires: true },
+      });
       expect(dbMock.userRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         select: {
@@ -294,7 +304,7 @@ describe('auth.service', (): void => {
           planId: true,
         },
       });
-      expect(dbMock.dataSourceQuery).toHaveBeenNthCalledWith(2, expect.stringContaining('FROM "Role"'), ['user-1']);
+      expect(dbMock.dataSourceQuery).toHaveBeenCalledWith(expect.stringContaining('FROM "Role"'), ['user-1']);
       expect(dbMock.planRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'plan-free' },
         select: { name: true },

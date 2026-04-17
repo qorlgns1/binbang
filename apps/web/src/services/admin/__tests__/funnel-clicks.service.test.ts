@@ -77,6 +77,15 @@ vi.mock('@workspace/db', async (importOriginal) => {
   };
 });
 
+function expectBetweenOperator(value: unknown, from: Date, to: Date): void {
+  expect(value).toEqual(
+    expect.objectContaining({
+      _type: 'between',
+      _value: [from, to],
+    }),
+  );
+}
+
 describe('admin/funnel-clicks.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
@@ -143,15 +152,11 @@ describe('admin/funnel-clicks.service', (): void => {
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          occurredAt: {
-            gte: new Date('2026-02-01T00:00:00.000Z'),
-            lte: new Date('2026-02-07T23:59:59.999Z'),
-          },
-        }),
-      }),
+    const [options] = mockLandingEventFindMany.mock.calls[0] as [{ where: { occurredAt: unknown } }];
+    expectBetweenOperator(
+      options.where.occurredAt,
+      new Date('2026-02-01T00:00:00.000Z'),
+      new Date('2026-02-07T23:59:59.999Z'),
     );
   });
 
@@ -181,15 +186,11 @@ describe('admin/funnel-clicks.service', (): void => {
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          occurredAt: {
-            gte: new Date('2026-01-16T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        }),
-      }),
+    const [options] = mockLandingEventFindMany.mock.calls[0] as [{ where: { occurredAt: unknown } }];
+    expectBetweenOperator(
+      options.where.occurredAt,
+      new Date('2026-01-16T00:00:00.000Z'),
+      new Date('2026-02-14T23:59:59.999Z'),
     );
   });
 
@@ -202,15 +203,11 @@ describe('admin/funnel-clicks.service', (): void => {
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          occurredAt: {
-            gte: new Date('2026-01-18T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        }),
-      }),
+    const [options] = mockLandingEventFindMany.mock.calls[0] as [{ where: { occurredAt: unknown } }];
+    expectBetweenOperator(
+      options.where.occurredAt,
+      new Date('2026-01-18T00:00:00.000Z'),
+      new Date('2026-02-14T23:59:59.999Z'),
     );
   });
 
