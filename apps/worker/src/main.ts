@@ -30,9 +30,9 @@ import {
 import 'dotenv/config';
 import { createServer } from 'node:http';
 
-import { processCheck } from './checkProcessor';
-import { getConfig, initConfig, logConfig } from './config';
-import { createCycleProcessor } from './cycleProcessor';
+import { processCheck } from './checkProcessor.js';
+import { getConfig, initConfig, logConfig } from './config.js';
+import { createCycleProcessor } from './cycleProcessor.js';
 
 async function main(): Promise<void> {
   // 1. 설정 초기화
