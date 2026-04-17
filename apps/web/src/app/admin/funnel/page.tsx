@@ -19,6 +19,59 @@ import { KpiCards } from './_components/KpiCards';
 import { useFunnelClicksQuery } from './_hooks/useFunnelClicksQuery';
 import { useFunnelGrowthQuery } from './_hooks/useFunnelGrowthQuery';
 import { useFunnelQuery } from './_hooks/useFunnelQuery';
+import { useTravelPlannerFunnelQuery } from './_hooks/useTravelPlannerFunnelQuery';
+
+const TRAVEL_PLANNER_COUNT_ITEMS = [
+  { key: 'landingViewed', label: 'Planner landing', alias: 'landing_viewed' },
+  { key: 'plannerStarted', label: 'Planner started', alias: 'planner_started' },
+  { key: 'plannerSubmitted', label: 'Planner submitted', alias: 'planner_submitted' },
+  { key: 'plannerResultViewed', label: 'Result viewed', alias: 'planner_result_viewed' },
+  { key: 'plannerFailed', label: 'Failed', alias: 'planner_failed' },
+  { key: 'plannerEmptyResult', label: 'Empty result', alias: 'planner_empty_result' },
+  { key: 'accommodationClicked', label: 'Agoda CTA click', alias: 'accommodation_clicked' },
+  { key: 'alertBridgeStarted', label: 'Alert bridge start', alias: 'alert_bridge_started' },
+] as const;
+
+const TRAVEL_PLANNER_CONVERSION_ITEMS = [
+  {
+    key: 'landingToStarted',
+    label: 'landing_viewed → planner_started',
+    numeratorKey: 'plannerStarted',
+    denominatorKey: 'landingViewed',
+  },
+  {
+    key: 'startedToSubmitted',
+    label: 'planner_started → planner_submitted',
+    numeratorKey: 'plannerSubmitted',
+    denominatorKey: 'plannerStarted',
+  },
+  {
+    key: 'startedToResultViewed',
+    label: 'planner_started → planner_result_viewed',
+    numeratorKey: 'plannerResultViewed',
+    denominatorKey: 'plannerStarted',
+  },
+  {
+    key: 'resultViewedToAccommodationClicked',
+    label: 'planner_result_viewed → accommodation_clicked',
+    numeratorKey: 'accommodationClicked',
+    denominatorKey: 'plannerResultViewed',
+  },
+  {
+    key: 'accommodationClickedToAlertBridgeStarted',
+    label: 'accommodation_clicked → alert_bridge_started',
+    numeratorKey: 'alertBridgeStarted',
+    denominatorKey: 'accommodationClicked',
+  },
+] as const;
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatPercentWithFraction(value: number, numerator: number, denominator: number): string {
+  return `${formatPercent(value)} (${numerator.toLocaleString()} / ${denominator.toLocaleString()})`;
+}
 
 export default function FunnelPage() {
   const [filter, setFilter] = useState<FunnelUtcFilter>(() => buildUtcFilterFromRange('30d'));
@@ -28,6 +81,7 @@ export default function FunnelPage() {
   const clickQuery = useFunnelClicksQuery(filter);
   const growthQuery = useFunnelGrowthQuery(filter);
   const affiliateQuery = useAffiliateFunnelQuery({ ...filter, category: affiliateCategory });
+  const travelPlannerQuery = useTravelPlannerFunnelQuery();
   const isPending = query.isPending || clickQuery.isPending || growthQuery.isPending || affiliateQuery.isPending;
   const errorMessages = [
     query.isError ? getUserMessage(query.error) : null,
@@ -310,6 +364,95 @@ export default function FunnelPage() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          <Card className='animate-dashboard-enter'>
+            <CardHeader>
+              <CardTitle>Travel Planner MVP Funnel</CardTitle>
+              <CardDescription>최근 7일, source = travel-planner 기준 read-only 집계입니다.</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-5'>
+              {travelPlannerQuery.isPending && (
+                <p className='text-sm text-muted-foreground'>Travel Planner 퍼널 데이터를 불러오는 중입니다.</p>
+              )}
+
+              {travelPlannerQuery.isError && (
+                <p className='text-sm text-destructive'>
+                  Travel Planner 퍼널 데이터를 불러오지 못했습니다: {getUserMessage(travelPlannerQuery.error)}
+                </p>
+              )}
+
+              {travelPlannerQuery.data && (
+                <>
+                  <p className='text-sm text-muted-foreground'>
+                    {formatLocalDateTime(travelPlannerQuery.data.range.from)} ~{' '}
+                    {formatLocalDateTime(travelPlannerQuery.data.range.to)}
+                  </p>
+
+                  {travelPlannerQuery.data.counts.plannerStarted < 20 && (
+                    <div className='rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'>
+                      표본이 적어 초기 수치는 해석 보류가 필요합니다.
+                    </div>
+                  )}
+
+                  <div className='grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4'>
+                    {TRAVEL_PLANNER_COUNT_ITEMS.map((item) => (
+                      <div key={item.key} className='rounded-lg border border-border p-3'>
+                        <p className='text-xs text-muted-foreground'>{item.label}</p>
+                        <p className='mt-1 text-2xl font-semibold text-foreground'>
+                          {travelPlannerQuery.data.counts[item.key].toLocaleString()}
+                        </p>
+                        <p className='mt-1 text-[11px] text-muted-foreground'>{item.alias}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+                    <div className='rounded-lg border border-border p-4'>
+                      <h3 className='text-sm font-medium text-foreground'>핵심 전환율</h3>
+                      <div className='mt-3 space-y-3'>
+                        {TRAVEL_PLANNER_CONVERSION_ITEMS.map((item) => (
+                          <div key={item.key} className='flex items-center justify-between gap-4 text-sm'>
+                            <span className='text-muted-foreground'>{item.label}</span>
+                            <span className='font-medium text-foreground'>
+                              {formatPercentWithFraction(
+                                travelPlannerQuery.data.conversion[item.key],
+                                travelPlannerQuery.data.counts[item.numeratorKey],
+                                travelPlannerQuery.data.counts[item.denominatorKey],
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className='rounded-lg border border-border p-4'>
+                      <h3 className='text-sm font-medium text-foreground'>보조 지표</h3>
+                      <div className='mt-3 space-y-3 text-sm'>
+                        <div className='flex items-center justify-between gap-4'>
+                          <span className='text-muted-foreground'>planner_failed</span>
+                          <span className='font-medium text-foreground'>
+                            {travelPlannerQuery.data.counts.plannerFailed.toLocaleString()}
+                          </span>
+                        </div>
+                        <p className='text-xs leading-relaxed text-muted-foreground'>
+                          planner_failed는 /api/chat 실패, tool error, 결과 도달 실패를 포함합니다.
+                        </p>
+                        <div className='flex items-center justify-between gap-4'>
+                          <span className='text-muted-foreground'>planner_empty_result</span>
+                          <span className='font-medium text-foreground'>
+                            {travelPlannerQuery.data.counts.plannerEmptyResult.toLocaleString()}
+                          </span>
+                        </div>
+                        <p className='text-xs leading-relaxed text-muted-foreground'>
+                          응답은 성공했지만 숙소 카드가 0개인 경우입니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </>

@@ -13,19 +13,22 @@ import type { TravelToolsOptions } from './affiliateUtils';
 export function createSearchAccommodationTool({ conversationId, userId }: TravelToolsOptions) {
   return tool({
     description:
-      'Search for hotels and accommodations with affiliate booking links. Use this tool INSTEAD of searchPlaces when the user asks about hotels, accommodations, places to stay, or lodging. Returns affiliated results with booking links and non-affiliated alternatives.',
+      'Search for hotels and accommodations with affiliate booking links. Use this tool INSTEAD of searchPlaces when the user asks about hotels, accommodations, places to stay, or lodging. Include checkIn/checkOut/adults when the user provides them. Returns affiliated results with booking links and non-affiliated alternatives.',
     inputSchema: z.object({
       query: z.string().describe('Hotel search query (e.g., "best hotels in Tokyo", "ryokan in Kyoto")'),
       location: z.string().optional().describe('Optional location bias (e.g., "Tokyo, Japan")'),
+      checkIn: z.string().optional().describe('Optional check-in date in YYYY-MM-DD when the user provides dates'),
+      checkOut: z.string().optional().describe('Optional check-out date in YYYY-MM-DD when the user provides dates'),
+      adults: z.number().int().positive().optional().describe('Optional adult guest count when the user provides it'),
     }),
-    execute: async ({ query, location }): Promise<SearchAccommodationResult> => {
+    execute: async ({ query, location, checkIn, checkOut, adults }): Promise<SearchAccommodationResult> => {
       const ctaFeatureEnabled = isAffiliateCtaEnabled();
       const affiliateLinkPolicy = await resolveAffiliateLinksEnabled({ conversationId, userId });
       const preferenceEnabled = affiliateLinkPolicy.enabled;
       const canUseAffiliateLink = ctaFeatureEnabled && preferenceEnabled;
 
       const [agodaResult, placesResult] = await Promise.all([
-        searchAgodaAccommodations({ query, location, limit: 5 }),
+        searchAgodaAccommodations({ query, location, checkIn, checkOut, adults, limit: 5 }),
         searchGooglePlaces({ query, location, type: 'hotel' }),
       ]);
       const places = placesResult.places;
@@ -51,6 +54,7 @@ export function createSearchAccommodationTool({ conversationId, userId }: Travel
       const affiliate: AccommodationEntity | null = firstAgoda
         ? {
             placeId: `agoda:${firstAgoda.hotelId}`,
+            hotelId: firstAgoda.hotelId,
             name: firstAgoda.name,
             address: firstAgoda.address,
             latitude: firstAgoda.latitude,
@@ -65,6 +69,9 @@ export function createSearchAccommodationTool({ conversationId, userId }: Travel
             priceAmount: firstAgoda.priceAmount,
             priceCurrency: firstAgoda.priceCurrency,
             isAvailable: firstAgoda.available,
+            checkIn,
+            checkOut,
+            adults,
           }
         : firstPlace
           ? {

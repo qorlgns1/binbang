@@ -2,6 +2,18 @@ import type { Prisma } from '@workspace/db';
 import { prisma } from '@workspace/db';
 import { ForbiddenError } from '@workspace/shared/errors';
 
+interface EnsureConversationExistsParams {
+  conversationId?: string;
+  sessionId: string;
+  userId?: string | null;
+  title?: string | null;
+}
+
+interface EnsureConversationExistsResult {
+  conversationId: string;
+  isNewConversation: boolean;
+}
+
 interface SaveMessageParams {
   conversationId?: string;
   sessionId: string;
@@ -12,56 +24,86 @@ interface SaveMessageParams {
   toolResults?: unknown[];
 }
 
-export async function saveConversationMessages(params: SaveMessageParams) {
-  const { sessionId, userId, userMessage, assistantMessage, toolCalls, toolResults } = params;
+function normalizeConversationTitle(title: string | null | undefined): string | null {
+  const normalized = title?.trim();
+  return normalized ? normalized.slice(0, 100) : null;
+}
+
+async function ensureConversationExistsTx(
+  tx: Prisma.TransactionClient,
+  params: EnsureConversationExistsParams,
+): Promise<EnsureConversationExistsResult> {
+  const { sessionId, userId } = params;
+  const title = normalizeConversationTitle(params.title);
   let { conversationId } = params;
+  let isNewConversation = false;
 
-  const resultId = await prisma.$transaction(async (tx) => {
-    let isNewConversation = false;
+  if (conversationId) {
+    const existingConversation = await tx.travelConversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, userId: true, sessionId: true, messageCount: true },
+    });
 
-    if (conversationId) {
-      const existingConversation = await tx.travelConversation.findUnique({
-        where: { id: conversationId },
-        select: { id: true, userId: true, sessionId: true },
-      });
-
-      if (!existingConversation) {
-        const conversation = await tx.travelConversation.create({
-          data: {
-            id: conversationId,
-            sessionId,
-            userId: userId ?? null,
-            title: userMessage.slice(0, 100),
-          },
-          select: { id: true },
-        });
-        conversationId = conversation.id;
-        isNewConversation = true;
-      } else if (userId && existingConversation.userId == null) {
-        // 로그인 사용자가 기존 게스트 대화를 이어갈 때 소유권을 즉시 귀속
-        await tx.travelConversation.update({
-          where: { id: conversationId },
-          data: { userId },
-        });
-      } else if (existingConversation.userId != null && existingConversation.userId !== userId) {
-        // 다른 유저 소유 대화에는 메시지 추가 불가
-        throw new ForbiddenError('ConversationForbidden');
-      } else if (existingConversation.userId == null && existingConversation.sessionId !== sessionId) {
-        // 다른 게스트 세션의 대화에는 메시지 추가 불가 (sessionId 불일치)
-        throw new ForbiddenError('ConversationForbidden');
-      }
-    } else {
+    if (!existingConversation) {
       const conversation = await tx.travelConversation.create({
         data: {
+          id: conversationId,
           sessionId,
           userId: userId ?? null,
-          title: userMessage.slice(0, 100),
+          title,
         },
         select: { id: true },
       });
       conversationId = conversation.id;
       isNewConversation = true;
+    } else if (userId && existingConversation.userId == null) {
+      isNewConversation = existingConversation.messageCount === 0;
+      // 로그인 사용자가 기존 게스트 대화를 이어갈 때 소유권을 즉시 귀속
+      await tx.travelConversation.update({
+        where: { id: conversationId },
+        data: { userId },
+      });
+    } else if (existingConversation.userId != null && existingConversation.userId !== userId) {
+      // 다른 유저 소유 대화에는 접근 불가
+      throw new ForbiddenError('ConversationForbidden');
+    } else if (existingConversation.userId == null && existingConversation.sessionId !== sessionId) {
+      // 다른 게스트 세션의 대화에는 접근 불가
+      throw new ForbiddenError('ConversationForbidden');
+    } else {
+      isNewConversation = existingConversation.messageCount === 0;
     }
+  } else {
+    const conversation = await tx.travelConversation.create({
+      data: {
+        sessionId,
+        userId: userId ?? null,
+        title,
+      },
+      select: { id: true },
+    });
+    conversationId = conversation.id;
+    isNewConversation = true;
+  }
+
+  return { conversationId, isNewConversation };
+}
+
+export async function ensureConversationExists(
+  params: EnsureConversationExistsParams,
+): Promise<EnsureConversationExistsResult> {
+  return prisma.$transaction((tx) => ensureConversationExistsTx(tx, params));
+}
+
+export async function saveConversationMessages(params: SaveMessageParams) {
+  const { sessionId, userId, userMessage, assistantMessage, toolCalls, toolResults } = params;
+
+  const resultId = await prisma.$transaction(async (tx) => {
+    const { conversationId, isNewConversation } = await ensureConversationExistsTx(tx, {
+      conversationId: params.conversationId,
+      sessionId,
+      userId,
+      title: userMessage,
+    });
 
     await tx.travelMessage.createMany({
       data: [

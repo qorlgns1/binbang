@@ -24,7 +24,7 @@ export const usePlaceStore = create<PlaceState>((set) => ({
   selectedPlaceId: undefined,
   hoveredPlaceId: undefined,
   mapHoveredEntityId: undefined,
-  showMap: true,
+  showMap: false,
   setEntities: (entities) => set({ entities }),
   selectPlace: (place) => set({ selectedPlaceId: place.placeId }),
   selectEntity: (entityId) => set({ selectedPlaceId: entityId }),

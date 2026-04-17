@@ -66,6 +66,14 @@ export interface AccommodationEntity {
   isAvailable?: boolean;
   /** 제휴 제공자 이름 (isAffiliate=true 일 때만 존재) */
   advertiserName?: string;
+  /** apps/web 알림 등록 prefill용 Agoda hotel ID */
+  hotelId?: string;
+  /** apps/web 알림 등록 prefill용 체크인 날짜 */
+  checkIn?: string;
+  /** apps/web 알림 등록 prefill용 체크아웃 날짜 */
+  checkOut?: string;
+  /** apps/web 알림 등록 prefill용 성인 수 */
+  adults?: number;
 }
 
 export interface SearchAccommodationResult {

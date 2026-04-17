@@ -13,7 +13,7 @@ import { badRequestResponse, forbiddenResponse, handleServiceError } from '@/lib
 import { jsonError } from '@/lib/httpResponse';
 import { resolveRequestId } from '@/lib/requestId';
 import { extractSessionIdFromRequest } from '@/lib/sessionServer';
-import { getConversation, saveConversationMessages } from '@/services/conversation.service';
+import { ensureConversationExists, getConversation, saveConversationMessages } from '@/services/conversation.service';
 import {
   GUEST_LIMITS,
   USER_LIMITS,
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     id?: string;
     locale?: string;
   };
-  const normalizedConversationId = clientConversationId?.trim() || chatId?.trim() || undefined;
+  let normalizedConversationId = clientConversationId?.trim() || chatId?.trim() || undefined;
 
   const session = await getServerSession(authOptions);
   const sessionId =
@@ -116,6 +116,18 @@ export async function POST(req: Request) {
 
   if (!rateCheck.allowed) {
     return jsonError(429, 'Rate limit exceeded', { reason: rateCheck.reason, requestId });
+  }
+
+  try {
+    const ensuredConversation = await ensureConversationExists({
+      conversationId: normalizedConversationId,
+      sessionId,
+      userId: session?.user?.id,
+      title: lastUserText,
+    });
+    normalizedConversationId = ensuredConversation.conversationId;
+  } catch (error) {
+    return handleServiceError(error, 'chat conversation ensure');
   }
 
   const rawModelMessages = await convertToModelMessages(messages);

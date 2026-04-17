@@ -706,6 +706,40 @@ model AgodaHotel {
   @@map("agoda_hotels")
 }
 
+model AgodaHotelSearch {
+  hotelId         Int      @id
+  cityId          Int
+  countryCode     String?
+  hotelNameKo     String?
+  hotelNameEn     String?
+  cityNameKo      String?
+  cityNameEn      String?
+  countryNameKo   String?
+  countryNameEn   String?
+  starRating      Float?
+  ratingAverage   Float?
+  reviewCount     Int?
+  latitude        Float?
+  longitude       Float?
+  photoUrl        String?
+  url             String?
+  searchTextKo    String   @default("")
+  searchTextEn    String   @default("")
+  koSourcePresent Boolean  @default(false)
+  enSourcePresent Boolean  @default(false)
+  llmAliasFilled  Boolean  @default(false)
+  mergedAt        DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([cityId])
+  @@index([countryCode, cityId])
+  @@index([hotelNameKo(ops: raw("gin_trgm_ops"))], map: "agoda_hotels_search_hotelNameKo_trgm_idx", type: Gin)
+  @@index([hotelNameEn(ops: raw("gin_trgm_ops"))], map: "agoda_hotels_search_hotelNameEn_trgm_idx", type: Gin)
+  @@index([searchTextKo(ops: raw("gin_trgm_ops"))], map: "agoda_hotels_search_searchTextKo_trgm_idx", type: Gin)
+  @@index([searchTextEn(ops: raw("gin_trgm_ops"))], map: "agoda_hotels_search_searchTextEn_trgm_idx", type: Gin)
+  @@map("agoda_hotels_search")
+}
+
 model AgodaPollRun {
   id              BigInt        @id @default(autoincrement())
   accommodationId String

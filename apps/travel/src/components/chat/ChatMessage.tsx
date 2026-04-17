@@ -53,7 +53,9 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
               }
 
               const toolPart = part as unknown as { type: string; toolCallId?: string };
-              const key = toolPart.toolCallId ?? `part-${part.type}`;
+              const key = toolPart.toolCallId
+                ? `${message.id ?? 'msg'}-tool-${toolPart.toolCallId}-${idx}`
+                : `${message.id ?? 'msg'}-part-${part.type}-${idx}`;
               return <ChatToolPart key={key} part={part} />;
             })}
             <p className='text-[10px] text-muted-foreground/80 mt-1.5 -ml-1 flex items-center gap-0.5' aria-hidden>
