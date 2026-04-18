@@ -12,7 +12,7 @@ import {
 import { startOfUtcDay } from '@workspace/shared/utils/date';
 import { getHeartbeatStatus } from '../health.service';
 import {
-  buildAgodaNotificationReasonBreakdown,
+  buildAgodaNotificationReasonBreakdownFromRows,
   parseAgodaNotificationReason,
   type AgodaNotificationReasonStat,
 } from '@/services/agoda-notification-observability.service';
@@ -206,10 +206,9 @@ type StatusCountRow = {
   count: number | string;
 };
 
-type NotificationReasonCountRow = {
+type NotificationReasonRow = {
   status: string;
   lastError: string | null;
-  count: number | string;
 };
 
 type GroupCountQueryBuilder<TRow extends object> = {
@@ -240,20 +239,17 @@ async function groupStatusCounts(
     .getRawMany();
 }
 
-async function groupNotificationReasonCounts(
-  repo: QueryBuilderRepository<NotificationReasonCountRow>,
+async function fetchNotificationReasonRows(
+  repo: QueryBuilderRepository<NotificationReasonRow>,
   alias: string,
   whereSql: string,
   params: Record<string, unknown>,
-): Promise<NotificationReasonCountRow[]> {
+): Promise<NotificationReasonRow[]> {
   return repo
     .createQueryBuilder(alias)
     .select(`${alias}.status`, 'status')
     .addSelect(`${alias}.lastError`, 'lastError')
-    .addSelect('COUNT(*)', 'count')
     .where(whereSql, params)
-    .groupBy(`${alias}.status`)
-    .addGroupBy(`${alias}.lastError`)
     .getRawMany();
 }
 
@@ -445,7 +441,7 @@ export async function getAdminOpsAccommodationDiagnostics(
       'notification.accommodationId = :accommodationId',
       { accommodationId },
     ),
-    groupNotificationReasonCounts(
+    fetchNotificationReasonRows(
       ds.getRepository(AgodaNotification),
       'notification',
       'notification.accommodationId = :accommodationId AND notification.status IN (:...statuses)',
@@ -540,14 +536,7 @@ export async function getAdminOpsAccommodationDiagnostics(
 
   const pollCounts = countByStatus(pollStatusGroups);
   const notificationCounts = countByStatus(notificationStatusGroups);
-  const reasonBreakdown = buildAgodaNotificationReasonBreakdown(
-    notificationReasonGroups.map((row) => ({
-      status: row.status,
-      lastError: row.lastError,
-      count: toDbCount(row.count),
-    })),
-    3,
-  );
+  const reasonBreakdown = buildAgodaNotificationReasonBreakdownFromRows(notificationReasonGroups, 3);
   const latestConsentType = consentRows[0]?.type ?? null;
   const queuedAgedMinutes =
     oldestQueuedNotification != null
@@ -945,7 +934,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
       .andWhere('accommodation.createdAt >= :from', { from })
       .getCount(),
     groupStatusCounts(ds.getRepository(AgodaNotification), 'notification', 'notification.createdAt >= :from', { from }),
-    groupNotificationReasonCounts(
+    fetchNotificationReasonRows(
       ds.getRepository(AgodaNotification),
       'notification',
       'notification.createdAt >= :from AND notification.status IN (:...statuses)',
@@ -975,14 +964,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
     .slice(0, FALSE_POSITIVE_LIMIT);
 
   const counts = countByStatus(notificationGroups);
-  const reasonBreakdown = buildAgodaNotificationReasonBreakdown(
-    notificationReasonGroups.map((row) => ({
-      status: row.status,
-      lastError: row.lastError,
-      count: toDbCount(row.count),
-    })),
-    3,
-  );
+  const reasonBreakdown = buildAgodaNotificationReasonBreakdownFromRows(notificationReasonGroups, 3);
 
   const queued = counts.queued ?? 0;
   const sent = counts.sent ?? 0;

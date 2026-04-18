@@ -273,6 +273,21 @@ describe('admin/funnel.service', (): void => {
     );
   });
 
+  it('uses Oracle-safe subquery ordering for conditionMet series aggregation', async (): Promise<void> => {
+    await getAdminFunnel({
+      range: '30d',
+      now: new Date('2026-02-14T18:40:00.000Z'),
+    });
+
+    const queryMock = (dbMock.dataSource as { query: ReturnType<typeof vi.fn> }).query;
+    const [, conditionMetSeriesCall] = queryMock.mock.calls as Array<[string, [Date, Date]]>;
+
+    expect(conditionMetSeriesCall[0]).toContain('FROM (');
+    expect(conditionMetSeriesCall[0]).toContain('MIN("createdAt") AS "createdAt"');
+    expect(conditionMetSeriesCall[0]).toContain('ORDER BY "conditionMet"."createdAt" ASC');
+    expect(conditionMetSeriesCall[0]).not.toContain('ORDER BY MIN("createdAt")');
+  });
+
   it('normalizes explicit UTC ISO filter to full UTC day boundaries for non-all ranges', async (): Promise<void> => {
     await getAdminFunnel({
       range: '7d',

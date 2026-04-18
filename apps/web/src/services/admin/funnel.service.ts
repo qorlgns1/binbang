@@ -227,7 +227,14 @@ export async function getAdminFunnel(input: GetAdminFunnelInput = {}): Promise<A
       order: { paymentConfirmedAt: 'ASC' },
     }),
     ds.query<Array<{ caseId: string; createdAt: Date }>>(
-      `SELECT "caseId", MIN("createdAt") AS "createdAt" FROM "BillingEvent" WHERE "createdAt" >= :1 AND "createdAt" <= :2 GROUP BY "caseId" ORDER BY MIN("createdAt") ASC`,
+      `SELECT "conditionMet"."caseId" AS "caseId", "conditionMet"."createdAt" AS "createdAt"
+       FROM (
+         SELECT "caseId", MIN("createdAt") AS "createdAt"
+         FROM "BillingEvent"
+         WHERE "createdAt" >= :1 AND "createdAt" <= :2
+         GROUP BY "caseId"
+       ) "conditionMet"
+       ORDER BY "conditionMet"."createdAt" ASC`,
       [from, to],
     ),
   ]);
