@@ -36,7 +36,6 @@
     "db:seed:base": "pnpm with-env pnpm --filter @workspace/db db:seed:base",
     "agoda:import:csv": "pnpm with-env tsx scripts/agoda-import-csv.ts",
     "agoda:search:build": "pnpm with-env tsx scripts/agoda-build-search-table.ts",
-    "agoda:search:backfill-en": "pnpm with-env tsx scripts/agoda-backfill-search-en.ts",
     "clean": "turbo run clean && rm -rf node_modules",
     "local:docker": "docker compose --env-file .env.local -f docker/docker-compose.local.yml",
     "update:ai-context": "node scripts/update-ai-context.mjs",
