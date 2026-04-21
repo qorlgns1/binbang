@@ -54,6 +54,7 @@ import { TravelEntity } from './entities/travel/travel-entity.entity.ts';
 import { TravelMessage } from './entities/travel/travel-message.entity.ts';
 import { InitialOracleSchema1744000000000 } from './migrations/1744000000000-InitialOracleSchema.ts';
 import { OracleTextIndexes1744000000001 } from './migrations/1744000000001-OracleTextIndexes.ts';
+import { ExpandTravelConversationIdLength1745232000000 } from './migrations/1745232000000-ExpandTravelConversationIdLength.ts';
 
 // oracledb thin mode — Oracle Instant Client 불필요
 // mTLS OFF이므로 Wallet도 불필요
@@ -125,7 +126,11 @@ export const AppDataSource = new DataSource({
     TravelEntity,
     TravelMessage,
   ],
-  migrations: [InitialOracleSchema1744000000000, OracleTextIndexes1744000000001],
+  migrations: [
+    InitialOracleSchema1744000000000,
+    OracleTextIndexes1744000000001,
+    ExpandTravelConversationIdLength1745232000000,
+  ],
 });
 
 let dataSourceInitializationPromise: Promise<DataSource> | null = null;

@@ -6,7 +6,7 @@ import { TravelConversation } from '../travel/travel-conversation.entity.ts';
 @Entity('conversation_preferences')
 @Index(['affiliateOverride'])
 export class ConversationPreference extends CuidEntity {
-  @Column({ type: 'varchar2', length: 30, unique: true })
+  @Column({ type: 'varchar2', length: 36, unique: true })
   conversationId!: string;
 
   @Column({ type: 'varchar2', length: 20, default: ConversationAffiliateOverride.inherit })

@@ -12,7 +12,7 @@ import { TravelConversation } from '../travel/travel-conversation.entity.ts';
 @Index(['occurredAt'])
 @Index(['conversationId', 'productId'])
 export class AffiliateEvent extends CuidEntity {
-  @Column({ type: 'varchar2', length: 30, nullable: true })
+  @Column({ type: 'varchar2', length: 36, nullable: true })
   conversationId!: string | null;
 
   @Column({ type: 'varchar2', length: 30, nullable: true })

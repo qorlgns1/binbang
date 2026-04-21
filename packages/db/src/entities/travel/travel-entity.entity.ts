@@ -5,7 +5,7 @@ import { TravelConversation } from './travel-conversation.entity.ts';
 @Entity('TravelEntity')
 @Index(['conversationId'])
 export class TravelEntity extends CuidEntity {
-  @Column({ type: 'varchar2', length: 30 })
+  @Column({ type: 'varchar2', length: 36 })
   conversationId!: string;
 
   @Column({ type: 'varchar2', length: 50 })

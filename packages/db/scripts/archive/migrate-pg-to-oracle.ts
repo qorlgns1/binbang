@@ -3,6 +3,13 @@ import 'dotenv/config';
 import oracledb from 'oracledb';
 import { Client as PgClient } from 'pg';
 
+import {
+  AGODA_HOTELS_SEARCH_TABLE,
+  AGODA_HOTELS_TABLE,
+  AGODA_SHARED_SCHEMA_ENV_KEY,
+  DEFAULT_AGODA_SHARED_SCHEMA,
+} from '../../src/agoda-shared.ts';
+
 type PhaseName = 'reference' | 'auth' | 'accommodation_agoda' | 'check_case_billing' | 'travel_affiliate' | 'logs';
 
 interface TableSpec {
@@ -24,6 +31,7 @@ const PHASES: readonly PhaseName[] = [
 ] as const;
 
 const DEFAULT_BATCH_SIZE = 1000;
+const SHARED_AGODA_TABLES = [AGODA_HOTELS_TABLE, AGODA_HOTELS_SEARCH_TABLE] as const;
 
 const TABLES: readonly TableSpec[] = [
   { phase: 'reference', table: 'Role', keys: ['id'] },
@@ -153,6 +161,24 @@ function parseArgs(argv: string[]): { dryRun: boolean; from: PhaseName; batchSiz
     from,
     batchSize: DEFAULT_BATCH_SIZE,
   };
+}
+
+function normalizeOracleIdentifier(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.toUpperCase() : null;
+}
+
+function resolveSharedAgodaTablesToSkip(oracleUser: string): readonly string[] {
+  const sharedSchema = normalizeOracleIdentifier(
+    process.env[AGODA_SHARED_SCHEMA_ENV_KEY] ?? DEFAULT_AGODA_SHARED_SCHEMA,
+  );
+  const appSchema = normalizeOracleIdentifier(oracleUser);
+
+  if (!sharedSchema || !appSchema || sharedSchema === appSchema) {
+    return [];
+  }
+
+  return SHARED_AGODA_TABLES;
 }
 
 function normalizeValue(value: unknown): unknown {
@@ -290,6 +316,9 @@ async function main(): Promise<void> {
     throw new Error('ORACLE_USER, ORACLE_PASSWORD, ORACLE_CONNECT_STRING are required.');
   }
 
+  const skippedSharedTables = resolveSharedAgodaTablesToSkip(oracleUser);
+  const selectedTableSpecs = TABLES.filter((spec) => !skippedSharedTables.includes(spec.table));
+
   const pgClient = new PgClient({ connectionString: sourceUrl });
   const oracleConnection = await oracledb.getConnection({
     user: oracleUser,
@@ -301,9 +330,12 @@ async function main(): Promise<void> {
     await pgClient.connect();
     console.log(`Starting PG → Oracle migration${args.dryRun ? ' (dry-run)' : ''}`);
     console.log(`Phases: ${selectedPhases.join(', ')}`);
+    if (skippedSharedTables.length > 0) {
+      console.log(`Skipping shared Agoda catalog tables: ${skippedSharedTables.join(', ')}`);
+    }
 
     for (const phase of selectedPhases) {
-      const phaseTables = TABLES.filter((table) => table.phase === phase);
+      const phaseTables = selectedTableSpecs.filter((table) => table.phase === phase);
       for (const spec of phaseTables) {
         await migrateTable(pgClient, oracleConnection, spec, args.batchSize, args.dryRun);
       }

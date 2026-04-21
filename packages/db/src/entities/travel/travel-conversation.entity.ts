@@ -9,7 +9,7 @@ import {
   OneToOne,
   UpdateDateColumn,
 } from 'typeorm';
-import { CuidEntity } from '../base/cuid-entity.ts';
+import { Cuid36Entity } from '../base/cuid36-entity.ts';
 import { User } from '../auth/user.entity.ts';
 import { AffiliateEvent } from '../affiliate/affiliate-event.entity.ts';
 import { AffiliatePreferenceAuditLog } from '../affiliate/affiliate-preference-audit-log.entity.ts';
@@ -20,7 +20,7 @@ import { TravelMessage } from './travel-message.entity.ts';
 @Entity('TravelConversation')
 @Index(['sessionId'])
 @Index(['userId'])
-export class TravelConversation extends CuidEntity {
+export class TravelConversation extends Cuid36Entity {
   @Column({ type: 'varchar2', length: 100 })
   sessionId!: string;
 
