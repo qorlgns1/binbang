@@ -1,5 +1,5 @@
-version: "1.2"
-last_verified: "2026-02-28"
+version: "1.3"
+last_verified: "2026-04-17"
 service:
   name: "binbang"
   purpose: "Airbnb/Agoda accommodation availability monitoring and notification service"
@@ -36,7 +36,7 @@ infrastructure:
   compute: "OCI VM + Docker Compose"
   region: "ap-seoul-1"
   runtime: "Node.js 24.x, pnpm 10.30.3"
-  database: "PostgreSQL (external, DATABASE_URL)"
+  database: "Oracle ADB (external, ORACLE_CONNECT_STRING; agoda_hotels* in BINBANG_SHARED schema)"
   cache: "Redis 7"
   storage: "사용 안 함"
   ingress: "Nginx reverse proxy + Let's Encrypt"
@@ -57,7 +57,7 @@ deployment:
     - "build and push Docker images"
     - "SSH deploy on target host"
     - "write image digests to .env.deploy.<APP_ENV>"
-    - "prisma migrate deploy + generate"
+    - "typeorm migration:run (via pnpm db:migrate:deploy)"
     - "compose up -d"
   deploy_commands:
     production:
@@ -73,7 +73,7 @@ deployment:
     - "docker compose -f docker/docker-compose.production.yml --env-file .env.production --env-file .env.deploy.production ps"
 
 migration:
-  tool: "Prisma Migrate"
+  tool: "TypeORM Migrate (typeorm migration:run)"
   strategy: "deploy migration before final service up"
   command: "APP_ENV=<env> pnpm db:migrate:deploy"
 
@@ -88,7 +88,10 @@ config:
   required_env_vars:
     runtime:
       - "APP_ENV"
-      - "DATABASE_URL"
+      - "ORACLE_USER"
+      - "ORACLE_PASSWORD"
+      - "ORACLE_CONNECT_STRING"
+      - "ORACLE_AGODA_SHARED_SCHEMA"
       - "REDIS_URL"
       - "NEXTAUTH_URL"
       - "NEXTAUTH_SECRET"
