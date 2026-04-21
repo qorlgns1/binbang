@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 
 import type { Platform } from '@workspace/db';
-import { getDataSource, PublicProperty, PublicAvailabilitySnapshot } from '@workspace/db';
+import { Accommodation, In, PublicAvailabilitySnapshot, PublicProperty, getDataSource } from '@workspace/db';
 import { MS_PER_DAY, startOfUtcDay, endOfUtcDay } from '@workspace/shared/utils/date';
 
 export const DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS = 7;
 
 const BATCH_SIZE = 100;
+const ACCOMMODATION_FETCH_BATCH_SIZE = 500;
 
 export interface RefreshPublicAvailabilitySnapshotsInput {
   now?: Date;
@@ -75,21 +76,6 @@ interface AccommodationSnapshotSource {
 
 interface AggregatedAccommodationRow {
   accommodationId: string;
-  platform: string;
-  platformId: string | null;
-  url: string;
-  name: string;
-  platformName: string | null;
-  platformImage: string | null;
-  platformDescription: string | null;
-  addressCountry: string | null;
-  addressRegion: string | null;
-  addressLocality: string | null;
-  ratingValue: number | null;
-  reviewCount: number | null;
-  latitude: number | null;
-  longitude: number | null;
-  lastPriceCurrency: string | null;
   sampleSize: number;
   priceCount: number;
   priceSum: number;
@@ -278,25 +264,64 @@ function chunk<T>(array: T[], size: number): T[][] {
   return result;
 }
 
-function toAccommodationSource(row: AggregatedAccommodationRow): AccommodationSnapshotSource {
+function toAccommodationSource(accommodation: Accommodation): AccommodationSnapshotSource {
   return {
-    id: row.accommodationId,
-    platform: row.platform as Platform,
-    platformId: row.platformId,
-    url: row.url,
-    name: row.name,
-    platformName: row.platformName,
-    platformImage: row.platformImage,
-    platformDescription: row.platformDescription,
-    addressCountry: row.addressCountry,
-    addressRegion: row.addressRegion,
-    addressLocality: row.addressLocality,
-    ratingValue: row.ratingValue,
-    reviewCount: row.reviewCount,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    lastPriceCurrency: row.lastPriceCurrency,
+    id: accommodation.id,
+    platform: accommodation.platform,
+    platformId: accommodation.platformId,
+    url: accommodation.url ?? '',
+    name: accommodation.name,
+    platformName: accommodation.platformName,
+    platformImage: accommodation.platformImage,
+    platformDescription: accommodation.platformDescription,
+    addressCountry: accommodation.addressCountry,
+    addressRegion: accommodation.addressRegion,
+    addressLocality: accommodation.addressLocality,
+    ratingValue: accommodation.ratingValue,
+    reviewCount: accommodation.reviewCount,
+    latitude: accommodation.latitude,
+    longitude: accommodation.longitude,
+    lastPriceCurrency: accommodation.lastPriceCurrency,
   };
+}
+
+async function loadAccommodationSources(
+  ds: Awaited<ReturnType<typeof getDataSource>>,
+  accommodationIds: string[],
+): Promise<Map<string, AccommodationSnapshotSource>> {
+  const ids = [...new Set(accommodationIds)];
+  const accommodationRepo = ds.getRepository(Accommodation);
+  const metadata = new Map<string, AccommodationSnapshotSource>();
+
+  for (const batch of chunk(ids, ACCOMMODATION_FETCH_BATCH_SIZE)) {
+    const accommodations = await accommodationRepo.find({
+      where: { id: In(batch) },
+      select: {
+        id: true,
+        platform: true,
+        platformId: true,
+        url: true,
+        name: true,
+        platformName: true,
+        platformImage: true,
+        platformDescription: true,
+        addressCountry: true,
+        addressRegion: true,
+        addressLocality: true,
+        ratingValue: true,
+        reviewCount: true,
+        latitude: true,
+        longitude: true,
+        lastPriceCurrency: true,
+      },
+    });
+
+    for (const accommodation of accommodations) {
+      metadata.set(accommodation.id, toAccommodationSource(accommodation));
+    }
+  }
+
+  return metadata;
 }
 
 export async function refreshPublicAvailabilitySnapshots(
@@ -322,27 +347,11 @@ export async function refreshPublicAvailabilitySnapshots(
     upsertTimeMs: 0,
   };
 
-  // Step 1: Oracle SQL - CheckLog + Accommodation JOIN + GROUP BY
-  // Oracle은 GROUP BY에 모든 비집계 컬럼을 명시해야 함
+  // Step 1: Oracle-safe aggregation by accommodationId only.
   const queryStart = Date.now();
   const rows = await ds.query<AggregatedAccommodationRow[]>(
     `SELECT
-      a."id"                    AS "accommodationId",
-      a."platform"              AS "platform",
-      a."platformId"            AS "platformId",
-      a."url"                   AS "url",
-      a."name"                  AS "name",
-      a."platformName"          AS "platformName",
-      a."platformImage"         AS "platformImage",
-      a."platformDescription"   AS "platformDescription",
-      a."addressCountry"        AS "addressCountry",
-      a."addressRegion"         AS "addressRegion",
-      a."addressLocality"       AS "addressLocality",
-      a."ratingValue"           AS "ratingValue",
-      a."reviewCount"           AS "reviewCount",
-      a."latitude"              AS "latitude",
-      a."longitude"             AS "longitude",
-      a."lastPriceCurrency"     AS "lastPriceCurrency",
+      cl."accommodationId"      AS "accommodationId",
       COUNT(cl."id")            AS "sampleSize",
       COUNT(cl."priceAmount")   AS "priceCount",
       COALESCE(SUM(cl."priceAmount"), 0) AS "priceSum",
@@ -356,27 +365,32 @@ export async function refreshPublicAvailabilitySnapshots(
     WHERE cl."createdAt" >= :1
       AND cl."createdAt" <= :2
       AND a."isActive" = 1
-    GROUP BY
-      a."id", a."platform", a."platformId", a."url", a."name",
-      a."platformName", a."platformImage", a."platformDescription",
-      a."addressCountry", a."addressRegion", a."addressLocality",
-      a."ratingValue", a."reviewCount", a."latitude", a."longitude",
-      a."lastPriceCurrency"`,
+    GROUP BY cl."accommodationId"`,
     [windowStartAt, windowEndAt],
   );
-  const queryTimeMs = Date.now() - queryStart;
 
   if (rows.length === 0) {
+    const queryTimeMs = Date.now() - queryStart;
     return { ...emptyResult, queryTimeMs };
   }
 
-  // Step 2: In-memory grouping by platformPropertyKey
+  const accommodationMetadata = await loadAccommodationSources(
+    ds,
+    rows.map((row) => row.accommodationId),
+  );
+  const queryTimeMs = Date.now() - queryStart;
+
+  // Step 2: Join aggregated metrics with accommodation metadata in memory.
   const aggregationStart = Date.now();
   const aggregates = new Map<string, PropertyAggregate>();
   let skippedWithoutKey = 0;
 
   for (const row of rows) {
-    const accommodation = toAccommodationSource(row);
+    const accommodation = accommodationMetadata.get(row.accommodationId);
+    if (!accommodation) {
+      skippedWithoutKey += 1;
+      continue;
+    }
 
     const platformPropertyKey = derivePlatformPropertyKey(accommodation);
     if (!platformPropertyKey) {
