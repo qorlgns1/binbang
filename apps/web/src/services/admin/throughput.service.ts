@@ -1,4 +1,14 @@
-import { prisma } from '@workspace/db';
+import {
+  Between,
+  CheckCycle,
+  CheckLog,
+  IsNull,
+  LessThanOrEqual,
+  MoreThan,
+  MoreThanOrEqual,
+  Not,
+  getDataSource,
+} from '@workspace/db';
 import type {
   ThroughputBucket,
   ThroughputComparisonGroup,
@@ -47,21 +57,47 @@ function autoBucketMinutes(fromDate: Date, toDate: Date): number {
 export async function getThroughputSummary(input: GetThroughputSummaryInput): Promise<ThroughputSummary> {
   const { from, to } = input;
 
-  const where: { createdAt?: { gte?: Date; lte?: Date } } = {};
-  if (from || to) {
-    where.createdAt = {};
-    if (from) where.createdAt.gte = new Date(from);
-    if (to) where.createdAt.lte = new Date(to);
-  }
+  const ds = await getDataSource();
+  const checkLogRepo = ds.getRepository(CheckLog);
+  const checkCycleRepo = ds.getRepository(CheckCycle);
+
+  const dateOp =
+    from && to
+      ? Between(new Date(from), new Date(to))
+      : from
+        ? MoreThanOrEqual(new Date(from))
+        : to
+          ? LessThanOrEqual(new Date(to))
+          : undefined;
+  const checkLogWhere = dateOp ? { createdAt: dateOp } : {};
+  const cycleDateWhere = dateOp ? { startedAt: dateOp } : {};
 
   const [totalChecks, statusGroups, firstCheck, lastCheck, lastCycle] = await Promise.all([
-    prisma.checkLog.count({ where }),
-    prisma.checkLog.groupBy({ by: ['status'], where, _count: true }),
-    prisma.checkLog.findFirst({ where, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
-    prisma.checkLog.findFirst({ where, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
-    prisma.checkCycle.findFirst({
-      where: { startedAt: where.createdAt ? { gte: where.createdAt.gte, lte: where.createdAt.lte } : undefined },
-      orderBy: { startedAt: 'desc' },
+    checkLogRepo.count({ where: checkLogWhere }),
+    // groupBy status → Oracle raw SQL
+    (async () => {
+      const params: unknown[] = [];
+      let whereClause = '';
+      if (from && to) {
+        whereClause = ' WHERE "createdAt" >= :1 AND "createdAt" <= :2';
+        params.push(new Date(from), new Date(to));
+      } else if (from) {
+        whereClause = ' WHERE "createdAt" >= :1';
+        params.push(new Date(from));
+      } else if (to) {
+        whereClause = ' WHERE "createdAt" <= :1';
+        params.push(new Date(to));
+      }
+      return ds.query<Array<{ status: string; cnt: string }>>(
+        `SELECT "status", COUNT(*) AS cnt FROM "CheckLog"${whereClause} GROUP BY "status"`,
+        params,
+      );
+    })(),
+    checkLogRepo.findOne({ where: checkLogWhere, order: { createdAt: 'ASC' }, select: { createdAt: true } }),
+    checkLogRepo.findOne({ where: checkLogWhere, order: { createdAt: 'DESC' }, select: { createdAt: true } }),
+    checkCycleRepo.findOne({
+      where: { ...cycleDateWhere },
+      order: { startedAt: 'DESC' },
       select: {
         startedAt: true,
         durationMs: true,
@@ -74,26 +110,22 @@ export async function getThroughputSummary(input: GetThroughputSummaryInput): Pr
     }),
   ]);
 
-  const errorCount = statusGroups
-    .filter((g: (typeof statusGroups)[0]): boolean => g.status === 'ERROR')
-    .reduce((sum: number, g: (typeof statusGroups)[0]): number => sum + g._count, 0);
+  const errorCount = statusGroups.filter((g) => g.status === 'ERROR').reduce((sum, g) => sum + Number(g.cnt), 0);
   const successCount = totalChecks - errorCount;
   const successRate = totalChecks > 0 ? Math.round((successCount / totalChecks) * 10000) / 100 : 0;
 
   let avgThroughputPerMin = 0;
-  const completedCycles = await prisma.checkCycle.findMany({
+  const completedCycles = await checkCycleRepo.find({
     where: {
-      durationMs: { not: null },
-      totalCount: { gt: 0 },
-      ...(from || to
-        ? { startedAt: { ...(from ? { gte: new Date(from) } : {}), ...(to ? { lte: new Date(to) } : {}) } }
-        : {}),
+      durationMs: Not(IsNull()),
+      totalCount: MoreThan(0),
+      ...cycleDateWhere,
     },
     select: { totalCount: true, durationMs: true },
   });
 
   if (completedCycles.length > 0) {
-    const totalThroughput = completedCycles.reduce((sum: number, c: (typeof completedCycles)[0]): number => {
+    const totalThroughput = completedCycles.reduce((sum, c) => {
       const perMin = (c.totalCount / (c.durationMs as number)) * 60_000;
       return sum + perMin;
     }, 0);
@@ -132,12 +164,13 @@ export async function getThroughputHistory(input: GetThroughputHistoryInput): Pr
   const bucketMinutes = customBucket ?? autoBucketMinutes(fromDate, toDate);
   const bucketMs = bucketMinutes * 60 * 1000;
 
-  const logs = await prisma.checkLog.findMany({
+  const ds = await getDataSource();
+  const logs = await ds.getRepository(CheckLog).find({
     where: {
-      createdAt: { gte: fromDate, lte: toDate },
+      createdAt: Between(fromDate, toDate),
     },
     select: { createdAt: true, status: true },
-    orderBy: { createdAt: 'asc' },
+    order: { createdAt: 'ASC' },
   });
 
   const bucketMap = new Map<number, { total: number; success: number; error: number }>();
@@ -172,48 +205,41 @@ export async function getThroughputHistory(input: GetThroughputHistoryInput): Pr
 export async function getThroughputCompare(input: GetThroughputCompareInput): Promise<ThroughputComparisonResponse> {
   const { compareBy, from, to } = input;
 
-  const where: { startedAt?: { gte?: Date; lte?: Date }; durationMs: { not: null } } = {
-    durationMs: { not: null },
-  };
-  if (from || to) {
-    where.startedAt = {};
-    if (from) where.startedAt.gte = new Date(from);
-    if (to) where.startedAt.lte = new Date(to);
+  const ds = await getDataSource();
+
+  const params: unknown[] = [];
+  let whereClause = 'WHERE "durationMs" IS NOT NULL';
+  if (from) {
+    params.push(new Date(from));
+    whereClause += ` AND "startedAt" >= :${params.length}`;
+  }
+  if (to) {
+    params.push(new Date(to));
+    whereClause += ` AND "startedAt" <= :${params.length}`;
   }
 
-  const avgFields = {
-    durationMs: true as const,
-    successCount: true as const,
-    totalCount: true as const,
-  };
+  const groupCol = compareBy === 'concurrency' ? '"concurrency"' : '"browserPoolSize"';
 
-  const rawGroups =
-    compareBy === 'concurrency'
-      ? await prisma.checkCycle.groupBy({
-          by: ['concurrency'],
-          where,
-          _avg: avgFields,
-          _count: true,
-          orderBy: { concurrency: 'asc' },
-        })
-      : await prisma.checkCycle.groupBy({
-          by: ['browserPoolSize'],
-          where,
-          _avg: avgFields,
-          _count: true,
-          orderBy: { browserPoolSize: 'asc' },
-        });
+  const rawGroups = await ds.query<
+    Array<{
+      groupVal: number;
+      avgDurationMs: string | null;
+      avgSuccessCount: string | null;
+      avgTotalCount: string | null;
+      cnt: string;
+    }>
+  >(
+    `SELECT ${groupCol} AS "groupVal", AVG("durationMs") AS "avgDurationMs", AVG("successCount") AS "avgSuccessCount", AVG("totalCount") AS "avgTotalCount", COUNT(*) AS cnt FROM "CheckCycle" ${whereClause} GROUP BY ${groupCol} ORDER BY ${groupCol} ASC`,
+    params,
+  );
 
   return {
     compareBy,
-    groups: rawGroups.map((g: (typeof rawGroups)[0]): ThroughputComparisonGroup => {
-      const avgTotal = g._avg.totalCount ?? 0;
-      const avgSuccess = g._avg.successCount ?? 0;
-      const avgDuration = g._avg.durationMs ?? 0;
-      const value =
-        compareBy === 'concurrency'
-          ? (g as { concurrency: number }).concurrency
-          : (g as { browserPoolSize: number }).browserPoolSize;
+    groups: rawGroups.map((g): ThroughputComparisonGroup => {
+      const avgTotal = Number(g.avgTotalCount ?? 0);
+      const avgSuccess = Number(g.avgSuccessCount ?? 0);
+      const avgDuration = Number(g.avgDurationMs ?? 0);
+      const value = Number(g.groupVal);
       const avgThroughputPerMin = avgDuration > 0 ? Math.round((avgTotal / avgDuration) * 60_000 * 100) / 100 : 0;
       return {
         key: compareBy,
@@ -221,7 +247,7 @@ export async function getThroughputCompare(input: GetThroughputCompareInput): Pr
         avgThroughputPerMin,
         avgCycleDurationMs: Math.round(avgDuration),
         avgSuccessRate: avgTotal > 0 ? Math.round((avgSuccess / avgTotal) * 10000) / 100 : 0,
-        cycleCount: g._count,
+        cycleCount: Number(g.cnt),
       };
     }),
   };

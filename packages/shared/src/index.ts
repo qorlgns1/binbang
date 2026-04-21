@@ -18,7 +18,7 @@
  */
 
 // Types
-export * from './types';
+export * from './types/index';
 
 // URL Parser / Builder (pure)
 export { parseAccommodationUrl } from './urlParser';

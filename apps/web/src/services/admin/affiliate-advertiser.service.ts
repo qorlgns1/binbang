@@ -1,4 +1,4 @@
-import { type AffiliateAdvertiserCategory, prisma } from '@workspace/db';
+import { AffiliateAdvertiser, type AffiliateAdvertiserCategory, getDataSource } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -25,16 +25,6 @@ export interface UpdateAffiliateAdvertiserInput {
   notes?: string | null;
 }
 
-const SELECT = {
-  id: true,
-  advertiserId: true,
-  name: true,
-  category: true,
-  notes: true,
-  source: true,
-  updatedAt: true,
-} as const;
-
 // ============================================================================
 // Service
 // ============================================================================
@@ -42,10 +32,10 @@ const SELECT = {
 export async function listAffiliateAdvertisers(
   category?: AffiliateAdvertiserCategory,
 ): Promise<AffiliateAdvertiserItem[]> {
-  const list = await prisma.affiliateAdvertiser.findMany({
+  const ds = await getDataSource();
+  const list = await ds.getRepository(AffiliateAdvertiser).find({
     where: category ? { category } : undefined,
-    select: SELECT,
-    orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    order: { category: 'ASC', name: 'ASC' },
   });
   return list as AffiliateAdvertiserItem[];
 }
@@ -53,25 +43,34 @@ export async function listAffiliateAdvertisers(
 export async function upsertFromProgrammes(
   input: UpsertFromProgrammesInput,
 ): Promise<{ created: number; updated: number }> {
+  if (input.programmes.length === 0) {
+    return { created: 0, updated: 0 };
+  }
+
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AffiliateAdvertiser);
   const advertiserIds = input.programmes.map((p) => p.advertiserId);
-  const existingRows = await prisma.affiliateAdvertiser.findMany({
-    where: { advertiserId: { in: advertiserIds } },
-    select: { advertiserId: true },
-  });
-  const existingCount = existingRows.length;
-  await prisma.$transaction(
-    input.programmes.map((p) =>
-      prisma.affiliateAdvertiser.upsert({
-        where: { advertiserId: p.advertiserId },
-        create: {
-          advertiserId: p.advertiserId,
-          name: p.name,
-          source: 'awin',
-        },
-        update: { name: p.name, source: 'awin' },
-      }),
-    ),
+
+  const existingRows = await repo
+    .createQueryBuilder('a')
+    .select('a.advertiserId', 'advertiserId')
+    .where('a.advertiserId IN (:...advertiserIds)', { advertiserIds })
+    .getRawMany<{ advertiserId: string | number }>();
+
+  const existingIds = new Set(existingRows.map((r) => Number(r.advertiserId)));
+  const existingCount = existingIds.size;
+
+  await Promise.all(
+    input.programmes.map(async (p) => {
+      if (existingIds.has(p.advertiserId)) {
+        await repo.update({ advertiserId: p.advertiserId }, { name: p.name, source: 'awin' });
+      } else {
+        const entity = repo.create({ advertiserId: p.advertiserId, name: p.name, source: 'awin' });
+        await repo.save(entity);
+      }
+    }),
   );
+
   return { created: input.programmes.length - existingCount, updated: existingCount };
 }
 
@@ -79,25 +78,22 @@ export async function updateAffiliateAdvertiser(
   id: string,
   input: UpdateAffiliateAdvertiserInput,
 ): Promise<AffiliateAdvertiserItem | null> {
-  const row = await prisma.affiliateAdvertiser.updateMany({
-    where: { id },
-    data: {
-      ...(input.category !== undefined && { category: input.category }),
-      ...(input.notes !== undefined && { notes: input.notes }),
-    },
-  });
-  if (row.count === 0) return null;
-  const one = await prisma.affiliateAdvertiser.findUnique({
-    where: { id },
-    select: SELECT,
-  });
-  return one as AffiliateAdvertiserItem;
+  const ds = await getDataSource();
+  const repo = ds.getRepository(AffiliateAdvertiser);
+
+  const updateData: Partial<AffiliateAdvertiser> = {};
+  if (input.category !== undefined) updateData.category = input.category;
+  if (input.notes !== undefined) updateData.notes = input.notes;
+
+  const result = await repo.update({ id }, updateData);
+  if ((result.affected ?? 0) === 0) return null;
+
+  const one = await repo.findOne({ where: { id } });
+  return one as AffiliateAdvertiserItem | null;
 }
 
 export async function getAffiliateAdvertiserById(id: string): Promise<AffiliateAdvertiserItem | null> {
-  const one = await prisma.affiliateAdvertiser.findUnique({
-    where: { id },
-    select: SELECT,
-  });
+  const ds = await getDataSource();
+  const one = await ds.getRepository(AffiliateAdvertiser).findOne({ where: { id } });
   return one as AffiliateAdvertiserItem | null;
 }

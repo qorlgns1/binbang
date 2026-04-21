@@ -33,22 +33,92 @@ const {
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    formSubmission: {
-      create: mockCreate,
-      findUnique: mockFindUnique,
-      findUniqueOrThrow: mockFindUniqueOrThrow,
-      findMany: mockFindMany,
-      count: mockCount,
-      update: mockUpdate,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    formSubmissionRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+      findOneOrFail: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    formSubmissionQb: {
+      getCount: ReturnType<typeof vi.fn>;
+      getMany: ReturnType<typeof vi.fn>;
+      where: ReturnType<typeof vi.fn>;
+    };
+    formQuestionMappingRepo: {
+      find: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    formSubmissionRepo: {
+      findOne: vi.fn(),
+      findOneOrFail: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
     },
-    formQuestionMapping: {
-      findMany: mockFindMappings,
+    formSubmissionQb: {
+      getCount: vi.fn(),
+      getMany: vi.fn(),
+      where: vi.fn(),
     },
-    $transaction: mockTransaction,
-  },
-}));
+    formQuestionMappingRepo: {
+      find: vi.fn(),
+    },
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockQueryBuilder, createMockRepository } = await import(
+    '../../../../test-utils/mock-db.ts'
+  );
+
+  const formSubmissionQb = createMockQueryBuilder();
+  formSubmissionQb.getMany.mockImplementation((...args) => callMock(mockFindMany, ...args));
+  formSubmissionQb.getCount.mockImplementation((...args) => callMock(mockCount, ...args));
+
+  const formSubmissionRepo = createMockRepository();
+  formSubmissionRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const saved = await callMock(mockCreate, entity);
+    if (saved && typeof saved === 'object') {
+      Object.assign(entity, saved as object);
+    }
+    return saved ?? entity;
+  });
+  formSubmissionRepo.findOne.mockImplementation((...args) => callMock(mockFindUnique, ...args));
+  formSubmissionRepo.findOneOrFail.mockImplementation((...args) => callMock(mockFindUniqueOrThrow, ...args));
+  formSubmissionRepo.update.mockImplementation((where, data) => callMock(mockUpdate, { where, data }));
+  formSubmissionRepo.createQueryBuilder.mockImplementation(() => formSubmissionQb);
+
+  const formQuestionMappingRepo = createMockRepository();
+  formQuestionMappingRepo.find.mockImplementation((...args) => callMock(mockFindMappings, ...args));
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.FormSubmission, formSubmissionRepo],
+      [actual.FormQuestionMapping, formQuestionMappingRepo],
+    ],
+    transactionImplementation: (...args) => callMock(mockTransaction, ...args),
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.formSubmissionRepo = formSubmissionRepo;
+  dbMock.formSubmissionQb = formSubmissionQb;
+  dbMock.formQuestionMappingRepo = formQuestionMappingRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 const NOW = new Date('2026-02-11T10:00:00.000Z');
 const FUTURE_DATE = '2026-12-31';
@@ -244,20 +314,7 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 function setupTransactionMock(): void {
-  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-    const tx = {
-      formSubmission: {
-        create: mockCreate,
-        findUnique: mockFindUnique,
-        findUniqueOrThrow: mockFindUniqueOrThrow,
-        update: mockUpdate,
-      },
-      formQuestionMapping: {
-        findMany: mockFindMappings,
-      },
-    };
-    return fn(tx);
-  });
+  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(dbMock.dataSource));
 }
 
 describe('intake.service', (): void => {
@@ -265,6 +322,7 @@ describe('intake.service', (): void => {
     vi.clearAllMocks();
     mockUpdate.mockResolvedValue({ id: 'sub-1' });
     mockFindMappings.mockResolvedValue([]);
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     setupTransactionMock();
   });
 
@@ -323,7 +381,7 @@ describe('intake.service', (): void => {
     });
 
     it('returns existing submission on duplicate responseId (P2002)', async (): Promise<void> => {
-      const p2002Error = Object.assign(new Error('Unique constraint'), { code: 'P2002' });
+      const p2002Error = new Error('ORA-00001: unique constraint violated');
       mockCreate.mockRejectedValue(p2002Error);
 
       const existing = makeRow();
@@ -353,7 +411,7 @@ describe('intake.service', (): void => {
     });
 
     it('throws when P2002 but findUnique returns null (defensive)', async (): Promise<void> => {
-      const p2002Error = Object.assign(new Error('Unique constraint'), { code: 'P2002' });
+      const p2002Error = new Error('ORA-00001: unique constraint violated');
       mockCreate.mockRejectedValue(p2002Error);
       mockFindUnique.mockResolvedValue(null);
 
@@ -362,7 +420,7 @@ describe('intake.service', (): void => {
           responseId: 'resp-abc',
           rawPayload: makeValidPayload(),
         }),
-      ).rejects.toThrow('Unique constraint');
+      ).rejects.toThrow('ORA-00001');
     });
   });
 
@@ -799,11 +857,7 @@ describe('intake.service', (): void => {
 
       await getFormSubmissions({ limit: 20, status: 'REJECTED' as never });
 
-      expect(mockFindMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { status: 'REJECTED' },
-        }),
-      );
+      expect(dbMock.formSubmissionQb.where).toHaveBeenCalledWith('fs.status = :status', { status: 'REJECTED' });
     });
   });
 });

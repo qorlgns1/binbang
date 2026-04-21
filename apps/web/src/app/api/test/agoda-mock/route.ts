@@ -31,6 +31,6 @@ export async function POST(): Promise<Response> {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 
-  const scenario = getAgodaMockScenario();
+  const scenario = await getAgodaMockScenario();
   return NextResponse.json(scenario === 'available' ? AVAILABLE_FIXTURE : SOLD_OUT_FIXTURE);
 }

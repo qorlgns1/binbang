@@ -1,6 +1,6 @@
 # Environment Matrix
 
-Last verified: 2026-02-28
+Last verified: 2026-04-17
 Owner: binbang
 
 ## 1) Environments
@@ -21,7 +21,7 @@ Owner: binbang
 | Travel upstream port (host) | `3301` | `3300` |
 | Compose project name | `binbang-dev` | default |
 | Redis | `redis:7-alpine` | `redis:7-alpine` |
-| DB | external PostgreSQL (`DATABASE_URL`) | external PostgreSQL (`DATABASE_URL`) |
+| DB | Oracle ADB (`ORACLE_CONNECT_STRING`) | Oracle ADB (`ORACLE_CONNECT_STRING`) |
 | Replica count | 1 web / 1 worker / 1 travel / 1 redis | 1 web / 1 worker / 1 travel / 1 redis |
 
 ## 3) External Integrations by Environment
@@ -47,7 +47,10 @@ Docker Compose는 `--env-file` 순서상 나중 파일이 이기므로 `.env.dep
 ## 5) Env Vars (Names Only)
 ### Common core (`.env.<APP_ENV>`)
 - `APP_ENV`
-- `DATABASE_URL`
+- `ORACLE_USER`
+- `ORACLE_PASSWORD`
+- `ORACLE_CONNECT_STRING`
+- `ORACLE_AGODA_SHARED_SCHEMA`
 - `REDIS_URL`
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
@@ -83,7 +86,7 @@ Docker Compose는 `--env-file` 순서상 나중 파일이 이기므로 `.env.dep
 - `CONTEXT_WINDOW_SIZE` — AI 대화 컨텍스트 윈도우
 - `TRAVEL_GUEST_DAILY_LIMIT` — 게스트 일일 요청 제한
 - `TRAVEL_GUEST_PER_CONVERSATION_LIMIT` — 게스트 대화당 요청 제한
-- `DATABASE_URL` — same as common (travel uses `@workspace/db` for conversations/entities)
+- `ORACLE_USER` / `ORACLE_PASSWORD` / `ORACLE_CONNECT_STRING` / `ORACLE_AGODA_SHARED_SCHEMA` — same as common (travel uses `@workspace/db` for conversations/entities)
 
 ## 6) Access and Guardrails
 - Deployment entrypoint: GitHub Actions `deploy.yml`

@@ -2,7 +2,7 @@ import { buildAccommodationUrl, type AccommodationToCheck, type CheckResult } fr
 
 import type { CheckerRuntimeConfig } from './baseChecker';
 import { baseCheck } from './baseChecker';
-import type { PlatformSelectorCache } from './selectors';
+import type { PlatformSelectorCache } from './selectors/index';
 
 /**
  * Agoda data-* 속성 기반 추출기

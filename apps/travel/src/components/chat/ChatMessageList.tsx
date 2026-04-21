@@ -4,25 +4,32 @@ import type { UIMessage } from 'ai';
 import { Bot } from 'lucide-react';
 import type { RefObject } from 'react';
 
+import type { ChatEntryMode, PlannerStage } from '@/components/chat/ChatPanel';
 import { ChatMessage } from '@/components/chat/ChatMessage';
-import { ChatPanelEmptyState } from '@/components/chat/ChatPanelSections';
+import {
+  ChatPanelChatEmptyState,
+  ChatPanelPlannerEmptyState,
+  ChatPanelPlannerLoadingState,
+} from '@/components/chat/ChatPanelSections';
 
 interface ChatMessageListProps {
+  entryMode: ChatEntryMode;
   messages: UIMessage[];
+  plannerStage: PlannerStage;
   status: string;
-  exampleQueries: string[];
   scrollAreaRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  onExampleClick: (query: string) => void;
+  onPlannerSubmit: (query: string) => boolean | undefined;
 }
 
 export function ChatMessageList({
+  entryMode,
   messages,
+  plannerStage,
   status,
-  exampleQueries,
   scrollAreaRef,
   messagesEndRef,
-  onExampleClick,
+  onPlannerSubmit,
 }: ChatMessageListProps) {
   return (
     <div
@@ -31,9 +38,14 @@ export function ChatMessageList({
       data-testid='chat-message-list'
     >
       {messages.length === 0 ? (
-        <ChatPanelEmptyState queries={exampleQueries} onExampleClick={onExampleClick} />
+        entryMode === 'planner' ? (
+          <ChatPanelPlannerEmptyState onPlannerSubmit={onPlannerSubmit} />
+        ) : (
+          <ChatPanelChatEmptyState />
+        )
       ) : (
         <div className='flex flex-col gap-0'>
+          {entryMode === 'planner' && plannerStage === 'loading' && <ChatPanelPlannerLoadingState />}
           {messages.map((message, idx) => {
             const isLast = idx === messages.length - 1;
             const isStreamingAssistant = status === 'streaming' && isLast && message.role === 'assistant';

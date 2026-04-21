@@ -1,9 +1,9 @@
-import type { AvailabilityStatus } from '@workspace/db';
+import { AvailabilityStatus } from '@workspace/db';
 
 export function determineStatus(result: { error: string | null; available: boolean }): AvailabilityStatus {
-  if (result.error) return 'ERROR';
-  if (result.available) return 'AVAILABLE';
-  return 'UNAVAILABLE';
+  if (result.error) return AvailabilityStatus.ERROR;
+  if (result.available) return AvailabilityStatus.AVAILABLE;
+  return AvailabilityStatus.UNAVAILABLE;
 }
 
 export function nightsBetween(checkIn: Date, checkOut: Date): number {
@@ -26,5 +26,7 @@ export function shouldSendAvailabilityNotification(
   lastStatus: AvailabilityStatus | null,
   hasKakaoToken: boolean,
 ): boolean {
-  return status === 'AVAILABLE' && lastStatus !== 'AVAILABLE' && Boolean(hasKakaoToken);
+  return (
+    status === AvailabilityStatus.AVAILABLE && lastStatus !== AvailabilityStatus.AVAILABLE && Boolean(hasKakaoToken)
+  );
 }

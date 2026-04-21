@@ -1,9 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["biome.json", "packages/db/prisma/schema.prisma"],
+  "globalDependencies": ["biome.json"],
   "globalEnv": ["APP_ENV", "NEXT_PUBLIC_*"],
   "globalPassThroughEnv": [
-    "DATABASE_URL",
+    "ORACLE_USER",
+    "ORACLE_PASSWORD",
+    "ORACLE_CONNECT_STRING",
+    "ORACLE_AGODA_SHARED_SCHEMA",
     "REDIS_URL",
     "NEXTAUTH_SECRET",
     "GOOGLE_CLIENT_ID",
@@ -11,21 +14,14 @@
     "KAKAO_CLIENT_ID",
     "KAKAO_CLIENT_SECRET"
   ],
-
   "tasks": {
-    "db:generate": {
-      "cache": false,
-      "outputs": ["generated/**"]
-    },
-
     "build": {
-      "dependsOn": ["^build", "@workspace/db#db:generate"],
+      "dependsOn": ["^build"],
       "passThroughEnv": ["NEXTAUTH_URL"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
 
     "dev": {
-      "dependsOn": ["@workspace/db#db:generate"],
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
@@ -72,27 +68,26 @@
     },
 
     "typecheck": {
-      "dependsOn": ["@workspace/db#db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 
     "@workspace/worker-shared#typecheck": {
-      "dependsOn": ["@workspace/shared#build", "@workspace/db#build", "@workspace/db#db:generate"],
+      "dependsOn": ["@workspace/shared#build", "@workspace/db#build"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 
     "@workspace/web#typecheck": {
-      "dependsOn": ["@workspace/web#build", "@workspace/db#db:generate"],
+      "dependsOn": ["@workspace/web#build", "@workspace/db#build"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 
     "@workspace/worker#typecheck": {
-      "dependsOn": ["@workspace/worker-shared#build", "@workspace/db#db:generate"],
+      "dependsOn": ["@workspace/worker-shared#build", "@workspace/db#build"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 
     "@workspace/travel#build": {
-      "dependsOn": ["^build", "@workspace/db#db:generate"],
+      "dependsOn": ["^build"],
       "passThroughEnv": [
         "NEXTAUTH_URL",
         "GOOGLE_GENERATIVE_AI_API_KEY",
@@ -104,7 +99,7 @@
     },
 
     "@workspace/travel#typecheck": {
-      "dependsOn": ["@workspace/travel#build", "@workspace/db#db:generate"],
+      "dependsOn": ["@workspace/travel#build", "@workspace/db#build"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 

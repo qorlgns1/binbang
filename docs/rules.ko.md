@@ -35,7 +35,7 @@ apps/
   worker/         # 워커 엔트리포인트 + wiring만 담당 (로직 금지)
 
 packages/
-  db/             # Prisma 스키마, 마이그레이션, DB 클라이언트 (단일 소유자)
+  db/             # TypeORM entities/migrations, DB 클라이언트 (단일 소유자)
   shared/         # 범용 공유 코드 (순수, 런타임 비의존)
   worker-shared/  # 워커 전용 공유 코드 (runtime / jobs / browser / observability)
 ```
@@ -80,7 +80,7 @@ packages/
 금지(MUST NOT):
 
 - 네트워크 I/O(`fetch`, `axios`, HTTP 클라이언트)
-- DB 접근/Prisma 사용(`@workspace/db` 포함)
+- DB 접근/ORM 사용(`@workspace/db` 포함)
 - Node 내장 모듈(`fs`, `path`, `child_process` 등)
 - 런타임 제어용 타이머/스케줄링(cron/queue/retry)
 - 브라우저 자동화 라이브러리(Playwright, Puppeteer)
@@ -199,43 +199,45 @@ DB / Env:
 
 ---
 
-## 5. Prisma / 데이터베이스 규칙 (`@workspace/db`)
+## 5. DB / TypeORM 규칙 (`@workspace/db`)
 
 ### 5.1 소유권
 
-- Prisma schema/migration은 `packages/db/prisma/**`에만 존재해야 한다.
-- Prisma Client 생성/노출은 `packages/db`가 단독 소유한다.
+- Oracle `DataSource`, entity, migration, enum, seed 상수는 `packages/db`가 단독 소유한다.
+- 런타임 스키마 자산은 `packages/db/src/**`, seed/이관 스크립트는 `packages/db/scripts/**`에만 둔다.
 
 ### 5.2 Import 정책
 
-- 허용: `import { prisma } from "@workspace/db"`
+- 허용: `import { getDataSource, User, Platform } from "@workspace/db"`
+- 허용: `import { getDataSource } from "@workspace/db/client"`
 - 금지:
-  - `packages/db` 외부에서 `@prisma/client` import
   - `packages/db/**` deep import
-  - 타 패키지/앱에서 Prisma Client 재수출
+  - 타 패키지/앱에서 자체 DataSource singleton 생성/재수출
 
 접근 규칙:
 
 - `apps/web` Client Component는 DB 직접/간접 접근 금지
 - `apps/web` Server 측 코드는 `apps/web/src/services/**`를 통해서만 DB 접근 가능
-- `apps/travel`도 동일: DB 접근은 `apps/travel/src/services/**`로만 허용, Route Handler의 `prisma.*` 직접 호출 금지
+- `apps/travel`도 동일: DB 접근은 `apps/travel/src/services/**`로만 허용, Route Handler의 `getDataSource()`/repository/query builder/raw SQL 직접 호출 금지
 - `apps/worker`는 `@workspace/db` 접근 가능하지만 가능하면 `@workspace/worker-shared/runtime` 경유를 권장
 - `packages/shared`는 DB 의존 금지
 - `packages/worker-shared`는 `runtime/**`에서만 DB 의존 허용
 
 ### 5.3 쿼리 원칙
 
-- Route Handler는 `prisma.*` 직접 호출 금지. DB 작업은 `apps/web/src/services/**` 또는 `apps/travel/src/services/**`에 위임.
-- 모든 쿼리는 `select`를 사용해야 한다(암묵적 전체 선택 금지).
+- Route Handler는 DB 직접 접근 금지. DB 작업은 `apps/web/src/services/**` 또는 `apps/travel/src/services/**`에 위임.
+- 조회는 필요한 컬럼/relations만 명시한다(암묵적 전체 로딩 금지).
 - 루프 안 쿼리 금지.
 - 다단계 논리 작업은 트랜잭션 사용.
+- 서비스/worker runtime에서만 `getDataSource()` + repository/query builder/raw SQL 사용을 허용한다.
 
 ### 5.4 마이그레이션 원칙
 
-- `prisma db push` 금지.
-- 스키마 변경은 `prisma migrate dev` 사용.
+- `synchronize: true` 금지.
+- 스키마 변경은 `pnpm db:migrate`, `pnpm db:migrate:deploy`, `pnpm --filter @workspace/db db:migrate:generate`만 사용.
 - 배포된 migration 수정/삭제 금지.
-- 수동 migration SQL은 기본 금지.
+- 레거시 Prisma/PostgreSQL 명령(`prisma db push`, `prisma migrate dev`, `DATABASE_URL` 전제) 재도입 금지.
+- 수동 SQL은 TypeORM migration 또는 일회성 데이터 이관 스크립트 내부에서만 허용한다.
 - schema/migration 변경은 명시적 승인 필요.
 
 ---
@@ -262,7 +264,7 @@ Single Gate Rule:
 Route Handlers:
 
 - `apps/web/src/app/api/**` Route Handler는 DB 직접 접근 금지
-  - 금지 예: `@workspace/db` import, Prisma 호출, SQL 실행
+  - 금지 예: `@workspace/db` import, `getDataSource()` 호출, repository/query builder/raw SQL 실행
 - Route Handler의 DB 접근은 `apps/web/src/services/**` 경유만 허용
 - Route Handler는 `apps/web/src/services/**` 외 DB-touching 모듈 호출 금지
 - Route Handler 책임은 아래로 한정:
@@ -384,7 +386,7 @@ Client Components:
   - `__tests__`, `__snapshots__`
 - locale 폴더는 BCP-47 스타일 허용:
   - 예: `ko`, `en`, `ja`, `zh-CN`
-- `packages/db/prisma/migrations/**` 디렉터리는 immutable 자산으로 폴더 네이밍 규칙 예외
+- `packages/db/src/migrations/**` 디렉터리는 immutable 자산으로 폴더 네이밍 규칙 예외
 - 외부 툴/계약 파일명은 통합 요구 시 upstream naming 유지 가능:
   - 예: `next-auth.d.ts`
 - `apps/web/src/components/ui/**`는 shadcn 호환을 위해 kebab-case 컴포넌트 파일명을 허용

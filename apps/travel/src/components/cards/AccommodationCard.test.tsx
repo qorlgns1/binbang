@@ -20,6 +20,9 @@ vi.mock('@/lib/affiliateTracking', () => ({
 vi.mock('@/lib/featureFlags', () => ({
   isAffiliateCtaEnabled: vi.fn(() => true),
 }));
+vi.mock('next-intl', () => ({
+  useLocale: () => 'ko',
+}));
 
 const baseAccommodation: AccommodationEntity = {
   placeId: 'place_1',

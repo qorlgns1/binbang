@@ -2,27 +2,63 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { generatePredictions } from './availabilityPredictor';
 
-const { mockQueryRaw, mockTransaction, mockUpsert } = vi.hoisted(
+const { mockQueryRaw, mockUpsert } = vi.hoisted(
   (): {
     mockQueryRaw: ReturnType<typeof vi.fn>;
-    mockTransaction: ReturnType<typeof vi.fn>;
     mockUpsert: ReturnType<typeof vi.fn>;
   } => ({
     mockQueryRaw: vi.fn(),
-    mockTransaction: vi.fn(),
     mockUpsert: vi.fn(),
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    $queryRaw: mockQueryRaw,
-    $transaction: mockTransaction,
-    publicAvailabilityPrediction: {
-      upsert: mockUpsert,
+interface AvailabilityPredictorDbMock {
+  dataSource: unknown;
+  predictionRepo: {
+    findOne: ReturnType<typeof vi.fn>;
+  };
+  getDataSource: ReturnType<typeof vi.fn>;
+}
+
+const dbMock = vi.hoisted(
+  (): AvailabilityPredictorDbMock => ({
+    dataSource: null,
+    predictionRepo: {
+      findOne: vi.fn(),
     },
-  },
-}));
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('./test-utils/mockDb');
+
+  const predictionRepo = createMockRepository();
+  predictionRepo.findOne.mockResolvedValue(null);
+  predictionRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    await callMock(mockUpsert, { create: entity, update: entity });
+    return entity;
+  });
+  predictionRepo.update.mockImplementation(async (where, data) => callMock(mockUpsert, { where, update: data }));
+
+  const dataSource = createMockDataSource({
+    repositories: [[actual.PublicAvailabilityPrediction, predictionRepo]],
+    queryImplementation: (sql: string, params?: unknown[]) => callMock(mockQueryRaw, sql, params),
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.predictionRepo = predictionRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 function makeSnapshot(
   publicPropertyId: string,
@@ -41,13 +77,8 @@ function makeSnapshot(
 describe('availabilityPredictor', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
-    mockTransaction.mockImplementation(async (ops: Promise<unknown>[]): Promise<unknown[]> => {
-      const results = [];
-      for (const op of ops) {
-        results.push(await op);
-      }
-      return results;
-    });
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
+    dbMock.predictionRepo.findOne.mockResolvedValue(null);
     mockUpsert.mockResolvedValue({});
   });
 

@@ -1,4 +1,4 @@
-import { type PredictionConfidence, prisma } from '@workspace/db';
+import { PredictionConfidence, getDataSource, PublicAvailabilityPrediction } from '@workspace/db';
 import { startOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
 
 export const DEFAULT_PREDICTION_WINDOW_DAYS = 28;
@@ -38,12 +38,12 @@ interface PropertySnapshotRow {
 
 function computeConfidence(snapshotCount: number, patternStrength: number): PredictionConfidence {
   if (snapshotCount >= HIGH_CONFIDENCE_MIN_SNAPSHOTS && patternStrength >= 0.3) {
-    return 'HIGH';
+    return PredictionConfidence.HIGH;
   }
   if (snapshotCount >= MEDIUM_CONFIDENCE_MIN_SNAPSHOTS && patternStrength >= 0.15) {
-    return 'MEDIUM';
+    return PredictionConfidence.MEDIUM;
   }
-  return 'LOW';
+  return PredictionConfidence.LOW;
 }
 
 function buildReasoning(
@@ -91,21 +91,24 @@ export async function generatePredictions(input: GeneratePredictionsInput = {}):
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   const queryStart = Date.now();
+  const ds = await getDataSource();
 
-  const snapshots = await prisma.$queryRaw<PropertySnapshotRow[]>`
-    SELECT
+  // Oracle SQL: 스냅샷 조회
+  const snapshots = await ds.query<PropertySnapshotRow[]>(
+    `SELECT
       s."publicPropertyId",
       s."snapshotDate",
       s."openRate",
       s."sampleSize"
     FROM "PublicAvailabilitySnapshot" s
     JOIN "PublicProperty" p ON p."id" = s."publicPropertyId"
-    WHERE s."snapshotDate" >= ${windowStart}
-      AND p."isActive" = true
+    WHERE s."snapshotDate" >= :1
+      AND p."isActive" = 1
       AND s."openRate" IS NOT NULL
       AND s."sampleSize" > 0
-    ORDER BY s."publicPropertyId", s."snapshotDate"
-  `;
+    ORDER BY s."publicPropertyId", s."snapshotDate"`,
+    [windowStart],
+  );
 
   const queryTimeMs = Date.now() - queryStart;
   const computeStart = Date.now();
@@ -200,18 +203,33 @@ export async function generatePredictions(input: GeneratePredictionsInput = {}):
 
   const UPSERT_BATCH_SIZE = 50;
   let predictionsCreated = 0;
+  const predictionRepo = ds.getRepository(PublicAvailabilityPrediction);
 
   for (let i = 0; i < candidates.length; i += UPSERT_BATCH_SIZE) {
     const batch = candidates.slice(i, i + UPSERT_BATCH_SIZE);
-    const operations = batch.map((candidate) =>
-      prisma.publicAvailabilityPrediction.upsert({
+
+    for (const candidate of batch) {
+      const existing = await predictionRepo.findOne({
         where: {
-          publicPropertyId_predictedAt: {
-            publicPropertyId: candidate.publicPropertyId,
-            predictedAt,
-          },
+          publicPropertyId: candidate.publicPropertyId,
+          predictedAt,
         },
-        create: {
+        select: { id: true },
+      });
+
+      if (existing) {
+        await predictionRepo.update(
+          { id: existing.id },
+          {
+            nextLikelyAvailableAt: candidate.nextLikelyAvailableAt,
+            confidence: candidate.confidence,
+            reasoning: candidate.reasoning,
+            windowDays,
+            algorithmVersion: 'v1.0',
+          },
+        );
+      } else {
+        const entity = predictionRepo.create({
           publicPropertyId: candidate.publicPropertyId,
           predictedAt,
           nextLikelyAvailableAt: candidate.nextLikelyAvailableAt,
@@ -219,19 +237,11 @@ export async function generatePredictions(input: GeneratePredictionsInput = {}):
           reasoning: candidate.reasoning,
           windowDays,
           algorithmVersion: 'v1.0',
-        },
-        update: {
-          nextLikelyAvailableAt: candidate.nextLikelyAvailableAt,
-          confidence: candidate.confidence,
-          reasoning: candidate.reasoning,
-          windowDays,
-          algorithmVersion: 'v1.0',
-        },
-      }),
-    );
-
-    await prisma.$transaction(operations);
-    predictionsCreated += batch.length;
+        });
+        await predictionRepo.save(entity);
+      }
+      predictionsCreated++;
+    }
   }
 
   const upsertTimeMs = Date.now() - upsertStart;

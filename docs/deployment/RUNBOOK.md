@@ -1,6 +1,6 @@
 # Operations Runbook
 
-Last verified: 2026-02-18
+Last verified: 2026-04-17
 Owner: binbang
 
 ## 1) Incident Levels
@@ -45,7 +45,7 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
 
 ## 4) Common Failure Scenarios
 ### A) App does not boot
-- Check `.env.<APP_ENV>` completeness (`DATABASE_URL`, auth vars 등)
+- Check `.env.<APP_ENV>` completeness (`ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_CONNECT_STRING`, auth vars 등)
 - Check `.env.deploy.<APP_ENV>` — IMAGE_TAG, DIGEST 값이 유효한지 확인
 - Check Next.js/web logs for env validation errors
 
@@ -60,8 +60,9 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
 - Restart worker service and re-check queue processing
 
 ### D) Migration-related errors
-- Validate Prisma migration status
+- Validate TypeORM migration status (`pnpm db:migrate:deploy` 재실행 시 pending 목록 확인)
 - Stop rollout, apply fix-forward or rollback decision
+- Shared Agoda catalog(`agoda_hotels`, `agoda_hotels_search`)는 `BINBANG_SHARED` 스키마이므로 application migration으로 복구되지 않는다. 스키마 이상 시 `packages/db/sql/agoda_shared_catalog.sql` 재적용 여부를 먼저 확인한다.
 - Re-run health checks before traffic stabilization message
 
 ## 5) Recovery Playbooks

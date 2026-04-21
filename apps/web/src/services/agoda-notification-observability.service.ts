@@ -142,6 +142,20 @@ export function buildAgodaNotificationReasonBreakdown(
   };
 }
 
+export function buildAgodaNotificationReasonBreakdownFromRows(
+  rows: Array<Pick<ReasonAggregateRow, 'status' | 'lastError'>>,
+  limitPerStatus = 3,
+): AgodaNotificationReasonBreakdown {
+  return buildAgodaNotificationReasonBreakdown(
+    rows.map((row) => ({
+      status: row.status,
+      lastError: row.lastError,
+      count: 1,
+    })),
+    limitPerStatus,
+  );
+}
+
 function isKnownReasonCode(value: string): value is AgodaNotificationReasonCode {
   return value in REASON_LABELS;
 }

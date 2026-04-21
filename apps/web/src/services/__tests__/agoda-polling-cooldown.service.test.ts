@@ -30,31 +30,120 @@ const {
   mockTransaction: vi.fn(),
 }));
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    accommodation: {
-      findUnique: mockAccommodationFindUnique,
-      update: mockAccommodationUpdate,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    accommodationRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    pollRunRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    snapshotRepo: {
+      find: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+    };
+    alertEventRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+    };
+    notificationRepo: {
+      save: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    accommodationRepo: {
+      findOne: vi.fn(),
+      update: vi.fn(),
     },
-    agodaPollRun: {
-      create: mockPollRunCreate,
-      findFirst: mockPollRunFindFirst,
-      update: mockPollRunUpdate,
+    pollRunRepo: {
+      findOne: vi.fn(),
+      save: vi.fn(),
+      update: vi.fn(),
     },
-    agodaRoomSnapshot: {
-      findMany: mockSnapshotFindMany,
-      createMany: mockSnapshotCreateMany,
+    snapshotRepo: {
+      find: vi.fn(),
+      save: vi.fn(),
     },
-    agodaAlertEvent: {
-      findFirst: mockAlertEventFindFirst,
-      create: mockAlertEventCreate,
+    alertEventRepo: {
+      findOne: vi.fn(),
+      save: vi.fn(),
     },
-    agodaNotification: {
-      createMany: mockNotificationCreateMany,
+    notificationRepo: {
+      save: vi.fn(),
     },
-    $transaction: mockTransaction,
-  },
-}));
+    getDataSource: vi.fn(),
+  }),
+);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../../test-utils/mock-db.ts');
+
+  const accommodationRepo = createMockRepository();
+  accommodationRepo.findOne.mockImplementation((...args) => mockAccommodationFindUnique(...args));
+  accommodationRepo.update.mockImplementation((where, data) => mockAccommodationUpdate({ where, data }));
+
+  const pollRunRepo = createMockRepository();
+  pollRunRepo.findOne.mockImplementation((...args) => mockPollRunFindFirst(...args));
+  pollRunRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await mockPollRunCreate({ data: entity });
+    if (created && typeof created === 'object') Object.assign(entity, created as object);
+    return created ?? entity;
+  });
+  pollRunRepo.update.mockImplementation((where, data) => mockPollRunUpdate({ where, data }));
+
+  const snapshotRepo = createMockRepository();
+  snapshotRepo.find.mockImplementation((...args) => mockSnapshotFindMany(...args));
+  snapshotRepo.save.mockImplementation(async (entities: unknown) => {
+    const data = Array.isArray(entities) ? entities : [entities];
+    await mockSnapshotCreateMany({ data });
+    return entities;
+  });
+
+  const alertEventRepo = createMockRepository();
+  alertEventRepo.findOne.mockImplementation((...args) => mockAlertEventFindFirst(...args));
+  alertEventRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await mockAlertEventCreate({ data: entity });
+    if (created && typeof created === 'object') Object.assign(entity, created as object);
+    return created ?? entity;
+  });
+
+  const notificationRepo = createMockRepository();
+  notificationRepo.save.mockImplementation(async (entities: unknown) => {
+    const data = Array.isArray(entities) ? entities : [entities];
+    await mockNotificationCreateMany({ data });
+    return entities;
+  });
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.Accommodation, accommodationRepo],
+      [actual.AgodaPollRun, pollRunRepo],
+      [actual.AgodaRoomSnapshot, snapshotRepo],
+      [actual.AgodaAlertEvent, alertEventRepo],
+      [actual.AgodaNotification, notificationRepo],
+    ],
+    transactionImplementation: (...args) => mockTransaction(...args),
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.accommodationRepo = accommodationRepo;
+  dbMock.pollRunRepo = pollRunRepo;
+  dbMock.snapshotRepo = snapshotRepo;
+  dbMock.alertEventRepo = alertEventRepo;
+  dbMock.notificationRepo = notificationRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 const { mockSearchAgodaAvailability } = vi.hoisted(() => ({
   mockSearchAgodaAvailability: vi.fn(),
@@ -70,6 +159,16 @@ const { mockNormalizeAgodaSearchResponse } = vi.hoisted(() => ({
 
 vi.mock('@/lib/agoda/normalize', () => ({
   normalizeAgodaSearchResponse: mockNormalizeAgodaSearchResponse,
+}));
+
+vi.mock('@/services/binbang-runtime-settings.service', () => ({
+  getBinbangRuntimeSettings: vi.fn(async () => ({
+    vacancyCooldownHours: 24,
+    priceDropCooldownHours: 24,
+    priceDropThreshold: 0.2,
+    pollIntervalMinutes: 30,
+    duePollLimit: 100,
+  })),
 }));
 
 // ============================================================================
@@ -126,7 +225,6 @@ function setupBaseAccommodation() {
 
   mockPollRunCreate.mockResolvedValue({ id: 1n, polledAt: new Date() });
   mockSnapshotCreateMany.mockResolvedValue({ count: 1 });
-  mockTransaction.mockResolvedValue([{}, {}]);
   mockNotificationCreateMany.mockResolvedValue({ count: 1 });
 }
 
@@ -141,6 +239,8 @@ import { pollAccommodationOnce } from '../agoda-polling.service';
 describe('agoda-polling: cooldown 쿨다운', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
+    mockTransaction.mockImplementation(async (fn: (manager: unknown) => Promise<unknown>) => fn(dbMock.dataSource));
   });
 
   it('vacancy 이벤트: 쿨다운 활성 시 알림 큐잉 건너뜀', async () => {
@@ -158,7 +258,7 @@ describe('agoda-polling: cooldown 쿨다운', () => {
     mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
 
     // 쿨다운: findFirst가 기존 이벤트 반환 → 쿨다운 활성
-    mockAlertEventFindFirst.mockResolvedValue({ id: 99n });
+    mockAlertEventFindFirst.mockResolvedValue({ id: 99n, detectedAt: new Date() });
 
     const result = await pollAccommodationOnce('acc_001');
 
@@ -217,7 +317,7 @@ describe('agoda-polling: cooldown 쿨다운', () => {
     mockNormalizeAgodaSearchResponse.mockReturnValue({ offers: [currentOffer] });
 
     // price_drop 쿨다운 활성
-    mockAlertEventFindFirst.mockResolvedValue({ id: 99n });
+    mockAlertEventFindFirst.mockResolvedValue({ id: 99n, detectedAt: new Date() });
 
     const result = await pollAccommodationOnce('acc_001');
 
@@ -367,6 +467,7 @@ describe('agoda-polling: cooldown 쿨다운', () => {
     expect(callArgs.where.type).toBe('vacancy');
     expect(callArgs.where.offerKey).toBe('1001:2001:3001');
     expect(callArgs.where.status).toBe('detected');
-    expect(callArgs.where.detectedAt.gte).toBeInstanceOf(Date);
+    expect(callArgs.select).toEqual({ id: true, detectedAt: true });
+    expect(callArgs.order).toEqual({ detectedAt: 'DESC' });
   });
 });

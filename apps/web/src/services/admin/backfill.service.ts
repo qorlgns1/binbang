@@ -1,6 +1,6 @@
 import { parsePrice } from '@workspace/shared';
 
-import { prisma } from '@workspace/db';
+import { Accommodation, CheckLog, IsNull, MoreThan, Not, getDataSource } from '@workspace/db';
 
 // ============================================================================
 // Types
@@ -28,65 +28,52 @@ export async function backfillPrices(): Promise<BackfillPricesResult> {
   let skippedLogs = 0;
   let cursor: string | undefined;
 
+  const ds = await getDataSource();
+  const checkLogRepo = ds.getRepository(CheckLog);
+
   // CheckLog 백필
   while (true) {
-    const logs = await prisma.checkLog.findMany({
-      where: { price: { not: null }, priceAmount: null },
+    const logs = await checkLogRepo.find({
+      where: {
+        price: Not(IsNull()),
+        priceAmount: IsNull(),
+        ...(cursor ? { id: MoreThan(cursor) } : {}),
+      },
       select: { id: true, price: true },
+      order: { id: 'ASC' },
       take: BATCH_SIZE,
-      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-      orderBy: { id: 'asc' },
     });
 
     if (logs.length === 0) break;
 
-    const updates = [];
+    let batchUpdated = 0;
     for (const log of logs) {
       const parsed = parsePrice(log.price);
       if (parsed) {
-        updates.push(
-          prisma.checkLog.update({
-            where: { id: log.id },
-            data: { priceAmount: parsed.amount, priceCurrency: parsed.currency },
-            select: { id: true },
-          }),
-        );
+        await checkLogRepo.update({ id: log.id }, { priceAmount: parsed.amount, priceCurrency: parsed.currency });
+        batchUpdated++;
       }
     }
 
-    if (updates.length > 0) {
-      await prisma.$transaction(updates);
-    }
-
-    updatedLogs += updates.length;
-    skippedLogs += logs.length - updates.length;
+    updatedLogs += batchUpdated;
+    skippedLogs += logs.length - batchUpdated;
     cursor = logs[logs.length - 1].id;
   }
 
   // Accommodation 백필
-  const accommodations = await prisma.accommodation.findMany({
-    where: { lastPrice: { not: null }, lastPriceAmount: null },
+  const accRepo = ds.getRepository(Accommodation);
+  const accommodations = await accRepo.find({
+    where: { lastPrice: Not(IsNull()), lastPriceAmount: IsNull() },
     select: { id: true, lastPrice: true },
   });
 
   let updatedAccommodations = 0;
-  const accUpdates = [];
   for (const acc of accommodations) {
     const parsed = parsePrice(acc.lastPrice);
     if (parsed) {
-      accUpdates.push(
-        prisma.accommodation.update({
-          where: { id: acc.id },
-          data: { lastPriceAmount: parsed.amount, lastPriceCurrency: parsed.currency },
-          select: { id: true },
-        }),
-      );
+      await accRepo.update({ id: acc.id }, { lastPriceAmount: parsed.amount, lastPriceCurrency: parsed.currency });
+      updatedAccommodations++;
     }
-  }
-
-  if (accUpdates.length > 0) {
-    await prisma.$transaction(accUpdates);
-    updatedAccommodations = accUpdates.length;
   }
 
   return {

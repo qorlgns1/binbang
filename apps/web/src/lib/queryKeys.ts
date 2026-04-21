@@ -66,6 +66,8 @@ export const adminKeys = {
     filters?: Record<string, string>,
   ): readonly ['admin', 'funnel', 'growth', Record<string, string>] =>
     [...adminKeys.funnel(), 'growth', filters ?? {}] as const,
+  travelPlannerFunnelSnapshot: (): readonly ['admin', 'funnel', 'travelPlanner'] =>
+    [...adminKeys.funnel(), 'travelPlanner'] as const,
   funnelAffiliateSnapshot: (
     filters?: Record<string, string>,
   ): readonly ['admin', 'funnel', 'affiliate', Record<string, string>] =>

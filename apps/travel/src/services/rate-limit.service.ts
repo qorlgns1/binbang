@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { TZDate, tz } from '@date-fns/tz';
-import { prisma } from '@workspace/db';
+import { Between, TravelConversation, TravelMessage, getDataSource } from '@workspace/db';
 
 /**
  * Rate Limiting 서비스
@@ -77,10 +77,14 @@ async function checkRateLimitPersistentByOwner(
   const { start: dayStart, end: dayEnd } = getDailyWindow(now);
   const normalizedConversationId = conversationId?.trim() || undefined;
 
+  const ds = await getDataSource();
+  const convRepo = ds.getRepository(TravelConversation);
+  const msgRepo = ds.getRepository(TravelMessage);
+
   let isNewConversationAttempt = true;
 
   if (normalizedConversationId) {
-    const existingConversation = await prisma.travelConversation.findFirst({
+    const existingConversation = await convRepo.findOne({
       where:
         owner.type === 'session'
           ? { id: normalizedConversationId, sessionId: owner.sessionId }
@@ -92,11 +96,11 @@ async function checkRateLimitPersistentByOwner(
   }
 
   if (isNewConversationAttempt) {
-    const dailyConversationCount = await prisma.travelConversation.count({
+    const dailyConversationCount = await convRepo.count({
       where:
         owner.type === 'session'
-          ? { sessionId: owner.sessionId, createdAt: { gte: dayStart, lt: dayEnd } }
-          : { userId: owner.userId, createdAt: { gte: dayStart, lt: dayEnd } },
+          ? { sessionId: owner.sessionId, createdAt: Between(dayStart, dayEnd) }
+          : { userId: owner.userId, createdAt: Between(dayStart, dayEnd) },
     });
 
     if (dailyConversationCount >= limits.daily) {
@@ -108,13 +112,16 @@ async function checkRateLimitPersistentByOwner(
   }
 
   if (normalizedConversationId) {
-    const conversationUserMessageCount = await prisma.travelMessage.count({
-      where: {
-        conversationId: normalizedConversationId,
-        role: 'user',
-        conversation: owner.type === 'session' ? { sessionId: owner.sessionId } : { userId: owner.userId },
-      },
-    });
+    // Use QueryBuilder to join with conversation for ownership check
+    const conversationUserMessageCount = await msgRepo
+      .createQueryBuilder('msg')
+      .innerJoin('msg.conversation', 'conv')
+      .where('msg.conversationId = :conversationId', { conversationId: normalizedConversationId })
+      .andWhere('msg.role = :role', { role: 'user' })
+      .andWhere(owner.type === 'session' ? 'conv.sessionId = :ownerId' : 'conv.userId = :ownerId', {
+        ownerId: owner.type === 'session' ? owner.sessionId : owner.userId,
+      })
+      .getCount();
 
     if (conversationUserMessageCount >= limits.perConversation) {
       return {

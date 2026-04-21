@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { WorkerHeartbeat, getDataSource } from '@workspace/db';
 
 import { loadWebSettings } from '@/services/web-settings.service';
 
@@ -48,8 +48,9 @@ export async function getHealthStatus(isDev: boolean = false): Promise<HealthChe
   };
 
   try {
+    const ds = await getDataSource();
     const dbStart = Date.now();
-    await prisma.$queryRaw`SELECT 1`;
+    await ds.query('SELECT 1 FROM DUAL');
     health.checks.database = {
       status: 'connected',
       latency: Date.now() - dbStart,
@@ -68,7 +69,8 @@ export async function getHealthStatus(isDev: boolean = false): Promise<HealthChe
 }
 
 export async function getHeartbeatStatus(): Promise<HeartbeatResponse> {
-  const heartbeat = await prisma.workerHeartbeat.findUnique({
+  const ds = await getDataSource();
+  const heartbeat = await ds.getRepository(WorkerHeartbeat).findOne({
     where: { id: 'singleton' },
     select: { lastHeartbeatAt: true, isProcessing: true, updatedAt: true },
   });

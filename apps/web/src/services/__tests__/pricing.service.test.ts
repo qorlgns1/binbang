@@ -29,19 +29,97 @@ const { mockCaseFindUnique, mockPriceQuoteUpdateMany, mockPriceQuoteCreate, mock
     }),
   );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    case: {
-      findUnique: mockCaseFindUnique,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    priceQuoteQb: {
+      execute: ReturnType<typeof vi.fn>;
+      set: ReturnType<typeof vi.fn>;
+      where: ReturnType<typeof vi.fn>;
+    };
+    caseRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    priceQuoteRepo: {
+      find: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    priceQuoteQb: {
+      execute: vi.fn(),
+      set: vi.fn(),
+      where: vi.fn(),
     },
-    priceQuote: {
-      updateMany: mockPriceQuoteUpdateMany,
-      create: mockPriceQuoteCreate,
-      findMany: mockPriceQuoteFindMany,
+    caseRepo: {
+      findOne: vi.fn(),
     },
-    $transaction: mockTransaction,
-  },
-}));
+    priceQuoteRepo: {
+      find: vi.fn(),
+      save: vi.fn(),
+    },
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockQueryBuilder, createMockRepository } = await import(
+    '../../../../../test-utils/mock-db.ts'
+  );
+
+  const priceQuoteQb = createMockQueryBuilder();
+  priceQuoteQb.execute.mockImplementation(async () => {
+    const setData = priceQuoteQb.set.mock.calls.at(-1)?.[0] ?? {};
+    const whereParams = priceQuoteQb.where.mock.calls.at(-1)?.[1] ?? {};
+    return callMock(mockPriceQuoteUpdateMany, {
+      where: { caseId: whereParams.caseId, isActive: true },
+      data: setData,
+    });
+  });
+
+  const caseRepo = createMockRepository();
+  caseRepo.findOne.mockImplementation((...args) => callMock(mockCaseFindUnique, ...args));
+
+  const priceQuoteRepo = createMockRepository();
+  priceQuoteRepo.find.mockImplementation((options: Record<string, unknown>) =>
+    callMock(mockPriceQuoteFindMany, {
+      ...options,
+      ...(options.order ? { orderBy: { updatedAt: 'desc' } } : {}),
+    }),
+  );
+  priceQuoteRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await callMock(mockPriceQuoteCreate, { data: entity });
+    if (created && typeof created === 'object') {
+      Object.assign(entity, created as object);
+    }
+    return created ?? entity;
+  });
+
+  const dataSource = createMockDataSource({
+    queryBuilder: priceQuoteQb,
+    repositories: [
+      [actual.Case, caseRepo],
+      [actual.PriceQuote, priceQuoteRepo],
+    ],
+    transactionImplementation: (...args) => callMock(mockTransaction, ...args),
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.priceQuoteQb = priceQuoteQb;
+  dbMock.caseRepo = caseRepo;
+  dbMock.priceQuoteRepo = priceQuoteRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 function buildInput(overrides: Partial<PricingInputSnapshot> = {}): PricingInputSnapshot {
   return {
@@ -72,24 +150,14 @@ function buildQuoteRow(overrides: Record<string, unknown> = {}) {
 }
 
 function setupTransactionMock(): void {
-  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-    const tx = {
-      case: {
-        findUnique: mockCaseFindUnique,
-      },
-      priceQuote: {
-        updateMany: mockPriceQuoteUpdateMany,
-        create: mockPriceQuoteCreate,
-      },
-    };
-    return fn(tx);
-  });
+  mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(dbMock.dataSource));
 }
 
 describe('pricing.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
     setupTransactionMock();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockCaseFindUnique.mockResolvedValue({ id: 'case-1' });
     mockPriceQuoteUpdateMany.mockResolvedValue({ count: 1 });
     mockPriceQuoteCreate.mockResolvedValue(buildQuoteRow());

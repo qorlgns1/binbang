@@ -1,5 +1,5 @@
 import type { AffiliateAdvertiserCategory, AffiliateEventType } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { getDataSource } from '@workspace/db';
 
 interface AggregateAffiliateFunnelInput {
   from: Date;
@@ -88,19 +88,31 @@ function calculateTotals(rows: FunnelMetrics[]): AggregateAffiliateFunnelResult[
 export async function aggregateAffiliateFunnel(
   input: AggregateAffiliateFunnelInput,
 ): Promise<AggregateAffiliateFunnelResult> {
-  const where = {
-    occurredAt: { gte: input.from, lte: input.to },
-    ...(input.category ? { category: input.category } : {}),
-  };
+  const ds = await getDataSource();
 
-  const rows = await prisma.affiliateEvent.groupBy({
-    by: ['category', 'eventType'] as ['category', 'eventType'],
-    where,
-    _count: { _all: true },
-  });
+  let sql = `SELECT "category", "eventType", COUNT(*) AS "count"
+    FROM "AffiliateEvent"
+    WHERE "occurredAt" >= :1 AND "occurredAt" <= :2`;
+  const params: unknown[] = [input.from, input.to];
+
+  if (input.category) {
+    sql += ` AND "category" = :3`;
+    params.push(input.category);
+  }
+
+  sql += ` GROUP BY "category", "eventType"`;
+
+  const rawRows = await ds.query<{ category: AffiliateAdvertiserCategory; eventType: string; count: string }[]>(
+    sql,
+    params,
+  );
 
   const byCategory = buildGroupedFunnel(
-    rows.map((row) => ({ key: row.category, eventType: row.eventType as AffiliateEventType, count: row._count._all })),
+    rawRows.map((row) => ({
+      key: row.category,
+      eventType: row.eventType as AffiliateEventType,
+      count: Number(row.count),
+    })),
     (category) => ({ category, ...createEmptyMetrics() }),
   ).sort((a, b) => a.category.localeCompare(b.category));
 

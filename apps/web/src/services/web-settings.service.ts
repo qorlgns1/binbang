@@ -5,7 +5,7 @@
  * binbang-runtime-settings.service.ts 와 동일한 패턴 적용.
  */
 
-import { prisma } from '@workspace/db';
+import { In, SystemSettings, getDataSource } from '@workspace/db';
 
 import type { WebSettingsCache } from '@/lib/settings';
 
@@ -89,8 +89,9 @@ function buildSettings(dbMap: Map<string, string>): WebSettingsCache {
 
 async function readDbSettingsMap(): Promise<Map<string, string>> {
   try {
-    const rows = await prisma.systemSettings.findMany({
-      where: { key: { in: Object.values(WEB_SETTING_KEYS) } },
+    const ds = await getDataSource();
+    const rows = await ds.getRepository(SystemSettings).find({
+      where: { key: In(Object.values(WEB_SETTING_KEYS)) },
       select: { key: true, value: true },
     });
     return new Map(rows.map((row) => [row.key, row.value]));

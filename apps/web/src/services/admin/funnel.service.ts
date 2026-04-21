@@ -1,4 +1,13 @@
-import { prisma } from '@workspace/db';
+import {
+  BillingEvent,
+  Between,
+  Case,
+  FormSubmission,
+  FormSubmissionStatus,
+  IsNull,
+  Not,
+  getDataSource,
+} from '@workspace/db';
 import { startOfUtcDay, endOfUtcDay, addUtcDays } from '@workspace/shared/utils/date';
 import { BadRequestError } from '@workspace/shared/errors';
 
@@ -95,23 +104,25 @@ function makeDateKeys(from: Date, to: Date): string[] {
 }
 
 async function resolveAllRangeStart(now: Date): Promise<Date> {
+  const ds = await getDataSource();
+
   const [submitted, processed, paymentConfirmed, conditionMet] = await Promise.all([
-    prisma.formSubmission.findFirst({
-      orderBy: { createdAt: 'asc' },
+    ds.getRepository(FormSubmission).findOne({
+      order: { createdAt: 'ASC' },
       select: { createdAt: true },
     }),
-    prisma.formSubmission.findFirst({
-      where: { status: 'PROCESSED' },
-      orderBy: { updatedAt: 'asc' },
+    ds.getRepository(FormSubmission).findOne({
+      where: { status: FormSubmissionStatus.PROCESSED },
+      order: { updatedAt: 'ASC' },
       select: { updatedAt: true },
     }),
-    prisma.case.findFirst({
-      where: { paymentConfirmedAt: { not: null } },
-      orderBy: { paymentConfirmedAt: 'asc' },
+    ds.getRepository(Case).findOne({
+      where: { paymentConfirmedAt: Not(IsNull()) },
+      order: { paymentConfirmedAt: 'ASC' },
       select: { paymentConfirmedAt: true },
     }),
-    prisma.billingEvent.findFirst({
-      orderBy: { createdAt: 'asc' },
+    ds.getRepository(BillingEvent).findOne({
+      order: { createdAt: 'ASC' },
       select: { createdAt: true },
     }),
   ]);
@@ -174,7 +185,8 @@ export async function getAdminFunnel(input: GetAdminFunnelInput = {}): Promise<A
   const now = input.now ?? new Date();
   const { from, to } = await resolveRange(range, now, input.from, input.to);
 
-  const rangeFilter = { gte: from, lte: to };
+  const ds = await getDataSource();
+  const rangeFilter = Between(from, to);
 
   const [
     submitted,
@@ -186,41 +198,45 @@ export async function getAdminFunnel(input: GetAdminFunnelInput = {}): Promise<A
     paymentConfirmedSeriesRows,
     conditionMetSeriesRows,
   ] = await Promise.all([
-    prisma.formSubmission.count({
+    ds.getRepository(FormSubmission).count({
       where: { createdAt: rangeFilter },
     }),
-    prisma.formSubmission.count({
-      where: { status: 'PROCESSED', updatedAt: rangeFilter },
+    ds.getRepository(FormSubmission).count({
+      where: { status: FormSubmissionStatus.PROCESSED, updatedAt: rangeFilter },
     }),
-    prisma.case.count({
+    ds.getRepository(Case).count({
       where: { paymentConfirmedAt: rangeFilter },
     }),
-    prisma.billingEvent.findMany({
-      where: { createdAt: rangeFilter },
-      distinct: ['caseId'],
-      select: { caseId: true },
-    }),
-    prisma.formSubmission.findMany({
+    ds.query<Array<{ caseId: string }>>(
+      `SELECT DISTINCT "caseId" FROM "BillingEvent" WHERE "createdAt" >= :1 AND "createdAt" <= :2`,
+      [from, to],
+    ),
+    ds.getRepository(FormSubmission).find({
       where: { createdAt: rangeFilter },
       select: { responseId: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
+      order: { createdAt: 'ASC' },
     }),
-    prisma.formSubmission.findMany({
-      where: { status: 'PROCESSED', updatedAt: rangeFilter },
+    ds.getRepository(FormSubmission).find({
+      where: { status: FormSubmissionStatus.PROCESSED, updatedAt: rangeFilter },
       select: { id: true, updatedAt: true },
-      orderBy: { updatedAt: 'asc' },
+      order: { updatedAt: 'ASC' },
     }),
-    prisma.case.findMany({
+    ds.getRepository(Case).find({
       where: { paymentConfirmedAt: rangeFilter },
       select: { id: true, paymentConfirmedAt: true },
-      orderBy: { paymentConfirmedAt: 'asc' },
+      order: { paymentConfirmedAt: 'ASC' },
     }),
-    prisma.billingEvent.findMany({
-      where: { createdAt: rangeFilter },
-      distinct: ['caseId'],
-      select: { caseId: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
-    }),
+    ds.query<Array<{ caseId: string; createdAt: Date }>>(
+      `SELECT "conditionMet"."caseId" AS "caseId", "conditionMet"."createdAt" AS "createdAt"
+       FROM (
+         SELECT "caseId", MIN("createdAt") AS "createdAt"
+         FROM "BillingEvent"
+         WHERE "createdAt" >= :1 AND "createdAt" <= :2
+         GROUP BY "caseId"
+       ) "conditionMet"
+       ORDER BY "conditionMet"."createdAt" ASC`,
+      [from, to],
+    ),
   ]);
 
   const conditionMet = conditionMetRows.length;
@@ -264,7 +280,8 @@ export async function getAdminFunnel(input: GetAdminFunnelInput = {}): Promise<A
   }
 
   for (const row of conditionMetSeriesRows) {
-    const key = toUtcDateKey(row.createdAt);
+    const createdAt = row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt as string);
+    const key = toUtcDateKey(createdAt);
     const target = seriesMap.get(key);
     if (target) {
       target.conditionMet += 1;

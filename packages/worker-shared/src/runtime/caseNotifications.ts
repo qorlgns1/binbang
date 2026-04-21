@@ -1,6 +1,6 @@
-import { prisma, type Prisma } from '@workspace/db';
+import { getDataSource, CaseNotification, NotificationStatus, LessThan } from '@workspace/db';
 
-import { getUserLocale, isStructuredPayload, renderNotification } from './i18n';
+import { getUserLocale, isStructuredPayload, renderNotification } from './i18n/index';
 import { sendKakaoNotification } from './notifications';
 
 export interface RetryCaseNotificationsOptions {
@@ -9,7 +9,7 @@ export interface RetryCaseNotificationsOptions {
    */
   batchSize?: number;
   /**
-   * PENDING 상태가 오래 지속되면 “중단된 시도”로 보고 재시도한다.
+   * PENDING 상태가 오래 지속되면 "중단된 시도"로 보고 재시도한다.
    */
   pendingStaleMs?: number;
 }
@@ -34,7 +34,7 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function extractPayload(payload: Prisma.JsonValue): NotificationPayload {
+function extractPayload(payload: unknown): NotificationPayload {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
     return payload as NotificationPayload;
   }
@@ -44,7 +44,7 @@ function extractPayload(payload: Prisma.JsonValue): NotificationPayload {
 /**
  * FAILED/PENDING(오래된) 알림을 재시도한다.
  *
- * - 멱등/중복 방지: (id + status + retryCount 조건)으로 먼저 “claim” 후 전송
+ * - 멱등/중복 방지: (id + status + retryCount 조건)으로 먼저 "claim" 후 전송
  * - maxRetries 초과 건은 스킵
  */
 export async function retryStaleCaseNotifications(
@@ -53,28 +53,16 @@ export async function retryStaleCaseNotifications(
   const batchSize = options.batchSize ?? 25;
   const pendingStaleMs = options.pendingStaleMs ?? 2 * 60_000;
   const pendingBefore = new Date(Date.now() - pendingStaleMs);
+  const ds = await getDataSource();
 
-  const candidates = await prisma.caseNotification.findMany({
-    where: {
-      OR: [{ status: 'FAILED' }, { status: 'PENDING', updatedAt: { lt: pendingBefore } }],
-    },
-    orderBy: { updatedAt: 'asc' },
+  const candidates = await ds.getRepository(CaseNotification).find({
+    where: [
+      { status: NotificationStatus.FAILED },
+      { status: NotificationStatus.PENDING, updatedAt: LessThan(pendingBefore) },
+    ],
+    order: { updatedAt: 'ASC' },
     take: batchSize,
-    select: {
-      id: true,
-      status: true,
-      payload: true,
-      retryCount: true,
-      maxRetries: true,
-      updatedAt: true,
-      case: {
-        select: {
-          accommodation: {
-            select: { userId: true },
-          },
-        },
-      },
-    },
+    relations: { case: { accommodation: true } },
   });
 
   const result: RetryCaseNotificationsResult = {
@@ -91,36 +79,36 @@ export async function retryStaleCaseNotifications(
       continue;
     }
 
-    // “claim” (경합 방지): 현재 상태 + retryCount 조건을 만족하는 경우에만 점유
-    const claimed = await prisma.caseNotification.updateMany({
-      where: {
+    // "claim" (경합 방지): 현재 상태 + retryCount 조건을 만족하는 경우에만 점유
+    const claimResult = await ds
+      .createQueryBuilder()
+      .update(CaseNotification)
+      .set({
+        status: NotificationStatus.PENDING,
+        retryCount: () => '"retryCount" + 1',
+        failReason: () => 'NULL',
+      })
+      .where('"id" = :id AND "status" = :status AND "retryCount" = :retryCount', {
         id: n.id,
         status: n.status,
         retryCount: n.retryCount,
-      },
-      data: {
-        status: 'PENDING',
-        retryCount: { increment: 1 },
-        failReason: null,
-      },
-    });
+      })
+      .execute();
 
-    if (claimed.count !== 1) {
+    if ((claimResult.affected ?? 0) !== 1) {
       result.skipped += 1;
       continue;
     }
 
     result.claimed += 1;
 
-    const payload = extractPayload(n.payload as Prisma.JsonValue);
+    const payload = extractPayload(n.payload);
     const userId = (isNonEmptyString(payload.userId) ? payload.userId : null) ?? n.case?.accommodation?.userId ?? null;
 
     if (!userId) {
-      await prisma.caseNotification.update({
-        where: { id: n.id },
-        data: { status: 'FAILED', failReason: 'payload(userId) 누락' },
-        select: { id: true },
-      });
+      await ds
+        .getRepository(CaseNotification)
+        .update({ id: n.id }, { status: NotificationStatus.FAILED, failReason: 'payload(userId) 누락' });
       result.failed += 1;
       continue;
     }
@@ -142,11 +130,9 @@ export async function retryStaleCaseNotifications(
         buttonUrl = rendered.buttonUrl;
       } catch (error) {
         const failReason = error instanceof Error ? error.message : 'locale/렌더링 예외';
-        await prisma.caseNotification.update({
-          where: { id: n.id },
-          data: { status: 'FAILED', failReason },
-          select: { id: true },
-        });
+        await ds
+          .getRepository(CaseNotification)
+          .update({ id: n.id }, { status: NotificationStatus.FAILED, failReason });
         result.failed += 1;
         continue;
       }
@@ -158,11 +144,9 @@ export async function retryStaleCaseNotifications(
     }
 
     if (!title || !description) {
-      await prisma.caseNotification.update({
-        where: { id: n.id },
-        data: { status: 'FAILED', failReason: 'payload(title/description) 누락' },
-        select: { id: true },
-      });
+      await ds
+        .getRepository(CaseNotification)
+        .update({ id: n.id }, { status: NotificationStatus.FAILED, failReason: 'payload(title/description) 누락' });
       result.failed += 1;
       continue;
     }
@@ -178,20 +162,19 @@ export async function retryStaleCaseNotifications(
       });
     } catch (error) {
       const failReason = error instanceof Error ? error.message : '카카오 메시지 전송 예외';
-      await prisma.caseNotification.update({
-        where: { id: n.id },
-        data: { status: 'FAILED', failReason },
-        select: { id: true },
-      });
+      await ds.getRepository(CaseNotification).update({ id: n.id }, { status: NotificationStatus.FAILED, failReason });
       result.failed += 1;
       continue;
     }
 
-    await prisma.caseNotification.update({
-      where: { id: n.id },
-      data: sent ? { status: 'SENT', sentAt: new Date() } : { status: 'FAILED', failReason: '카카오 메시지 전송 실패' },
-      select: { id: true },
-    });
+    await ds
+      .getRepository(CaseNotification)
+      .update(
+        { id: n.id },
+        sent
+          ? { status: NotificationStatus.SENT, sentAt: new Date() }
+          : { status: NotificationStatus.FAILED, failReason: '카카오 메시지 전송 실패' },
+      );
 
     if (sent) {
       result.sent += 1;

@@ -3,6 +3,7 @@
  * 요구사항-테스트 매핑: TC-P3A-06, TC-P3A-07, TC-P3A-08
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryFailedError } from '@workspace/db';
 import { createAffiliateEvent } from './affiliate-event.service';
 
 const { mockPrismaCreate, mockUserFindUnique } = vi.hoisted(() => ({
@@ -10,15 +11,59 @@ const { mockPrismaCreate, mockUserFindUnique } = vi.hoisted(() => ({
   mockUserFindUnique: vi.fn(),
 }));
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    affiliateEvent: { create: mockPrismaCreate },
-    user: { findUnique: mockUserFindUnique },
-  },
-}));
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    affiliateEventRepo: unknown;
+    userRepo: unknown;
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    affiliateEventRepo: null,
+    userRepo: null,
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../test-utils/mock-db');
+
+  const affiliateEventRepo = createMockRepository();
+  affiliateEventRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
+    const created = await callMock<Record<string, unknown>>(mockPrismaCreate, { data: entity });
+    if (created && typeof created === 'object') Object.assign(entity, created);
+    return entity;
+  });
+
+  const userRepo = createMockRepository();
+  userRepo.findOne.mockImplementation((...args) => callMock(mockUserFindUnique, ...args));
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.AffiliateEvent, affiliateEventRepo],
+      [actual.User, userRepo],
+    ],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.affiliateEventRepo = affiliateEventRepo;
+  dbMock.userRepo = userRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('affiliate-event.service', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockPrismaCreate.mockReset();
     mockUserFindUnique.mockReset();
     mockUserFindUnique.mockResolvedValue(null);
@@ -107,8 +152,7 @@ describe('affiliate-event.service', () => {
   });
 
   it('returns deduped: true on unique constraint for impression', async () => {
-    const uniqueError = new Error('Unique constraint');
-    (uniqueError as Error & { code?: string }).code = 'P2002';
+    const uniqueError = new QueryFailedError('INSERT INTO "AffiliateEvent"', [], { errorNum: 1 } as never);
     mockPrismaCreate.mockRejectedValueOnce(uniqueError);
 
     const result = await createAffiliateEvent({

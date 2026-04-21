@@ -1,4 +1,12 @@
+'use client';
+
+import { useEffect } from 'react';
+
 import { Landmark, RefreshCw } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+
+import { PlannerStartForm } from '@/components/chat/PlannerStartForm';
+import { trackPlannerEventOnce } from '@/lib/plannerTracking';
 
 interface ChatPanelRestoreBannerProps {
   restoreStatus: 'idle' | 'restoring' | 'failed';
@@ -46,33 +54,63 @@ export function ChatPanelRestoreBanner({ restoreStatus, onRetryRestore, onOpenHi
 }
 
 interface ChatPanelEmptyStateProps {
-  queries: string[];
-  onExampleClick: (query: string) => void;
+  onPlannerSubmit: (query: string) => boolean | undefined;
 }
 
-export function ChatPanelEmptyState({ queries, onExampleClick }: ChatPanelEmptyStateProps) {
+export function ChatPanelPlannerEmptyState({ onPlannerSubmit }: ChatPanelEmptyStateProps) {
+  const t = useTranslations('chat');
+  const locale = useLocale();
+
+  useEffect(() => {
+    trackPlannerEventOnce(`landing_viewed:${locale}`, {
+      eventName: 'landing_viewed',
+      locale,
+    });
+  }, [locale]);
+
   return (
     <div className='flex flex-col items-center justify-center min-h-[55vh] text-center px-4'>
       <div className='flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-amber-light to-brand-amber/20 dark:from-brand-amber-dark/30 dark:to-brand-amber/10 mb-8 ring-1 ring-brand-amber/20'>
         <Landmark className='h-12 w-12 text-brand-amber dark:text-brand-amber' aria-hidden />
       </div>
-      <h2 className='text-2xl font-semibold tracking-tight mb-2 text-foreground'>빈방</h2>
+      <h2 className='text-2xl font-semibold tracking-tight mb-2 text-foreground'>{t('welcomeTitle')}</h2>
       <p className='text-muted-foreground mb-8 max-w-sm leading-relaxed text-[0.9375rem] sm:text-base'>
-        반가워요. 당신의 휴식이 길을 잃지 않도록, 빈방이 밤새 불을 밝혀둘게요.
+        {t('welcomeMessage')}
       </p>
-      <p className='text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3'>추천 질문</p>
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl'>
-        {queries.map((query) => (
-          <button
-            key={query}
-            type='button'
-            onClick={() => onExampleClick(query)}
-            className='rounded-full border border-border/60 bg-background/60 px-5 py-3 text-left text-sm text-foreground transition-all duration-200 hover:bg-muted/60 hover:border-border hover:shadow-sm active:scale-[0.99]'
-            aria-label={`추천 질문: ${query}`}
-          >
-            {query}
-          </button>
-        ))}
+      <div className='w-full max-w-xl rounded-3xl border border-border/60 bg-card/70 p-4 shadow-sm backdrop-blur-sm sm:p-5'>
+        <PlannerStartForm onSubmitPrompt={onPlannerSubmit} />
+      </div>
+    </div>
+  );
+}
+
+export function ChatPanelChatEmptyState() {
+  const t = useTranslations('chat');
+
+  return (
+    <div className='flex min-h-[55vh] flex-col items-center justify-center px-4 text-center'>
+      <div className='mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-amber-light to-brand-amber/20 ring-1 ring-brand-amber/20 dark:from-brand-amber-dark/30 dark:to-brand-amber/10'>
+        <Landmark className='h-10 w-10 text-brand-amber' aria-hidden />
+      </div>
+      <h2 className='mb-2 text-2xl font-semibold tracking-tight text-foreground'>{t('welcomeTitle')}</h2>
+      <p className='max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base'>{t('welcomeMessage')}</p>
+    </div>
+  );
+}
+
+export function ChatPanelPlannerLoadingState() {
+  const t = useTranslations('chat.planner');
+
+  return (
+    <div className='mb-5 rounded-3xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur-sm'>
+      <div className='flex items-start gap-3'>
+        <div className='mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary'>
+          <RefreshCw className='h-4 w-4 animate-spin' aria-hidden />
+        </div>
+        <div className='space-y-1.5'>
+          <p className='text-sm font-semibold text-foreground sm:text-base'>{t('loadingTitle')}</p>
+          <p className='text-sm leading-relaxed text-muted-foreground'>{t('loadingDescription')}</p>
+        </div>
       </div>
     </div>
   );

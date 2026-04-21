@@ -3,12 +3,12 @@ import type { AccommodationToCheck, CheckResult } from '@workspace/shared';
 import { checkAgoda } from './agoda';
 import { checkAirbnb } from './airbnb';
 import type { CheckerRuntimeConfig } from './baseChecker';
-import type { PlatformSelectorCache } from './selectors';
+import type { PlatformSelectorCache } from './selectors/index';
 
 export { checkAgoda } from './agoda';
 export { checkAirbnb } from './airbnb';
 export { initBrowserPool, closeBrowserPool, acquireBrowser, releaseBrowser } from './browserPool';
-export type { PlatformSelectorCache, SelectorConfig } from './selectors';
+export type { PlatformSelectorCache, SelectorConfig } from './selectors/index';
 
 export type { AccommodationToCheck, CheckResult };
 export type { CheckerRuntimeConfig } from './baseChecker';

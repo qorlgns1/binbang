@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, User } from '@workspace/db';
 import axios from 'axios';
 import { buildKakaoNotificationSender, type KakaoNotificationContext } from '@workspace/shared/utils/kakaoNotification';
 
@@ -8,7 +8,7 @@ import {
   sendEmailHttp,
   sendKakaoMessageHttp,
 } from '@workspace/worker-shared/observability';
-import { getSettings } from './settings';
+import { getSettings } from './settings/index';
 import { getEmailConfig, getEnv } from './settings/env';
 
 // ── Types ──
@@ -46,15 +46,15 @@ async function refreshKakaoToken(userId: string, refreshToken: string): Promise<
 
     const { access_token, refresh_token, expires_in } = response.data;
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
+    const ds = await getDataSource();
+    await ds.getRepository(User).update(
+      { id: userId },
+      {
         kakaoAccessToken: access_token,
         kakaoRefreshToken: refresh_token || refreshToken,
         kakaoTokenExpiry: new Date(Date.now() + expires_in * 1000),
       },
-      select: { id: true },
-    });
+    );
 
     console.log('✅ 카카오 토큰 갱신 완료');
     return access_token;
@@ -81,7 +81,8 @@ async function refreshKakaoTokenWithLock(userId: string, refreshToken: string): 
  * 유효한 access_token 가져오기 (DB 1회 조회)
  */
 async function getValidAccessToken(userId: string): Promise<KakaoNotificationContext | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: {
       name: true,
@@ -146,7 +147,8 @@ export async function sendKakaoNotification(
   if (result === 'unauthorized' && !retried) {
     // 토큰 만료 시 갱신 후 1회 재시도
     console.log('⚠️ 토큰 만료. 갱신 후 재시도...');
-    const user = await prisma.user.findUnique({
+    const ds = await getDataSource();
+    const user = await ds.getRepository(User).findOne({
       where: { id: params.userId },
       select: { kakaoRefreshToken: true },
     });
@@ -228,7 +230,8 @@ export async function notifyAvailable(
  * User.email이 없거나 이메일 설정(Resend)이 없으면 false를 반환한다.
  */
 export async function sendEmailNotification(params: NotificationMessageParams): Promise<boolean> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: params.userId },
     select: { email: true },
   });

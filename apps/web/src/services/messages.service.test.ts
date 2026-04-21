@@ -8,40 +8,63 @@ import {
   getTemplateByKey,
 } from './messages.service';
 
-// ============================================================================
-// Mock setup
-// ============================================================================
-
-const { mockCaseFindUnique, mockMessageCreate, mockMessageFindMany, mockMessageGroupBy } = vi.hoisted(
+const dbMock = vi.hoisted(
   (): {
-    mockCaseFindUnique: ReturnType<typeof vi.fn>;
-    mockMessageCreate: ReturnType<typeof vi.fn>;
-    mockMessageFindMany: ReturnType<typeof vi.fn>;
-    mockMessageGroupBy: ReturnType<typeof vi.fn>;
+    dataSource: {
+      query: ReturnType<typeof vi.fn>;
+    };
+    caseRepo: {
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    caseMessageRepo: {
+      create: ReturnType<typeof vi.fn>;
+      count: ReturnType<typeof vi.fn>;
+      find: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
   } => ({
-    mockCaseFindUnique: vi.fn(),
-    mockMessageCreate: vi.fn(),
-    mockMessageFindMany: vi.fn(),
-    mockMessageGroupBy: vi.fn(),
+    dataSource: {
+      query: vi.fn(),
+    },
+    caseRepo: {
+      findOne: vi.fn(),
+    },
+    caseMessageRepo: {
+      create: vi.fn(),
+      count: vi.fn(),
+      find: vi.fn(),
+      save: vi.fn(),
+    },
+    getDataSource: vi.fn(),
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    case: {
-      findUnique: mockCaseFindUnique,
-    },
-    caseMessage: {
-      create: mockMessageCreate,
-      findMany: mockMessageFindMany,
-      groupBy: mockMessageGroupBy,
-    },
-  },
-}));
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../test-utils/mock-db.ts');
 
-// ============================================================================
-// Fixtures
-// ============================================================================
+  const caseRepo = createMockRepository();
+  const caseMessageRepo = createMockRepository();
+  caseMessageRepo.save.mockImplementation(async (entity: Record<string, unknown>) => entity);
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.Case, caseRepo],
+      [actual.CaseMessage, caseMessageRepo],
+    ],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.caseRepo = caseRepo;
+  dbMock.caseMessageRepo = caseMessageRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 const NOW = new Date('2026-02-13T00:00:00.000Z');
 
@@ -57,12 +80,9 @@ function buildMessageRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
-// ============================================================================
-// Tests
-// ============================================================================
-
 beforeEach(() => {
   vi.clearAllMocks();
+  dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
 });
 
 describe('MESSAGE_TEMPLATES', () => {
@@ -117,28 +137,31 @@ describe('createCaseMessage', () => {
   };
 
   it('should create a message and return output with ISO date', async () => {
-    mockCaseFindUnique.mockResolvedValue({ id: 'case-1' });
-    mockMessageCreate.mockResolvedValue(buildMessageRow());
+    dbMock.caseRepo.findOne.mockResolvedValue({ id: 'case-1' });
+    dbMock.caseMessageRepo.create.mockImplementation((data: Record<string, unknown>) => ({
+      ...buildMessageRow(),
+      ...data,
+    }));
 
     const result = await createCaseMessage(input);
 
     expect(result.id).toBe('msg-1');
     expect(result.templateKey).toBe('intake_confirm');
     expect(result.createdAt).toBe(NOW.toISOString());
-    expect(mockMessageCreate).toHaveBeenCalledOnce();
+    expect(dbMock.caseMessageRepo.create).toHaveBeenCalledOnce();
   });
 
   it('should throw when case does not exist', async () => {
-    mockCaseFindUnique.mockResolvedValue(null);
+    dbMock.caseRepo.findOne.mockResolvedValue(null);
 
     await expect(createCaseMessage(input)).rejects.toThrow('Case not found');
-    expect(mockMessageCreate).not.toHaveBeenCalled();
+    expect(dbMock.caseMessageRepo.create).not.toHaveBeenCalled();
   });
 });
 
 describe('getCaseMessages', () => {
   it('should return empty array when no messages', async () => {
-    mockMessageFindMany.mockResolvedValue([]);
+    dbMock.caseMessageRepo.find.mockResolvedValue([]);
 
     const result = await getCaseMessages('case-1');
     expect(result).toEqual([]);
@@ -147,7 +170,7 @@ describe('getCaseMessages', () => {
   it('should return messages sorted by createdAt desc', async () => {
     const msg1 = buildMessageRow({ id: 'msg-1', createdAt: new Date('2026-02-12T00:00:00Z') });
     const msg2 = buildMessageRow({ id: 'msg-2', createdAt: new Date('2026-02-13T00:00:00Z') });
-    mockMessageFindMany.mockResolvedValue([msg2, msg1]);
+    dbMock.caseMessageRepo.find.mockResolvedValue([msg2, msg1]);
 
     const result = await getCaseMessages('case-1');
 
@@ -159,9 +182,9 @@ describe('getCaseMessages', () => {
 
 describe('getOperatorMessageStats', () => {
   it('should return grouped stats', async () => {
-    mockMessageGroupBy.mockResolvedValue([
-      { templateKey: 'intake_confirm', _count: { id: 5 } },
-      { templateKey: 'price_quote', _count: { id: 3 } },
+    dbMock.dataSource.query.mockResolvedValue([
+      { templateKey: 'intake_confirm', count: '5' },
+      { templateKey: 'price_quote', count: '3' },
     ]);
 
     const result = await getOperatorMessageStats();
@@ -172,26 +195,18 @@ describe('getOperatorMessageStats', () => {
   });
 
   it('should filter by sentById when provided', async () => {
-    mockMessageGroupBy.mockResolvedValue([]);
+    dbMock.dataSource.query.mockResolvedValue([]);
 
     await getOperatorMessageStats('admin-1');
 
-    expect(mockMessageGroupBy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { sentById: 'admin-1' },
-      }),
-    );
+    expect(dbMock.dataSource.query).toHaveBeenCalledWith(expect.stringContaining('WHERE "sentById" = :1'), ['admin-1']);
   });
 
   it('should not filter when sentById is omitted', async () => {
-    mockMessageGroupBy.mockResolvedValue([]);
+    dbMock.dataSource.query.mockResolvedValue([]);
 
     await getOperatorMessageStats();
 
-    expect(mockMessageGroupBy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {},
-      }),
-    );
+    expect(dbMock.dataSource.query).toHaveBeenCalledWith(expect.not.stringContaining('WHERE "sentById" = :1'), []);
   });
 });

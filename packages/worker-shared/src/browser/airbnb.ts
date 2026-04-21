@@ -2,7 +2,7 @@ import { buildAccommodationUrl, type AccommodationToCheck, type CheckResult } fr
 
 import type { CheckerRuntimeConfig } from './baseChecker';
 import { baseCheck } from './baseChecker';
-import type { PlatformSelectorCache } from './selectors';
+import type { PlatformSelectorCache } from './selectors/index';
 
 /**
  * Airbnb data-testid 및 JSON-LD 기반 추출기

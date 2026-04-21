@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { Accommodation, AgodaNotification, getDataSource } from '@workspace/db';
 
 const DEFAULT_HISTORY_LIMIT = 20;
 
@@ -34,30 +34,20 @@ export async function getNotificationHistory(params: {
   userId: string;
   limit?: number;
 }): Promise<NotificationHistoryItem[]> {
-  const ownership = await prisma.accommodation.findFirst({
+  const ds = await getDataSource();
+
+  const ownership = await ds.getRepository(Accommodation).findOne({
     where: { id: params.accommodationId, userId: params.userId },
     select: { id: true },
   });
 
   if (!ownership) return [];
 
-  const rows = await prisma.agodaNotification.findMany({
+  const rows = await ds.getRepository(AgodaNotification).find({
     where: { accommodationId: params.accommodationId },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    relations: { alertEvent: true },
+    order: { createdAt: 'DESC', id: 'DESC' },
     take: params.limit ?? DEFAULT_HISTORY_LIMIT,
-    select: {
-      id: true,
-      status: true,
-      sentAt: true,
-      alertEvent: {
-        select: {
-          id: true,
-          type: true,
-          detectedAt: true,
-          meta: true,
-        },
-      },
-    },
   });
 
   return rows.map((row) => ({

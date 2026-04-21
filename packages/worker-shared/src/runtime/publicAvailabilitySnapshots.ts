@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 
 import type { Platform } from '@workspace/db';
-import { prisma } from '@workspace/db';
+import { Accommodation, In, PublicAvailabilitySnapshot, PublicProperty, getDataSource } from '@workspace/db';
 import { MS_PER_DAY, startOfUtcDay, endOfUtcDay } from '@workspace/shared/utils/date';
 
 export const DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS = 7;
 
 const BATCH_SIZE = 100;
+const ACCOMMODATION_FETCH_BATCH_SIZE = 500;
 
 export interface RefreshPublicAvailabilitySnapshotsInput {
   now?: Date;
@@ -75,24 +76,9 @@ interface AccommodationSnapshotSource {
 
 interface AggregatedAccommodationRow {
   accommodationId: string;
-  platform: string;
-  platformId: string | null;
-  url: string;
-  name: string;
-  platformName: string | null;
-  platformImage: string | null;
-  platformDescription: string | null;
-  addressCountry: string | null;
-  addressRegion: string | null;
-  addressLocality: string | null;
-  ratingValue: number | null;
-  reviewCount: number | null;
-  latitude: number | null;
-  longitude: number | null;
-  lastPriceCurrency: string | null;
   sampleSize: number;
   priceCount: number;
-  priceSum: bigint;
+  priceSum: number;
   minPriceAmount: number | null;
   maxPriceAmount: number | null;
   availableCount: number;
@@ -151,8 +137,6 @@ function derivePlatformPropertyKey(accommodation: AccommodationSnapshotSource): 
 
 function buildSlug(nameCandidate: string, platformPropertyKey: string): string {
   const base = slugify(nameCandidate).slice(0, 80) || 'property';
-  // SHA256 12-char suffix for virtually zero collision probability
-  // 16^12 = 281 trillion combinations vs SHA1 8-char = 4 billion
   const suffix = createHash('sha256').update(platformPropertyKey).digest('hex').slice(0, 12);
   return `${base}-${suffix}`;
 }
@@ -280,25 +264,64 @@ function chunk<T>(array: T[], size: number): T[][] {
   return result;
 }
 
-function toAccommodationSource(row: AggregatedAccommodationRow): AccommodationSnapshotSource {
+function toAccommodationSource(accommodation: Accommodation): AccommodationSnapshotSource {
   return {
-    id: row.accommodationId,
-    platform: row.platform as Platform,
-    platformId: row.platformId,
-    url: row.url,
-    name: row.name,
-    platformName: row.platformName,
-    platformImage: row.platformImage,
-    platformDescription: row.platformDescription,
-    addressCountry: row.addressCountry,
-    addressRegion: row.addressRegion,
-    addressLocality: row.addressLocality,
-    ratingValue: row.ratingValue,
-    reviewCount: row.reviewCount,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    lastPriceCurrency: row.lastPriceCurrency,
+    id: accommodation.id,
+    platform: accommodation.platform,
+    platformId: accommodation.platformId,
+    url: accommodation.url ?? '',
+    name: accommodation.name,
+    platformName: accommodation.platformName,
+    platformImage: accommodation.platformImage,
+    platformDescription: accommodation.platformDescription,
+    addressCountry: accommodation.addressCountry,
+    addressRegion: accommodation.addressRegion,
+    addressLocality: accommodation.addressLocality,
+    ratingValue: accommodation.ratingValue,
+    reviewCount: accommodation.reviewCount,
+    latitude: accommodation.latitude,
+    longitude: accommodation.longitude,
+    lastPriceCurrency: accommodation.lastPriceCurrency,
   };
+}
+
+async function loadAccommodationSources(
+  ds: Awaited<ReturnType<typeof getDataSource>>,
+  accommodationIds: string[],
+): Promise<Map<string, AccommodationSnapshotSource>> {
+  const ids = [...new Set(accommodationIds)];
+  const accommodationRepo = ds.getRepository(Accommodation);
+  const metadata = new Map<string, AccommodationSnapshotSource>();
+
+  for (const batch of chunk(ids, ACCOMMODATION_FETCH_BATCH_SIZE)) {
+    const accommodations = await accommodationRepo.find({
+      where: { id: In(batch) },
+      select: {
+        id: true,
+        platform: true,
+        platformId: true,
+        url: true,
+        name: true,
+        platformName: true,
+        platformImage: true,
+        platformDescription: true,
+        addressCountry: true,
+        addressRegion: true,
+        addressLocality: true,
+        ratingValue: true,
+        reviewCount: true,
+        latitude: true,
+        longitude: true,
+        lastPriceCurrency: true,
+      },
+    });
+
+    for (const accommodation of accommodations) {
+      metadata.set(accommodation.id, toAccommodationSource(accommodation));
+    }
+  }
+
+  return metadata;
 }
 
 export async function refreshPublicAvailabilitySnapshots(
@@ -309,6 +332,7 @@ export async function refreshPublicAvailabilitySnapshots(
   const snapshotDate = startOfUtcDay(now);
   const windowEndAt = endOfUtcDay(now);
   const windowStartAt = startOfUtcDay(new Date(snapshotDate.getTime() - (windowDays - 1) * MS_PER_DAY));
+  const ds = await getDataSource();
 
   const emptyResult: RefreshPublicAvailabilitySnapshotsResult = {
     snapshotDate: snapshotDate.toISOString(),
@@ -323,54 +347,50 @@ export async function refreshPublicAvailabilitySnapshots(
     upsertTimeMs: 0,
   };
 
-  // Step 1: Single SQL query – join CheckLog + Accommodation and aggregate per accommodation
+  // Step 1: Oracle-safe aggregation by accommodationId only.
   const queryStart = Date.now();
-  const rows = await prisma.$queryRaw<AggregatedAccommodationRow[]>`
-    SELECT
-      a."id"                  AS "accommodationId",
-      a."platform"::text      AS "platform",
-      a."platformId",
-      a."url",
-      a."name",
-      a."platformName",
-      a."platformImage",
-      a."platformDescription",
-      a."addressCountry",
-      a."addressRegion",
-      a."addressLocality",
-      a."ratingValue",
-      a."reviewCount",
-      a."latitude",
-      a."longitude",
-      a."lastPriceCurrency",
-      COUNT(cl."id")::int                                                          AS "sampleSize",
-      COUNT(cl."priceAmount")::int                                                 AS "priceCount",
-      COALESCE(SUM(cl."priceAmount"), 0)                                           AS "priceSum",
-      MIN(cl."priceAmount")                                                        AS "minPriceAmount",
-      MAX(cl."priceAmount")                                                        AS "maxPriceAmount",
-      SUM(CASE WHEN cl."status"::text = 'AVAILABLE'   THEN 1 ELSE 0 END)::int     AS "availableCount",
-      SUM(CASE WHEN cl."status"::text = 'UNAVAILABLE' THEN 1 ELSE 0 END)::int     AS "unavailableCount",
-      SUM(CASE WHEN cl."status"::text = 'ERROR'       THEN 1 ELSE 0 END)::int     AS "errorCount"
+  const rows = await ds.query<AggregatedAccommodationRow[]>(
+    `SELECT
+      cl."accommodationId"      AS "accommodationId",
+      COUNT(cl."id")            AS "sampleSize",
+      COUNT(cl."priceAmount")   AS "priceCount",
+      COALESCE(SUM(cl."priceAmount"), 0) AS "priceSum",
+      MIN(cl."priceAmount")     AS "minPriceAmount",
+      MAX(cl."priceAmount")     AS "maxPriceAmount",
+      SUM(CASE WHEN cl."status" = 'AVAILABLE'   THEN 1 ELSE 0 END) AS "availableCount",
+      SUM(CASE WHEN cl."status" = 'UNAVAILABLE' THEN 1 ELSE 0 END) AS "unavailableCount",
+      SUM(CASE WHEN cl."status" = 'ERROR'       THEN 1 ELSE 0 END) AS "errorCount"
     FROM "CheckLog" cl
     JOIN "Accommodation" a ON a."id" = cl."accommodationId"
-    WHERE cl."createdAt" >= ${windowStartAt}
-      AND cl."createdAt" <= ${windowEndAt}
-      AND a."isActive" = true
-    GROUP BY a."id"
-  `;
-  const queryTimeMs = Date.now() - queryStart;
+    WHERE cl."createdAt" >= :1
+      AND cl."createdAt" <= :2
+      AND a."isActive" = 1
+    GROUP BY cl."accommodationId"`,
+    [windowStartAt, windowEndAt],
+  );
 
   if (rows.length === 0) {
+    const queryTimeMs = Date.now() - queryStart;
     return { ...emptyResult, queryTimeMs };
   }
 
-  // Step 2: In-memory grouping by platformPropertyKey (handles multi-accommodation merging)
+  const accommodationMetadata = await loadAccommodationSources(
+    ds,
+    rows.map((row) => row.accommodationId),
+  );
+  const queryTimeMs = Date.now() - queryStart;
+
+  // Step 2: Join aggregated metrics with accommodation metadata in memory.
   const aggregationStart = Date.now();
   const aggregates = new Map<string, PropertyAggregate>();
   let skippedWithoutKey = 0;
 
   for (const row of rows) {
-    const accommodation = toAccommodationSource(row);
+    const accommodation = accommodationMetadata.get(row.accommodationId);
+    if (!accommodation) {
+      skippedWithoutKey += 1;
+      continue;
+    }
 
     const platformPropertyKey = derivePlatformPropertyKey(accommodation);
     if (!platformPropertyKey) {
@@ -383,12 +403,12 @@ export async function refreshPublicAvailabilitySnapshots(
     mergeMetadata(aggregate, accommodation);
     aggregate.lastObservedAt = now;
 
-    aggregate.sampleSize += row.sampleSize;
-    aggregate.priceCount += row.priceCount;
+    aggregate.sampleSize += Number(row.sampleSize);
+    aggregate.priceCount += Number(row.priceCount);
     aggregate.priceSum += Number(row.priceSum);
-    aggregate.availableCount += row.availableCount;
-    aggregate.unavailableCount += row.unavailableCount;
-    aggregate.errorCount += row.errorCount;
+    aggregate.availableCount += Number(row.availableCount);
+    aggregate.unavailableCount += Number(row.unavailableCount);
+    aggregate.errorCount += Number(row.errorCount);
 
     if (typeof row.minPriceAmount === 'number') {
       aggregate.minPriceAmount =
@@ -403,27 +423,30 @@ export async function refreshPublicAvailabilitySnapshots(
   }
   const aggregationTimeMs = Date.now() - aggregationStart;
 
-  // Step 3: Batch upserts via $transaction (BATCH_SIZE per transaction)
+  // Step 3: Upsert PublicProperty + PublicAvailabilitySnapshot
   const upsertStart = Date.now();
   let upsertedProperties = 0;
   let upsertedSnapshots = 0;
 
   const validAggregates = [...aggregates.values()].filter((a) => a.sampleSize > 0);
   const batches = chunk(validAggregates, BATCH_SIZE);
+  const propertyRepo = ds.getRepository(PublicProperty);
+  const snapshotRepo = ds.getRepository(PublicAvailabilitySnapshot);
 
   for (const batch of batches) {
-    const propertyResults = await prisma.$transaction(
-      batch.map((agg) =>
-        prisma.publicProperty.upsert({
-          where: {
-            platform_platformPropertyKey: {
-              platform: agg.platform,
-              platformPropertyKey: agg.platformPropertyKey,
-            },
-          },
-          create: {
-            platform: agg.platform,
-            platformPropertyKey: agg.platformPropertyKey,
+    // PublicProperty upsert
+    const propertyIds: string[] = [];
+
+    for (const agg of batch) {
+      const existing = await propertyRepo.findOne({
+        where: { platform: agg.platform, platformPropertyKey: agg.platformPropertyKey },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await propertyRepo.update(
+          { id: existing.id },
+          {
             slug: agg.slug,
             name: agg.name,
             sourceUrl: agg.sourceUrl,
@@ -440,75 +463,83 @@ export async function refreshPublicAvailabilitySnapshots(
             lastObservedAt: agg.lastObservedAt,
             isActive: true,
           },
-          update: {
-            slug: agg.slug,
-            name: agg.name,
-            sourceUrl: agg.sourceUrl,
-            imageUrl: agg.imageUrl,
-            description: agg.description,
-            countryKey: agg.countryKey,
-            cityKey: agg.cityKey,
-            addressRegion: agg.addressRegion,
-            addressLocality: agg.addressLocality,
-            ratingValue: agg.ratingValue,
-            reviewCount: agg.reviewCount,
-            latitude: agg.latitude,
-            longitude: agg.longitude,
-            lastObservedAt: agg.lastObservedAt,
-            isActive: true,
-          },
-          select: { id: true },
-        }),
-      ),
-    );
-    upsertedProperties += propertyResults.length;
-
-    await prisma.$transaction(
-      batch.map((agg, idx) => {
-        const propertyId = propertyResults[idx].id;
-        const avgPriceAmount = agg.priceCount > 0 ? Math.round(agg.priceSum / agg.priceCount) : null;
-        const openRate = safeOpenRate(agg.availableCount, agg.sampleSize);
-
-        return prisma.publicAvailabilitySnapshot.upsert({
-          where: {
-            publicPropertyId_snapshotDate: {
-              publicPropertyId: propertyId,
-              snapshotDate,
-            },
-          },
-          create: {
-            publicPropertyId: propertyId,
-            snapshotDate,
-            windowStartAt,
-            windowEndAt,
-            sampleSize: agg.sampleSize,
-            availableCount: agg.availableCount,
-            unavailableCount: agg.unavailableCount,
-            errorCount: agg.errorCount,
-            avgPriceAmount,
-            minPriceAmount: agg.minPriceAmount,
-            maxPriceAmount: agg.maxPriceAmount,
-            currency: agg.currency,
-            openRate,
-          },
-          update: {
-            windowStartAt,
-            windowEndAt,
-            sampleSize: agg.sampleSize,
-            availableCount: agg.availableCount,
-            unavailableCount: agg.unavailableCount,
-            errorCount: agg.errorCount,
-            avgPriceAmount,
-            minPriceAmount: agg.minPriceAmount,
-            maxPriceAmount: agg.maxPriceAmount,
-            currency: agg.currency,
-            openRate,
-          },
-          select: { id: true },
+        );
+        propertyIds.push(existing.id);
+      } else {
+        const entity = propertyRepo.create({
+          platform: agg.platform,
+          platformPropertyKey: agg.platformPropertyKey,
+          slug: agg.slug,
+          name: agg.name,
+          sourceUrl: agg.sourceUrl,
+          imageUrl: agg.imageUrl,
+          description: agg.description,
+          countryKey: agg.countryKey,
+          cityKey: agg.cityKey,
+          addressRegion: agg.addressRegion,
+          addressLocality: agg.addressLocality,
+          ratingValue: agg.ratingValue,
+          reviewCount: agg.reviewCount,
+          latitude: agg.latitude,
+          longitude: agg.longitude,
+          lastObservedAt: agg.lastObservedAt,
+          isActive: true,
         });
-      }),
-    );
-    upsertedSnapshots += batch.length;
+        await propertyRepo.save(entity);
+        propertyIds.push(entity.id);
+      }
+      upsertedProperties++;
+    }
+
+    // PublicAvailabilitySnapshot upsert
+    for (let idx = 0; idx < batch.length; idx++) {
+      const agg = batch[idx];
+      const propertyId = propertyIds[idx];
+      const avgPriceAmount = agg.priceCount > 0 ? Math.round(agg.priceSum / agg.priceCount) : null;
+      const openRate = safeOpenRate(agg.availableCount, agg.sampleSize);
+
+      const existingSnapshot = await snapshotRepo.findOne({
+        where: { publicPropertyId: propertyId, snapshotDate },
+        select: { id: true },
+      });
+
+      if (existingSnapshot) {
+        await snapshotRepo.update(
+          { id: existingSnapshot.id },
+          {
+            windowStartAt,
+            windowEndAt,
+            sampleSize: agg.sampleSize,
+            availableCount: agg.availableCount,
+            unavailableCount: agg.unavailableCount,
+            errorCount: agg.errorCount,
+            avgPriceAmount,
+            minPriceAmount: agg.minPriceAmount,
+            maxPriceAmount: agg.maxPriceAmount,
+            currency: agg.currency,
+            openRate,
+          },
+        );
+      } else {
+        const snapshotEntity = snapshotRepo.create({
+          publicPropertyId: propertyId,
+          snapshotDate,
+          windowStartAt,
+          windowEndAt,
+          sampleSize: agg.sampleSize,
+          availableCount: agg.availableCount,
+          unavailableCount: agg.unavailableCount,
+          errorCount: agg.errorCount,
+          avgPriceAmount,
+          minPriceAmount: agg.minPriceAmount,
+          maxPriceAmount: agg.maxPriceAmount,
+          currency: agg.currency,
+          openRate,
+        });
+        await snapshotRepo.save(snapshotEntity);
+      }
+      upsertedSnapshots++;
+    }
   }
   const upsertTimeMs = Date.now() - upsertStart;
 

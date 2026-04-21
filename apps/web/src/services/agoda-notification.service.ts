@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { AgodaConsentLog, AgodaNotification, In, LessThan, getDataSource } from '@workspace/db';
 
 import { buildAgodaLandingUrl, buildClickoutUrl } from '@/lib/agoda/buildAgodaUrl';
 import { logError, logInfo, logWarn } from '@/lib/logger';
@@ -48,7 +48,6 @@ function toDisplayPrice(value: number | null, currency: string | null, locale: A
 }
 
 function resolveRetryDelayMinutes(attempt: number): number {
-  // failed 상태의 첫 재시도는 attempt=1로 기록되므로 backoff[0](1분)부터 시작해야 한다.
   const retryIndex = Math.max(attempt - 1, 0);
   const index = Math.min(retryIndex, RETRY_BACKOFF_MINUTES.length - 1);
   return RETRY_BACKOFF_MINUTES[index] ?? RETRY_BACKOFF_MINUTES[RETRY_BACKOFF_MINUTES.length - 1] ?? 60;
@@ -86,14 +85,15 @@ function parseEventMeta(meta: unknown): {
 }
 
 async function hasActiveConsent(userId: string, email: string, accommodationId: string): Promise<boolean> {
-  const latest = await prisma.agodaConsentLog.findFirst({
-    where: {
-      accommodationId,
-      OR: [{ userId }, { email: email.trim().toLowerCase() }],
-    },
-    orderBy: { createdAt: 'desc' },
-    select: { type: true },
-  });
+  const ds = await getDataSource();
+  // TypeORM OR 조건: accommodationId가 일치하고 userId 또는 email이 일치하는 가장 최근 레코드
+  const latest = await ds
+    .getRepository(AgodaConsentLog)
+    .createQueryBuilder('c')
+    .where('c.accommodationId = :accommodationId', { accommodationId })
+    .andWhere('(c.userId = :userId OR c.email = :email)', { userId, email: email.trim().toLowerCase() })
+    .orderBy('c.createdAt', 'DESC')
+    .getOne();
 
   return latest?.type === 'opt_in';
 }
@@ -234,9 +234,9 @@ function buildEmailContent(params: {
 }
 
 type NotificationOutcome =
-  | { id: bigint; kind: 'suppressed'; reasonCode: AgodaNotificationReasonCode; reasonMessage: string }
-  | { id: bigint; kind: 'sent' }
-  | { id: bigint; kind: 'failed'; nextAttempt: number; reasonCode: AgodaNotificationReasonCode; reasonMessage: string };
+  | { id: number; kind: 'suppressed'; reasonCode: AgodaNotificationReasonCode; reasonMessage: string }
+  | { id: number; kind: 'sent' }
+  | { id: number; kind: 'failed'; nextAttempt: number; reasonCode: AgodaNotificationReasonCode; reasonMessage: string };
 
 function buildReasonCounts(outcomes: NotificationOutcome[], kind: 'failed' | 'suppressed'): Record<string, number> {
   return outcomes.reduce<Record<string, number>>((acc, outcome) => {
@@ -260,62 +260,45 @@ function logDispatchOutcome(params: {
 }
 
 /**
- * 알림 ID 배열을 원자적으로 'processing' 상태로 클레임한다.
- * UPDATE ... RETURNING 을 사용해 이 워커가 실제로 업데이트한 행만 반환한다.
- * 동시에 두 개의 디스패처가 실행되더라도 각자 다른 행을 클레임하므로 중복 발송이 방지된다.
- *
- * BigInt.toString()은 십진수 숫자만 생성하므로 직접 보간해도 SQL 인젝션 위험이 없다.
+ * Oracle에서는 다건 UPDATE ... RETURNING 대체가 까다로우므로,
+ * FOR UPDATE SKIP LOCKED로 행을 잠근 뒤 같은 트랜잭션에서 processing으로 전환한다.
+ * 이렇게 해야 동시 디스패처 간 중복 클레임이 발생하지 않는다.
  */
-async function claimNotifications(ids: bigint[], fromStatus: string): Promise<bigint[]> {
+async function claimNotifications(ids: number[], fromStatus: string): Promise<number[]> {
   if (ids.length === 0) return [];
-  const idLiterals = ids.map(String).join(',');
-  const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-    `UPDATE agoda_notifications
-     SET status = 'processing', "updatedAt" = NOW()
-     WHERE status = $1 AND id = ANY(ARRAY[${idLiterals}]::bigint[])
-     RETURNING id::text`,
-    fromStatus,
-  );
-  return rows.map((r) => BigInt(r.id));
-}
+  const ds = await getDataSource();
+  const idPlaceholders = ids.map((_, i) => `:${i + 2}`).join(',');
 
-const notificationSelect = {
-  id: true,
-  status: true,
-  attempt: true,
-  updatedAt: true,
-  accommodation: {
-    select: {
-      id: true,
-      name: true,
-      platformId: true,
-      isActive: true,
-      url: true,
-      userId: true,
-      checkIn: true,
-      checkOut: true,
-      adults: true,
-      rooms: true,
-      children: true,
-      locale: true,
-      platformMetadata: true,
-      user: { select: { email: true, kakaoAccessToken: true } },
-    },
-  },
-  alertEvent: {
-    select: {
-      id: true,
-      type: true,
-      status: true,
-      meta: true,
-    },
-  },
-} as const;
+  return ds.transaction(async (manager) => {
+    const lockedRows = (await manager.query(
+      `SELECT "id" FROM "agoda_notifications"
+       WHERE "status" = :1 AND "id" IN (${idPlaceholders})
+       FOR UPDATE SKIP LOCKED`,
+      [fromStatus, ...ids],
+    )) as Array<{ id: number }>;
+
+    const claimedIds = lockedRows.map((row) => Number(row.id));
+    if (claimedIds.length === 0) {
+      return [];
+    }
+
+    await manager.query(
+      `UPDATE "agoda_notifications"
+       SET "status" = 'processing', "updatedAt" = SYSTIMESTAMP
+       WHERE "status" = :1 AND "id" IN (${claimedIds.map((_, i) => `:${i + 2}`).join(',')})`,
+      [fromStatus, ...claimedIds],
+    );
+
+    const claimedIdSet = new Set(claimedIds);
+    return ids.filter((id) => claimedIdSet.has(id));
+  });
+}
 
 export async function dispatchAgodaNotifications(params?: {
   limit?: number;
   requestId?: string;
 }): Promise<DispatchAgodaNotificationsResult> {
+  const ds = await getDataSource();
   const runtimeSettings = await getBinbangRuntimeSettings();
   const limit = params?.limit ?? runtimeSettings.notificationDispatchLimit;
   const maxAttempts = runtimeSettings.notificationMaxAttempts;
@@ -327,62 +310,56 @@ export async function dispatchAgodaNotifications(params?: {
     'stale processing recovered at max attempts',
   );
 
-  // 워커 충돌·타임아웃으로 stale processing 알림을 복구한다.
-  // maxAttempts를 초과/도달하는 항목은 failed로 종료 처리하고,
-  // 나머지만 queued로 되돌려 dead-queued 누적을 방지한다.
-  await prisma.$executeRaw`
-    UPDATE agoda_notifications
-    SET status = 'failed',
-        attempt = ${maxAttempts},
-        "updatedAt" = NOW(),
-        "lastError" = COALESCE("lastError", ${staleProcessingError})
-    WHERE channel = 'email'
-      AND status = 'processing'
-      AND "updatedAt" <= ${staleThreshold}
-      AND attempt + 1 >= ${maxAttempts}
-  `;
+  // stale processing 복구: maxAttempts 도달한 항목은 failed로 종료
+  await ds.query(
+    `UPDATE "agoda_notifications"
+     SET "status" = 'failed',
+         "attempt" = :1,
+         "updatedAt" = SYSTIMESTAMP,
+         "lastError" = NVL("lastError", :2)
+     WHERE "channel" = 'email'
+       AND "status" = 'processing'
+       AND "updatedAt" <= :3
+       AND "attempt" + 1 >= :4`,
+    [maxAttempts, staleProcessingError, staleThreshold, maxAttempts],
+  );
 
-  await prisma.$executeRaw`
-    UPDATE agoda_notifications
-    SET status = 'queued', attempt = attempt + 1, "updatedAt" = NOW()
-    WHERE channel = 'email'
-      AND status = 'processing'
-      AND "updatedAt" <= ${staleThreshold}
-      AND attempt + 1 < ${maxAttempts}
-  `;
+  // stale processing 복구: maxAttempts 미달 항목은 queued로 되돌림
+  await ds.query(
+    `UPDATE "agoda_notifications"
+     SET "status" = 'queued', "attempt" = "attempt" + 1, "updatedAt" = SYSTIMESTAMP
+     WHERE "channel" = 'email'
+       AND "status" = 'processing'
+       AND "updatedAt" <= :1
+       AND "attempt" + 1 < :2`,
+    [staleThreshold, maxAttempts],
+  );
 
-  // queued를 우선 처리하고, 남은 슬롯에만 failed를 채운다.
-  // queued + failed를 혼합 조회하면 backoff 중인 failed가 슬롯을 점유해
-  // 새로운 queued 알림이 영원히 선택되지 못하는 starvation이 발생한다.
-  const queuedIdRows = await prisma.agodaNotification.findMany({
-    where: { channel: 'email', status: 'queued', attempt: { lt: maxAttempts } },
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  const repo = ds.getRepository(AgodaNotification);
+
+  const queuedIdRows = await repo.find({
+    where: { channel: 'email', status: 'queued', attempt: LessThan(maxAttempts) },
+    order: { createdAt: 'ASC', id: 'ASC' },
     take: limit,
     select: { id: true },
   });
 
   const remaining = limit - queuedIdRows.length;
-  // due 조건 필터링 전에 take를 적용하면, 백오프가 긴 오래된 행들이 슬롯을 선점해
-  // 실제로 due인 행들이 take 범위 밖으로 밀릴 수 있다. (starvation)
-  // over-fetch 후 isRetryDue 필터 → slice(remaining) 로 해결한다.
   const failedIdRows =
     remaining > 0
-      ? await prisma.agodaNotification.findMany({
-          where: { channel: 'email', status: 'failed', attempt: { lt: maxAttempts } },
-          orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+      ? await repo.find({
+          where: { channel: 'email', status: 'failed', attempt: LessThan(maxAttempts) },
+          order: { updatedAt: 'ASC', id: 'ASC' },
           take: remaining * 2,
           select: { id: true, updatedAt: true, attempt: true },
         })
       : [];
 
-  // 백오프 대기 중인 failed 항목은 클레임 전에 필터링한다.
   const queuedIds = queuedIdRows.map((r) => r.id);
   const allDueFailed = failedIdRows.filter((r) => isRetryDue(r.updatedAt, r.attempt));
   const failedDueIds = allDueFailed.slice(0, remaining).map((r) => r.id);
   const skippedNotDue = failedIdRows.length - allDueFailed.length;
 
-  // 원자적 클레임: 이 워커가 실제로 업데이트한 행만 반환된다.
-  // 동시 실행 중인 다른 디스패처는 이미 'processing'인 행을 클레임할 수 없다.
   const claimedQueuedIds = await claimNotifications(queuedIds, 'queued');
   const claimedFailedIds = await claimNotifications(failedDueIds, 'failed');
   const claimedIds = [...claimedQueuedIds, ...claimedFailedIds];
@@ -402,9 +379,9 @@ export async function dispatchAgodaNotifications(params?: {
     return result;
   }
 
-  const candidates = await prisma.agodaNotification.findMany({
-    where: { id: { in: claimedIds } },
-    select: notificationSelect,
+  const candidates = await repo.find({
+    where: { id: In(claimedIds) },
+    relations: { accommodation: { user: true }, alertEvent: true },
   });
 
   const outcomes: NotificationOutcome[] = [];
@@ -496,7 +473,6 @@ export async function dispatchAgodaNotifications(params?: {
       const dashboardUrl = `${baseUrl.replace(/\/$/, '')}/dashboard`;
       const meta = parseEventMeta(notification.alertEvent.meta);
 
-      // Agoda 랜딩 URL: metaSearch에서 받은 URL > fallback(platformId 기반) > null
       const acc = notification.accommodation;
       const storedLandingUrl =
         acc.platformMetadata != null &&
@@ -519,7 +495,6 @@ export async function dispatchAgodaNotifications(params?: {
             })
           : null);
 
-      // /api/go 클릭아웃 경유 URL (추적용)
       const agodaUrl = rawAgodaUrl
         ? buildClickoutUrl({
             baseUrl: baseUrl,
@@ -545,7 +520,6 @@ export async function dispatchAgodaNotifications(params?: {
         html: emailContent.html,
       });
 
-      // 카카오 토큰이 있으면 병행 발송 (실패해도 이메일 상태에 영향 없음)
       if (notification.accommodation.user?.kakaoAccessToken) {
         await sendBinbangKakaoNotification(notification.accommodation.userId, {
           accommodationId: acc.id,
@@ -604,38 +578,24 @@ export async function dispatchAgodaNotifications(params?: {
 
   await Promise.all([
     sentIds.length > 0
-      ? prisma.agodaNotification.updateMany({
-          where: { id: { in: sentIds } },
-          data: { status: 'sent', sentAt: now, lastError: null },
-        })
+      ? repo.update({ id: In(sentIds) }, { status: 'sent', sentAt: now, lastError: null })
       : Promise.resolve(),
-    suppressedList.length > 0
-      ? prisma.$transaction(
-          suppressedList.map((o) =>
-            prisma.agodaNotification.update({
-              where: { id: o.id },
-              data: {
-                status: 'suppressed',
-                lastError: encodeAgodaNotificationReason(o.reasonCode, o.reasonMessage),
-              },
-            }),
-          ),
-        )
-      : Promise.resolve(),
-    failedList.length > 0
-      ? prisma.$transaction(
-          failedList.map((o) =>
-            prisma.agodaNotification.update({
-              where: { id: o.id },
-              data: {
-                status: 'failed',
-                attempt: o.nextAttempt,
-                lastError: encodeAgodaNotificationReason(o.reasonCode, o.reasonMessage),
-              },
-            }),
-          ),
-        )
-      : Promise.resolve(),
+    ...suppressedList.map((o) =>
+      repo.update(
+        { id: o.id },
+        { status: 'suppressed', lastError: encodeAgodaNotificationReason(o.reasonCode, o.reasonMessage) },
+      ),
+    ),
+    ...failedList.map((o) =>
+      repo.update(
+        { id: o.id },
+        {
+          status: 'failed',
+          attempt: o.nextAttempt,
+          lastError: encodeAgodaNotificationReason(o.reasonCode, o.reasonMessage),
+        },
+      ),
+    ),
   ]);
 
   const failedReasonCounts = buildReasonCounts(outcomes, 'failed');

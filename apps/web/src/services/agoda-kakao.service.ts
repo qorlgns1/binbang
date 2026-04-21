@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { User, getDataSource } from '@workspace/db';
 import {
   buildKakaoNotificationSender,
   prependKakaoNotificationSender,
@@ -66,15 +66,15 @@ async function refreshKakaoAccessToken(
       expires_in: number;
     };
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
+    const ds = await getDataSource();
+    await ds.getRepository(User).update(
+      { id: userId },
+      {
         kakaoAccessToken: data.access_token,
         kakaoRefreshToken: data.refresh_token ?? refreshToken,
         kakaoTokenExpiry: new Date(Date.now() + data.expires_in * 1000),
       },
-      select: { id: true },
-    });
+    );
 
     return data.access_token;
   } catch (error) {
@@ -100,7 +100,8 @@ export async function getValidKakaoAccessToken(
   userId: string,
   logContext?: Omit<KakaoNotificationLogContext, 'userId'>,
 ): Promise<KakaoNotificationContext | null> {
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { id: userId },
     select: {
       name: true,

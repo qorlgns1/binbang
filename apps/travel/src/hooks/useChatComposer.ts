@@ -53,30 +53,32 @@ export function useChatComposer({
   }, [authStatus, sessionId]);
 
   const handleSubmit = useCallback(
-    (e?: FormEvent) => {
+    (e?: FormEvent): boolean => {
       e?.preventDefault?.();
       if (!input.trim() || isLoading) {
-        return;
+        return false;
       }
       if (!ensureSessionReady()) {
-        return;
+        return false;
       }
 
       const text = input.trim();
       setInput('');
       sendMessage({ text }, { body: getChatRequestBody() });
+      return true;
     },
     [ensureSessionReady, getChatRequestBody, input, isLoading, sendMessage, setInput],
   );
 
   const handleExampleClick = useCallback(
-    (query: string) => {
+    (query: string): boolean => {
       if (!ensureSessionReady()) {
-        return;
+        return false;
       }
 
       setInput('');
       sendMessage({ text: query }, { body: getChatRequestBody() });
+      return true;
     },
     [ensureSessionReady, getChatRequestBody, sendMessage, setInput],
   );

@@ -3,7 +3,5 @@ export interface HistoryConversation {
   title: string | null;
   createdAt: string;
   updatedAt: string;
-  _count: {
-    messages: number;
-  };
+  messageCount: number;
 }

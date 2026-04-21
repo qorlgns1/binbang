@@ -38,11 +38,7 @@ ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
 ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
 
-# Prisma generate requires DATABASE_URL at build time (for schema validation only)
-ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-ENV DATABASE_URL=${DATABASE_URL}
-
-RUN pnpm turbo run build --filter=@workspace/web
+RUN pnpm turbo run build --force --filter=@workspace/web
 
 # ============================================
 # Runner

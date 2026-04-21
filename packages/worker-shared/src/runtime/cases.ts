@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, Case, CaseStatus, IsNull, Not } from '@workspace/db';
 
 export interface ActiveCaseLink {
   caseId: string;
@@ -11,13 +11,11 @@ export interface ActiveCaseLink {
  * accommodationId → [{ caseId, conditionDefinition }, ...] 맵으로 반환한다.
  */
 export async function findActiveCaseLinks(): Promise<Map<string, ActiveCaseLink[]>> {
-  const activeCases = await prisma.case.findMany({
-    where: { status: 'ACTIVE_MONITORING', accommodationId: { not: null } },
-    select: {
-      id: true,
-      accommodationId: true,
-      submission: { select: { extractedFields: true } },
-    },
+  const ds = await getDataSource();
+  const activeCases = await ds.getRepository(Case).find({
+    where: { status: CaseStatus.ACTIVE_MONITORING, accommodationId: Not(IsNull()) },
+    select: { id: true, accommodationId: true },
+    relations: { submission: true },
   });
 
   const map = new Map<string, ActiveCaseLink[]>();

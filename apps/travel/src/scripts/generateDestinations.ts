@@ -5,7 +5,7 @@
  * pnpm --filter @workspace/travel generate:destinations
  */
 
-import { prisma } from '@workspace/db';
+import { AppDataSource, Destination, getDataSource } from '@workspace/db';
 
 interface DestinationSeed {
   slug: string;
@@ -1101,10 +1101,11 @@ async function fetchImage(destination: DestinationSeed): Promise<string | null> 
 async function generateDestination(seed: DestinationSeed) {
   console.log(`\n📍 Processing ${seed.nameEn}...`);
 
+  const ds = await getDataSource();
+  const repo = ds.getRepository(Destination);
+
   // 이미 존재하는지 확인
-  const existing = await prisma.destination.findUnique({
-    where: { slug: seed.slug },
-  });
+  const existing = await repo.findOne({ where: { slug: seed.slug } });
 
   if (existing) {
     console.log(`⏭️  Skipping ${seed.nameEn} (already exists)`);
@@ -1118,29 +1119,27 @@ async function generateDestination(seed: DestinationSeed) {
   const imageUrl = await fetchImage(seed);
 
   // DB에 저장
-  await prisma.destination.create({
-    data: {
-      slug: seed.slug,
-      nameKo: seed.nameKo,
-      nameEn: seed.nameEn,
-      country: seed.country,
-      countryCode: seed.countryCode,
-      description: {
-        ko: content.descriptionKo,
-        en: content.descriptionEn,
-      },
-      highlights: {
-        ko: content.highlightsKo,
-        en: content.highlightsEn,
-      },
-      latitude: seed.latitude,
-      longitude: seed.longitude,
-      currency: seed.currency,
-      imageUrl,
-      published: true,
-      // weather 필드는 optional이므로 제외
-    },
+  const entity = repo.create({
+    slug: seed.slug,
+    nameKo: seed.nameKo,
+    nameEn: seed.nameEn,
+    country: seed.country,
+    countryCode: seed.countryCode,
+    description: {
+      ko: content.descriptionKo,
+      en: content.descriptionEn,
+    } as object,
+    highlights: {
+      ko: content.highlightsKo,
+      en: content.highlightsEn,
+    } as object,
+    latitude: seed.latitude,
+    longitude: seed.longitude,
+    currency: seed.currency,
+    imageUrl,
+    published: true,
   });
+  await repo.save(entity);
 
   console.log(`✅ Created ${seed.nameEn}`);
 }
@@ -1166,5 +1165,7 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
   });

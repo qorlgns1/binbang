@@ -1,4 +1,3 @@
-import type { Destination } from '@workspace/db';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Link from 'next/link';
@@ -7,7 +6,7 @@ import { DestinationGrid } from '@/components/destinations/DestinationGrid';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { buildLocalePath } from '@/lib/localePath';
-import { getPublishedDestinations } from '@/services/destination.service';
+import { getPublishedDestinations, type DestinationRecord } from '@/services/destination.service';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://travel.moodybeard.com';
 
@@ -45,7 +44,7 @@ export default async function DestinationsPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale });
-  const destinations = await getPublishedDestinations().catch(() => [] as Destination[]);
+  const destinations = await getPublishedDestinations().catch(() => [] as DestinationRecord[]);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -77,7 +76,7 @@ export default async function DestinationsPage({ params }: Props) {
             <div className='flex items-center gap-3'>
               <LanguageSwitcher />
               <Link
-                href={buildLocalePath(locale, '/chat')}
+                href={buildLocalePath(locale, '/planner')}
                 className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
               >
                 {t('landing.hero.cta')}

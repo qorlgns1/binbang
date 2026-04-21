@@ -7,10 +7,7 @@ catalog:
   vitest: ^4.1.0
 
 onlyBuiltDependencies:
-  - "@prisma/client"
-  - "@prisma/engines"
   - esbuild
-  - prisma
   - playwright
   - sharp
   - unrs-resolver

@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { getDataSource, TravelConversation, IsNull, LessThan } from '@workspace/db';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_TRAVEL_GUEST_RETENTION_DAYS = 7;
@@ -29,17 +29,16 @@ export async function cleanupTravelGuestConversations(
 ): Promise<CleanupTravelGuestConversationsResult> {
   const retentionDays = resolveRetentionDays(input.retentionDays);
   const cutoffDate = new Date(Date.now() - retentionDays * DAY_MS);
+  const ds = await getDataSource();
 
-  const result = await prisma.travelConversation.deleteMany({
-    where: {
-      userId: null,
-      createdAt: { lt: cutoffDate },
-    },
+  const result = await ds.getRepository(TravelConversation).delete({
+    userId: IsNull(),
+    createdAt: LessThan(cutoffDate),
   });
 
   return {
     retentionDays,
     cutoffAt: cutoffDate.toISOString(),
-    deletedCount: result.count,
+    deletedCount: result.affected ?? 0,
   };
 }

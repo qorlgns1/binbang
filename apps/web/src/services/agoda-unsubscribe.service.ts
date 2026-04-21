@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import { prisma } from '@workspace/db';
+import { AgodaConsentLog, User, getDataSource } from '@workspace/db';
 
 interface UnsubscribePayload {
   accommodationId: string;
@@ -109,17 +109,18 @@ export async function unsubscribeAgodaAccommodation(params: { accommodationId: s
   // userId를 이메일로 조회해 consent log에 기록한다.
   // 이메일 기반 수신거부는 userId 없이도 동작하지만,
   // userId가 있으면 hasActiveConsent의 OR 조건에서 더 정확하게 매칭된다.
-  const user = await prisma.user.findUnique({
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOne({
     where: { email: normalizedEmail },
     select: { id: true },
   });
 
-  await prisma.agodaConsentLog.create({
-    data: {
-      email: normalizedEmail,
-      type: 'opt_out',
-      userId: user?.id,
-      accommodationId: params.accommodationId,
-    },
+  const repo = ds.getRepository(AgodaConsentLog);
+  const entity = repo.create({
+    email: normalizedEmail,
+    type: 'opt_out',
+    userId: user?.id ?? null,
+    accommodationId: params.accommodationId,
   });
+  await repo.save(entity);
 }

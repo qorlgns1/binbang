@@ -1,4 +1,11 @@
-import { type AvailabilityStatus, type Platform, type Prisma, prisma } from '@workspace/db';
+import {
+  type AvailabilityStatus,
+  type Platform,
+  Accommodation,
+  CheckLog,
+  WorkerHeartbeat,
+  getDataSource,
+} from '@workspace/db';
 import { loadWebSettings } from '@/services/web-settings.service';
 import type { MonitoringLogEntry, MonitoringLogsResponse, MonitoringSummary, WorkerHealthInfo } from '@/types/admin';
 
@@ -42,48 +49,52 @@ export async function getMonitoringSummary(): Promise<MonitoringSummary> {
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
+  const ds = await getDataSource();
+
   const [heartbeat, dbLatency, checkStats24h, recentErrors, lastSuccess, activeCount] = await Promise.all([
-    prisma.workerHeartbeat.findUnique({
+    ds.getRepository(WorkerHeartbeat).findOne({
       where: { id: 'singleton' },
       select: { lastHeartbeatAt: true, startedAt: true, isProcessing: true, schedule: true },
     }),
 
     (async (): Promise<number> => {
       const start = Date.now();
-      await prisma.$queryRaw`SELECT 1`;
+      await ds.query('SELECT 1 FROM DUAL');
       return Date.now() - start;
     })(),
 
-    prisma.checkLog.groupBy({
-      by: ['status'],
-      where: { createdAt: { gte: oneDayAgo } },
-      _count: { status: true },
-    }),
+    ds.query<Array<{ status: string; cnt: string }>>(
+      `SELECT "status", COUNT(*) AS cnt FROM "CheckLog" WHERE "createdAt" >= :1 GROUP BY "status"`,
+      [oneDayAgo],
+    ),
 
-    prisma.checkLog.findMany({
-      where: { createdAt: { gte: oneHourAgo }, status: 'ERROR' },
-      orderBy: { createdAt: 'desc' },
+    ds.getRepository(CheckLog).find({
+      where: { status: 'ERROR' as AvailabilityStatus },
+      order: { createdAt: 'DESC' },
       take: 1,
       select: { errorMessage: true },
     }),
 
-    prisma.checkLog.findFirst({
-      where: { status: { in: ['AVAILABLE', 'UNAVAILABLE'] } },
-      orderBy: { createdAt: 'desc' },
+    ds.getRepository(CheckLog).findOne({
+      where: [{ status: 'AVAILABLE' as AvailabilityStatus }, { status: 'UNAVAILABLE' as AvailabilityStatus }],
+      order: { createdAt: 'DESC' },
       select: { createdAt: true },
     }),
 
-    prisma.accommodation.count({ where: { isActive: true } }),
+    ds.getRepository(Accommodation).count({ where: { isActive: true } }),
   ]);
 
-  const errorCount1h = await prisma.checkLog.count({
-    where: { createdAt: { gte: oneHourAgo }, status: 'ERROR' },
-  });
+  const errorCount1h = await ds
+    .getRepository(CheckLog)
+    .createQueryBuilder('c')
+    .where('c.status = :status', { status: 'ERROR' })
+    .andWhere('c.createdAt >= :oneHourAgo', { oneHourAgo })
+    .getCount();
 
-  const totalChecks = checkStats24h.reduce((sum, g): number => sum + g._count.status, 0);
+  const totalChecks = checkStats24h.reduce((sum, g): number => sum + Number(g.cnt), 0);
   const errorChecks = checkStats24h
     .filter((g): boolean => g.status === 'ERROR')
-    .reduce((sum, g): number => sum + g._count.status, 0);
+    .reduce((sum, g): number => sum + Number(g.cnt), 0);
   const successChecks = totalChecks - errorChecks;
 
   return {
@@ -120,47 +131,46 @@ export async function getMonitoringSummary(): Promise<MonitoringSummary> {
 export async function getMonitoringLogs(input: GetMonitoringLogsInput): Promise<MonitoringLogsResponse> {
   const { status, platform, accommodationId, from, to, cursor, limit } = input;
 
-  const where: Prisma.CheckLogWhereInput = {};
+  const ds = await getDataSource();
+  const repo = ds.getRepository(CheckLog);
+
+  const qb = repo
+    .createQueryBuilder('c')
+    .innerJoinAndSelect('c.accommodation', 'acc')
+    .orderBy('c.createdAt', 'DESC')
+    .take(limit + 1);
 
   if (status) {
-    where.status = status;
+    qb.andWhere('c.status = :status', { status });
   }
 
   if (platform) {
-    where.accommodation = { platform };
+    qb.andWhere('acc.platform = :platform', { platform });
   }
 
   if (accommodationId) {
-    where.accommodationId = accommodationId;
+    qb.andWhere('c.accommodationId = :accommodationId', { accommodationId });
   }
 
-  if (from || to) {
-    where.createdAt = {};
-    if (from) where.createdAt.gte = new Date(from);
-    if (to) where.createdAt.lte = new Date(to);
+  if (from) {
+    qb.andWhere('c.createdAt >= :from', { from: new Date(from) });
   }
 
-  const logs = await prisma.checkLog.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: {
-      id: true,
-      createdAt: true,
-      status: true,
-      price: true,
-      errorMessage: true,
-      notificationSent: true,
-      accommodation: {
-        select: {
-          id: true,
-          name: true,
-          platform: true,
-        },
-      },
-    },
-  });
+  if (to) {
+    qb.andWhere('c.createdAt <= :to', { to: new Date(to) });
+  }
+
+  if (cursor) {
+    const cursorItem = await repo.findOne({ where: { id: cursor }, select: { id: true, createdAt: true } });
+    if (cursorItem) {
+      qb.andWhere('(c.createdAt < :cursorDate OR (c.createdAt = :cursorDate AND c.id < :cursorId))', {
+        cursorDate: cursorItem.createdAt,
+        cursorId: cursor,
+      });
+    }
+  }
+
+  const logs = await qb.getMany();
 
   const hasMore = logs.length > limit;
   const items = hasMore ? logs.slice(0, limit) : logs;

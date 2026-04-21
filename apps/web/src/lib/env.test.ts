@@ -4,7 +4,9 @@ import { getEnv, getEnvNumber, validateWebEnv } from '@/lib/env';
 
 const ORIGINAL_ENV = process.env;
 const REQUIRED_WEB_ENV = {
-  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/accommodation_monitor',
+  ORACLE_USER: 'app_user',
+  ORACLE_PASSWORD: 'app_password',
+  ORACLE_CONNECT_STRING: 'tcps://localhost:1522/binbang_high.adb.oraclecloud.com',
   NEXTAUTH_URL: 'http://localhost:3000',
   NEXTAUTH_SECRET: 'test-secret',
   GOOGLE_CLIENT_ID: 'google-client-id',

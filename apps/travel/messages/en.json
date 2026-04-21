@@ -30,6 +30,31 @@
       "question2": "Show me a list of 4-star hotels available for immediate booking in London.",
       "question3": "I want to set up a vacancy alert for a specific hotel."
     },
+    "planner": {
+      "title": "Start Your Travel Planner",
+      "description": "Enter your destination, dates, guests, budget, and preferred stay style to start hotel recommendations.",
+      "destinationLabel": "Destination",
+      "destinationPlaceholder": "e.g. Tokyo, Kyoto, Paris",
+      "checkInLabel": "Check-in",
+      "checkOutLabel": "Check-out",
+      "adultsLabel": "Adults",
+      "budgetLabel": "Budget",
+      "budgetPlaceholder": "e.g. under $150 per night",
+      "styleLabel": "Stay style",
+      "stylePlaceholder": "e.g. ryokan, budget hotel, ocean view",
+      "submit": "Get hotel recommendations",
+      "submitting": "Requesting recommendations...",
+      "loadingTitle": "Finding stays for your trip details",
+      "loadingDescription": "We’ll show recommendations as soon as they’re ready.",
+      "errors": {
+        "destinationRequired": "Please enter a destination",
+        "checkInRequired": "Please enter a check-in date",
+        "checkOutRequired": "Please enter a check-out date",
+        "checkOutAfterCheckIn": "Check-out must be after check-in",
+        "adultsRequired": "Please enter the number of adults",
+        "adultsInvalid": "Adults must be an integer of at least 1"
+      }
+    },
     "thinking": "Thinking...",
     "typing": "Typing...",
     "emptyState": "No messages yet. Ask me anything!",

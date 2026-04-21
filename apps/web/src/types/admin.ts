@@ -362,6 +362,37 @@ export interface AdminFunnelGrowthResponse {
   series: AdminFunnelGrowthSeriesItem[];
 }
 
+// ── Travel Planner Funnel ──
+
+export interface AdminTravelPlannerFunnelCounts {
+  landingViewed: number;
+  plannerStarted: number;
+  plannerSubmitted: number;
+  plannerResultViewed: number;
+  plannerFailed: number;
+  plannerEmptyResult: number;
+  accommodationClicked: number;
+  alertBridgeStarted: number;
+}
+
+export interface AdminTravelPlannerFunnelConversion {
+  landingToStarted: number;
+  startedToSubmitted: number;
+  startedToResultViewed: number;
+  resultViewedToAccommodationClicked: number;
+  accommodationClickedToAlertBridgeStarted: number;
+}
+
+export interface AdminTravelPlannerFunnelResponse {
+  range: {
+    from: string;
+    to: string;
+    timezone: 'UTC';
+  };
+  counts: AdminTravelPlannerFunnelCounts;
+  conversion: AdminTravelPlannerFunnelConversion;
+}
+
 // ── Platform Selector Management ──
 
 export interface PlatformSelectorItem {

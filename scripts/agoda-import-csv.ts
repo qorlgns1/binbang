@@ -9,7 +9,7 @@
  *
  * 동작 방식:
  *   Python subprocess로 CSV 파싱(필드 내 개행 처리) → JSON Lines stdout
- *   Node.js readline으로 수신 → BATCH_SIZE 행마다 Prisma createMany (스트리밍, 메모리 절약)
+ *   Node.js readline으로 수신 → BATCH_SIZE 행마다 TypeORM upsert (스트리밍, 메모리 절약)
  */
 
 import { createInterface } from 'node:readline';
@@ -17,7 +17,7 @@ import { spawn } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { prisma } from '../packages/db/src/index';
+import { AgodaHotel, getDataSource } from '../packages/db/src/index.js';
 
 // ============================================================================
 // 인수 파싱
@@ -178,15 +178,13 @@ function processChunk(
 }
 
 // ============================================================================
-// Prisma 배치 upsert
+// TypeORM 배치 upsert
 // ============================================================================
 
 async function importBatch(rows: HotelRow[]): Promise<number> {
-  const result = await prisma.agodaHotel.createMany({
-    data: rows,
-    skipDuplicates: true,
-  });
-  return result.count;
+  const ds = await getDataSource();
+  await ds.getRepository(AgodaHotel).upsert(rows, ['hotelId']);
+  return rows.length;
 }
 
 // ============================================================================
@@ -246,4 +244,9 @@ main()
     console.error('❌ 오류:', err);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    const ds = await getDataSource();
+    if (ds.isInitialized) {
+      await ds.destroy();
+    }
+  });

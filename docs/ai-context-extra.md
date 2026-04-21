@@ -20,14 +20,15 @@ AI가 코드 제안/리팩터 시 참고하면 좋은 정보만 정리한 문서
 
 | 하려는 일 | 넣을 위치 | 참고 |
 | --- | --- | --- |
-| 운영 웹 API 엔드포인트 | `apps/web/src/app/api/**/route.ts` | DB 접근은 `apps/web/src/services/**`만. Route Handler에서 `prisma` 직접 호출 금지. |
+| 운영 웹 API 엔드포인트 | `apps/web/src/app/api/**/route.ts` | DB 접근은 `apps/web/src/services/**`만. Route Handler에서 `getDataSource()`/repository/query builder 직접 호출 금지. |
 | 여행 앱 API 엔드포인트 | `apps/travel/src/app/api/**/route.ts` | `apps/web`와 동일 규칙: DB는 `apps/travel/src/services/**`만. |
 | 웹 서비스(DB 사용) | `apps/web/src/services/*.service.ts` | Route Handler/Server Component는 서비스만 호출. |
 | 여행 서비스(DB 사용) | `apps/travel/src/services/*.service.ts` | 대화/제휴/여행지/캐시 로직은 여기서 관리. |
 | 여행 SEO/i18n 페이지 | `apps/travel/src/app/[locale]/**` | `middleware.ts`, `messages/*.json`, `services/destination.service.ts`와 함께 변경. |
 | Agoda 관리자 테스트 패널 | `apps/web/src/app/admin/agoda/**` | 서버 호출은 `apps/web/src/app/api/admin/agoda/**` + `services/admin/agoda*.service.ts`. |
 | Agoda CSV 처리 | `scripts/agoda-chunk-csv.mjs`, `scripts/agoda-import-csv.ts` | 대용량 처리이므로 Route Handler에 구현하지 말고 스크립트로 유지. |
-| DB 모델/마이그레이션 | `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/**` | `prisma db push` 금지, `pnpm db:migrate`만 사용. |
+| DB entity/migration | `packages/db/src/entities/**`, `packages/db/src/migrations/**` | `synchronize: true` 금지, `pnpm db:migrate`/`pnpm --filter @workspace/db db:migrate:generate`만 사용. |
+| DB seed/이관 상수 | `packages/db/src/constants/**`, `packages/db/scripts/**` | base seed는 `pnpm db:seed:base`, 개발 seed는 `pnpm db:seed`, PG→Oracle 이관은 스크립트로만 수행. |
 | 공용 에러/파서/포맷 | `packages/shared/src/errors`, `packages/shared/src/i18n`, `packages/shared/src/utils` | 순수 코드만 허용 (네트워크/DB/env 금지). |
 | 워커 런타임/스케줄 | `packages/worker-shared/src/runtime/**`, `apps/worker/src/**` | 재사용 로직은 `worker-shared`로 올리고 엔트리는 `apps/worker`에 유지. |
 
@@ -35,13 +36,13 @@ AI가 코드 제안/리팩터 시 참고하면 좋은 정보만 정리한 문서
 
 ## 3. 자주 하는 실수 / 피할 것
 
-- Route Handler(`app/api/**/route.ts`)에서 `prisma` 또는 `@workspace/db` 직접 호출.
+- Route Handler(`app/api/**/route.ts`)에서 `@workspace/db`, `getDataSource()`, repository, query builder, raw SQL을 직접 호출.
 - Next.js 앱(`apps/web`, `apps/travel`)에서 `@workspace/worker-shared`를 직접 import.
 - API 에러를 임의 JSON으로 반환해 `ErrorResponseBody` 계약을 깨뜨리는 변경.
 - `packages/shared`에 `fetch`/`axios`/`process.env`/Node `fs` 등 런타임 의존 코드 추가.
 - `packages/**/src/**` deep import 사용.
 - 루트 `package.json`에 앱 런타임 의존성 추가.
-- `prisma db push` 사용 (`pnpm db:migrate`만 허용).
+- `synchronize: true`, `prisma db push`, `prisma migrate dev`, `DATABASE_URL` 전제를 되살리는 변경.
 - Agoda/내부 토큰을 URL query에 싣는 구현 (헤더 사용 + 비교는 timing-safe 방식 유지).
 - i18n 메시지 변경 후 `pnpm i18n:ci`를 생략해 키 불일치 상태로 커밋.
 
@@ -64,16 +65,21 @@ pnpm --filter @workspace/travel test:e2e:run
 
 # DB
 pnpm db:migrate
+pnpm db:migrate:deploy
+pnpm --filter @workspace/db db:migrate:generate
+pnpm db:seed
 pnpm db:seed:base
-pnpm db:studio
-pnpm db:generate
+
+# PG → Oracle 데이터 이관
+pnpm tsx packages/db/scripts/migrate-pg-to-oracle.ts --dry-run
+pnpm tsx packages/db/scripts/migrate-pg-to-oracle.ts --from=reference
 
 # Agoda 데이터 처리 (대용량 CSV)
 node scripts/agoda-chunk-csv.mjs <입력파일> --chunk-size 100000 --out-dir ~/Downloads/agoda-chunks
 pnpm tsx scripts/agoda-import-csv.ts --dir ~/Downloads/agoda-chunks --batch 1000
 
-# Docker (로컬 DB/Redis)
-pnpm local:docker up -d db redis
+# Docker (로컬 Redis / web / worker)
+pnpm local:docker up -d redis
 ```
 
 ---
@@ -82,7 +88,8 @@ pnpm local:docker up -d db redis
 
 값은 `.env.example`, `apps/web/.env.example`, `apps/travel/.env.example`, `apps/worker/.env.example`를 기준으로 확인.
 
-- **루트 공통**: `APP_ENV`, `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`
+- **루트 공통**: `APP_ENV`, `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_CONNECT_STRING`, `REDIS_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`
+- **루트 선택**: `PG_SOURCE_DATABASE_URL` (PG→Oracle 이관 리허설/실행 시에만 사용)
 - **웹 전용**: `NEXTAUTH_URL`, `WORKER_INTERNAL_URL`, `GOOGLE_FORM_WEBHOOK_SECRET`, `AGODA_AFFILIATE_SITE_ID`, `AGODA_AFFILIATE_API_KEY`, `AWIN_API_TOKEN`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`
 - **트래블 전용**: `NEXTAUTH_URL`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GOOGLE_MAPS_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`, `OPENWEATHERMAP_API_KEY`, `EXCHANGERATE_API_KEY`, `AWIN_API_TOKEN`, `AGODA_AFFILIATE_API_KEY`, `AGODA_AFFILIATE_SITE_ID`, `TRAVEL_INTERNAL_CRON_TOKEN`
 - **워커 전용**: `WORKER_CONTROL_PORT`, `TRAVEL_INTERNAL_URL`, `TRAVEL_CACHE_PREWARM_CRON`, `TRAVEL_CACHE_PREWARM_TIMEOUT_MS`, `AFFILIATE_AUDIT_*`
@@ -96,7 +103,7 @@ pnpm local:docker up -d db redis
 - **운영 웹 런타임**: `apps/web/package.json`
 - **여행 앱 런타임**: `apps/travel/package.json`
 - **워커 런타임**: `apps/worker` 또는 `packages/worker-shared`
-- **DB/Prisma**: `packages/db`
+- **DB/TypeORM**: `packages/db`
 - **범용 공유**: `packages/shared` (순수/런타임 비의존만)
 
 새 패키지 추가 시 기준: "어디서 실행되는 코드인가(웹/트래블/워커/DB/공용)"를 먼저 결정하고 그 워크스페이스에만 추가.

@@ -23,7 +23,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 
 # ============================================
-# Builder (Prisma generate only)
+# Builder
 # ============================================
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
@@ -33,19 +33,11 @@ COPY --from=deps /app/packages/worker-shared/node_modules ./packages/worker-shar
 COPY --from=deps /app/apps/worker/node_modules ./apps/worker/node_modules
 COPY . .
 
-# Prisma generate requires DATABASE_URL at build time (for schema validation only)
-ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-ENV DATABASE_URL=${DATABASE_URL}
-
-# Generate Prisma client
-RUN pnpm turbo run db:generate --filter=@workspace/db
-
-# Build workspace libraries consumed by worker runtime.
-# Without dist outputs, package exports resolve to missing files in container.
-RUN pnpm turbo run build --filter=@workspace/db --filter=@workspace/shared --filter=@workspace/worker-shared
+# Build the worker and its workspace dependencies so runtime only loads compiled JS.
+RUN pnpm turbo run build --force --filter=@workspace/worker
 
 # ============================================
-# Runner (tsx for TypeScript execution)
+# Runner (compiled JavaScript runtime)
 # ============================================
 FROM base AS runner
 WORKDIR /app
@@ -66,4 +58,4 @@ COPY --from=builder /app/apps/worker ./apps/worker
 COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3500
-CMD ["pnpm", "--filter=@workspace/worker", "exec", "tsx", "src/main.ts"]
+CMD ["node", "apps/worker/dist/main.js"]

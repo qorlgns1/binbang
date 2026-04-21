@@ -18,22 +18,78 @@ const { mockLandingEventFindMany, mockLandingEventFindFirst, mockFormSubmissionC
     }),
   );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    landingEvent: {
-      findMany: mockLandingEventFindMany,
-      findFirst: mockLandingEventFindFirst,
+const dbMock = vi.hoisted(
+  (): {
+    dataSource: unknown;
+    landingEventRepo: {
+      find: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    formSubmissionRepo: {
+      count: ReturnType<typeof vi.fn>;
+      findOne: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
+  } => ({
+    dataSource: null,
+    landingEventRepo: {
+      find: vi.fn(),
+      findOne: vi.fn(),
     },
-    formSubmission: {
-      count: mockFormSubmissionCount,
-      findFirst: mockFormSubmissionFindFirst,
+    formSubmissionRepo: {
+      count: vi.fn(),
+      findOne: vi.fn(),
     },
-  },
-}));
+    getDataSource: vi.fn(),
+  }),
+);
+
+const callMock = <TReturn>(fn: unknown, ...args: unknown[]): TReturn =>
+  (fn as (...args: unknown[]) => TReturn)(...args);
+
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../../../test-utils/mock-db.ts');
+
+  const landingEventRepo = createMockRepository();
+  landingEventRepo.find.mockImplementation((...args) => callMock(mockLandingEventFindMany, ...args));
+  landingEventRepo.findOne.mockImplementation((...args) => callMock(mockLandingEventFindFirst, ...args));
+
+  const formSubmissionRepo = createMockRepository();
+  formSubmissionRepo.count.mockImplementation((...args) => callMock(mockFormSubmissionCount, ...args));
+  formSubmissionRepo.findOne.mockImplementation((...args) => callMock(mockFormSubmissionFindFirst, ...args));
+
+  const dataSource = createMockDataSource({
+    repositories: [
+      [actual.LandingEvent, landingEventRepo],
+      [actual.FormSubmission, formSubmissionRepo],
+    ],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.landingEventRepo = landingEventRepo;
+  dbMock.formSubmissionRepo = formSubmissionRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
+
+function expectBetweenOperator(value: unknown, from: Date, to: Date): void {
+  expect(value).toEqual(
+    expect.objectContaining({
+      _type: 'between',
+      _value: [from, to],
+    }),
+  );
+}
 
 describe('admin/funnel-clicks.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     mockFormSubmissionCount.mockResolvedValue(0);
     mockFormSubmissionFindFirst.mockResolvedValue(null);
     mockLandingEventFindFirst.mockResolvedValue(null);
@@ -96,15 +152,11 @@ describe('admin/funnel-clicks.service', (): void => {
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          occurredAt: {
-            gte: new Date('2026-02-01T00:00:00.000Z'),
-            lte: new Date('2026-02-07T23:59:59.999Z'),
-          },
-        }),
-      }),
+    const [options] = mockLandingEventFindMany.mock.calls[0] as [{ where: { occurredAt: unknown } }];
+    expectBetweenOperator(
+      options.where.occurredAt,
+      new Date('2026-02-01T00:00:00.000Z'),
+      new Date('2026-02-07T23:59:59.999Z'),
     );
   });
 
@@ -134,15 +186,11 @@ describe('admin/funnel-clicks.service', (): void => {
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          occurredAt: {
-            gte: new Date('2026-01-16T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        }),
-      }),
+    const [options] = mockLandingEventFindMany.mock.calls[0] as [{ where: { occurredAt: unknown } }];
+    expectBetweenOperator(
+      options.where.occurredAt,
+      new Date('2026-01-16T00:00:00.000Z'),
+      new Date('2026-02-14T23:59:59.999Z'),
     );
   });
 
@@ -155,15 +203,11 @@ describe('admin/funnel-clicks.service', (): void => {
       now: new Date('2026-02-14T12:00:00.000Z'),
     });
 
-    expect(mockLandingEventFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          occurredAt: {
-            gte: new Date('2026-01-18T00:00:00.000Z'),
-            lte: new Date('2026-02-14T23:59:59.999Z'),
-          },
-        }),
-      }),
+    const [options] = mockLandingEventFindMany.mock.calls[0] as [{ where: { occurredAt: unknown } }];
+    expectBetweenOperator(
+      options.where.occurredAt,
+      new Date('2026-01-18T00:00:00.000Z'),
+      new Date('2026-02-14T23:59:59.999Z'),
     );
   });
 

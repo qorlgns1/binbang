@@ -1,4 +1,11 @@
-import { type FormQuestionField, type FormSubmissionStatus, type Prisma, prisma } from '@workspace/db';
+import {
+  type EntityManager,
+  FormQuestionField,
+  FormQuestionMapping,
+  FormSubmission,
+  FormSubmissionStatus,
+  getDataSource,
+} from '@workspace/db';
 import { z } from 'zod';
 
 // ============================================================================
@@ -57,28 +64,6 @@ export interface GetFormSubmissionsResult {
   nextCursor: string | null;
   total?: number;
 }
-
-// ============================================================================
-// Shared select
-// ============================================================================
-
-const FORM_SUBMISSION_SELECT = {
-  id: true,
-  responseId: true,
-  status: true,
-  rawPayload: true,
-  formVersion: true,
-  sourceIp: true,
-  extractedFields: true,
-  rejectionReason: true,
-  consentBillingOnConditionMet: true,
-  consentServiceScope: true,
-  consentCapturedAt: true,
-  consentTexts: true,
-  receivedAt: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
 
 // ============================================================================
 // Helpers
@@ -179,7 +164,9 @@ const rawPayloadFieldsSchema = z.object({
 });
 
 function isUniqueConstraintError(error: unknown): boolean {
-  return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
+  if (error == null || typeof error !== 'object') return false;
+  const message = 'message' in error ? String((error as { message: unknown }).message) : '';
+  return message.includes('ORA-00001');
 }
 
 function resolveConsentEvidence(input: { formVersion: string | null; payloadConsentTexts: ConsentTexts | null }): {
@@ -306,26 +293,36 @@ function answerIncludesExactText(value: unknown, expectedAnswer: string): boolea
 }
 
 async function getActiveFormQuestionMappingsByField(input: {
-  tx: Prisma.TransactionClient;
+  manager: EntityManager;
   formKey: string;
 }): Promise<Map<FormQuestionField, FormQuestionMappingRow>> {
-  const rows = await input.tx.formQuestionMapping.findMany({
-    where:
-      input.formKey === DEFAULT_FORM_KEY
-        ? { isActive: true, formKey: DEFAULT_FORM_KEY }
-        : { isActive: true, OR: [{ formKey: input.formKey }, { formKey: DEFAULT_FORM_KEY }] },
-    select: {
-      formKey: true,
-      field: true,
-      questionItemId: true,
-      questionTitle: true,
-      expectedAnswer: true,
-    },
-  });
+  const { manager, formKey } = input;
+  const repo = manager.getRepository(FormQuestionMapping);
+
+  let rows: FormQuestionMappingRow[];
+  if (formKey === DEFAULT_FORM_KEY) {
+    rows = await repo.find({
+      where: { isActive: true, formKey: DEFAULT_FORM_KEY },
+      select: { formKey: true, field: true, questionItemId: true, questionTitle: true, expectedAnswer: true },
+    });
+  } else {
+    // Load both form-specific and default mappings
+    const [specific, defaults] = await Promise.all([
+      repo.find({
+        where: { isActive: true, formKey },
+        select: { formKey: true, field: true, questionItemId: true, questionTitle: true, expectedAnswer: true },
+      }),
+      repo.find({
+        where: { isActive: true, formKey: DEFAULT_FORM_KEY },
+        select: { formKey: true, field: true, questionItemId: true, questionTitle: true, expectedAnswer: true },
+      }),
+    ]);
+    rows = [...specific, ...defaults];
+  }
 
   const sortedRows = [...rows].sort((a, b) => {
-    const aPriority = a.formKey === input.formKey ? 1 : 0;
-    const bPriority = b.formKey === input.formKey ? 1 : 0;
+    const aPriority = a.formKey === formKey ? 1 : 0;
+    const bPriority = b.formKey === formKey ? 1 : 0;
     return bPriority - aPriority;
   });
 
@@ -388,22 +385,22 @@ function normalizeFromAnswersWithMappings(input: {
     return undefined;
   }
 
-  const contactChannel = toAnswerString(getAnswerValue('CONTACT_CHANNEL'));
-  const contactValue = toAnswerString(getAnswerValue('CONTACT_VALUE'));
-  const targetUrl = toAnswerString(getAnswerValue('TARGET_URL'));
-  const conditionDefinition = toAnswerString(getAnswerValue('CONDITION_DEFINITION'));
-  const requestWindow = toFormDateString(getAnswerValue('REQUEST_WINDOW'));
-  const checkFrequency = toAnswerString(getAnswerValue('CHECK_FREQUENCY'));
+  const contactChannel = toAnswerString(getAnswerValue(FormQuestionField.CONTACT_CHANNEL));
+  const contactValue = toAnswerString(getAnswerValue(FormQuestionField.CONTACT_VALUE));
+  const targetUrl = toAnswerString(getAnswerValue(FormQuestionField.TARGET_URL));
+  const conditionDefinition = toAnswerString(getAnswerValue(FormQuestionField.CONDITION_DEFINITION));
+  const requestWindow = toFormDateString(getAnswerValue(FormQuestionField.REQUEST_WINDOW));
+  const checkFrequency = toAnswerString(getAnswerValue(FormQuestionField.CHECK_FREQUENCY));
 
-  const billingMapping = mappingByField.get('BILLING_CONSENT');
-  const scopeMapping = mappingByField.get('SCOPE_CONSENT');
+  const billingMapping = mappingByField.get(FormQuestionField.BILLING_CONSENT);
+  const scopeMapping = mappingByField.get(FormQuestionField.SCOPE_CONSENT);
   const billingConsentText = billingMapping?.expectedAnswer ?? undefined;
   const scopeConsentText = scopeMapping?.expectedAnswer ?? undefined;
   const billingConsent = billingMapping?.expectedAnswer
-    ? answerIncludesExactText(getAnswerValue('BILLING_CONSENT'), billingMapping.expectedAnswer)
+    ? answerIncludesExactText(getAnswerValue(FormQuestionField.BILLING_CONSENT), billingMapping.expectedAnswer)
     : false;
   const scopeConsent = scopeMapping?.expectedAnswer
-    ? answerIncludesExactText(getAnswerValue('SCOPE_CONSENT'), scopeMapping.expectedAnswer)
+    ? answerIncludesExactText(getAnswerValue(FormQuestionField.SCOPE_CONSENT), scopeMapping.expectedAnswer)
     : false;
 
   const respondentEmail = toOptionalString(rawPayload.respondentEmail) ?? toOptionalString(rawPayload.respondent_email);
@@ -443,12 +440,12 @@ function normalizeFromAnswersWithMappings(input: {
 
 async function normalizeRawPayload(input: {
   rawPayload: Record<string, unknown>;
-  tx: Prisma.TransactionClient;
+  manager: EntityManager;
 }): Promise<NormalizeRawPayloadResult> {
-  const { rawPayload, tx } = input;
+  const { rawPayload, manager } = input;
   const formKey = toOptionalString(rawPayload.form_id) ?? toOptionalString(rawPayload.formId) ?? DEFAULT_FORM_KEY;
   const mappingByField = await getActiveFormQuestionMappingsByField({
-    tx,
+    manager,
     formKey,
   });
   const normalizedFromAnswers = normalizeFromAnswersWithMappings({
@@ -531,21 +528,23 @@ function toOutput(row: FormSubmissionRow): FormSubmissionOutput {
 // ============================================================================
 
 export async function createFormSubmission(input: CreateFormSubmissionInput): Promise<CreateFormSubmissionResult> {
+  const ds = await getDataSource();
+
   try {
-    const result = await prisma.$transaction(async (tx): Promise<FormSubmissionRow> => {
-      const created = await tx.formSubmission.create({
-        data: {
-          responseId: input.responseId,
-          rawPayload: input.rawPayload as unknown as Prisma.InputJsonValue,
-          sourceIp: input.sourceIp,
-        },
-        select: FORM_SUBMISSION_SELECT,
+    const result = await ds.transaction(async (manager): Promise<FormSubmissionRow> => {
+      const repo = manager.getRepository(FormSubmission);
+
+      const created = repo.create({
+        responseId: input.responseId,
+        rawPayload: input.rawPayload as object,
+        sourceIp: input.sourceIp,
       });
+      await repo.save(created);
 
       // rawPayload 검증/추출
       const normalized = await normalizeRawPayload({
         rawPayload: input.rawPayload,
-        tx,
+        manager,
       });
       const parseResult = rawPayloadFieldsSchema.safeParse(normalized.payload);
 
@@ -561,27 +560,26 @@ export async function createFormSubmission(input: CreateFormSubmissionInput): Pr
           payloadConsentTexts,
         });
 
-        await tx.formSubmission.update({
-          where: { id: created.id },
-          data: {
+        await repo.update(
+          { id: created.id },
+          {
             extractedFields: {
               ...(parseResult.data as unknown as Record<string, unknown>),
               ...(normalized.mappingWarnings.length > 0 ? { mapping_warnings: normalized.mappingWarnings } : {}),
-            } as unknown as Prisma.InputJsonValue,
+            } as object,
             formVersion: consentEvidence.formVersion,
             consentBillingOnConditionMet: parseResult.data.billing_consent,
             consentServiceScope: parseResult.data.scope_consent,
             consentCapturedAt: new Date(),
-            consentTexts: consentEvidence.consentTexts as unknown as Prisma.InputJsonValue,
+            consentTexts: consentEvidence.consentTexts as object,
             ...(normalized.mappingWarnings.length > 0
               ? {
-                  status: 'NEEDS_REVIEW',
+                  status: FormSubmissionStatus.NEEDS_REVIEW,
                   rejectionReason: normalized.mappingWarnings.join('; '),
                 }
               : {}),
           },
-          select: { id: true },
-        });
+        );
       } else {
         const reasons = [
           ...normalized.mappingWarnings,
@@ -592,67 +590,68 @@ export async function createFormSubmission(input: CreateFormSubmissionInput): Pr
           return field !== 'billing_consent' && field !== 'scope_consent';
         });
 
-        await tx.formSubmission.update({
-          where: { id: created.id },
-          data: {
-            status: hasNonConsentError ? 'NEEDS_REVIEW' : 'REJECTED',
+        await repo.update(
+          { id: created.id },
+          {
+            status: hasNonConsentError ? FormSubmissionStatus.NEEDS_REVIEW : FormSubmissionStatus.REJECTED,
             rejectionReason: reasons.join('; '),
           },
-          select: { id: true },
-        });
+        );
       }
 
-      return tx.formSubmission.findUniqueOrThrow({
-        where: { id: created.id },
-        select: FORM_SUBMISSION_SELECT,
-      });
+      const final = await repo.findOneOrFail({ where: { id: created.id } });
+      return final as unknown as FormSubmissionRow;
     });
 
     return { submission: toOutput(result), created: true };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      const existing = await prisma.formSubmission.findUnique({
+      const existing = await ds.getRepository(FormSubmission).findOne({
         where: { responseId: input.responseId },
-        select: FORM_SUBMISSION_SELECT,
       });
 
       if (!existing) {
         throw error;
       }
 
-      return { submission: toOutput(existing), created: false };
+      return { submission: toOutput(existing as unknown as FormSubmissionRow), created: false };
     }
     throw error;
   }
 }
 
 export async function getFormSubmissionById(id: string): Promise<FormSubmissionOutput | null> {
-  const submission = await prisma.formSubmission.findUnique({
-    where: { id },
-    select: FORM_SUBMISSION_SELECT,
-  });
-
-  if (!submission) {
-    return null;
-  }
-
-  return toOutput(submission);
+  const ds = await getDataSource();
+  const submission = await ds.getRepository(FormSubmission).findOne({ where: { id } });
+  if (!submission) return null;
+  return toOutput(submission as unknown as FormSubmissionRow);
 }
 
 export async function getFormSubmissions(input: GetFormSubmissionsInput): Promise<GetFormSubmissionsResult> {
-  const where: Prisma.FormSubmissionWhereInput = {};
+  const ds = await getDataSource();
+  const repo = ds.getRepository(FormSubmission);
+
+  const qb = repo.createQueryBuilder('fs');
 
   if (input.status) {
-    where.status = input.status;
+    qb.where('fs.status = :status', { status: input.status });
   }
 
-  const submissions = await prisma.formSubmission.findMany({
-    where,
-    select: FORM_SUBMISSION_SELECT,
-    orderBy: { receivedAt: 'desc' },
-    take: input.limit + 1,
-    ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-  });
+  if (input.cursor) {
+    const cursorItem = await repo.findOne({ where: { id: input.cursor }, select: { id: true, receivedAt: true } });
+    if (cursorItem) {
+      qb.andWhere('(fs.receivedAt < :cursorDate OR (fs.receivedAt = :cursorDate AND fs.id < :cursorId))', {
+        cursorDate: cursorItem.receivedAt,
+        cursorId: input.cursor,
+      });
+    }
+  }
+
+  qb.orderBy('fs.receivedAt', 'DESC')
+    .addOrderBy('fs.id', 'DESC')
+    .limit(input.limit + 1);
+
+  const submissions = await qb.getMany();
 
   const hasMore = submissions.length > input.limit;
   const items = hasMore ? submissions.slice(0, input.limit) : submissions;
@@ -660,11 +659,15 @@ export async function getFormSubmissions(input: GetFormSubmissionsInput): Promis
 
   let total: number | undefined;
   if (!input.cursor) {
-    total = await prisma.formSubmission.count({ where });
+    const countQb = repo.createQueryBuilder('fs');
+    if (input.status) {
+      countQb.where('fs.status = :status', { status: input.status });
+    }
+    total = await countQb.getCount();
   }
 
   return {
-    submissions: items.map(toOutput),
+    submissions: items.map((s) => toOutput(s as unknown as FormSubmissionRow)),
     nextCursor,
     ...(total !== undefined && { total }),
   };

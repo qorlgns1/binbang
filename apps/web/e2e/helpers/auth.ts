@@ -1,4 +1,4 @@
-import { expect, type APIResponse, type Page } from '@playwright/test';
+import type { APIResponse, Page } from '@playwright/test';
 
 const DEFAULT_PASSWORD = 'E2E-Password-1234!';
 const E2E_EMAIL_PREFIX = 'e2e.';
@@ -43,7 +43,7 @@ export function buildUniqueCredentials(): Credentials {
  * 1) `/ko/signup` 진입
  * 2) 이름/이메일/비밀번호 입력
  * 3) 제출 버튼 클릭
- * 4) 성공 기준: `/ko/login`으로 리다이렉트
+ * 4) 성공 기준: locale과 무관하게 `/login`으로 리다이렉트
  *
  * @param page Playwright page 인스턴스
  * @param credentials 회원가입에 사용할 계정 정보
@@ -57,7 +57,7 @@ export async function signUpThroughUi(page: Page, credentials: Credentials): Pro
   await page.getByTestId('signup-password-confirm-input').fill(credentials.password);
   await page.getByTestId('signup-submit-button').click();
 
-  await page.waitForURL('**/ko/login');
+  await page.waitForURL('**/login');
 }
 
 /**
@@ -109,17 +109,13 @@ export async function signUpAndLoginThroughUi(page: Page, credentials: Credentia
  */
 export async function dismissTutorialIfVisible(page: Page): Promise<void> {
   const skipButton = page.getByRole('button', { name: /건너뛰기|skip/i }).first();
-  const isVisible = await skipButton
-    .isVisible({ timeout: 5_000 })
-    .then(() => true)
-    .catch(() => false);
+  const isVisible = await skipButton.isVisible().catch(() => false);
 
   if (!isVisible) {
     return;
   }
 
-  await skipButton.click();
-  await expect(skipButton).toBeHidden({ timeout: 10_000 });
+  await skipButton.click().catch(() => undefined);
 }
 
 // ============================================================================

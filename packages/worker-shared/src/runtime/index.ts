@@ -1,5 +1,5 @@
 // Settings
-export { getSettings, loadSettings } from './settings';
+export { getSettings, loadSettings } from './settings/index';
 export {
   validateWorkerEnv,
   validateWebEnv,
@@ -9,7 +9,7 @@ export {
   getTravelCachePrewarmConfig,
   getBinbangCronConfig,
 } from './settings/env';
-export type { SystemSettingsCache } from './settings';
+export type { SystemSettingsCache } from './settings/index';
 export type {
   AffiliateAuditPurgeConfig,
   AffiliateAuditTelegramConfig,
@@ -86,8 +86,8 @@ export {
   invalidateSelectorCache,
   preloadSelectorCache,
   buildExtractorCode,
-} from './selectors';
-export type { PlatformSelectorCache, SelectorConfig } from './selectors';
+} from './selectors/index';
+export type { PlatformSelectorCache, SelectorConfig } from './selectors/index';
 
 // Evidence
 export { createConditionMetEvent } from './evidence';

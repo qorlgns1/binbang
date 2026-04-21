@@ -1,4 +1,4 @@
-import { prisma } from '@workspace/db';
+import { Case, CaseMessage, getDataSource } from '@workspace/db';
 import { NotFoundError } from '@workspace/shared/errors';
 
 // ============================================================================
@@ -130,8 +130,9 @@ const CASE_MESSAGE_SELECT = {
 
 export async function createCaseMessage(input: CreateCaseMessageInput): Promise<CaseMessageOutput> {
   const { caseId, templateKey, channel, content, sentById } = input;
+  const ds = await getDataSource();
 
-  const caseRecord = await prisma.case.findUnique({
+  const caseRecord = await ds.getRepository(Case).findOne({
     where: { id: caseId },
     select: { id: true },
   });
@@ -140,43 +141,42 @@ export async function createCaseMessage(input: CreateCaseMessageInput): Promise<
     throw new NotFoundError('Case not found');
   }
 
-  const message = await prisma.caseMessage.create({
-    data: {
-      caseId,
-      templateKey,
-      channel,
-      content,
-      sentById,
-    },
-    select: CASE_MESSAGE_SELECT,
-  });
+  const repo = ds.getRepository(CaseMessage);
+  const message = repo.create({ caseId, templateKey, channel, content, sentById });
+  await repo.save(message);
 
   return toCaseMessageOutput(message);
 }
 
 export async function getCaseMessages(caseId: string): Promise<CaseMessageOutput[]> {
-  const messages = await prisma.caseMessage.findMany({
-    where: { caseId },
+  const ds = await getDataSource();
+  const messages = await ds.getRepository(CaseMessage).find({
     select: CASE_MESSAGE_SELECT,
-    orderBy: { createdAt: 'desc' },
+    where: { caseId },
+    order: { createdAt: 'DESC' },
   });
 
   return messages.map(toCaseMessageOutput);
 }
 
 export async function getOperatorMessageStats(sentById?: string): Promise<OperatorMessageStat[]> {
-  const where = sentById ? { sentById } : {};
+  const ds = await getDataSource();
 
-  const groups = await prisma.caseMessage.groupBy({
-    by: ['templateKey'],
-    where,
-    _count: { id: true },
-    orderBy: { _count: { id: 'desc' } },
-  });
+  let sql = `SELECT "templateKey", COUNT(*) AS "count" FROM "CaseMessage"`;
+  const params: unknown[] = [];
 
-  return groups.map((g) => ({
+  if (sentById) {
+    sql += ` WHERE "sentById" = :1`;
+    params.push(sentById);
+  }
+
+  sql += ` GROUP BY "templateKey" ORDER BY "count" DESC`;
+
+  const rows = await ds.query<{ templateKey: string; count: string }[]>(sql, params);
+
+  return rows.map((g) => ({
     templateKey: g.templateKey,
-    count: g._count.id,
+    count: Number(g.count),
   }));
 }
 

@@ -26,17 +26,19 @@
     }
   },
   "scripts": {
-    "build": "tsc --build --force && tsc-alias",
+    "build": "tsc --build --force && tsc-alias -f -fe .js && pnpm -C ../.. --filter @workspace/shared build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist node_modules",
     "lint": "biome lint ."
   },
   "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2",
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
     "axios": "^1.13.6",
-    "dotenv": "^17.3.1"
+    "dotenv": "^17.3.1",
+    "typeorm": "^0.3.27"
   },
   "peerDependencies": {
     "bullmq": "^5.0.0",

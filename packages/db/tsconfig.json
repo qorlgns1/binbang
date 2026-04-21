@@ -9,11 +9,12 @@
     "noEmit": false,
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
     "paths": {
-      "@/*": ["./src/*"],
-      "@/generated/*": ["./generated/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "generated/**/*.ts", "prisma/**/*.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "scripts/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

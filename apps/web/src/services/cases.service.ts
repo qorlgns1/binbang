@@ -1,4 +1,14 @@
-import { type CaseStatus, type Prisma, prisma } from '@workspace/db';
+import {
+  Accommodation,
+  Case,
+  CaseStatus,
+  CaseStatusLog,
+  ConditionMetEvent,
+  FormSubmission,
+  FormSubmissionStatus,
+  type EntityManager,
+  getDataSource,
+} from '@workspace/db';
 import { BadRequestError, ConflictError, NotFoundError } from '@workspace/shared/errors';
 
 import { type AmbiguityResult, analyzeCondition } from './condition-parser.service';
@@ -133,120 +143,22 @@ export interface GetCasesResult {
 // ============================================================================
 
 const VALID_TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
-  RECEIVED: ['REVIEWING'],
-  REVIEWING: ['NEEDS_CLARIFICATION', 'WAITING_PAYMENT', 'REJECTED'],
-  NEEDS_CLARIFICATION: ['REVIEWING'],
-  WAITING_PAYMENT: ['ACTIVE_MONITORING', 'CANCELLED'],
-  ACTIVE_MONITORING: ['CONDITION_MET', 'EXPIRED', 'CANCELLED'],
-  CONDITION_MET: ['BILLED'],
-  BILLED: ['CLOSED'],
-  CLOSED: [],
-  REJECTED: [],
-  EXPIRED: [],
-  CANCELLED: [],
+  [CaseStatus.RECEIVED]: [CaseStatus.REVIEWING],
+  [CaseStatus.REVIEWING]: [CaseStatus.NEEDS_CLARIFICATION, CaseStatus.WAITING_PAYMENT, CaseStatus.REJECTED],
+  [CaseStatus.NEEDS_CLARIFICATION]: [CaseStatus.REVIEWING],
+  [CaseStatus.WAITING_PAYMENT]: [CaseStatus.ACTIVE_MONITORING, CaseStatus.CANCELLED],
+  [CaseStatus.ACTIVE_MONITORING]: [CaseStatus.CONDITION_MET, CaseStatus.EXPIRED, CaseStatus.CANCELLED],
+  [CaseStatus.CONDITION_MET]: [CaseStatus.BILLED],
+  [CaseStatus.BILLED]: [CaseStatus.CLOSED],
+  [CaseStatus.CLOSED]: [],
+  [CaseStatus.REJECTED]: [],
+  [CaseStatus.EXPIRED]: [],
+  [CaseStatus.CANCELLED]: [],
 };
 
 export function isValidTransition(from: CaseStatus, to: CaseStatus): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
-
-// ============================================================================
-// Shared select
-// ============================================================================
-
-const CASE_SELECT = {
-  id: true,
-  submissionId: true,
-  status: true,
-  assignedTo: true,
-  statusChangedAt: true,
-  statusChangedBy: true,
-  note: true,
-  ambiguityResult: true,
-  clarificationResolvedAt: true,
-  paymentConfirmedAt: true,
-  paymentConfirmedBy: true,
-  accommodationId: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
-const CASE_STATUS_LOG_SELECT = {
-  id: true,
-  fromStatus: true,
-  toStatus: true,
-  changedById: true,
-  reason: true,
-  createdAt: true,
-} as const;
-
-const CASE_DETAIL_SELECT = {
-  ...CASE_SELECT,
-  submission: {
-    select: {
-      id: true,
-      responseId: true,
-      status: true,
-      rawPayload: true,
-      extractedFields: true,
-      rejectionReason: true,
-      consentBillingOnConditionMet: true,
-      consentServiceScope: true,
-      consentCapturedAt: true,
-      consentTexts: true,
-      receivedAt: true,
-    },
-  },
-  statusLogs: {
-    select: CASE_STATUS_LOG_SELECT,
-    orderBy: { createdAt: 'desc' as const },
-  },
-  conditionMetEvents: {
-    select: {
-      id: true,
-      checkLogId: true,
-      evidenceSnapshot: true,
-      screenshotBase64: true,
-      capturedAt: true,
-      createdAt: true,
-    },
-    orderBy: { capturedAt: 'desc' as const },
-  },
-  notifications: {
-    select: {
-      id: true,
-      channel: true,
-      status: true,
-      payload: true,
-      sentAt: true,
-      failReason: true,
-      retryCount: true,
-      maxRetries: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: 'desc' as const },
-  },
-  billingEvent: {
-    select: {
-      id: true,
-      type: true,
-      amountKrw: true,
-      description: true,
-      createdAt: true,
-    },
-  },
-  messages: {
-    select: {
-      id: true,
-      templateKey: true,
-      channel: true,
-      content: true,
-      sentById: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: 'desc' as const },
-  },
-} as const;
 
 // ============================================================================
 // Helpers
@@ -417,13 +329,37 @@ function toCaseDetailOutput(row: CaseDetailRow): CaseDetailOutput {
   };
 }
 
+async function loadCaseDetail(manager: EntityManager, id: string): Promise<CaseDetailRow | null> {
+  const entity = await manager.findOne(Case, {
+    where: { id },
+    relations: {
+      submission: true,
+      statusLogs: true,
+      conditionMetEvents: true,
+      notifications: true,
+      billingEvent: true,
+      messages: true,
+    },
+  });
+  if (!entity) return null;
+
+  entity.statusLogs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  entity.conditionMetEvents.sort((a, b) => b.capturedAt.getTime() - a.capturedAt.getTime());
+  entity.notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  entity.messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  return entity as unknown as CaseDetailRow;
+}
+
 // ============================================================================
 // Service Functions
 // ============================================================================
 
 export async function createCase(input: CreateCaseInput): Promise<CaseDetailOutput> {
-  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
-    const submission = await tx.formSubmission.findUnique({
+  const ds = await getDataSource();
+
+  const result = await ds.transaction(async (manager): Promise<CaseDetailRow> => {
+    const submission = await manager.findOne(FormSubmission, {
       where: { id: input.submissionId },
       select: { id: true, status: true, extractedFields: true },
     });
@@ -432,11 +368,11 @@ export async function createCase(input: CreateCaseInput): Promise<CaseDetailOutp
       throw new NotFoundError('Submission not found');
     }
 
-    if (submission.status === 'REJECTED') {
+    if (submission.status === FormSubmissionStatus.REJECTED) {
       throw new ConflictError('Cannot create case from rejected submission');
     }
 
-    if (submission.status === 'PROCESSED') {
+    if (submission.status === FormSubmissionStatus.PROCESSED) {
       throw new ConflictError('Submission already processed');
     }
 
@@ -448,44 +384,39 @@ export async function createCase(input: CreateCaseInput): Promise<CaseDetailOutp
     const conditionText = typeof extracted.condition_definition === 'string' ? extracted.condition_definition : '';
     const ambiguity = analyzeCondition(conditionText);
 
-    await tx.formSubmission.update({
-      where: { id: input.submissionId },
-      data: { status: 'PROCESSED' },
-      select: { id: true },
-    });
+    await manager
+      .getRepository(FormSubmission)
+      .update({ id: input.submissionId }, { status: FormSubmissionStatus.PROCESSED });
 
-    const created = await tx.case.create({
-      data: {
-        submissionId: input.submissionId,
-        statusChangedBy: input.changedById,
-        ambiguityResult: ambiguity as unknown as Prisma.InputJsonValue,
-      },
-      select: CASE_DETAIL_SELECT,
+    const newCase = manager.getRepository(Case).create({
+      submissionId: input.submissionId,
+      statusChangedBy: input.changedById,
+      ambiguityResult: ambiguity as object,
     });
+    await manager.getRepository(Case).save(newCase);
 
-    await tx.caseStatusLog.create({
-      data: {
-        caseId: created.id,
-        fromStatus: 'RECEIVED',
-        toStatus: 'RECEIVED',
-        changedById: input.changedById,
-        reason: 'Case created from form submission',
-      },
-      select: { id: true },
+    const statusLog = manager.getRepository(CaseStatusLog).create({
+      caseId: newCase.id,
+      fromStatus: CaseStatus.RECEIVED,
+      toStatus: CaseStatus.RECEIVED,
+      changedById: input.changedById,
+      reason: 'Case created from form submission',
     });
+    await manager.getRepository(CaseStatusLog).save(statusLog);
 
-    return tx.case.findUniqueOrThrow({
-      where: { id: created.id },
-      select: CASE_DETAIL_SELECT,
-    });
+    const fullCase = await loadCaseDetail(manager, newCase.id);
+    if (!fullCase) throw new Error('Case not found after creation');
+    return fullCase;
   });
 
   return toCaseDetailOutput(result);
 }
 
 export async function transitionCaseStatus(input: TransitionCaseStatusInput): Promise<CaseDetailOutput> {
-  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
-    const current = await tx.case.findUnique({
+  const ds = await getDataSource();
+
+  const result = await ds.transaction(async (manager): Promise<CaseDetailRow> => {
+    const current = await manager.findOne(Case, {
       where: { id: input.caseId },
       select: {
         id: true,
@@ -494,7 +425,6 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
         clarificationResolvedAt: true,
         paymentConfirmedAt: true,
         accommodationId: true,
-        _count: { select: { conditionMetEvents: true } },
       },
     });
 
@@ -507,7 +437,7 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
     }
 
     // Guard: REVIEWING → WAITING_PAYMENT requires resolved ambiguity
-    if (current.status === 'REVIEWING' && input.toStatus === 'WAITING_PAYMENT') {
+    if (current.status === CaseStatus.REVIEWING && input.toStatus === CaseStatus.WAITING_PAYMENT) {
       const ambiguity = current.ambiguityResult as AmbiguityResult | null;
       if (ambiguity && ambiguity.severity !== 'GREEN' && !current.clarificationResolvedAt) {
         throw new BadRequestError('Ambiguity must be resolved before payment');
@@ -515,7 +445,7 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
     }
 
     // Guard: WAITING_PAYMENT → ACTIVE_MONITORING requires payment confirmation + accommodation link
-    if (current.status === 'WAITING_PAYMENT' && input.toStatus === 'ACTIVE_MONITORING') {
+    if (current.status === CaseStatus.WAITING_PAYMENT && input.toStatus === CaseStatus.ACTIVE_MONITORING) {
       if (!current.paymentConfirmedAt) {
         throw new BadRequestError('Payment must be confirmed before monitoring start');
       }
@@ -525,52 +455,48 @@ export async function transitionCaseStatus(input: TransitionCaseStatusInput): Pr
     }
 
     // Guard: ACTIVE_MONITORING → CONDITION_MET requires at least one evidence
-    if (current.status === 'ACTIVE_MONITORING' && input.toStatus === 'CONDITION_MET') {
-      if (current._count.conditionMetEvents === 0) {
+    if (current.status === CaseStatus.ACTIVE_MONITORING && input.toStatus === CaseStatus.CONDITION_MET) {
+      const count = await manager.count(ConditionMetEvent, { where: { caseId: input.caseId } });
+      if (count === 0) {
         throw new BadRequestError('At least one condition met evidence is required');
       }
     }
 
-    const updateData: Record<string, unknown> = {
+    const updateData: Partial<Case> = {
       status: input.toStatus,
       statusChangedAt: new Date(),
       statusChangedBy: input.changedById,
     };
 
     // Set clarificationResolvedAt when resolving clarification
-    if (current.status === 'NEEDS_CLARIFICATION' && input.toStatus === 'REVIEWING') {
+    if (current.status === CaseStatus.NEEDS_CLARIFICATION && input.toStatus === CaseStatus.REVIEWING) {
       updateData.clarificationResolvedAt = new Date();
     }
 
-    await tx.case.update({
-      where: { id: input.caseId },
-      data: updateData,
-      select: { id: true },
-    });
+    await manager.getRepository(Case).update({ id: input.caseId }, updateData);
 
-    await tx.caseStatusLog.create({
-      data: {
-        caseId: input.caseId,
-        fromStatus: current.status,
-        toStatus: input.toStatus,
-        changedById: input.changedById,
-        reason: input.reason,
-      },
-      select: { id: true },
+    const statusLog = manager.getRepository(CaseStatusLog).create({
+      caseId: input.caseId,
+      fromStatus: current.status,
+      toStatus: input.toStatus,
+      changedById: input.changedById,
+      reason: input.reason,
     });
+    await manager.getRepository(CaseStatusLog).save(statusLog);
 
-    return tx.case.findUniqueOrThrow({
-      where: { id: input.caseId },
-      select: CASE_DETAIL_SELECT,
-    });
+    const fullCase = await loadCaseDetail(manager, input.caseId);
+    if (!fullCase) throw new Error('Case not found after update');
+    return fullCase;
   });
 
   return toCaseDetailOutput(result);
 }
 
 export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDetailOutput> {
-  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
-    const current = await tx.case.findUnique({
+  const ds = await getDataSource();
+
+  const result = await ds.transaction(async (manager): Promise<CaseDetailRow> => {
+    const current = await manager.findOne(Case, {
       where: { id: input.caseId },
       select: { id: true, status: true, paymentConfirmedAt: true },
     });
@@ -579,7 +505,7 @@ export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDe
       throw new NotFoundError('Case not found');
     }
 
-    if (current.status !== 'WAITING_PAYMENT') {
+    if (current.status !== CaseStatus.WAITING_PAYMENT) {
       throw new BadRequestError(`Payment confirmation requires WAITING_PAYMENT status, current: ${current.status}`);
     }
 
@@ -587,38 +513,36 @@ export async function confirmPayment(input: ConfirmPaymentInput): Promise<CaseDe
       throw new ConflictError('Payment already confirmed');
     }
 
-    await tx.case.update({
-      where: { id: input.caseId },
-      data: {
+    await manager.getRepository(Case).update(
+      { id: input.caseId },
+      {
         paymentConfirmedAt: new Date(),
         paymentConfirmedBy: input.confirmedById,
       },
-      select: { id: true },
-    });
+    );
 
-    await tx.caseStatusLog.create({
-      data: {
-        caseId: input.caseId,
-        fromStatus: 'WAITING_PAYMENT',
-        toStatus: 'WAITING_PAYMENT',
-        changedById: input.confirmedById,
-        reason: input.note ?? '결제 확인',
-      },
-      select: { id: true },
+    const statusLog = manager.getRepository(CaseStatusLog).create({
+      caseId: input.caseId,
+      fromStatus: CaseStatus.WAITING_PAYMENT,
+      toStatus: CaseStatus.WAITING_PAYMENT,
+      changedById: input.confirmedById,
+      reason: input.note ?? '결제 확인',
     });
+    await manager.getRepository(CaseStatusLog).save(statusLog);
 
-    return tx.case.findUniqueOrThrow({
-      where: { id: input.caseId },
-      select: CASE_DETAIL_SELECT,
-    });
+    const fullCase = await loadCaseDetail(manager, input.caseId);
+    if (!fullCase) throw new Error('Case not found after update');
+    return fullCase;
   });
 
   return toCaseDetailOutput(result);
 }
 
 export async function linkAccommodation(input: LinkAccommodationInput): Promise<CaseDetailOutput> {
-  const result = await prisma.$transaction(async (tx): Promise<CaseDetailRow> => {
-    const current = await tx.case.findUnique({
+  const ds = await getDataSource();
+
+  const result = await ds.transaction(async (manager): Promise<CaseDetailRow> => {
+    const current = await manager.findOne(Case, {
       where: { id: input.caseId },
       select: { id: true, status: true, accommodationId: true },
     });
@@ -627,11 +551,11 @@ export async function linkAccommodation(input: LinkAccommodationInput): Promise<
       throw new NotFoundError('Case not found');
     }
 
-    if (current.status !== 'WAITING_PAYMENT') {
+    if (current.status !== CaseStatus.WAITING_PAYMENT) {
       throw new BadRequestError(`Accommodation link requires WAITING_PAYMENT status, current: ${current.status}`);
     }
 
-    const accommodation = await tx.accommodation.findUnique({
+    const accommodation = await manager.findOne(Accommodation, {
       where: { id: input.accommodationId },
       select: { id: true },
     });
@@ -640,59 +564,56 @@ export async function linkAccommodation(input: LinkAccommodationInput): Promise<
       throw new NotFoundError('Accommodation not found');
     }
 
-    await tx.case.update({
-      where: { id: input.caseId },
-      data: { accommodationId: input.accommodationId },
-      select: { id: true },
-    });
+    await manager.getRepository(Case).update({ id: input.caseId }, { accommodationId: input.accommodationId });
 
-    await tx.caseStatusLog.create({
-      data: {
-        caseId: input.caseId,
-        fromStatus: 'WAITING_PAYMENT',
-        toStatus: 'WAITING_PAYMENT',
-        changedById: input.changedById,
-        reason: `숙소 연결: ${input.accommodationId}`,
-      },
-      select: { id: true },
+    const statusLog = manager.getRepository(CaseStatusLog).create({
+      caseId: input.caseId,
+      fromStatus: CaseStatus.WAITING_PAYMENT,
+      toStatus: CaseStatus.WAITING_PAYMENT,
+      changedById: input.changedById,
+      reason: `숙소 연결: ${input.accommodationId}`,
     });
+    await manager.getRepository(CaseStatusLog).save(statusLog);
 
-    return tx.case.findUniqueOrThrow({
-      where: { id: input.caseId },
-      select: CASE_DETAIL_SELECT,
-    });
+    const fullCase = await loadCaseDetail(manager, input.caseId);
+    if (!fullCase) throw new Error('Case not found after update');
+    return fullCase;
   });
 
   return toCaseDetailOutput(result);
 }
 
 export async function getCaseById(id: string): Promise<CaseDetailOutput | null> {
-  const row = await prisma.case.findUnique({
-    where: { id },
-    select: CASE_DETAIL_SELECT,
-  });
-
-  if (!row) {
-    return null;
-  }
-
-  return toCaseDetailOutput(row);
+  const ds = await getDataSource();
+  const row = await loadCaseDetail(ds.manager, id);
+  return row ? toCaseDetailOutput(row) : null;
 }
 
 export async function getCases(input: GetCasesInput): Promise<GetCasesResult> {
-  const where: Prisma.CaseWhereInput = {};
+  const ds = await getDataSource();
+  const repo = ds.getRepository(Case);
+
+  const qb = repo.createQueryBuilder('c');
 
   if (input.status) {
-    where.status = input.status;
+    qb.where('c.status = :status', { status: input.status });
   }
 
-  const cases = await prisma.case.findMany({
-    where,
-    select: CASE_SELECT,
-    orderBy: { createdAt: 'desc' },
-    take: input.limit + 1,
-    ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-  });
+  if (input.cursor) {
+    const cursorItem = await repo.findOne({ where: { id: input.cursor }, select: { id: true, createdAt: true } });
+    if (cursorItem) {
+      qb.andWhere('(c.createdAt < :cursorDate OR (c.createdAt = :cursorDate AND c.id < :cursorId))', {
+        cursorDate: cursorItem.createdAt,
+        cursorId: input.cursor,
+      });
+    }
+  }
+
+  qb.orderBy('c.createdAt', 'DESC')
+    .addOrderBy('c.id', 'DESC')
+    .limit(input.limit + 1);
+
+  const cases = await qb.getMany();
 
   const hasMore = cases.length > input.limit;
   const items = hasMore ? cases.slice(0, input.limit) : cases;
@@ -700,11 +621,15 @@ export async function getCases(input: GetCasesInput): Promise<GetCasesResult> {
 
   let total: number | undefined;
   if (!input.cursor) {
-    total = await prisma.case.count({ where });
+    const countQb = repo.createQueryBuilder('c');
+    if (input.status) {
+      countQb.where('c.status = :status', { status: input.status });
+    }
+    total = await countQb.getCount();
   }
 
   return {
-    cases: items.map(toCaseOutput),
+    cases: items.map((c) => toCaseOutput(c as unknown as CaseRow)),
     nextCursor,
     ...(total !== undefined && { total }),
   };

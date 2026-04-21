@@ -1,4 +1,4 @@
-import { type FormQuestionField, prisma } from '@workspace/db';
+import { type FormQuestionField, FormQuestionMapping, getDataSource } from '@workspace/db';
 import { BadRequestError, ConflictError, NotFoundError } from '@workspace/shared/errors';
 
 // ============================================================================
@@ -47,19 +47,10 @@ export interface UpdateFormQuestionMappingInput {
 
 const DEFAULT_FORM_KEY = '*';
 
-const CONSENT_FIELDS: FormQuestionField[] = ['BILLING_CONSENT', 'SCOPE_CONSENT'];
-
-const FORM_QUESTION_MAPPING_SELECT = {
-  id: true,
-  formKey: true,
-  field: true,
-  questionItemId: true,
-  questionTitle: true,
-  expectedAnswer: true,
-  isActive: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
+const CONSENT_FIELDS: FormQuestionField[] = [
+  'BILLING_CONSENT' as FormQuestionField,
+  'SCOPE_CONSENT' as FormQuestionField,
+];
 
 // ============================================================================
 // Helpers
@@ -91,20 +82,12 @@ function requiresExpectedAnswer(field: FormQuestionField): boolean {
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
-  return error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002';
+  if (error == null || typeof error !== 'object') return false;
+  const message = 'message' in error ? String((error as { message: unknown }).message) : '';
+  return message.includes('ORA-00001');
 }
 
-function toOutput(row: {
-  id: string;
-  formKey: string;
-  field: FormQuestionField;
-  questionItemId: string | null;
-  questionTitle: string;
-  expectedAnswer: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}): FormQuestionMappingOutput {
+function toOutput(row: FormQuestionMapping): FormQuestionMappingOutput {
   return {
     id: row.id,
     formKey: row.formKey,
@@ -132,13 +115,14 @@ function validateExpectedAnswer(field: FormQuestionField, expectedAnswer: string
 export async function getFormQuestionMappings(
   input: GetFormQuestionMappingsInput,
 ): Promise<{ mappings: FormQuestionMappingOutput[] }> {
-  const rows = await prisma.formQuestionMapping.findMany({
+  const ds = await getDataSource();
+
+  const rows = await ds.getRepository(FormQuestionMapping).find({
     where: {
       ...(input.formKey ? { formKey: normalizeFormKey(input.formKey) } : {}),
       ...(input.includeInactive ? {} : { isActive: true }),
     },
-    select: FORM_QUESTION_MAPPING_SELECT,
-    orderBy: [{ formKey: 'asc' }, { field: 'asc' }],
+    order: { formKey: 'ASC', field: 'ASC' },
   });
 
   return {
@@ -154,20 +138,20 @@ export async function createFormQuestionMapping(
   const questionTitle = normalizeRequiredText(input.questionTitle, 'questionTitle');
   const expectedAnswer = validateExpectedAnswer(input.field, normalizeOptionalText(input.expectedAnswer));
 
-  try {
-    const created = await prisma.formQuestionMapping.create({
-      data: {
-        formKey,
-        field: input.field,
-        questionItemId,
-        questionTitle,
-        expectedAnswer,
-        isActive: input.isActive ?? true,
-      },
-      select: FORM_QUESTION_MAPPING_SELECT,
-    });
+  const ds = await getDataSource();
+  const repo = ds.getRepository(FormQuestionMapping);
 
-    return toOutput(created);
+  try {
+    const entity = repo.create({
+      formKey,
+      field: input.field,
+      questionItemId,
+      questionTitle,
+      expectedAnswer,
+      isActive: input.isActive ?? true,
+    });
+    await repo.save(entity);
+    return toOutput(entity);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       throw new ConflictError('Mapping already exists for formKey and field');
@@ -179,10 +163,10 @@ export async function createFormQuestionMapping(
 export async function updateFormQuestionMapping(
   input: UpdateFormQuestionMappingInput,
 ): Promise<FormQuestionMappingOutput> {
-  const existing = await prisma.formQuestionMapping.findUnique({
-    where: { id: input.id },
-    select: FORM_QUESTION_MAPPING_SELECT,
-  });
+  const ds = await getDataSource();
+  const repo = ds.getRepository(FormQuestionMapping);
+
+  const existing = await repo.findOne({ where: { id: input.id } });
 
   if (!existing) {
     throw new NotFoundError('Mapping not found');
@@ -202,9 +186,9 @@ export async function updateFormQuestionMapping(
   );
 
   try {
-    const updated = await prisma.formQuestionMapping.update({
-      where: { id: input.id },
-      data: {
+    await repo.update(
+      { id: input.id },
+      {
         formKey,
         field,
         questionItemId,
@@ -212,9 +196,9 @@ export async function updateFormQuestionMapping(
         expectedAnswer,
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       },
-      select: FORM_QUESTION_MAPPING_SELECT,
-    });
+    );
 
+    const updated = await repo.findOneOrFail({ where: { id: input.id } });
     return toOutput(updated);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
@@ -225,15 +209,11 @@ export async function updateFormQuestionMapping(
 }
 
 export async function deleteFormQuestionMapping(id: string): Promise<void> {
-  try {
-    await prisma.formQuestionMapping.delete({
-      where: { id },
-      select: { id: true },
-    });
-  } catch (error) {
-    if (error != null && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
-      throw new NotFoundError('Mapping not found');
-    }
-    throw error;
+  const ds = await getDataSource();
+  const repo = ds.getRepository(FormQuestionMapping);
+
+  const result = await repo.delete({ id });
+  if ((result.affected ?? 0) === 0) {
+    throw new NotFoundError('Mapping not found');
   }
 }

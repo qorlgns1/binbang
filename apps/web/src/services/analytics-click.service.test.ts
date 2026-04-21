@@ -2,25 +2,48 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLandingClickEvent } from './analytics-click.service';
 
-const { mockLandingEventCreate } = vi.hoisted(
+const dbMock = vi.hoisted(
   (): {
-    mockLandingEventCreate: ReturnType<typeof vi.fn>;
+    dataSource: unknown;
+    landingEventRepo: {
+      create: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+    };
+    getDataSource: ReturnType<typeof vi.fn>;
   } => ({
-    mockLandingEventCreate: vi.fn(),
+    dataSource: null,
+    landingEventRepo: {
+      create: vi.fn(),
+      save: vi.fn(),
+    },
+    getDataSource: vi.fn(),
   }),
 );
 
-vi.mock('@workspace/db', () => ({
-  prisma: {
-    landingEvent: {
-      create: mockLandingEventCreate,
-    },
-  },
-}));
+vi.mock('@workspace/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@workspace/db')>();
+  const { createMockDataSource, createMockRepository } = await import('../../../../test-utils/mock-db.ts');
+
+  const landingEventRepo = createMockRepository();
+  landingEventRepo.save.mockImplementation(async (entity: Record<string, unknown>) => entity);
+  const dataSource = createMockDataSource({
+    repositories: [[actual.LandingEvent, landingEventRepo]],
+  });
+
+  dbMock.dataSource = dataSource;
+  dbMock.landingEventRepo = landingEventRepo;
+  dbMock.getDataSource.mockResolvedValue(dataSource);
+
+  return {
+    ...actual,
+    getDataSource: dbMock.getDataSource,
+  };
+});
 
 describe('analytics-click.service', (): void => {
   beforeEach((): void => {
-    mockLandingEventCreate.mockClear();
+    vi.clearAllMocks();
+    dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
   });
 
   afterEach((): void => {
@@ -28,11 +51,10 @@ describe('analytics-click.service', (): void => {
   });
 
   it('persists click event and returns normalized payload', async (): Promise<void> => {
-    mockLandingEventCreate.mockResolvedValue({
+    dbMock.landingEventRepo.create.mockImplementation((data: Record<string, unknown>) => ({
       id: 'evt_1',
-      eventName: 'nav_pricing',
-      occurredAt: new Date('2026-02-14T01:02:03.000Z'),
-    });
+      ...data,
+    }));
 
     const result = await createLandingClickEvent({
       eventName: 'nav_pricing',
@@ -46,21 +68,17 @@ describe('analytics-click.service', (): void => {
       ipAddress: '127.0.0.1',
     });
 
-    expect(mockLandingEventCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          eventName: 'nav_pricing',
-          source: 'public_header_desktop',
-          sessionId: 'session_1',
-          locale: 'ko',
-          path: '/ko',
-          referrer: 'https://example.com',
-          userAgent: 'ua',
-          ipAddress: '127.0.0.1',
-          occurredAt: new Date('2026-02-14T01:02:03.000Z'),
-        }),
-      }),
-    );
+    expect(dbMock.landingEventRepo.create).toHaveBeenCalledWith({
+      eventName: 'nav_pricing',
+      source: 'public_header_desktop',
+      sessionId: 'session_1',
+      locale: 'ko',
+      path: '/ko',
+      referrer: 'https://example.com',
+      userAgent: 'ua',
+      ipAddress: '127.0.0.1',
+      occurredAt: new Date('2026-02-14T01:02:03.000Z'),
+    });
 
     expect(result).toEqual({
       eventId: 'evt_1',
@@ -74,22 +92,19 @@ describe('analytics-click.service', (): void => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
 
-    mockLandingEventCreate.mockResolvedValue({
+    dbMock.landingEventRepo.create.mockImplementation((data: Record<string, unknown>) => ({
       id: 'evt_2',
-      eventName: 'nav_request',
-      occurredAt: now,
-    });
+      ...data,
+    }));
 
     await createLandingClickEvent({
       eventName: 'nav_request',
     });
 
-    expect(mockLandingEventCreate).toHaveBeenCalledWith(
+    expect(dbMock.landingEventRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          path: '/',
-          occurredAt: now,
-        }),
+        path: '/',
+        occurredAt: now,
       }),
     );
   });
@@ -99,22 +114,19 @@ describe('analytics-click.service', (): void => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
 
-    mockLandingEventCreate.mockResolvedValue({
+    dbMock.landingEventRepo.create.mockImplementation((data: Record<string, unknown>) => ({
       id: 'evt_3',
-      eventName: 'nav_signup',
-      occurredAt: now,
-    });
+      ...data,
+    }));
 
     await createLandingClickEvent({
       eventName: 'nav_signup',
       occurredAt: 'invalid-date',
     });
 
-    expect(mockLandingEventCreate).toHaveBeenCalledWith(
+    expect(dbMock.landingEventRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          occurredAt: now,
-        }),
+        occurredAt: now,
       }),
     );
   });

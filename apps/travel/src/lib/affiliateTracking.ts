@@ -81,6 +81,10 @@ export async function trackAffiliateEvent(input: TrackAffiliateEventInput): Prom
       }),
     );
 
+    if (response.status === 202) {
+      return;
+    }
+
     if (!response.ok) {
       console.warn('Affiliate tracking event returned non-OK response', {
         status: response.status,

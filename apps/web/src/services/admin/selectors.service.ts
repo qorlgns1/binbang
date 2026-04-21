@@ -1,4 +1,10 @@
-import { type Platform, type SelectorCategory, prisma } from '@workspace/db';
+import {
+  type Platform,
+  type SelectorCategory,
+  PlatformSelector,
+  SelectorChangeLog,
+  getDataSource,
+} from '@workspace/db';
 import { ConflictError, NotFoundError } from '@workspace/shared/errors';
 import type {
   CreateSelectorPayload,
@@ -84,29 +90,28 @@ function toSelectorItem(s: {
 export async function getSelectors(input: GetSelectorsInput): Promise<PlatformSelectorsResponse> {
   const { platform, category, includeInactive = false } = input;
 
-  const selectors = await prisma.platformSelector.findMany({
-    where: {
-      ...(platform && { platform }),
-      ...(category && { category }),
-      ...(!includeInactive && { isActive: true }),
-    },
-    select: {
-      id: true,
-      platform: true,
-      category: true,
-      name: true,
-      selector: true,
-      extractorCode: true,
-      priority: true,
-      isActive: true,
-      description: true,
-      createdBy: { select: { id: true, name: true } },
-      updatedBy: { select: { id: true, name: true } },
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: [{ platform: 'asc' }, { category: 'asc' }, { priority: 'desc' }, { name: 'asc' }],
-  });
+  const ds = await getDataSource();
+  const qb = ds
+    .getRepository(PlatformSelector)
+    .createQueryBuilder('s')
+    .leftJoinAndSelect('s.createdBy', 'createdBy')
+    .leftJoinAndSelect('s.updatedBy', 'updatedBy')
+    .orderBy('s.platform', 'ASC')
+    .addOrderBy('s.category', 'ASC')
+    .addOrderBy('s.priority', 'DESC')
+    .addOrderBy('s.name', 'ASC');
+
+  if (platform) {
+    qb.andWhere('s.platform = :platform', { platform });
+  }
+  if (category) {
+    qb.andWhere('s.category = :category', { category });
+  }
+  if (!includeInactive) {
+    qb.andWhere('s.isActive = :isActive', { isActive: true });
+  }
+
+  const selectors = await qb.getMany();
 
   return {
     selectors: selectors.map(toSelectorItem),
@@ -117,15 +122,12 @@ export async function getSelectors(input: GetSelectorsInput): Promise<PlatformSe
 export async function createSelector(input: CreateSelectorInput): Promise<PlatformSelectorItem> {
   const { createdById, ...body } = input;
 
+  const ds = await getDataSource();
+  const selectorRepo = ds.getRepository(PlatformSelector);
+
   // 중복 확인
-  const existing = await prisma.platformSelector.findUnique({
-    where: {
-      platform_category_name: {
-        platform: body.platform,
-        category: body.category,
-        name: body.name,
-      },
-    },
+  const existing = await selectorRepo.findOne({
+    where: { platform: body.platform, category: body.category, name: body.name },
     select: { id: true },
   });
 
@@ -134,74 +136,46 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
   }
 
   // 생성
-  const selector = await prisma.$transaction(
-    async (
-      tx,
-    ): Promise<{
-      id: string;
-      platform: Platform;
-      category: SelectorCategory;
-      name: string;
-      selector: string;
-      extractorCode: string | null;
-      priority: number;
-      isActive: boolean;
-      description: string | null;
-      createdBy: { id: string; name: string | null } | null;
-      updatedBy: { id: string; name: string | null } | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }> => {
-      const created = await tx.platformSelector.create({
-        data: {
-          platform: body.platform,
-          category: body.category,
-          name: body.name,
-          selector: body.selector,
-          extractorCode: body.extractorCode,
-          priority: body.priority ?? 0,
-          description: body.description,
-          createdById,
-          updatedById: createdById,
-        },
-        select: {
-          id: true,
-          platform: true,
-          category: true,
-          name: true,
-          selector: true,
-          extractorCode: true,
-          priority: true,
-          isActive: true,
-          description: true,
-          createdBy: { select: { id: true, name: true } },
-          updatedBy: { select: { id: true, name: true } },
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+  const selector = await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(PlatformSelector);
+    const logRepo = manager.getRepository(SelectorChangeLog);
 
-      // 변경 로그 기록
-      await tx.selectorChangeLog.create({
-        data: {
-          entityType: 'PlatformSelector',
-          entityId: created.id,
-          action: 'create',
-          newValue: JSON.stringify({
-            platform: body.platform,
-            category: body.category,
-            name: body.name,
-            selector: body.selector,
-            priority: body.priority ?? 0,
-          }),
-          changedById: createdById,
-        },
-        select: { id: true },
-      });
+    const entity = repo.create({
+      platform: body.platform,
+      category: body.category,
+      name: body.name,
+      selector: body.selector,
+      extractorCode: body.extractorCode,
+      priority: body.priority ?? 0,
+      description: body.description,
+      createdById,
+      updatedById: createdById,
+    });
+    await repo.save(entity);
 
-      return created;
-    },
-  );
+    const created = await repo.findOneOrFail({
+      where: { id: entity.id },
+      relations: { createdBy: true, updatedBy: true },
+    });
+
+    // 변경 로그 기록
+    const log = logRepo.create({
+      entityType: 'PlatformSelector',
+      entityId: created.id,
+      action: 'create',
+      newValue: JSON.stringify({
+        platform: body.platform,
+        category: body.category,
+        name: body.name,
+        selector: body.selector,
+        priority: body.priority ?? 0,
+      }),
+      changedById: createdById,
+    });
+    await logRepo.save(log);
+
+    return created;
+  });
 
   return toSelectorItem(selector);
 }
@@ -209,8 +183,11 @@ export async function createSelector(input: CreateSelectorInput): Promise<Platfo
 export async function updateSelector(input: UpdateSelectorInput): Promise<PlatformSelectorItem> {
   const { id, updatedById, ...body } = input;
 
+  const ds = await getDataSource();
+  const selectorRepo = ds.getRepository(PlatformSelector);
+
   // 기존 셀렉터 조회
-  const existing = await prisma.platformSelector.findUnique({
+  const existing = await selectorRepo.findOne({
     where: { id },
     select: { id: true, selector: true, priority: true, isActive: true },
   });
@@ -220,75 +197,48 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
   }
 
   // 업데이트
-  const selector = await prisma.$transaction(
-    async (
-      tx,
-    ): Promise<{
-      id: string;
-      platform: Platform;
-      category: SelectorCategory;
-      name: string;
-      selector: string;
-      extractorCode: string | null;
-      priority: number;
-      isActive: boolean;
-      description: string | null;
-      createdBy: { id: string; name: string | null } | null;
-      updatedBy: { id: string; name: string | null } | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }> => {
-      const updated = await tx.platformSelector.update({
-        where: { id },
-        data: {
-          ...(body.selector !== undefined && { selector: body.selector }),
-          ...(body.extractorCode !== undefined && { extractorCode: body.extractorCode }),
-          ...(body.priority !== undefined && { priority: body.priority }),
-          ...(body.isActive !== undefined && { isActive: body.isActive }),
-          ...(body.description !== undefined && { description: body.description }),
-          updatedById,
-        },
-        select: {
-          id: true,
-          platform: true,
-          category: true,
-          name: true,
-          selector: true,
-          extractorCode: true,
-          priority: true,
-          isActive: true,
-          description: true,
-          createdBy: { select: { id: true, name: true } },
-          updatedBy: { select: { id: true, name: true } },
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+  const selector = await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(PlatformSelector);
+    const logRepo = manager.getRepository(SelectorChangeLog);
 
-      // 변경 로그 기록
-      await tx.selectorChangeLog.create({
-        data: {
-          entityType: 'PlatformSelector',
-          entityId: id,
-          action: 'update',
-          oldValue: JSON.stringify({
-            selector: existing.selector,
-            priority: existing.priority,
-            isActive: existing.isActive,
-          }),
-          newValue: JSON.stringify({
-            selector: updated.selector,
-            priority: updated.priority,
-            isActive: updated.isActive,
-          }),
-          changedById: updatedById,
-        },
-        select: { id: true },
-      });
+    await repo.update(
+      { id },
+      {
+        ...(body.selector !== undefined && { selector: body.selector }),
+        ...(body.extractorCode !== undefined && { extractorCode: body.extractorCode }),
+        ...(body.priority !== undefined && { priority: body.priority }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
+        ...(body.description !== undefined && { description: body.description }),
+        updatedById,
+      },
+    );
 
-      return updated;
-    },
-  );
+    const updated = await repo.findOneOrFail({
+      where: { id },
+      relations: { createdBy: true, updatedBy: true },
+    });
+
+    // 변경 로그 기록
+    const log = logRepo.create({
+      entityType: 'PlatformSelector',
+      entityId: id,
+      action: 'update',
+      oldValue: JSON.stringify({
+        selector: existing.selector,
+        priority: existing.priority,
+        isActive: existing.isActive,
+      }),
+      newValue: JSON.stringify({
+        selector: updated.selector,
+        priority: updated.priority,
+        isActive: updated.isActive,
+      }),
+      changedById: updatedById,
+    });
+    await logRepo.save(log);
+
+    return updated;
+  });
 
   return toSelectorItem(selector);
 }
@@ -296,7 +246,10 @@ export async function updateSelector(input: UpdateSelectorInput): Promise<Platfo
 export async function deleteSelector(input: DeleteSelectorInput): Promise<void> {
   const { id, deletedById } = input;
 
-  const existing = await prisma.platformSelector.findUnique({
+  const ds = await getDataSource();
+  const selectorRepo = ds.getRepository(PlatformSelector);
+
+  const existing = await selectorRepo.findOne({
     where: { id },
     select: { id: true, platform: true, category: true, name: true, selector: true },
   });
@@ -305,77 +258,56 @@ export async function deleteSelector(input: DeleteSelectorInput): Promise<void> 
     throw new NotFoundError('Selector not found');
   }
 
-  await prisma.$transaction(async (tx): Promise<void> => {
-    await tx.platformSelector.delete({
-      where: { id },
-    });
+  await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(PlatformSelector);
+    const logRepo = manager.getRepository(SelectorChangeLog);
 
-    await tx.selectorChangeLog.create({
-      data: {
-        entityType: 'PlatformSelector',
-        entityId: id,
-        action: 'delete',
-        oldValue: JSON.stringify({
-          platform: existing.platform,
-          category: existing.category,
-          name: existing.name,
-          selector: existing.selector,
-        }),
-        changedById: deletedById,
-      },
-      select: { id: true },
+    await repo.delete({ id });
+
+    const log = logRepo.create({
+      entityType: 'PlatformSelector',
+      entityId: id,
+      action: 'delete',
+      oldValue: JSON.stringify({
+        platform: existing.platform,
+        category: existing.category,
+        name: existing.name,
+        selector: existing.selector,
+      }),
+      changedById: deletedById,
     });
+    await logRepo.save(log);
   });
 }
 
 export async function getSelectorHistory(input: GetSelectorHistoryInput): Promise<SelectorChangeLogsResponse> {
   const { entityType, entityId, from, to, cursor, limit } = input;
 
-  const where: {
-    entityType?: string;
-    entityId?: string;
-    createdAt?: { gte?: Date; lte?: Date };
-    id?: { lt: string };
-  } = {};
+  const ds = await getDataSource();
+  const qb = ds
+    .getRepository(SelectorChangeLog)
+    .createQueryBuilder('l')
+    .leftJoinAndSelect('l.changedBy', 'changedBy')
+    .orderBy('l.createdAt', 'DESC')
+    .take(limit + 1);
 
   if (entityType) {
-    where.entityType = entityType;
+    qb.andWhere('l.entityType = :entityType', { entityType });
   }
-
   if (entityId) {
-    where.entityId = entityId;
+    qb.andWhere('l.entityId = :entityId', { entityId });
   }
-
   if (from) {
-    where.createdAt = { ...where.createdAt, gte: new Date(from) };
+    qb.andWhere('l.createdAt >= :from', { from: new Date(from) });
   }
-
   if (to) {
-    where.createdAt = { ...where.createdAt, lte: new Date(to) };
+    qb.andWhere('l.createdAt <= :to', { to: new Date(to) });
   }
-
   if (cursor) {
-    where.id = { lt: cursor };
+    qb.andWhere('l.id < :cursor', { cursor });
   }
 
-  const logs = await prisma.selectorChangeLog.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    select: {
-      id: true,
-      entityType: true,
-      entityId: true,
-      action: true,
-      field: true,
-      oldValue: true,
-      newValue: true,
-      createdAt: true,
-      changedBy: {
-        select: { id: true, name: true },
-      },
-    },
-  });
+  const logs = await qb.getMany();
 
   const hasMore = logs.length > limit;
   const items = hasMore ? logs.slice(0, -1) : logs;

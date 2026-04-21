@@ -1,8 +1,18 @@
-import { prisma } from '@workspace/db';
+import {
+  Accommodation,
+  AgodaAlertEvent,
+  AgodaConsentLog,
+  AgodaNotification,
+  AgodaPollRun,
+  AgodaRoomSnapshot,
+  In,
+  Platform,
+  getDataSource,
+} from '@workspace/db';
 import { startOfUtcDay } from '@workspace/shared/utils/date';
 import { getHeartbeatStatus } from '../health.service';
 import {
-  buildAgodaNotificationReasonBreakdown,
+  buildAgodaNotificationReasonBreakdownFromRows,
   parseAgodaNotificationReason,
   type AgodaNotificationReasonStat,
 } from '@/services/agoda-notification-observability.service';
@@ -178,11 +188,119 @@ function toRate(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 1000) / 1000;
 }
 
-function countByStatus(rows: Array<{ status: string; _count: { _all: number } }>): Record<string, number> {
+function toDbCount(value: number | string | null | undefined): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Number.parseInt(value, 10) || 0;
+  return 0;
+}
+
+function countByStatus(rows: Array<{ status: string; count: number | string }>): Record<string, number> {
   return rows.reduce<Record<string, number>>((acc, row) => {
-    acc[row.status] = row._count._all;
+    acc[row.status] = toDbCount(row.count);
     return acc;
   }, {});
+}
+
+type StatusCountRow = {
+  status: string;
+  count: number | string;
+};
+
+type NotificationReasonRow = {
+  status: string;
+  lastError: string | null;
+};
+
+type GroupCountQueryBuilder<TRow extends object> = {
+  select(selection: string, alias: string): GroupCountQueryBuilder<TRow>;
+  addSelect(selection: string, alias: string): GroupCountQueryBuilder<TRow>;
+  where(whereSql: string, params: Record<string, unknown>): GroupCountQueryBuilder<TRow>;
+  groupBy(group: string): GroupCountQueryBuilder<TRow>;
+  addGroupBy(group: string): GroupCountQueryBuilder<TRow>;
+  getRawMany(): Promise<TRow[]>;
+};
+
+type QueryBuilderRepository<TRow extends object> = {
+  createQueryBuilder(alias: string): GroupCountQueryBuilder<TRow>;
+};
+
+async function groupStatusCounts(
+  repo: QueryBuilderRepository<StatusCountRow>,
+  alias: string,
+  whereSql: string,
+  params: Record<string, unknown>,
+): Promise<StatusCountRow[]> {
+  return repo
+    .createQueryBuilder(alias)
+    .select(`${alias}.status`, 'status')
+    .addSelect('COUNT(*)', 'count')
+    .where(whereSql, params)
+    .groupBy(`${alias}.status`)
+    .getRawMany();
+}
+
+async function fetchNotificationReasonRows(
+  repo: QueryBuilderRepository<NotificationReasonRow>,
+  alias: string,
+  whereSql: string,
+  params: Record<string, unknown>,
+): Promise<NotificationReasonRow[]> {
+  return repo
+    .createQueryBuilder(alias)
+    .select(`${alias}.status`, 'status')
+    .addSelect(`${alias}.lastError`, 'lastError')
+    .where(whereSql, params)
+    .getRawMany();
+}
+
+async function loadNotificationStatsByAlertEventIds(eventIds: number[]): Promise<{
+  latestByEventId: Map<number, { status: string; lastError: string | null }>;
+  hasTerminalNotification: Set<number>;
+}> {
+  if (eventIds.length === 0) {
+    return { latestByEventId: new Map(), hasTerminalNotification: new Set() };
+  }
+
+  const ds = await getDataSource();
+  const rows = await ds.getRepository(AgodaNotification).find({
+    where: { alertEventId: In(eventIds) },
+    order: { alertEventId: 'ASC', createdAt: 'DESC' },
+    select: { alertEventId: true, status: true, lastError: true },
+  });
+
+  const latestByEventId = new Map<number, { status: string; lastError: string | null }>();
+  const hasTerminalNotification = new Set<number>();
+
+  for (const row of rows) {
+    if (!latestByEventId.has(row.alertEventId)) {
+      latestByEventId.set(row.alertEventId, {
+        status: row.status,
+        lastError: row.lastError,
+      });
+    }
+
+    if (row.status === 'failed' || row.status === 'suppressed') {
+      hasTerminalNotification.add(row.alertEventId);
+    }
+  }
+
+  return { latestByEventId, hasTerminalNotification };
+}
+
+async function countSnapshotsByPollRunIds(pollRunIds: number[]): Promise<Map<number, number>> {
+  if (pollRunIds.length === 0) return new Map();
+
+  const ds = await getDataSource();
+  const rows = await ds
+    .getRepository(AgodaRoomSnapshot)
+    .createQueryBuilder('snapshot')
+    .select('snapshot.pollRunId', 'pollRunId')
+    .addSelect('COUNT(*)', 'count')
+    .where('snapshot.pollRunId IN (:...pollRunIds)', { pollRunIds })
+    .groupBy('snapshot.pollRunId')
+    .getRawMany<{ pollRunId: number | string; count: number | string }>();
+
+  return new Map(rows.map((row) => [toDbCount(row.pollRunId), toDbCount(row.count)]));
 }
 
 function dateUtcStart(date: Date): Date {
@@ -225,29 +343,17 @@ export async function getAdminOpsAccommodationDiagnostics(
   const normalizedQuery = query.trim();
   if (normalizedQuery.length === 0) return null;
 
-  const accommodation = await prisma.accommodation.findFirst({
-    where: {
-      platform: 'AGODA',
-      OR: [{ id: normalizedQuery }, { platformId: normalizedQuery }],
-    },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      name: true,
-      platformId: true,
-      isActive: true,
-      checkIn: true,
-      checkOut: true,
-      createdAt: true,
-      lastPolledAt: true,
-      lastEventAt: true,
-      user: {
-        select: {
-          email: true,
-        },
-      },
-    },
-  });
+  const ds = await getDataSource();
+  const accommodation = await ds
+    .getRepository(Accommodation)
+    .createQueryBuilder('accommodation')
+    .leftJoinAndSelect('accommodation.user', 'user')
+    .where('accommodation.platform = :platform', { platform: Platform.AGODA })
+    .andWhere('(accommodation.id = :query OR accommodation.platformId = :query)', {
+      query: normalizedQuery,
+    })
+    .orderBy('accommodation.createdAt', 'DESC')
+    .getOne();
 
   if (!accommodation) {
     return null;
@@ -278,14 +384,12 @@ export async function getAdminOpsAccommodationDiagnostics(
     workerStatus,
     pollDueBullmqFailure,
   ] = await Promise.all([
-    prisma.agodaPollRun.groupBy({
-      by: ['status'],
-      where: { accommodationId },
-      _count: { _all: true },
+    groupStatusCounts(ds.getRepository(AgodaPollRun), 'pollRun', 'pollRun.accommodationId = :accommodationId', {
+      accommodationId,
     }),
-    prisma.agodaPollRun.findMany({
+    ds.getRepository(AgodaPollRun).find({
       where: { accommodationId },
-      orderBy: { polledAt: 'desc' },
+      order: { polledAt: 'DESC' },
       take: 5,
       select: {
         id: true,
@@ -296,32 +400,32 @@ export async function getAdminOpsAccommodationDiagnostics(
         error: true,
       },
     }),
-    prisma.agodaPollRun.count({
+    ds.getRepository(AgodaPollRun).count({
       where: { accommodationId, status: 'success' },
     }),
-    prisma.agodaPollRun.findMany({
+    ds.getRepository(AgodaPollRun).find({
       where: { accommodationId, status: 'success' },
-      orderBy: { polledAt: 'desc' },
+      order: { polledAt: 'DESC' },
       take: 2,
       select: {
         id: true,
       },
     }),
-    prisma.agodaAlertEvent.count({
+    ds.getRepository(AgodaAlertEvent).count({
       where: { accommodationId },
     }),
-    prisma.agodaAlertEvent.count({
+    ds.getRepository(AgodaAlertEvent).count({
       where: { accommodationId, type: 'vacancy', status: 'detected' },
     }),
-    prisma.agodaAlertEvent.count({
+    ds.getRepository(AgodaAlertEvent).count({
       where: { accommodationId, type: 'vacancy', status: 'rejected_verify_failed' },
     }),
-    prisma.agodaAlertEvent.count({
+    ds.getRepository(AgodaAlertEvent).count({
       where: { accommodationId, type: 'price_drop', status: 'detected' },
     }),
-    prisma.agodaAlertEvent.findMany({
+    ds.getRepository(AgodaAlertEvent).find({
       where: { accommodationId },
-      orderBy: { detectedAt: 'desc' },
+      order: { detectedAt: 'DESC' },
       take: 10,
       select: {
         id: true,
@@ -329,32 +433,23 @@ export async function getAdminOpsAccommodationDiagnostics(
         type: true,
         status: true,
         offerKey: true,
-        notifications: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: {
-            status: true,
-            lastError: true,
-          },
-        },
       },
     }),
-    prisma.agodaNotification.groupBy({
-      by: ['status'],
+    groupStatusCounts(
+      ds.getRepository(AgodaNotification),
+      'notification',
+      'notification.accommodationId = :accommodationId',
+      { accommodationId },
+    ),
+    fetchNotificationReasonRows(
+      ds.getRepository(AgodaNotification),
+      'notification',
+      'notification.accommodationId = :accommodationId AND notification.status IN (:...statuses)',
+      { accommodationId, statuses: ['failed', 'suppressed'] },
+    ),
+    ds.getRepository(AgodaNotification).find({
       where: { accommodationId },
-      _count: { _all: true },
-    }),
-    prisma.agodaNotification.groupBy({
-      by: ['status', 'lastError'],
-      where: {
-        accommodationId,
-        status: { in: ['failed', 'suppressed'] },
-      },
-      _count: { _all: true },
-    }),
-    prisma.agodaNotification.findMany({
-      where: { accommodationId },
-      orderBy: { createdAt: 'desc' },
+      order: { createdAt: 'DESC' },
       take: 10,
       select: {
         id: true,
@@ -365,16 +460,16 @@ export async function getAdminOpsAccommodationDiagnostics(
         lastError: true,
       },
     }),
-    prisma.agodaNotification.findFirst({
+    ds.getRepository(AgodaNotification).findOne({
       where: { accommodationId, status: 'queued' },
-      orderBy: { createdAt: 'asc' },
+      order: { createdAt: 'ASC' },
       select: {
         createdAt: true,
       },
     }),
-    prisma.agodaConsentLog.findMany({
+    ds.getRepository(AgodaConsentLog).find({
       where: { accommodationId },
-      orderBy: { createdAt: 'desc' },
+      order: { createdAt: 'DESC' },
       take: 5,
       select: {
         type: true,
@@ -389,17 +484,10 @@ export async function getAdminOpsAccommodationDiagnostics(
   const recentPollRunIds = recentPollRunsRaw.map((run) => run.id);
   const latestSuccessRunIds = latestSuccessRuns.map((run) => run.id);
   const snapshotIds = [...new Set([...recentPollRunIds, ...latestSuccessRunIds])];
-
-  const snapshotCountRows =
-    snapshotIds.length > 0
-      ? await prisma.agodaRoomSnapshot.groupBy({
-          by: ['pollRunId'],
-          where: { pollRunId: { in: snapshotIds } },
-          _count: { _all: true },
-        })
-      : [];
-
-  const snapshotCountByRunId = new Map(snapshotCountRows.map((row) => [row.pollRunId.toString(), row._count._all]));
+  const snapshotCountByRunId = await countSnapshotsByPollRunIds(snapshotIds);
+  const { latestByEventId: latestNotificationsByEventId } = await loadNotificationStatsByAlertEventIds(
+    recentEventsRaw.map((row) => row.id),
+  );
 
   const recentPollRuns = recentPollRunsRaw.map((row) => ({
     id: row.id.toString(),
@@ -408,13 +496,13 @@ export async function getAdminOpsAccommodationDiagnostics(
     httpStatus: row.httpStatus,
     latencyMs: row.latencyMs,
     error: row.error,
-    snapshotCount: snapshotCountByRunId.get(row.id.toString()) ?? 0,
+    snapshotCount: snapshotCountByRunId.get(row.id) ?? 0,
   }));
 
   const latestSuccessSnapshotCount =
-    latestSuccessRuns[0] != null ? (snapshotCountByRunId.get(latestSuccessRuns[0].id.toString()) ?? 0) : null;
+    latestSuccessRuns[0] != null ? (snapshotCountByRunId.get(latestSuccessRuns[0].id) ?? 0) : null;
   const previousSuccessSnapshotCount =
-    latestSuccessRuns[1] != null ? (snapshotCountByRunId.get(latestSuccessRuns[1].id.toString()) ?? 0) : null;
+    latestSuccessRuns[1] != null ? (snapshotCountByRunId.get(latestSuccessRuns[1].id) ?? 0) : null;
 
   const recentEvents = recentEventsRaw.map((row) => ({
     id: row.id.toString(),
@@ -422,13 +510,13 @@ export async function getAdminOpsAccommodationDiagnostics(
     type: row.type,
     status: row.status,
     offerKey: row.offerKey,
-    latestNotificationStatus: row.notifications[0]?.status ?? null,
+    latestNotificationStatus: latestNotificationsByEventId.get(row.id)?.status ?? null,
     latestNotificationReasonCode: (() => {
-      const n = row.notifications[0];
+      const n = latestNotificationsByEventId.get(row.id);
       if (!n || (n.status !== 'failed' && n.status !== 'suppressed')) return null;
       return parseAgodaNotificationReason(n.lastError, n.status).code;
     })(),
-    latestNotificationError: row.notifications[0]?.lastError ?? null,
+    latestNotificationError: latestNotificationsByEventId.get(row.id)?.lastError ?? null,
   }));
 
   const recentNotifications = recentNotificationsRaw.map((row) => {
@@ -448,14 +536,7 @@ export async function getAdminOpsAccommodationDiagnostics(
 
   const pollCounts = countByStatus(pollStatusGroups);
   const notificationCounts = countByStatus(notificationStatusGroups);
-  const reasonBreakdown = buildAgodaNotificationReasonBreakdown(
-    notificationReasonGroups.map((row) => ({
-      status: row.status,
-      lastError: row.lastError,
-      count: row._count._all,
-    })),
-    3,
-  );
+  const reasonBreakdown = buildAgodaNotificationReasonBreakdownFromRows(notificationReasonGroups, 3);
   const latestConsentType = consentRows[0]?.type ?? null;
   const queuedAgedMinutes =
     oldestQueuedNotification != null
@@ -704,24 +785,23 @@ async function fetchStalledAccommodations(now: Date): Promise<StalledAccommodati
   const runtimeSettings = await getBinbangRuntimeSettings();
   const stallThreshold = new Date(now.getTime() - STALL_MULTIPLIER * runtimeSettings.pollIntervalMinutes * 60_000);
   const todayStart = startOfUtcDay(now);
-
-  const rows = await prisma.accommodation.findMany({
-    where: {
-      platform: 'AGODA',
-      isActive: true,
-      platformId: { not: null },
-      checkIn: { gte: todayStart },
-      OR: [{ lastPolledAt: { lte: stallThreshold } }, { lastPolledAt: null, createdAt: { lte: stallThreshold } }],
-    },
-    orderBy: { lastPolledAt: 'asc' },
-    take: STALL_LIMIT,
-    select: {
-      id: true,
-      name: true,
-      createdAt: true,
-      lastPolledAt: true,
-    },
-  });
+  const ds = await getDataSource();
+  const rows = await ds
+    .getRepository(Accommodation)
+    .createQueryBuilder('accommodation')
+    .where('accommodation.platform = :platform', { platform: Platform.AGODA })
+    .andWhere('accommodation.isActive = :isActive', { isActive: true })
+    .andWhere('accommodation.platformId IS NOT NULL')
+    .andWhere('accommodation.checkIn >= :todayStart', { todayStart })
+    .andWhere(
+      '(accommodation.lastPolledAt <= :stallThreshold OR (accommodation.lastPolledAt IS NULL AND accommodation.createdAt <= :stallThreshold))',
+      { stallThreshold },
+    )
+    .orderBy('accommodation.lastPolledAt', 'ASC')
+    .addOrderBy('accommodation.createdAt', 'ASC')
+    .take(STALL_LIMIT)
+    .select(['accommodation.id', 'accommodation.name', 'accommodation.createdAt', 'accommodation.lastPolledAt'])
+    .getMany();
 
   return rows.map((row) => ({
     id: row.id,
@@ -829,6 +909,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
   const now = new Date();
   const days = Number.isFinite(lookbackDays) ? Math.max(1, Math.floor(lookbackDays)) : DEFAULT_LOOKBACK_DAYS;
   const from = startOfLookback(now, days);
+  const ds = await getDataSource();
 
   const [
     alertsTotal,
@@ -840,84 +921,50 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
     stalledItems,
     schedulerHealth,
   ] = await Promise.all([
-    prisma.accommodation.count({
-      where: { platform: 'AGODA' },
+    ds.getRepository(Accommodation).count({
+      where: { platform: Platform.AGODA },
     }),
-    prisma.accommodation.count({
-      where: { platform: 'AGODA', isActive: true },
+    ds.getRepository(Accommodation).count({
+      where: { platform: Platform.AGODA, isActive: true },
     }),
-    prisma.accommodation.count({
-      where: { platform: 'AGODA', createdAt: { gte: from } },
-    }),
-    prisma.agodaNotification.groupBy({
-      by: ['status'],
-      where: {
-        createdAt: { gte: from },
-      },
-      _count: {
-        _all: true,
-      },
-    }),
-    prisma.agodaNotification.groupBy({
-      by: ['status', 'lastError'],
-      where: {
-        createdAt: { gte: from },
-        status: { in: ['failed', 'suppressed'] },
-      },
-      _count: {
-        _all: true,
-      },
-    }),
-    prisma.agodaAlertEvent.findMany({
-      where: {
-        detectedAt: { gte: from },
-        OR: [
-          { status: 'rejected_verify_failed' },
-          {
-            status: 'detected',
-            notifications: {
-              some: { status: { in: ['failed', 'suppressed'] } },
-            },
-          },
-        ],
-      },
-      orderBy: { detectedAt: 'desc' },
-      take: FALSE_POSITIVE_LIMIT,
-      select: {
-        id: true,
-        accommodationId: true,
-        detectedAt: true,
-        type: true,
-        status: true,
-        accommodation: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        notifications: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: {
-            status: true,
-            lastError: true,
-          },
-        },
-      },
-    }),
+    ds
+      .getRepository(Accommodation)
+      .createQueryBuilder('accommodation')
+      .where('accommodation.platform = :platform', { platform: Platform.AGODA })
+      .andWhere('accommodation.createdAt >= :from', { from })
+      .getCount(),
+    groupStatusCounts(ds.getRepository(AgodaNotification), 'notification', 'notification.createdAt >= :from', { from }),
+    fetchNotificationReasonRows(
+      ds.getRepository(AgodaNotification),
+      'notification',
+      'notification.createdAt >= :from AND notification.status IN (:...statuses)',
+      { from, statuses: ['failed', 'suppressed'] },
+    ),
+    ds
+      .getRepository(AgodaAlertEvent)
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.accommodation', 'accommodation')
+      .where('event.detectedAt >= :from', { from })
+      .andWhere('event.status IN (:...statuses)', { statuses: ['rejected_verify_failed', 'detected'] })
+      .orderBy('event.detectedAt', 'DESC')
+      .take(FALSE_POSITIVE_LIMIT * 10)
+      .getMany(),
     fetchStalledAccommodations(now),
     getSchedulerHealth(),
   ]);
 
-  const counts = countByStatus(notificationGroups);
-  const reasonBreakdown = buildAgodaNotificationReasonBreakdown(
-    notificationReasonGroups.map((row) => ({
-      status: row.status,
-      lastError: row.lastError,
-      count: row._count._all,
-    })),
-    3,
+  const falsePositiveNotificationStats = await loadNotificationStatsByAlertEventIds(
+    falsePositiveRows.map((row) => row.id),
   );
+  const filteredFalsePositiveRows = falsePositiveRows
+    .filter(
+      (row) =>
+        row.status === 'rejected_verify_failed' || falsePositiveNotificationStats.hasTerminalNotification.has(row.id),
+    )
+    .slice(0, FALSE_POSITIVE_LIMIT);
+
+  const counts = countByStatus(notificationGroups);
+  const reasonBreakdown = buildAgodaNotificationReasonBreakdownFromRows(notificationReasonGroups, 3);
 
   const queued = counts.queued ?? 0;
   const sent = counts.sent ?? 0;
@@ -946,8 +993,9 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
       successRate: toRate(sent, attempted),
       reasonBreakdown,
     },
-    falsePositiveCandidates: falsePositiveRows.map((row) => {
-      const notificationStatus = row.notifications[0]?.status ?? null;
+    falsePositiveCandidates: filteredFalsePositiveRows.map((row) => {
+      const latestNotification = falsePositiveNotificationStats.latestByEventId.get(row.id);
+      const notificationStatus = latestNotification?.status ?? null;
       return {
         eventId: row.id.toString(),
         detectedAt: row.detectedAt.toISOString(),
@@ -959,7 +1007,7 @@ export async function getAdminOpsSummary(lookbackDays = DEFAULT_LOOKBACK_DAYS): 
         reason: buildFalsePositiveReason({
           eventStatus: row.status,
           notificationStatus,
-          notificationError: row.notifications[0]?.lastError ?? null,
+          notificationError: latestNotification?.lastError ?? null,
         }),
       };
     }),

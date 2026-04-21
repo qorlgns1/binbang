@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Last verified: 2026-02-18
+Last verified: 2026-04-17
 Owner: binbang
 
 ## 1) Service Overview
@@ -18,7 +18,8 @@ Owner: binbang
   - Travel: `apps/travel` (Next.js 15, AI SDK v6, Gemini)
   - Scheduler/Cron: worker runtime scheduler (BullMQ)
 - Data stores:
-  - Primary DB: PostgreSQL (`DATABASE_URL`)
+  - Primary DB: Oracle ADB (`ORACLE_USER` / `ORACLE_PASSWORD` / `ORACLE_CONNECT_STRING`)
+  - Shared Agoda catalog: `BINBANG_SHARED` 스키마 (`agoda_hotels`, `agoda_hotels_search` — dev/prod 읽기 전용 공유)
   - Cache/queue: Redis 7 (`REDIS_URL`)
   - Object storage: 사용 안 함
 - Network edge:
@@ -36,7 +37,7 @@ Based on `.github/workflows/deploy.yml`.
    - `develop` -> `kihoonbae/binbang:web-develop`, `worker-develop`
 4. Deploy via SSH to OCI host
 5. Write image digests + deploy metadata to `.env.deploy.<APP_ENV>`
-6. Run Prisma migrate/generate (+ seed)
+6. Run TypeORM migration (+ seed)
 7. Start/update compose services
 
 ## 4) Env File Structure (Server)
@@ -67,7 +68,6 @@ docker compose -f docker/docker-compose.production.yml \
   pull
 
 APP_ENV=production pnpm db:migrate:deploy
-APP_ENV=production pnpm with-env pnpm --filter @workspace/db exec prisma generate
 APP_ENV=production pnpm db:seed:base
 
 docker compose -f docker/docker-compose.production.yml \
@@ -89,7 +89,6 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
   pull
 
 APP_ENV=development pnpm db:migrate:deploy
-APP_ENV=development pnpm with-env pnpm --filter @workspace/db exec prisma generate
 APP_ENV=development pnpm db:seed:base
 APP_ENV=development pnpm with-env pnpm --filter @workspace/db db:seed
 
@@ -100,11 +99,12 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
 ```
 
 ## 6) Database Migration Policy
-- Migration tool: Prisma Migrate
+- Migration tool: TypeORM Migrate (`typeorm migration:run`)
 - **On OCI host**: `APP_ENV=production pnpm db:migrate:deploy` — `with-env`를 통해 `.env.production.local`과 `.env.production`을 로드한다.
 - Timing: before final `compose up -d`
 - Compatibility: maintain backward-compatible schema for rolling restart windows
-- Prohibited flow: `prisma db push` (repo rule)
+- Prohibited flow: TypeORM `synchronize: true` / 수동 DDL (repo rule)
+- Shared Agoda catalog(`agoda_hotels`, `agoda_hotels_search`)는 `BINBANG_SHARED` 스키마로 분리된 dev/prod 공유 읽기 전용 카탈로그다. 환경 migration이 아닌 `packages/db/sql/agoda_shared_catalog.sql`로 관리하며, TypeORM migration은 이 테이블을 건드리지 않는다.
 
 ## 7) Health Checks and Verification
 - Public health endpoint:
@@ -172,5 +172,6 @@ docker compose -f docker/docker-compose.production.yml \
 - Service owner/on-call: `KIHOON BAE`
 
 ## 12) Change History
+- 2026-04-17: PostgreSQL+Prisma → Oracle ADB+TypeORM 마이그레이션 반영 (데이터 저장소 교체, migration 도구 교체, `agoda_hotels*` 공유 스키마 분리)
 - 2026-02-18: env 파일 구조 개선 — `.env.deploy.<env>` 분리, `with-env` 단일화, deploy.yml 통합
 - 2026-02-15: initial structured deployment document created
