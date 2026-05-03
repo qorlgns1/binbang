@@ -44,11 +44,11 @@
     "i18n:ci": "pnpm i18n:typegen && pnpm i18n:check"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.8",
+    "@biomejs/biome": "2.4.14",
     "dotenv-cli": "^11.0.0",
-    "turbo": "^2.8.20",
+    "turbo": "^2.9.8",
     "typescript": "^5.7.2",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.5"
   },
   "engines": {
     "node": ">=24.13.0 <25"
