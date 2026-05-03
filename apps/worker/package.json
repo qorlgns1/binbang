@@ -17,10 +17,10 @@
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
     "@workspace/worker-shared": "workspace:*",
-    "bullmq": "^5.71.0",
-    "dotenv": "^17.3.1",
+    "bullmq": "^5.76.5",
+    "dotenv": "^17.4.2",
     "ioredis": "^5.10.1",
-    "playwright": "^1.58.2"
+    "playwright": "^1.59.1"
   },
   "devDependencies": {
     "@types/node": "^22.16.0",
