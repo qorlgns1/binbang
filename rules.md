@@ -34,7 +34,7 @@ apps/
   worker/         # 워커 엔트리포인트 + wiring만 담당 (로직 금지)
 
 packages/
-  db/             # Prisma 스키마, 마이그레이션, DB 클라이언트 (단일 소유자)
+  db/             # TypeORM DataSource, entity, 마이그레이션, seed (단일 소유자)
   shared/         # 범용 공유 코드 (순수, 런타임 비의존)
   worker-shared/  # 워커 전용 공유 코드 (runtime / jobs / browser / observability)
 ```
@@ -79,7 +79,7 @@ Universal code that is safe for both web and worker environments.
 **Forbidden (MUST NOT)**
 
 - Network I/O such as `fetch`, `axios`, or HTTP clients
-- Database access or Prisma usage (including `@workspace/db`)
+- Database access (including `@workspace/db`)
 - Node built-in modules (`fs`, `path`, `child_process`, etc.)
 - Timers and scheduling primitives used for runtime control (cron/queues/retries)
 - Browser automation libraries (Puppeteer, Playwright)
@@ -209,26 +209,26 @@ Observability records behavior but does not control it.
 
 ---
 
-## 5. Prisma / Database Rules (`@workspace/db`)
+## 5. Database / TypeORM Rules (`@workspace/db`)
 
 ### 5.1 Ownership
 
-- Prisma schema and migrations MUST exist only in `packages/db/prisma/**`.
-- Prisma Client generation and export MUST be owned exclusively by `packages/db`.
+- The Oracle `DataSource`, entities, migrations, enums, and seed constants MUST be owned solely by `packages/db`.
+- Runtime schema assets MUST live in `packages/db/src/**`; seed and one-off data-migration scripts in `packages/db/scripts/**`.
 
 ### 5.2 Import Policy
 
-- Allowed: `import { prisma } from "@workspace/db"`
+- Allowed: `import { getDataSource, User, Platform } from "@workspace/db"`
+- Allowed: `import { getDataSource } from "@workspace/db/client"`
 - Forbidden:
-  - Importing `@prisma/client` outside `packages/db`
   - Deep imports into `packages/db/**`
-  - Re-exporting Prisma Client from any other package or application
+  - Creating or re-exporting a separate `DataSource` singleton in any other package or application
 
 **Access Rules**
 
 - `apps/web` Client Components MUST NOT access the database directly or indirectly.
 - `apps/web` Server-side code MAY access the database **only** through `apps/web/src/services/**` (see Section 6).
-- `apps/travel` follows the same rule as `apps/web`: DB access **only** through `apps/travel/src/services/**`; Route Handlers MUST NOT call `prisma.*` directly.
+- `apps/travel` follows the same rule: DB access **only** through `apps/travel/src/services/**`; Route Handlers MUST NOT call `getDataSource()`, repositories, query builders, or raw SQL directly.
 - `apps/worker` MAY access the database via `@workspace/db` but SHOULD do so via `@workspace/worker-shared/runtime` where possible.
 - `packages/shared` MUST NOT depend on the database.
 - `packages/worker-shared` MAY depend on the database **ONLY** in `runtime/**` (enforced above).
@@ -237,19 +237,21 @@ Observability records behavior but does not control it.
 
 ### 5.3 Query Discipline
 
-- Route Handlers MUST NOT call `prisma.*` directly. They MUST delegate DB work to `apps/web/src/services/**` or `apps/travel/src/services/**` (see Section 6).
-- All queries MUST use `select` (no implicit “select all”).
+- Route Handlers MUST NOT access the database directly. They MUST delegate DB work to `apps/web/src/services/**` or `apps/travel/src/services/**` (see Section 6).
+- Queries MUST name the columns and relations they need (no implicit full loading).
 - Queries inside loops are forbidden.
 - Multi-step logical operations MUST use transactions.
+- `getDataSource()` with repositories, query builders, or raw SQL is allowed only in services and worker runtime code.
 
 ---
 
 ### 5.4 Migration Discipline
 
-- `prisma db push` is forbidden.
-- `prisma migrate dev` MUST be used for schema changes.
+- `synchronize: true` is forbidden.
+- Schema changes MUST use `pnpm db:migrate`, `pnpm db:migrate:deploy`, or `pnpm --filter @workspace/db db:migrate:generate`.
 - Deployed migrations MUST never be edited or deleted.
-- Manual migration SQL is forbidden by default.
+- Reintroducing legacy Prisma/PostgreSQL commands (`prisma db push`, `prisma migrate dev`, a `DATABASE_URL` assumption) is forbidden.
+- Manual SQL is allowed only inside a TypeORM migration or a one-off data-migration script.
 - Schema and migration changes require explicit approval.
 
 ---
@@ -278,7 +280,7 @@ These three MUST be treated as distinct layers with distinct responsibilities.
 
 **Route Handlers**
 - `apps/web/src/app/api/**` Route Handlers MUST NOT access the database directly.
-  - Forbidden direct access: importing `@workspace/db`, calling Prisma, executing SQL.
+  - Forbidden direct access: importing `@workspace/db`, calling `getDataSource()`/repositories, executing SQL.
 - Route Handlers MAY access DB only through `apps/web/src/services/**`.
 - Route Handlers MUST NOT call DB-touching modules outside `apps/web/src/services/**`.
 - Route Handlers responsibilities are limited to:
@@ -400,7 +402,7 @@ Boundaries are enforced by import rules, not by discipline.
   - `__tests__`, `__snapshots__`
 - Locale folders MAY use BCP-47 style names.
   - Example: `ko`, `en`, `ja`, `zh-CN`
-- Prisma migration directories under `packages/db/prisma/migrations/**` are immutable and exempt from folder naming rules.
+- TypeORM migration filenames under `packages/db/src/migrations/**` keep their generated `<timestamp>-<Name>.ts` form and are exempt from file naming rules.
 - External/tooling contract filenames MAY keep upstream conventions when required for integration.
   - Example: `next-auth.d.ts`
 - `apps/web/src/components/ui/**` MAY use kebab-case component filenames to keep upstream shadcn-style compatibility.
