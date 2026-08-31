@@ -19,7 +19,7 @@
 - **Role**: Full-stack 개발 (아키텍처, 웹, 워커, DB 모델링, CI/CD, 운영)
 - **Architecture**:
   - Next.js 운영 웹(`apps/web`), 여행 앱(`apps/travel`), 백그라운드 워커(`apps/worker`) 분리
-  - Prisma 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
+  - DB 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
   - monorepo 경계 규칙(`rules.md`, `RULES_SUMMARY.md`) 기반으로 유지보수성 확보
 - **Technical Decisions**:
   - BullMQ(Redis) 기반 잡 큐 + Playwright 브라우저 풀로 스크래핑 성능/안정성 개선
@@ -122,7 +122,8 @@ pnpm local:docker up -d --build
 - [Playwright](https://playwright.dev/) - 브라우저 자동화
 - [BullMQ](https://docs.bullmq.io/) - Redis 기반 잡 큐
 - [Next.js](https://nextjs.org/) - React 프레임워크
-- [Prisma](https://www.prisma.io/) - ORM
+- [TypeORM](https://typeorm.io/) - ORM
+- [Oracle Autonomous Database](https://www.oracle.com/autonomous-database/) - 데이터베이스
 - [NextAuth.js](https://next-auth.js.org/) - 인증
 
 ---

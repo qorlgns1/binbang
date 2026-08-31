@@ -12,11 +12,7 @@ import { DEFAULT_LOCALE, type Locale } from '@workspace/shared/i18n';
  * @param _userId - 사용자 ID (스키마 확장 시 활용)
  */
 export async function getUserLocale(_userId: string): Promise<Locale> {
-  // TODO: User.preferredLocale 필드 추가 시 활성화
-  // const user = await prisma.user.findUnique({
-  //   where: { id: _userId },
-  //   select: { preferredLocale: true },
-  // });
-  // return normalizeLocale(user?.preferredLocale);
+  // TODO: User.preferredLocale 컬럼 추가 시 활성화.
+  // runtime/** 에서만 DB 접근이 허용되므로 여기서 getDataSource()로 조회한다.
   return DEFAULT_LOCALE;
 }
