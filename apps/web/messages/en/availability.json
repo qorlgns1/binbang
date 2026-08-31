@@ -72,7 +72,7 @@
     "q2": "Can price and availability change in real time?",
     "a2": "Yes. Booking platforms can update room inventory and prices at any time, so use this page as a trend reference and set an alert for immediate updates.",
     "q3": "Do I need to pay to create alerts?",
-    "a3": "You can start in beta right away, and if you need faster checks or more monitored listings you can contact the team."
+    "a3": "You can start right away. Set up to 50 alerts, checked every 30 minutes."
   },
   "region": {
     "metaTitle": "{platform} {region} Accommodation Availability | Binbang",

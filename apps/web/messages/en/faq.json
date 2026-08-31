@@ -2,7 +2,7 @@
   "meta": {
     "title": "Binbang – Frequently Asked Questions",
     "description": "Find answers to frequently asked questions about Binbang vacancy alert service.",
-    "ogDescription": "Binbang FAQ – service, alerts, and beta operations."
+    "ogDescription": "Binbang FAQ – common questions about using the service, alerts, and pricing."
   },
   "title": {
     "heading": "Frequently Asked Questions",
@@ -11,7 +11,7 @@
   "categories": {
     "service": "About the Service",
     "monitoring": "Alerts & Monitoring",
-    "account": "Account & Beta Access",
+    "account": "Account & usage",
     "other": "Other"
   },
   "service": {
@@ -22,7 +22,7 @@
   },
   "monitoring": {
     "q1": "How often are vacancies checked?",
-    "a1": "The current beta operating standard determines the default check cadence. You can review your current limits and check interval on the usage page, and they may change as operations stabilize.",
+    "a1": "We check your property and dates every 30 minutes. You can set up to 50 alerts.",
     "q2": "How will I receive alerts?",
     "a2": "Email alerts are included by default. You can also receive real-time KakaoTalk alerts by connecting your Kakao account.",
     "q3": "Does monitoring run 24/7?",
@@ -32,9 +32,9 @@
     "q1": "How do I sign up?",
     "a1": "You can sign up easily with your Google account. Your email is used only for account identification and sending alerts.",
     "q2": "Is there public pricing now?",
-    "a2": "Not yet. Public pricing and automatic billing are not active. The product is currently managed around beta access and usage scope.",
+    "a2": "No. We charge no fees and never ask for a payment method. We earn a commission from the booking platform when a booking is made through the link in an alert email.",
     "q3": "What if I need a higher limit?",
-    "a3": "Contact us through the beta guide page or support email. We review expansion requests based on real usage context."
+    "a3": "Email support and we will look at your situation."
   },
   "other": {
     "q1": "Is my personal data safe?",
@@ -45,6 +45,6 @@
   "footer": {
     "stillHaveQuestions": "Still have questions? ",
     "privacyPolicy": "Privacy Policy",
-    "pricing": "Beta Guide"
+    "pricing": "Pricing"
   }
 }

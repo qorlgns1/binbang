@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – 空室アラートサービス | リアルタイム監視",
-    "description": "満室の宿を見つけましたか？Binbangは現在ベータ運用中で、空室が出た瞬間にお知らせします。",
-    "twitterDescription": "現在ベータ運用中の空室アラートサービス。"
+    "description": "泊まりたい宿が満室ですか？ 空きが出た瞬間にビンバンがメールでお知らせします。無料です。",
+    "twitterDescription": "宿の空室通知サービス。空きが出たらメールでお知らせします。"
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "ベータ案内",
+    "pricing": "料金について",
     "faq": "FAQ",
     "about": "紹介",
     "login": "ログイン"
@@ -16,10 +16,10 @@
     "headlineMobile": ["あなたの休息が", "道に迷わないように、"],
     "subheadline": "Binbangが一晩中灯台の灯りを灯します。",
     "subheadlineMobile": ["Binbangが一晩中", "灯台の灯りを灯します。"],
-    "description": "終わりのない更新に疲れていませんか？Binbangは現在ベータ運用中で、あなたが眠っている間も見張り続けます。",
-    "cta": "ベータを始める",
+    "description": "繰り返しの再読み込みと予約競争にお疲れではありませんか？ ビンバンはあなたが眠っている間も静かに見守り、空きを待ちます。",
+    "cta": "通知を登録",
     "secondaryCta": "機能を見る",
-    "statusLabel": "オープンベータ"
+    "statusLabel": "無料で提供中"
   },
   "features": {
     "f1Title": "30分ごとに確認します",
@@ -32,7 +32,7 @@
   "footer": {
     "title": "複雑な部分はお任せください。",
     "description": "あなたは次の旅の計画に集中してください。",
-    "cta": "今すぐベータを始める",
+    "cta": "今すぐ通知を登録",
     "copyright": "© 2026 Binbang. All rights reserved.",
     "privacy": "プライバシーポリシー",
     "terms": "利用規約"

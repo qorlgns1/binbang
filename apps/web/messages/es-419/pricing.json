@@ -1,60 +1,67 @@
 {
-  "nav": { "brand": "Binbang", "login": "Iniciar sesión", "getStarted": "Entrar a la beta", "dashboard": "Panel" },
+  "nav": {
+    "brand": "Binbang",
+    "login": "Iniciar sesión",
+    "getStarted": "Crear alerta",
+    "dashboard": "Panel"
+  },
   "meta": {
-    "title": "Binbang – Guía beta",
-    "description": "Binbang está operando en beta. En lugar de precios públicos, revisa el alcance actual, cómo entrar y dónde dejar feedback.",
-    "ogDescription": "Guía beta de Binbang. Revisa el alcance actual y cómo entrar."
+    "title": "Binbang – Precios",
+    "description": "Binbang es gratis. No te cobramos nada; recibimos una comisión cuando se hace una reserva a través del enlace del correo de alerta.",
+    "ogDescription": "Precios de Binbang. Uso gratuito, sin cargos."
   },
   "hero": {
-    "eyebrow": "Open Beta",
-    "heading": "Primero estamos afinando la beta antes de mostrar precios",
-    "subline1": "Binbang funciona hoy como una beta pequeña.",
-    "subline2": "Estamos estabilizando el flujo real y la calidad de las alertas antes del cobro público.",
-    "description": "Puedes registrarte y usar el flujo principal de monitoreo desde ahora. Si necesitas más alcance, lo ampliamos gradualmente según feedback y operación."
+    "eyebrow": "Gratis",
+    "heading": "Binbang es gratis",
+    "subline1": "No pagas nada por crear ni recibir alertas.",
+    "subline2": "Tampoco pedimos un medio de pago.",
+    "description": "Recibimos una comisión de la plataforma de reservas cuando alguien reserva a través del enlace del correo de alerta. Por eso no te cobramos."
   },
   "cards": {
-    "beta": {
-      "title": "Beta abierta primero",
-      "description": "Antes de una tabla de precios, explicamos el alcance actual y las reglas de uso."
+    "free": {
+      "title": "Sin cargos",
+      "description": "Crear y recibir alertas no cuesta nada. No hay planes de pago ni datos de pago que ingresar."
     },
     "coverage": {
-      "title": "Lo disponible ahora",
-      "description": "Estamos validando alertas de disponibilidad, límites base y el flujo principal de monitoreo."
+      "title": "Qué incluye",
+      "description": "Hasta 50 alertas, y revisamos tu alojamiento y tus fechas cada 30 minutos."
     },
     "feedback": {
-      "title": "Feedback antes del empaque",
-      "description": "Si necesitas más capacidad o falta una función, el equipo lo revisa con base en uso real."
+      "title": "Cómo nos financiamos",
+      "description": "Cuando se concreta una reserva por el enlace del correo de alerta, la plataforma de reservas nos paga una comisión."
     }
   },
   "process": {
-    "title": "Cómo funciona la beta",
+    "title": "Cómo funciona",
     "step1": {
-      "title": "Regístrate y empieza",
-      "description": "Crea una cuenta, registra el alojamiento que quieres y usa el servicio dentro del alcance beta actual."
+      "title": "Elige alojamiento y fechas",
+      "description": "Busca desde la página principal, elige tus fechas y deja tu correo. No hace falta crear una cuenta."
     },
     "step2": {
-      "title": "Primero el uso",
-      "description": "Mostramos límites de registro y frecuencia de revisión antes de hablar de cobro formal."
+      "title": "Revisamos cada 30 minutos",
+      "description": "Vigilamos tus fechas sin parar. Apenas se libere una habitación, te escribimos."
     },
     "step3": {
-      "title": "Pide más si lo necesitas",
-      "description": "Si necesitas más monitoreo, contacta al equipo y lo revisaremos según la operación beta."
+      "title": "Reserva por el enlace",
+      "description": "Reservar con el enlace del correo nos permite seguir operando. Si prefieres, puedes reservar por tu cuenta."
     }
   },
   "cta": {
-    "title": "Prueba la beta primero y cuéntanos qué falta",
-    "description": "La prioridad ahora es estabilizar el producto real, no promocionar planes. Puedes empezar ya o escribir al equipo.",
-    "primary": "Entrar a la beta",
-    "secondary": "Contactar al equipo"
+    "title": "Crea tu primera alerta",
+    "description": "Buscar y crear una alerta toma menos de un minuto. Cualquier duda, escríbenos.",
+    "primary": "Crear alerta",
+    "secondary": "Contáctanos"
   },
   "faq": {
     "title": "Preguntas frecuentes",
-    "q1": "¿Debo pagar ahora?",
-    "a1": "No. Aún no hay precios públicos ni cobro automático. Hoy operamos con acceso beta y alcance de uso.",
-    "q2": "¿Puedo usar la beta de inmediato?",
-    "a2": "Sí. Puedes registrarte y empezar dentro del alcance actual, aunque algunos límites pueden cambiar mientras estabilizamos la operación.",
-    "q3": "¿Qué pasa si necesito más capacidad?",
-    "a3": "Usa el botón de contacto o escribe al soporte. Revisamos ampliaciones según los casos de uso reales."
+    "q1": "¿De verdad es gratis?",
+    "a1": "Sí. No cobramos nada ni pedimos un medio de pago. No existen planes de pago.",
+    "q2": "¿Cuántas alertas puedo crear?",
+    "a2": "Hasta 50. Revisamos cada 30 minutos.",
+    "q3": "¿Cómo dejo de recibir alertas?",
+    "a3": "Haz clic en el enlace para darte de baja al final de cualquier correo de alerta, o elimina la alerta desde tu panel."
   },
-  "footer": { "contact": "Contacto: {email}" }
+  "footer": {
+    "contact": "Contacto: {email}"
+  }
 }

@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – Alertas de disponibilidad | Monitoreo en tiempo real",
-    "description": "¿Alojamiento agotado? Binbang está en beta y te avisa cuando aparece disponibilidad.",
-    "twitterDescription": "Servicio de alertas de disponibilidad que opera en beta."
+    "description": "¿Está agotado el lugar que quieres? Binbang te escribe apenas se libere una habitación. Gratis.",
+    "twitterDescription": "Alertas de disponibilidad para alojamientos agotados. Te avisamos por correo."
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "Guía beta",
+    "pricing": "Precios",
     "faq": "FAQ",
     "about": "Acerca de",
     "login": "Iniciar sesión"
@@ -16,10 +16,10 @@
     "headlineMobile": ["Para que tu descanso", "no pierda el rumbo,"],
     "subheadline": "Binbang mantiene el faro encendido toda la noche.",
     "subheadlineMobile": ["Binbang mantiene el faro", "encendido toda la noche."],
-    "description": "¿Cansado de actualizar sin parar? Binbang está en beta y vigila mientras duermes para detectar vacantes antes.",
-    "cta": "Empezar la beta",
+    "description": "¿Cansado de recargar la página y competir por una reserva? Binbang vigila mientras duermes y espera a que se libere una habitación.",
+    "cta": "Crear alerta",
     "secondaryCta": "Ver funciones",
-    "statusLabel": "Beta abierta"
+    "statusLabel": "Gratis"
   },
   "features": {
     "f1Title": "Revisamos cada 30 minutos",
@@ -32,7 +32,7 @@
   "footer": {
     "title": "Nosotros manejamos la complejidad.",
     "description": "Tú puedes concentrarte en planear tu próximo viaje.",
-    "cta": "Empezar la beta ahora",
+    "cta": "Crear alerta ahora",
     "copyright": "© 2026 Binbang. Todos los derechos reservados.",
     "privacy": "Política de privacidad",
     "terms": "Términos del servicio"

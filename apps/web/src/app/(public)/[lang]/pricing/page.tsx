@@ -43,7 +43,7 @@ export default async function PricingPage({ params }: PageProps): Promise<React.
   const t = await getTranslations({ locale: lang, namespace: 'pricing' });
   const highlightCards = [
     {
-      key: 'beta',
+      key: 'free',
       icon: Sparkles,
     },
     {
