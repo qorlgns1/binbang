@@ -22,16 +22,12 @@
     "statusLabel": "Beta abierta"
   },
   "features": {
-    "f1Title": "Noticias más claras, primero",
-    "f1Subtitle": "Menos espera, más emoción",
-    "f1Desc": "La optimización del navegador encuentra habitaciones disponibles hasta 4 veces más rápido que las revisiones habituales. Sé el primero en saberlo y asegura tu estancia ideal antes que los demás.",
-    "f2Title": "Claro a través de cualquier niebla",
-    "f2Subtitle": "Precisión inquebrantable ante cada cambio",
-    "f2Desc": "Los selectores dinámicos se adaptan a los cambios de interfaz de los sitios de reserva sin redesplegar código. Aunque las plataformas evolucionen, la visión de Binbang no pierde el rumbo.",
-    "f3Title": "Un faro que no se apaga",
-    "f3Subtitle": "Protección constante, incluso mientras duermes",
-    "f3Desc": "Los registros de latido por minuto mantienen el monitoreo estable y transparente todo el día. El sistema detecta y recupera cualquier fallo automáticamente, para que tu vigilancia no termine.",
-    "learnMore": "Saber más"
+    "f1Title": "Revisamos cada 30 minutos",
+    "f1Desc": "Vigilamos tu alojamiento y tus fechas sin parar. Apenas se libere una habitación, te escribimos.",
+    "f2Title": "Es gratis",
+    "f2Desc": "Crea hasta 5 alertas sin costo. Nunca pedimos un medio de pago.",
+    "f3Title": "Cancela cuando quieras",
+    "f3Desc": "Un clic en el enlace para darte de baja al final de cualquier correo de alerta."
   },
   "footer": {
     "title": "Nosotros manejamos la complejidad.",

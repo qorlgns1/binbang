@@ -1,82 +1,35 @@
 'use client';
 
-import Image from 'next/image';
-
-import { Anchor, Target, Zap } from 'lucide-react';
+import { BellOff, Timer, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-const FEATURE_IMAGES = [
-  {
-    url: 'https://images.unsplash.com/photo-1552858725-2758b5fb1286?auto=format&fit=crop&w=1400&q=80',
-    alt: '빠른 속도 - 1분마다 자동으로 체크하는 실시간 모니터링',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1536125434175-6c5657605fb0?auto=format&fit=crop&w=1400&q=80',
-    alt: '정확한 추적 - 사이트 변경에도 대응하는 동적 셀렉터',
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1610029795220-e5afca4dc7ba?auto=format&fit=crop&w=1400&q=80',
-    alt: '안정적인 운영 - 24시간 하트비트 모니터링',
-  },
-] as const;
-
 /**
- * Render the features section with three responsive feature cards.
+ * 처음 온 방문자가 실제로 궁금해하는 것만 사실대로 적는다.
+ *
+ * 각 항목은 코드에 근거가 있다:
+ * - 30분 주기: `binbang-runtime-settings.service.ts` 의 `pollIntervalMinutes` 기본값
+ * - 무료 / 알림 5개: `packages/db` seed 상수의 FREE 플랜과 `MAX_ACCOMMODATIONS`
+ * - 수신거부: 알림 메일 하단에 서명 토큰 링크를 넣는다 (`agoda-notification.service.ts`)
  */
 export function Features(): React.ReactElement {
   const t = useTranslations('landing');
+
   const items = [
-    {
-      icon: <Zap className='size-8 text-primary' />,
-      title: t('features.f1Title'),
-      subtitle: t('features.f1Subtitle'),
-      description: t('features.f1Desc'),
-      image: FEATURE_IMAGES[0].url,
-      imageAlt: FEATURE_IMAGES[0].alt,
-    },
-    {
-      icon: <Target className='size-8 text-primary' />,
-      title: t('features.f2Title'),
-      subtitle: t('features.f2Subtitle'),
-      description: t('features.f2Desc'),
-      image: FEATURE_IMAGES[1].url,
-      imageAlt: FEATURE_IMAGES[1].alt,
-    },
-    {
-      icon: <Anchor className='size-8 text-primary' />,
-      title: t('features.f3Title'),
-      subtitle: t('features.f3Subtitle'),
-      description: t('features.f3Desc'),
-      image: FEATURE_IMAGES[2].url,
-      imageAlt: FEATURE_IMAGES[2].alt,
-    },
+    { icon: Timer, title: t('features.f1Title'), description: t('features.f1Desc') },
+    { icon: Wallet, title: t('features.f2Title'), description: t('features.f2Desc') },
+    { icon: BellOff, title: t('features.f3Title'), description: t('features.f3Desc') },
   ];
 
   return (
-    <section id='features' className='bg-background px-4 py-24'>
-      <div className='mx-auto grid w-full max-w-7xl gap-6 md:grid-cols-3'>
-        {items.map((item) => (
-          <article
-            key={item.title}
-            className='group relative h-auto min-h-[420px] overflow-hidden rounded-2xl border border-border bg-card/50 transition-transform duration-500 ease-out hover:-translate-y-0.5 md:h-[480px]'
-          >
-            <Image
-              src={item.image}
-              alt={item.imageAlt}
-              fill
-              className='object-cover opacity-0 grayscale transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:opacity-25 group-hover:grayscale-0'
-              sizes='(max-width: 768px) 100vw, 33vw'
-            />
-
-            <div className='relative z-10 flex h-full flex-col p-7'>
-              <div className='mb-5 w-fit rounded-lg border border-border bg-background/70 p-3'>{item.icon}</div>
-              <h3 className='text-2xl font-semibold leading-snug text-foreground'>{item.title}</h3>
-              <p className='mt-2 text-sm font-medium italic text-primary/80'>{item.subtitle}</p>
-              <p className='mt-4 leading-relaxed text-muted-foreground'>{item.description}</p>
-              <p className='mt-auto text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100'>
-                {t('features.learnMore')}
-              </p>
+    <section id='features' className='bg-background px-4 py-20'>
+      <div className='mx-auto grid w-full max-w-5xl gap-5 sm:grid-cols-3'>
+        {items.map(({ icon: Icon, title, description }) => (
+          <article key={title} className='rounded-2xl border border-border bg-card/50 p-6'>
+            <div className='mb-4 w-fit rounded-lg border border-border bg-background/70 p-2.5'>
+              <Icon className='size-5 text-primary' />
             </div>
+            <h3 className='break-keep text-lg font-semibold text-foreground'>{title}</h3>
+            <p className='mt-2 break-keep text-sm leading-relaxed text-muted-foreground'>{description}</p>
           </article>
         ))}
       </div>

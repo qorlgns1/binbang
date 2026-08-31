@@ -22,16 +22,12 @@
     "statusLabel": "Open Beta"
   },
   "features": {
-    "f1Title": "Brighter News, First",
-    "f1Subtitle": "Less waiting, more excitement",
-    "f1Desc": "Browser optimization finds open rooms up to 4x faster than conventional checks. Be the first to know and secure your perfect stay ahead of everyone else.",
-    "f2Title": "Clear Through Any Fog",
-    "f2Subtitle": "Unwavering accuracy through every change",
-    "f2Desc": "Dynamic selectors adapt to booking-site UI changes without redeploying code. Even when platforms evolve, Binbang's vision never loses its way.",
-    "f3Title": "An Unfading Lighthouse",
-    "f3Subtitle": "Steadfast protection, even while you sleep",
-    "f3Desc": "Minute-level heartbeat logs keep monitoring stable and transparent, all day. The system detects and recovers from any issues automatically, so your watch never ends.",
-    "learnMore": "Learn more"
+    "f1Title": "We check every 30 minutes",
+    "f1Desc": "We watch your property and dates around the clock. When a room opens, you get an email.",
+    "f2Title": "It's free",
+    "f2Desc": "Set up to 5 alerts at no cost. We never ask for a payment method.",
+    "f3Title": "Stop anytime",
+    "f3Desc": "One click on the unsubscribe link at the bottom of any alert email."
   },
   "footer": {
     "title": "We handle the complexity.",
