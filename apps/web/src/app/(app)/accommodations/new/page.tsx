@@ -1,17 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { ArrowLeft, Bell, Loader2, Search, Star, X } from 'lucide-react';
+import { ArrowLeft, Bell } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { type HotelSearchResult, HotelSearchInput } from '@/components/hotel-search/HotelSearchInput';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateAgodaAlertMutation } from '@/features/accommodations';
@@ -20,16 +20,6 @@ import { ApiError, getUserMessage, getValidationFieldErrors } from '@/lib/apiErr
 // ============================================================================
 // Types
 // ============================================================================
-
-interface HotelSearchResult {
-  hotelId: string;
-  name: string;
-  nameEn: string | null;
-  city: string | null;
-  country: string | null;
-  starRating: number | null;
-  photoUrl: string | null;
-}
 
 type FormField = 'platformId' | 'name' | 'checkIn' | 'checkOut' | 'adults' | 'children' | 'rooms' | 'consentOptIn';
 
@@ -95,178 +85,6 @@ function parseAccommodationPrefill(rawPrefill: string | null): AccommodationPref
   } catch {
     return null;
   }
-}
-
-// ============================================================================
-// Hotel Search Component
-// ============================================================================
-
-interface HotelSearchInputProps {
-  onSelect: (hotel: HotelSearchResult) => void;
-  selectedHotel: HotelSearchResult | null;
-  onClear: () => void;
-  error?: string;
-}
-
-function HotelSearchInput({ onSelect, selectedHotel, onClear, error }: HotelSearchInputProps): React.ReactElement {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<HotelSearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const search = useCallback(async (q: string): Promise<void> => {
-    if (q.length < 2) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    setIsSearching(true);
-    try {
-      const res = await fetch(`/api/hotels/search?q=${encodeURIComponent(q)}&limit=10`, {
-        signal: controller.signal,
-      });
-      if (res.ok) {
-        const payload = (await res.json()) as HotelSearchResult[] | { hotels?: HotelSearchResult[] };
-        const hotels = Array.isArray(payload) ? payload : Array.isArray(payload.hotels) ? payload.hotels : [];
-        setResults(hotels);
-        setIsOpen(hotels.length > 0);
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      void search(query);
-    }, 300);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [query, search]);
-
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent): void {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  if (selectedHotel) {
-    return (
-      <div
-        className='flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3'
-        data-testid='selected-hotel-card'
-      >
-        {selectedHotel.photoUrl && (
-          <Image
-            src={selectedHotel.photoUrl}
-            alt={selectedHotel.name}
-            width={56}
-            height={56}
-            unoptimized
-            className='size-14 shrink-0 rounded object-cover'
-          />
-        )}
-        <div className='min-w-0 flex-1'>
-          <p className='truncate text-sm font-medium'>{selectedHotel.name}</p>
-          {selectedHotel.nameEn && selectedHotel.nameEn !== selectedHotel.name && (
-            <p className='truncate text-xs text-muted-foreground'>{selectedHotel.nameEn}</p>
-          )}
-          <p className='text-xs text-muted-foreground'>
-            {[selectedHotel.city, selectedHotel.country].filter(Boolean).join(', ')}
-          </p>
-          {selectedHotel.starRating && (
-            <div className='mt-0.5 flex items-center gap-0.5'>
-              {Array.from({ length: Math.round(selectedHotel.starRating) }).map((_, i) => (
-                <Star key={i} className='size-3 fill-amber-400 text-amber-400' />
-              ))}
-            </div>
-          )}
-        </div>
-        <Button type='button' variant='ghost' size='sm' className='shrink-0 p-1' onClick={onClear}>
-          <X className='size-4' />
-          <span className='sr-only'>선택 해제</span>
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div ref={containerRef} className='relative'>
-      <div className='relative'>
-        <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
-        <Input
-          type='text'
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => results.length > 0 && setIsOpen(true)}
-          placeholder='호텔명, 도시명으로 검색...'
-          className='bg-background/80 pl-9 transition-all focus:bg-background'
-          data-testid='hotel-search-input'
-        />
-        {isSearching && (
-          <Loader2 className='absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground' />
-        )}
-      </div>
-
-      {isOpen && results.length > 0 && (
-        <div className='absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover shadow-md'>
-          <ul className='max-h-64 overflow-y-auto py-1' data-testid='hotel-search-results'>
-            {results.map((hotel) => (
-              <li key={hotel.hotelId}>
-                <button
-                  type='button'
-                  className='flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-muted/60'
-                  data-testid={`hotel-search-result-${hotel.hotelId}`}
-                  onClick={() => {
-                    onSelect(hotel);
-                    setQuery('');
-                    setIsOpen(false);
-                  }}
-                >
-                  {hotel.photoUrl && (
-                    <Image
-                      src={hotel.photoUrl}
-                      alt={hotel.name}
-                      width={40}
-                      height={40}
-                      unoptimized
-                      className='size-10 shrink-0 rounded object-cover'
-                    />
-                  )}
-                  <div className='min-w-0'>
-                    <p className='truncate text-sm font-medium'>{hotel.name}</p>
-                    <p className='truncate text-xs text-muted-foreground'>
-                      {[hotel.city, hotel.country].filter(Boolean).join(', ')}
-                    </p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {error && <p className='mt-1 text-xs text-destructive'>{error}</p>}
-    </div>
-  );
 }
 
 // ============================================================================
@@ -432,6 +250,8 @@ export default function NewAccommodationPage(): React.ReactElement {
                 selectedHotel={selectedHotel}
                 onClear={() => setSelectedHotel(null)}
                 error={fieldErrors.platformId}
+                placeholder='호텔명, 도시명으로 검색...'
+                clearLabel='선택 해제'
               />
             </div>
 

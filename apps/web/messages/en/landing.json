@@ -54,20 +54,114 @@
   "appPurpose": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available. When you sign in with Google, we use your email address only for account identification and sending vacancy alerts.",
   "appPurposeAriaLabel": "App purpose and data use",
   "mockLogs": [
-    { "id": 1, "message": "Vacancy found: Park Hyatt Seoul (Premium Suite)", "location": "Seoul" },
-    { "id": 2, "message": "Vacancy found: Grand Hyatt Jeju (Ocean View Deluxe)", "location": "Jeju" },
-    { "id": 3, "message": "Check complete: 2,847 targets scanned", "location": "System" },
-    { "id": 4, "message": "Vacancy found: Shilla Stay Gwanghwamun (Executive)", "location": "Seoul" },
-    { "id": 5, "message": "Alert sent: Delivered to 3 users", "location": "System" },
-    { "id": 6, "message": "Vacancy found: Lotte Hotel Busan (Ocean Premier)", "location": "Busan" },
-    { "id": 7, "message": "Vacancy found: Four Seasons Seoul (Corner King)", "location": "Seoul" },
-    { "id": 8, "message": "Check complete: 1,923 targets scanned", "location": "System" },
-    { "id": 9, "message": "Vacancy found: Maison Glad Jeju (Standard Double)", "location": "Jeju" },
-    { "id": 10, "message": "Vacancy found: Ananti Cove (Oceanhill Deluxe)", "location": "Busan" },
-    { "id": 11, "message": "Vacancy found: Conrad Seoul (Executive)", "location": "Seoul" },
-    { "id": 12, "message": "Alert sent: Delivered to 7 users", "location": "System" },
-    { "id": 13, "message": "Vacancy found: Banyan Tree Club & Spa (Pool Villa)", "location": "Jeju" },
-    { "id": 14, "message": "Check complete: 3,421 targets scanned", "location": "System" },
-    { "id": 15, "message": "Vacancy found: Seamarq Hotel (Ocean View Twin)", "location": "Gangneung" }
-  ]
+    {
+      "id": 1,
+      "message": "Vacancy found: Park Hyatt Seoul (Premium Suite)",
+      "location": "Seoul"
+    },
+    {
+      "id": 2,
+      "message": "Vacancy found: Grand Hyatt Jeju (Ocean View Deluxe)",
+      "location": "Jeju"
+    },
+    {
+      "id": 3,
+      "message": "Check complete: 2,847 targets scanned",
+      "location": "System"
+    },
+    {
+      "id": 4,
+      "message": "Vacancy found: Shilla Stay Gwanghwamun (Executive)",
+      "location": "Seoul"
+    },
+    {
+      "id": 5,
+      "message": "Alert sent: Delivered to 3 users",
+      "location": "System"
+    },
+    {
+      "id": 6,
+      "message": "Vacancy found: Lotte Hotel Busan (Ocean Premier)",
+      "location": "Busan"
+    },
+    {
+      "id": 7,
+      "message": "Vacancy found: Four Seasons Seoul (Corner King)",
+      "location": "Seoul"
+    },
+    {
+      "id": 8,
+      "message": "Check complete: 1,923 targets scanned",
+      "location": "System"
+    },
+    {
+      "id": 9,
+      "message": "Vacancy found: Maison Glad Jeju (Standard Double)",
+      "location": "Jeju"
+    },
+    {
+      "id": 10,
+      "message": "Vacancy found: Ananti Cove (Oceanhill Deluxe)",
+      "location": "Busan"
+    },
+    {
+      "id": 11,
+      "message": "Vacancy found: Conrad Seoul (Executive)",
+      "location": "Seoul"
+    },
+    {
+      "id": 12,
+      "message": "Alert sent: Delivered to 7 users",
+      "location": "System"
+    },
+    {
+      "id": 13,
+      "message": "Vacancy found: Banyan Tree Club & Spa (Pool Villa)",
+      "location": "Jeju"
+    },
+    {
+      "id": 14,
+      "message": "Check complete: 3,421 targets scanned",
+      "location": "System"
+    },
+    {
+      "id": 15,
+      "message": "Vacancy found: Seamarq Hotel (Ocean View Twin)",
+      "location": "Gangneung"
+    }
+  ],
+  "quickStart": {
+    "title": "Sold out? We'll tell you the moment a room opens",
+    "subtitle": "Search a hotel and leave your email. No account needed.",
+    "searchPlaceholder": "Search by hotel or city",
+    "clearHotel": "Clear selection",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "next": "Next",
+    "back": "Back",
+    "insightTitle": "What we've seen at this property",
+    "insightObserved": "{samples} checks over the last {days} days",
+    "insightOpenRate": "Rooms seen open",
+    "insightMinPrice": "Lowest price seen",
+    "insightEmpty": "We haven't watched this property yet. Set an alert and we'll check every 30 minutes and tell you the moment a room opens.",
+    "insightLastSeen": "Last checked",
+    "emailTitle": "Where should we reach you?",
+    "emailPlaceholder": "name@example.com",
+    "consent": "I agree to receive email alerts for openings and price drops. You can unsubscribe anytime.",
+    "sendCode": "Send code",
+    "sending": "Sending...",
+    "codeTitle": "Enter the code we emailed you",
+    "codeHint": "We sent a 6-digit code to {email}.",
+    "verify": "Start alert",
+    "verifying": "Setting up...",
+    "resend": "Send a new code",
+    "changeEmail": "Use a different email",
+    "doneTitle": "Your alert is live",
+    "doneBody": "We'll email {email} as soon as a room opens.",
+    "goDashboard": "View my alerts",
+    "errorHotel": "Pick a property first",
+    "errorDates": "Check your check-in and check-out dates",
+    "errorConsent": "Please agree to receive alerts",
+    "errorCreate": "We couldn't set up the alert"
+  }
 }

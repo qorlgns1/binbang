@@ -37,7 +37,8 @@ export function Hero(): React.ReactElement {
           {t('hero.statusLabel')}
         </div>
 
-        <h1 className='max-w-5xl text-[32px] font-bold leading-[48px] text-foreground md:text-[56px] md:leading-[64px] lg:text-[72px] lg:leading-[80px]'>
+        {/* 홈의 h1은 QuickStartSection이 갖는다. 여기는 하위 섹션 제목이다. */}
+        <h2 className='max-w-5xl text-[32px] font-bold leading-[48px] text-foreground md:text-[56px] md:leading-[64px] lg:text-[72px] lg:leading-[80px]'>
           <span className='md:hidden'>
             {headlineMobile.map((line, i) => (
               <span key={line}>
@@ -62,7 +63,7 @@ export function Hero(): React.ReactElement {
               {t('hero.subheadline')}
             </span>
           </span>
-        </h1>
+        </h2>
         <p className='mt-7 max-w-3xl text-base leading-[26px] text-muted-foreground'>{t('hero.description')}</p>
         <CTAButtons />
         <div className='mt-16 w-full'>

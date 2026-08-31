@@ -668,3 +668,88 @@ export async function getRegionalSitemapItems(
     }),
   );
 }
+
+/** 홈 화면 "가치 확인" 단계에 보여줄 숙소 관측 요약. */
+export interface PublicPropertyInsight {
+  slug: string;
+  name: string;
+  /** 집계에 사용된 스냅샷 일수 */
+  observedDays: number;
+  /** 관측 시도 총 횟수 */
+  sampleSize: number;
+  /** 빈방이 있었던 관측 횟수 */
+  availableCount: number;
+  /** 빈방 관측 비율 (0~1). 스냅샷의 openRate 평균 */
+  openRate: number | null;
+  minPriceAmount: number | null;
+  currency: string | null;
+  lastObservedAt: string | null;
+}
+
+export interface GetPublicPropertyInsightInput {
+  platform: Platform;
+  platformId: string;
+  /** 최근 며칠치 스냅샷을 집계할지 (기본 30일) */
+  days?: number;
+}
+
+/**
+ * Agoda 호텔 ID로 공개 관측 요약을 조회한다.
+ *
+ * 공개 스냅샷은 등록된 숙소에서만 생성되므로, 아무도 등록한 적 없는
+ * 숙소는 `null`을 돌려준다. 호출부는 그 경우를 "관측 이력 없음"으로 표시한다.
+ */
+export async function getPublicPropertyInsight(
+  input: GetPublicPropertyInsightInput,
+): Promise<PublicPropertyInsight | null> {
+  const days = Math.min(Math.max(input.days ?? 30, 1), 180);
+  const platformPropertyKey = `id:${input.platformId}`;
+
+  const ds = await getDataSource();
+  const property = await ds.getRepository(PublicProperty).findOne({
+    where: { platform: input.platform, platformPropertyKey, isActive: true },
+    select: { id: true, slug: true, name: true },
+  });
+
+  if (!property) return null;
+
+  const rows = await ds.query<
+    {
+      observedDays: string;
+      sampleSize: string | null;
+      availableCount: string | null;
+      openRate: number | null;
+      minPriceAmount: number | null;
+      currency: string | null;
+      lastObservedAt: Date | null;
+    }[]
+  >(
+    `SELECT
+       COUNT(s."id") AS "observedDays",
+       SUM(s."sampleSize") AS "sampleSize",
+       SUM(s."availableCount") AS "availableCount",
+       AVG(s."openRate") AS "openRate",
+       MIN(s."minPriceAmount") AS "minPriceAmount",
+       MIN(s."currency") AS "currency",
+       MAX(s."snapshotDate") AS "lastObservedAt"
+     FROM "PublicAvailabilitySnapshot" s
+     WHERE s."publicPropertyId" = :1
+       AND s."snapshotDate" >= (SYSDATE - :2)`,
+    [property.id, days],
+  );
+
+  const row = rows[0];
+  if (!row || Number(row.observedDays) === 0) return null;
+
+  return {
+    slug: property.slug,
+    name: property.name,
+    observedDays: Number(row.observedDays),
+    sampleSize: Number(row.sampleSize ?? 0),
+    availableCount: Number(row.availableCount ?? 0),
+    openRate: row.openRate == null ? null : Number(row.openRate),
+    minPriceAmount: row.minPriceAmount == null ? null : Number(row.minPriceAmount),
+    currency: row.currency,
+    lastObservedAt: row.lastObservedAt ? new Date(row.lastObservedAt).toISOString() : null,
+  };
+}

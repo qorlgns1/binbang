@@ -54,20 +54,114 @@
   "appPurpose": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva de alojamiento y envía notificaciones por correo cuando hay habitación disponible. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas de disponibilidad.",
   "appPurposeAriaLabel": "Propósito de la app y uso de datos",
   "mockLogs": [
-    { "id": 1, "message": "Disponible: Park Hyatt Seoul (Suite Premium)", "location": "Seúl" },
-    { "id": 2, "message": "Disponible: Grand Hyatt Jeju (Deluxe Vista al mar)", "location": "Jeju" },
-    { "id": 3, "message": "Revisión completada: 2.847 objetivos escaneados", "location": "Sistema" },
-    { "id": 4, "message": "Disponible: Shilla Stay Gwanghwamun (Ejecutivo)", "location": "Seúl" },
-    { "id": 5, "message": "Alerta enviada: entregada a 3 usuarios", "location": "Sistema" },
-    { "id": 6, "message": "Disponible: Lotte Hotel Busan (Premier Océano)", "location": "Busan" },
-    { "id": 7, "message": "Disponible: Four Seasons Seoul (Corner King)", "location": "Seúl" },
-    { "id": 8, "message": "Revisión completada: 1.923 objetivos escaneados", "location": "Sistema" },
-    { "id": 9, "message": "Disponible: Maison Glad Jeju (Doble estándar)", "location": "Jeju" },
-    { "id": 10, "message": "Disponible: Ananti Cove (Deluxe Oceanhill)", "location": "Busan" },
-    { "id": 11, "message": "Disponible: Conrad Seoul (Ejecutivo)", "location": "Seúl" },
-    { "id": 12, "message": "Alerta enviada: entregada a 7 usuarios", "location": "Sistema" },
-    { "id": 13, "message": "Disponible: Banyan Tree Club & Spa (Villa con piscina)", "location": "Jeju" },
-    { "id": 14, "message": "Revisión completada: 3.421 objetivos escaneados", "location": "Sistema" },
-    { "id": 15, "message": "Disponible: Seamarq Hotel (Twin vista al mar)", "location": "Gangneung" }
-  ]
+    {
+      "id": 1,
+      "message": "Disponible: Park Hyatt Seoul (Suite Premium)",
+      "location": "Seúl"
+    },
+    {
+      "id": 2,
+      "message": "Disponible: Grand Hyatt Jeju (Deluxe Vista al mar)",
+      "location": "Jeju"
+    },
+    {
+      "id": 3,
+      "message": "Revisión completada: 2.847 objetivos escaneados",
+      "location": "Sistema"
+    },
+    {
+      "id": 4,
+      "message": "Disponible: Shilla Stay Gwanghwamun (Ejecutivo)",
+      "location": "Seúl"
+    },
+    {
+      "id": 5,
+      "message": "Alerta enviada: entregada a 3 usuarios",
+      "location": "Sistema"
+    },
+    {
+      "id": 6,
+      "message": "Disponible: Lotte Hotel Busan (Premier Océano)",
+      "location": "Busan"
+    },
+    {
+      "id": 7,
+      "message": "Disponible: Four Seasons Seoul (Corner King)",
+      "location": "Seúl"
+    },
+    {
+      "id": 8,
+      "message": "Revisión completada: 1.923 objetivos escaneados",
+      "location": "Sistema"
+    },
+    {
+      "id": 9,
+      "message": "Disponible: Maison Glad Jeju (Doble estándar)",
+      "location": "Jeju"
+    },
+    {
+      "id": 10,
+      "message": "Disponible: Ananti Cove (Deluxe Oceanhill)",
+      "location": "Busan"
+    },
+    {
+      "id": 11,
+      "message": "Disponible: Conrad Seoul (Ejecutivo)",
+      "location": "Seúl"
+    },
+    {
+      "id": 12,
+      "message": "Alerta enviada: entregada a 7 usuarios",
+      "location": "Sistema"
+    },
+    {
+      "id": 13,
+      "message": "Disponible: Banyan Tree Club & Spa (Villa con piscina)",
+      "location": "Jeju"
+    },
+    {
+      "id": 14,
+      "message": "Revisión completada: 3.421 objetivos escaneados",
+      "location": "Sistema"
+    },
+    {
+      "id": 15,
+      "message": "Disponible: Seamarq Hotel (Twin vista al mar)",
+      "location": "Gangneung"
+    }
+  ],
+  "quickStart": {
+    "title": "¿Agotado? Te avisamos apenas se libere una habitación",
+    "subtitle": "Busca un hotel y deja tu correo. Sin crear cuenta.",
+    "searchPlaceholder": "Busca por hotel o ciudad",
+    "clearHotel": "Quitar selección",
+    "checkIn": "Entrada",
+    "checkOut": "Salida",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "insightTitle": "Lo que hemos visto en este alojamiento",
+    "insightObserved": "{samples} revisiones en los últimos {days} días",
+    "insightOpenRate": "Veces con habitación disponible",
+    "insightMinPrice": "Precio más bajo visto",
+    "insightEmpty": "Aún no hemos observado este alojamiento. Crea una alerta y revisaremos cada 30 minutos para avisarte apenas se libere una habitación.",
+    "insightLastSeen": "Última revisión",
+    "emailTitle": "¿A dónde te avisamos?",
+    "emailPlaceholder": "name@example.com",
+    "consent": "Acepto recibir alertas por correo de disponibilidad y bajadas de precio. Puedes darte de baja cuando quieras.",
+    "sendCode": "Enviar código",
+    "sending": "Enviando...",
+    "codeTitle": "Ingresa el código que te enviamos",
+    "codeHint": "Enviamos un código de 6 dígitos a {email}.",
+    "verify": "Crear alerta",
+    "verifying": "Creando...",
+    "resend": "Enviar un código nuevo",
+    "changeEmail": "Usar otro correo",
+    "doneTitle": "Tu alerta está activa",
+    "doneBody": "Te escribiremos a {email} apenas se libere una habitación.",
+    "goDashboard": "Ver mis alertas",
+    "errorHotel": "Elige un alojamiento primero",
+    "errorDates": "Revisa las fechas de entrada y salida",
+    "errorConsent": "Debes aceptar recibir alertas",
+    "errorCreate": "No pudimos crear la alerta"
+  }
 }
