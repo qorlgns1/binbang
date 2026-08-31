@@ -1,22 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  checkEmailExists,
-  createUserWithCredentials,
-  getSessionAndUserByToken,
-  saveKakaoTokens,
-  verifyCredentials,
-} from './auth.service';
-
-const { mockBcryptHash, mockBcryptCompare } = vi.hoisted(
-  (): {
-    mockBcryptHash: ReturnType<typeof vi.fn>;
-    mockBcryptCompare: ReturnType<typeof vi.fn>;
-  } => ({
-    mockBcryptHash: vi.fn(),
-    mockBcryptCompare: vi.fn(),
-  }),
-);
+import { getSessionAndUserByToken, saveKakaoTokens } from './auth.service';
 
 const dbMock = vi.hoisted(
   (): {
@@ -102,148 +86,12 @@ vi.mock('@workspace/db', async (importOriginal) => {
   };
 });
 
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: (...args: unknown[]) => (mockBcryptHash as (...a: unknown[]) => unknown)(...args),
-    compare: (...args: unknown[]) => (mockBcryptCompare as (...a: unknown[]) => unknown)(...args),
-  },
-}));
-
 describe('auth.service', (): void => {
   beforeEach((): void => {
     vi.clearAllMocks();
     dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
     dbMock.dataSourceQuery.mockResolvedValue([]);
     dbMock.sessionRepo.findOne.mockResolvedValue(null);
-  });
-
-  describe('createUserWithCredentials', (): void => {
-    it('hashes password and creates user', async (): Promise<void> => {
-      mockBcryptHash.mockResolvedValue('hashed');
-      dbMock.planRepo.findOne.mockResolvedValue({ id: 'plan-free', name: 'FREE' });
-      dbMock.roleRepo.findOne.mockResolvedValue({ id: 'role-user', name: 'USER' });
-      dbMock.userRepo.create.mockImplementation((data: Record<string, unknown>) => ({
-        id: 'user-1',
-        ...data,
-      }));
-
-      const result = await createUserWithCredentials({
-        email: 'a@b.co',
-        password: 'secret',
-        name: 'Alice',
-      });
-
-      expect(mockBcryptHash).toHaveBeenCalledWith('secret', 12);
-      expect(dbMock.userRepo.create).toHaveBeenCalledWith({
-        email: 'a@b.co',
-        password: 'hashed',
-        name: 'Alice',
-        emailVerified: expect.any(Date),
-        planId: 'plan-free',
-        roles: [{ id: 'role-user', name: 'USER' }],
-      });
-      expect(result).toEqual({
-        id: 'user-1',
-        email: 'a@b.co',
-        name: 'Alice',
-      });
-    });
-  });
-
-  describe('verifyCredentials', (): void => {
-    it('returns user when password matches', async (): Promise<void> => {
-      dbMock.userRepo.findOne.mockResolvedValue({
-        id: 'user-1',
-        email: 'a@b.co',
-        name: 'Alice',
-        password: 'hashed',
-      });
-      mockBcryptCompare.mockResolvedValue(true);
-
-      const result = await verifyCredentials({
-        email: 'a@b.co',
-        password: 'secret',
-      });
-
-      expect(dbMock.userRepo.findOne).toHaveBeenCalledWith({
-        where: { email: 'a@b.co' },
-        select: { id: true, email: true, name: true, password: true },
-      });
-      expect(mockBcryptCompare).toHaveBeenCalledWith('secret', 'hashed');
-      expect(result).toEqual({
-        id: 'user-1',
-        email: 'a@b.co',
-        name: 'Alice',
-      });
-    });
-
-    it('returns null when user not found', async (): Promise<void> => {
-      dbMock.userRepo.findOne.mockResolvedValue(null);
-
-      const result = await verifyCredentials({
-        email: 'none@b.co',
-        password: 'secret',
-      });
-
-      expect(result).toBeNull();
-      expect(mockBcryptCompare).not.toHaveBeenCalled();
-    });
-
-    it('returns null when user has no password', async (): Promise<void> => {
-      dbMock.userRepo.findOne.mockResolvedValue({
-        id: 'user-1',
-        email: 'a@b.co',
-        name: 'Alice',
-        password: null,
-      });
-
-      const result = await verifyCredentials({
-        email: 'a@b.co',
-        password: 'secret',
-      });
-
-      expect(result).toBeNull();
-      expect(mockBcryptCompare).not.toHaveBeenCalled();
-    });
-
-    it('returns null when password does not match', async (): Promise<void> => {
-      dbMock.userRepo.findOne.mockResolvedValue({
-        id: 'user-1',
-        email: 'a@b.co',
-        name: 'Alice',
-        password: 'hashed',
-      });
-      mockBcryptCompare.mockResolvedValue(false);
-
-      const result = await verifyCredentials({
-        email: 'a@b.co',
-        password: 'wrong',
-      });
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('checkEmailExists', (): void => {
-    it('returns true when user exists', async (): Promise<void> => {
-      dbMock.userRepo.findOne.mockResolvedValue({ id: 'user-1' });
-
-      const result = await checkEmailExists('a@b.co');
-
-      expect(dbMock.userRepo.findOne).toHaveBeenCalledWith({
-        where: { email: 'a@b.co' },
-        select: { id: true },
-      });
-      expect(result).toBe(true);
-    });
-
-    it('returns false when user does not exist', async (): Promise<void> => {
-      dbMock.userRepo.findOne.mockResolvedValue(null);
-
-      const result = await checkEmailExists('none@b.co');
-
-      expect(result).toBe(false);
-    });
   });
 
   describe('saveKakaoTokens', (): void => {

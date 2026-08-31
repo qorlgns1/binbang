@@ -10,10 +10,8 @@ function toPercent(value: number): string {
 }
 
 const CONVERSION_ITEMS: Array<{ key: keyof AdminFunnelGrowthConversion; label: string }> = [
-  { key: 'visitToSignup', label: '오가닉 유입 → 가입 완료' },
-  { key: 'signupToAlert', label: '가입 완료 → 첫 알림 생성' },
   { key: 'visitToAlert', label: '오가닉 유입 → 첫 알림 생성' },
-  { key: 'ctaToSignup', label: '가용성 CTA → 가입 완료' },
+  { key: 'ctaToAlert', label: '가용성 CTA → 첫 알림 생성' },
 ];
 
 export function GrowthConversionMatrix({ conversion }: GrowthConversionMatrixProps) {

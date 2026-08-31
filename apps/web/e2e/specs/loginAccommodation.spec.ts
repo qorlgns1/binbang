@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-import { buildUniqueCredentials, signUpAndLoginThroughUi } from '../helpers/auth';
+import { buildUniqueCredentials, loginAndDismissTutorial } from '../helpers/auth';
 import { registerAlertThroughUi } from '../helpers/accommodation';
 import { applySniperCoreSuiteGuards } from '../helpers/suite';
 
 /**
  * Sprint 1/2 SniperCore 핵심 사용자 가치:
- * 1) 신규 사용자가 직접 가입/로그인할 수 있어야 한다.
+ * 1) 신규 사용자가 이메일 OTP만으로 로그인할 수 있어야 한다(계정은 검증 시 자동 생성).
  * 2) Agoda 호텔을 검색해서 알림을 등록할 수 있어야 한다.
  * 3) 등록 직후 대시보드에서 내 알림(숙소)이 보이는지 확인해야 한다.
  *
@@ -19,18 +19,18 @@ test.describe('sniper core e2e', () => {
 
   /**
    * 핵심 happy-path:
-   * 1) 사용자 가입/로그인
+   * 1) OTP 로그인 (계정 자동 생성)
    * 2) 알림 등록
    * 3) 대시보드에 결과 반영
    *
    * 비즈니스 관점에서 "첫 사용자 가치"가 살아 있는지 확인하는 스모크 시나리오다.
    */
-  test('회원가입부터 알림 등록까지 핵심 경로가 동작한다', async ({ page }) => {
+  test('OTP 로그인부터 알림 등록까지 핵심 경로가 동작한다', async ({ page }) => {
     const credentials = buildUniqueCredentials();
     let selectedHotelName = '';
 
-    await test.step('회원가입/로그인', async () => {
-      await signUpAndLoginThroughUi(page, credentials);
+    await test.step('OTP 로그인', async () => {
+      await loginAndDismissTutorial(page, credentials);
     });
 
     await test.step('호텔 검색 후 알림 등록', async () => {

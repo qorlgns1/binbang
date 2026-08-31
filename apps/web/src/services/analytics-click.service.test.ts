@@ -120,7 +120,7 @@ describe('analytics-click.service', (): void => {
     }));
 
     await createLandingClickEvent({
-      eventName: 'nav_signup',
+      eventName: 'nav_login',
       occurredAt: 'invalid-date',
     });
 

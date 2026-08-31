@@ -17,7 +17,7 @@ const INVALID_MESSAGE = '인증코드가 올바르지 않습니다';
  * 인증코드 검증 + 로그인.
  *
  * NextAuth v4의 CredentialsProvider는 database 세션 전략과 함께 쓸 수 없어서,
- * 기존 credentials-login 라우트와 동일하게 Session 레코드를 직접 만들고 쿠키를 굽는다.
+ * 그래서 Session 레코드를 직접 만들고 세션 쿠키를 굽는다.
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {

@@ -1,5 +1,5 @@
 export const LANDING_CLICK_EVENT_NAMES = [
-  'nav_signup',
+  'nav_login',
   'nav_request',
   'nav_pricing',
   'mobile_menu_open',
@@ -11,9 +11,6 @@ export const LANDING_GROWTH_EVENT_NAMES = [
   'availability_page_view',
   'availability_cta_hover',
   'availability_cta',
-  'signup_page_view',
-  'signup_form_start',
-  'signup_completed',
   'first_accommodation_start',
   'first_alert_created',
 ] as const;

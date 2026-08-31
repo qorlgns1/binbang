@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { buildUniqueCredentials, signUpAndLoginViaApi } from '../helpers/auth';
+import { buildUniqueCredentials, loginViaApi } from '../helpers/auth';
 import { registerAlertViaApi } from '../helpers/accommodation';
 import { getNotificationHistory, pollAccommodationOnceById, setAgodaMockScenario } from '../helpers/polling';
 import { applyAgodaMockGuard, applySniperCoreSuiteGuards } from '../helpers/suite';
@@ -32,7 +32,7 @@ test.describe('vacancy alert e2e', () => {
 
     // 1. 회원가입 / 로그인 (API 직접 호출)
     await test.step('회원가입 / 로그인', async () => {
-      await signUpAndLoginViaApi(page, credentials);
+      await loginViaApi(page, credentials);
     });
 
     // 2. 알림 등록 (API 직접 호출 — 호텔 검색 UI 생략)

@@ -1,80 +1,6 @@
-import bcrypt from 'bcryptjs';
 import type { Adapter, AdapterSession, AdapterUser } from 'next-auth/adapters';
 
 import { Account, Plan, Role, Session, User, VerificationToken, getDataSource } from '@workspace/db';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface SignupInput {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface CredentialsLoginInput {
-  email: string;
-  password: string;
-}
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string | null;
-}
-
-// ============================================================================
-// Service Functions
-// ============================================================================
-
-export async function createUserWithCredentials(input: SignupInput): Promise<AuthUser> {
-  const hashedPassword = await bcrypt.hash(input.password, 12);
-  const ds = await getDataSource();
-
-  const freePlan = await ds.getRepository(Plan).findOne({ where: { name: 'FREE' } });
-  const userRole = await ds.getRepository(Role).findOne({ where: { name: 'USER' } });
-
-  const repo = ds.getRepository(User);
-  const user = repo.create({
-    email: input.email,
-    password: hashedPassword,
-    name: input.name,
-    emailVerified: new Date(),
-    planId: freePlan?.id ?? null,
-    roles: userRole ? [userRole] : [],
-  });
-  await repo.save(user);
-
-  return {
-    id: user.id,
-    email: user.email ?? '',
-    name: user.name,
-  };
-}
-
-export async function verifyCredentials(input: CredentialsLoginInput): Promise<AuthUser | null> {
-  const ds = await getDataSource();
-  const user = await ds.getRepository(User).findOne({
-    where: { email: input.email },
-    select: { id: true, email: true, name: true, password: true },
-  });
-
-  if (!user || !user.password) {
-    return null;
-  }
-
-  const isValid = await bcrypt.compare(input.password, user.password);
-  if (!isValid) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    email: user.email ?? '',
-    name: user.name,
-  };
-}
 
 // ============================================================================
 // NextAuth Adapter / Callback 용 서비스 함수
@@ -349,37 +275,4 @@ export async function saveKakaoTokens(
   }
 
   await ds.getRepository(User).update({ id: userId }, updateData);
-}
-
-// ============================================================================
-// 기타 서비스 함수
-// ============================================================================
-
-export async function checkEmailExists(email: string): Promise<boolean> {
-  const ds = await getDataSource();
-  const user = await ds.getRepository(User).findOne({
-    where: { email },
-    select: { id: true },
-  });
-  return user !== null;
-}
-
-export interface CreateSessionResult {
-  sessionToken: string;
-  expires: Date;
-}
-
-export async function createSessionForUser(userId: string): Promise<CreateSessionResult> {
-  const { randomUUID } = await import('node:crypto');
-  const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30일
-
-  const sessionToken = randomUUID();
-  const expires = new Date(Date.now() + SESSION_MAX_AGE_MS);
-
-  const ds = await getDataSource();
-  const repo = ds.getRepository(Session);
-  const session = repo.create({ sessionToken, userId, expires });
-  await repo.save(session);
-
-  return { sessionToken, expires };
 }

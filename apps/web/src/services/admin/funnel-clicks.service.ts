@@ -8,7 +8,7 @@ import type { FunnelRangePreset } from '@/services/admin/funnel.service';
 const DEFAULT_RANGE: FunnelRangePreset = '30d';
 
 export interface AdminFunnelClickTotals {
-  navSignup: number;
+  navLogin: number;
   navRequest: number;
   navPricing: number;
   mobileMenuOpen: number;
@@ -89,7 +89,7 @@ function makeDateKeys(from: Date, to: Date): string[] {
 
 function emptyClickTotals(): AdminFunnelClickTotals {
   return {
-    navSignup: 0,
+    navLogin: 0,
     navRequest: 0,
     navPricing: 0,
     mobileMenuOpen: 0,
@@ -102,8 +102,8 @@ function applyEventCount(target: AdminFunnelClickTotals, eventName: LandingClick
   target.total += 1;
 
   switch (eventName) {
-    case 'nav_signup':
-      target.navSignup += 1;
+    case 'nav_login':
+      target.navLogin += 1;
       break;
     case 'nav_request':
       target.navRequest += 1;

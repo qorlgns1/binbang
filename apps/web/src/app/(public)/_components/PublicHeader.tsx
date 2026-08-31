@@ -39,7 +39,7 @@ function resolveVariant(pathname: string | null, lang: Locale): PublicHeaderVari
   ) {
     return 'pricing';
   }
-  if (pathname === buildPublicPath(lang, '/login') || pathname === buildPublicPath(lang, '/signup')) return 'auth';
+  if (pathname === buildPublicPath(lang, '/login') || pathname === buildPublicPath(lang, '/login')) return 'auth';
   if (pathname === buildPublicPath(lang, '/terms') || pathname === buildPublicPath(lang, '/privacy')) return 'legal';
   return 'default';
 }
@@ -71,9 +71,9 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
       locale: lang,
     });
   };
-  const handleNavSignupClick = (): void => {
+  const handleNavLoginClick = (): void => {
     trackClickEvent({
-      eventName: 'nav_signup',
+      eventName: 'nav_login',
       source: 'public_header_pricing',
       locale: lang,
     });
@@ -159,7 +159,7 @@ export function PublicHeader({ lang, variant: variantProp }: PublicHeaderProps):
                   <Link href={buildPublicPath(lang, '/login')}>{tPricing('nav.login')}</Link>
                 </Button>
                 <Button size='sm' asChild className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                  <Link href={buildPublicPath(lang, '/signup')} onClick={handleNavSignupClick}>
+                  <Link href={buildPublicPath(lang, '/login')} onClick={handleNavLoginClick}>
                     {tPricing('nav.getStarted')}
                   </Link>
                 </Button>

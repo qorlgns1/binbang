@@ -26,7 +26,7 @@ export function Footer(): React.ReactElement {
           <h2 className='text-3xl font-semibold text-foreground md:text-4xl'>{t('footer.title')}</h2>
           <p className='mx-auto mt-5 max-w-2xl text-lg text-muted-foreground'>{t('footer.description')}</p>
           <Link
-            href={buildPublicPath(lang, '/signup')}
+            href={buildPublicPath(lang, '/login')}
             className='mt-10 inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
             onClick={handleCTAClick}
           >

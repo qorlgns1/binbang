@@ -101,7 +101,7 @@ describe('admin/funnel-clicks.service', (): void => {
     mockLandingEventFindMany.mockResolvedValue([
       { eventName: 'nav_request', occurredAt: new Date('2026-02-13T01:00:00.000Z') },
       { eventName: 'nav_pricing', occurredAt: new Date('2026-02-13T02:00:00.000Z') },
-      { eventName: 'nav_signup', occurredAt: new Date('2026-02-14T01:00:00.000Z') },
+      { eventName: 'nav_login', occurredAt: new Date('2026-02-14T01:00:00.000Z') },
       { eventName: 'mobile_menu_open', occurredAt: new Date('2026-02-14T02:00:00.000Z') },
       { eventName: 'mobile_menu_cta', occurredAt: new Date('2026-02-14T03:00:00.000Z') },
     ]);
@@ -114,7 +114,7 @@ describe('admin/funnel-clicks.service', (): void => {
     });
 
     expect(result.totals).toEqual({
-      navSignup: 1,
+      navLogin: 1,
       navRequest: 1,
       navPricing: 1,
       mobileMenuOpen: 1,
@@ -125,7 +125,7 @@ describe('admin/funnel-clicks.service', (): void => {
     expect(result.series).toEqual([
       {
         date: '2026-02-13',
-        navSignup: 0,
+        navLogin: 0,
         navRequest: 1,
         navPricing: 1,
         mobileMenuOpen: 0,
@@ -134,7 +134,7 @@ describe('admin/funnel-clicks.service', (): void => {
       },
       {
         date: '2026-02-14',
-        navSignup: 1,
+        navLogin: 1,
         navRequest: 0,
         navPricing: 0,
         mobileMenuOpen: 1,
@@ -220,7 +220,7 @@ describe('admin/funnel-clicks.service', (): void => {
     expect(result.series).toEqual([
       {
         date: '2026-02-14',
-        navSignup: 0,
+        navLogin: 0,
         navRequest: 0,
         navPricing: 0,
         mobileMenuOpen: 0,

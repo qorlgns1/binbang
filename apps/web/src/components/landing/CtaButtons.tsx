@@ -13,7 +13,7 @@ import { smoothScrollTo } from '@/lib/utils/scroll';
 
 /**
  * Render the primary and secondary call-to-action buttons used on the landing page.
- * The primary button navigates to signup; the secondary button smooth-scrolls to the features section.
+ * The primary button navigates to login; the secondary button smooth-scrolls to the features section.
  */
 export function CTAButtons(): React.ReactElement {
   const t = useTranslations('landing');
@@ -34,7 +34,7 @@ export function CTAButtons(): React.ReactElement {
   return (
     <div className='mt-10 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center'>
       <Button asChild size='lg' className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'>
-        <Link href={buildPublicPath(lang, '/signup')} onClick={handlePrimaryCTA}>
+        <Link href={buildPublicPath(lang, '/login')} onClick={handlePrimaryCTA}>
           <BellRing className='mr-2 size-5' />
           {t('hero.cta')}
         </Link>

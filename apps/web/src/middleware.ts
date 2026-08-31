@@ -140,7 +140,6 @@ export const config = {
     '/availability',
     '/availability/:path*',
     '/login',
-    '/signup',
     '/pricing',
     '/terms',
     '/privacy',

@@ -171,6 +171,26 @@ function buildOtpEmail(code: string, locale: string): { subject: string; text: s
   };
 }
 
+/**
+ * 새 코드를 만들어 저장하고 평문을 돌려준다.
+ * identifier가 단독 PK라 이전 코드는 자동으로 대체된다.
+ */
+async function persistNewCode(email: string): Promise<string> {
+  const code = generateCode();
+  const identifier = toIdentifier(email);
+  const expires = new Date(Date.now() + CODE_TTL_SECONDS * 1000);
+
+  const ds = await getDataSource();
+  await ds.transaction(async (manager) => {
+    const repo = manager.getRepository(VerificationToken);
+    await repo.delete({ identifier });
+    await repo.save(repo.create({ identifier, token: hashCode(email, code), expires }));
+  });
+
+  await clearVerifyAttempts(email);
+  return code;
+}
+
 // ============================================================================
 // Service Functions
 // ============================================================================
@@ -199,23 +219,12 @@ export async function issueEmailOtp(input: IssueEmailOtpInput): Promise<IssueEma
     }
   }
 
-  const code = generateCode();
-  const identifier = toIdentifier(email);
-  const expires = new Date(Date.now() + CODE_TTL_SECONDS * 1000);
-
-  const ds = await getDataSource();
-  await ds.transaction(async (manager) => {
-    const repo = manager.getRepository(VerificationToken);
-    await repo.delete({ identifier });
-    await repo.save(repo.create({ identifier, token: hashCode(email, code), expires }));
-  });
-
-  await clearVerifyAttempts(email);
+  const code = await persistNewCode(email);
 
   const message = buildOtpEmail(code, locale);
   await sendAgodaAlertEmail({ to: email, subject: message.subject, text: message.text, html: message.html });
 
-  logInfo('email_otp_issued', { expiresAt: expires.toISOString() });
+  logInfo('email_otp_issued', { ttlSeconds: CODE_TTL_SECONDS });
   return { status: 'sent' };
 }
 
@@ -306,4 +315,15 @@ export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<Verify
   logInfo('email_otp_verified', { isNewUser: result.isNewUser });
 
   return { status: 'verified', ...result };
+}
+
+/**
+ * 테스트 전용: 코드를 발급하고 **평문을 반환한다**.
+ *
+ * 메일을 보내지 않으므로 E2E에서 코드를 받아올 수 있다.
+ * 이 함수를 호출하는 라우트는 반드시 production에서 비활성화되어야 한다.
+ * 프로덕션 코드 경로에서는 절대 호출하지 않는다.
+ */
+export async function issueEmailOtpForTest(email: string): Promise<string> {
+  return persistNewCode(normalizeEmail(email));
 }

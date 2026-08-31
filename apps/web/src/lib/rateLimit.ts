@@ -63,7 +63,7 @@ export interface RateLimitConfig {
  * pathname에 적용할 레이트 제한 설정을 반환합니다.
  * health 등 제한 없음 경로는 null을 반환합니다.
  *
- * @param pathname - 요청 경로 (예: `/api/auth/signup`)
+ * @param pathname - 요청 경로 (예: `/api/auth/email-code`)
  * @returns 해당 경로의 제한 설정 또는 null
  */
 export function getRateLimit(pathname: string): RateLimitConfig | null {
@@ -74,11 +74,8 @@ export function getRateLimit(pathname: string): RateLimitConfig | null {
     return { limit: 20, windowMs: 10 * 1000 };
   }
 
-  // Credentials endpoints – brute-force 방지 (1분 기준)
-  // 실패 시에만 카운트하는 것이 이상적이지만, 현재는 모든 요청을 카운트
-  if (pathname === '/api/auth/credentials-login') return { limit: 30, windowMs: DEFAULT_WINDOW_MS }; // 1분에 30회 (2초에 1회)
-  if (pathname === '/api/auth/signup') return { limit: 10, windowMs: DEFAULT_WINDOW_MS }; // 1분에 10회
-  // 이메일 OTP – 서비스 계층에도 Redis 기반 이메일/IP 한도가 있고, 여기는 그 앞단의 IP 방어다.
+  // 이메일 OTP – brute-force 방지 (1분 기준).
+  // 서비스 계층에도 Redis 기반 이메일/IP 한도가 있고, 여기는 그 앞단의 IP 방어다.
   if (pathname === '/api/auth/email-code') return { limit: 10, windowMs: DEFAULT_WINDOW_MS }; // 1분에 10회
   if (pathname === '/api/auth/email-verify') return { limit: 20, windowMs: DEFAULT_WINDOW_MS }; // 1분에 20회
   if (pathname.startsWith('/api/auth/')) return { limit: 60, windowMs: DEFAULT_WINDOW_MS };
@@ -108,7 +105,7 @@ export function checkRateLimit(ip: string, config: RateLimitConfig): RateLimitRe
 
   // 경로 티어(limit, windowMs)별로 독립 카운터를 유지한다.
   // IP만 키로 사용하면 모든 API 경로의 타임스탬프가 공유되어,
-  // 제너럴 API 요청이 signup 같은 낮은 limit 경로를 오차단한다.
+  // 제너럴 API 요청이 email-code 같은 낮은 limit 경로를 오차단한다.
   const storeKey = `${ip}:${limit}:${windowMs}`;
   let entry = store.get(storeKey);
   if (!entry) {
