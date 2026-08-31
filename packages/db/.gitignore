@@ -1,4 +1,2 @@
-prisma/*.db
-prisma/*.db-journal
 generated/
 dist/
