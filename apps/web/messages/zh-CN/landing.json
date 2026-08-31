@@ -44,7 +44,7 @@
   "appPurpose": "Binbang 是监控住宿预订网站空房并在有空房时通过邮件通知您的服务。使用 Google 登录时，我们仅将您的邮箱用于账户识别和空房提醒发送。",
   "appPurposeAriaLabel": "应用目的与数据使用",
   "quickStart": {
-    "title": "客满了？有空房我们第一时间通知你",
+    "title": "客满了？\n有空房我们第一时间通知你",
     "subtitle": "搜索酒店并留下邮箱即可，无需注册账号。",
     "searchPlaceholder": "按酒店或城市搜索",
     "clearHotel": "取消选择",
@@ -69,6 +69,7 @@
     "errorHotel": "请先选择住宿",
     "errorDates": "请检查入住和退房日期",
     "errorConsent": "需要同意接收提醒",
-    "errorCreate": "提醒设置失败"
+    "errorCreate": "提醒设置失败",
+    "submit": "获取空房提醒"
   }
 }

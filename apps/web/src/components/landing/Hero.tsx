@@ -16,7 +16,7 @@ export function Hero(): React.ReactElement {
     (messages.landing as { hero?: { subheadlineMobile?: string[] } })?.hero?.subheadlineMobile ?? [];
 
   return (
-    <section className='relative flex min-h-screen flex-col justify-center overflow-hidden px-4 pb-20 pt-28'>
+    <section className='relative flex flex-col justify-center overflow-hidden px-4 pb-20 pt-20'>
       <div className='absolute inset-0'>
         <Image
           src='https://images.unsplash.com/photo-1610029795220-e5afca4dc7ba?auto=format&fit=crop&w=1920&q=80'
@@ -37,7 +37,7 @@ export function Hero(): React.ReactElement {
         </div>
 
         {/* 홈의 h1은 QuickStartSection이 갖는다. 여기는 하위 섹션 제목이다. */}
-        <h2 className='max-w-5xl text-[32px] font-bold leading-[48px] text-foreground md:text-[56px] md:leading-[64px] lg:text-[72px] lg:leading-[80px]'>
+        <h2 className='max-w-4xl text-2xl font-bold leading-[38px] text-foreground md:text-[34px] md:leading-[46px]'>
           <span className='md:hidden'>
             {headlineMobile.map((line, i) => (
               <span key={line}>

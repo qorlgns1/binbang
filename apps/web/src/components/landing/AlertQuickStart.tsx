@@ -1,11 +1,11 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { Bell, CheckCircle2 } from 'lucide-react';
+import { Bell, BellRing, CheckCircle2 } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,13 @@ export function AlertQuickStart(): React.ReactElement {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const today = todayIso();
+  // 오늘 날짜는 마운트 후에 계산한다.
+  // 렌더 중에 계산하면 서버(UTC)와 브라우저(예: KST)의 날짜가 갈리는 시간대가 있어
+  // min 속성이 어긋나고 hydration 불일치가 발생한다.
+  const [today, setToday] = useState('');
+  useEffect(() => {
+    setToday(todayIso());
+  }, []);
 
   function handleDatesSubmit(e: FormEvent): void {
     e.preventDefault();
@@ -154,7 +160,7 @@ export function AlertQuickStart(): React.ReactElement {
         )}
 
         {step === 'search' && (
-          <form onSubmit={handleDatesSubmit} className='space-y-4'>
+          <form onSubmit={handleDatesSubmit} className='space-y-3'>
             <HotelSearchInput
               onSelect={setHotel}
               selectedHotel={hotel}
@@ -164,39 +170,45 @@ export function AlertQuickStart(): React.ReactElement {
               size='lg'
             />
 
-            {hotel && (
-              <>
-                <div className='grid grid-cols-2 gap-3'>
-                  <div className='space-y-1.5'>
-                    <Label htmlFor='qs-checkin'>{t('checkIn')}</Label>
-                    <Input
-                      id='qs-checkin'
-                      type='date'
-                      min={today}
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      required
-                      data-testid='qs-checkin'
-                    />
-                  </div>
-                  <div className='space-y-1.5'>
-                    <Label htmlFor='qs-checkout'>{t('checkOut')}</Label>
-                    <Input
-                      id='qs-checkout'
-                      type='date'
-                      min={checkIn || today}
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      required
-                      data-testid='qs-checkout'
-                    />
-                  </div>
-                </div>
-                <Button type='submit' className='w-full' data-testid='qs-next'>
-                  {t('next')}
-                </Button>
-              </>
-            )}
+            {/* 날짜는 처음부터 노출한다. 숙소 선택 전에 숨기면 카드가 비어 보이고,
+                무엇을 입력해야 하는지도 한눈에 들어오지 않는다. */}
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='space-y-1.5'>
+                <Label htmlFor='qs-checkin' className='text-xs text-muted-foreground'>
+                  {t('checkIn')}
+                </Label>
+                <Input
+                  id='qs-checkin'
+                  type='date'
+                  min={today || undefined}
+                  value={checkIn}
+                  onChange={(e) => setCheckIn(e.target.value)}
+                  required
+                  className='h-12'
+                  data-testid='qs-checkin'
+                />
+              </div>
+              <div className='space-y-1.5'>
+                <Label htmlFor='qs-checkout' className='text-xs text-muted-foreground'>
+                  {t('checkOut')}
+                </Label>
+                <Input
+                  id='qs-checkout'
+                  type='date'
+                  min={checkIn || today || undefined}
+                  value={checkOut}
+                  onChange={(e) => setCheckOut(e.target.value)}
+                  required
+                  className='h-12'
+                  data-testid='qs-checkout'
+                />
+              </div>
+            </div>
+
+            <Button type='submit' size='lg' className='h-12 w-full text-base' data-testid='qs-next'>
+              <BellRing className='mr-2 size-5' />
+              {t('submit')}
+            </Button>
           </form>
         )}
 

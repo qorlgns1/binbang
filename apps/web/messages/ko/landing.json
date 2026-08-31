@@ -44,7 +44,7 @@
   "appPurpose": "Binbang(빈방)은 숙소 예약 사이트의 빈방을 모니터링하여 이메일로 알림을 보내는 서비스입니다. Google 로그인 시 수집하는 이메일 주소는 회원 식별 및 빈방 알림 발송에만 사용됩니다.",
   "appPurposeAriaLabel": "앱 목적 및 데이터 사용",
   "quickStart": {
-    "title": "매진된 숙소, 방 나면 알려드립니다",
+    "title": "매진된 숙소,\n방 나면 알려드립니다",
     "subtitle": "호텔을 검색하고 이메일만 남기세요. 회원가입은 없습니다.",
     "searchPlaceholder": "호텔명이나 도시로 검색",
     "clearHotel": "선택 해제",
@@ -69,6 +69,7 @@
     "errorHotel": "숙소를 선택해주세요",
     "errorDates": "체크인·체크아웃 날짜를 확인해주세요",
     "errorConsent": "알림 수신 동의가 필요합니다",
-    "errorCreate": "알림 등록에 실패했습니다"
+    "errorCreate": "알림 등록에 실패했습니다",
+    "submit": "빈방 알림 받기"
   }
 }

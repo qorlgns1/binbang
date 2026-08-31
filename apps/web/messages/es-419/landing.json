@@ -44,7 +44,7 @@
   "appPurpose": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva de alojamiento y envía notificaciones por correo cuando hay habitación disponible. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas de disponibilidad.",
   "appPurposeAriaLabel": "Propósito de la app y uso de datos",
   "quickStart": {
-    "title": "¿Agotado? Te avisamos apenas se libere una habitación",
+    "title": "¿Agotado?\nTe avisamos apenas se libere una habitación",
     "subtitle": "Busca un hotel y deja tu correo. Sin crear cuenta.",
     "searchPlaceholder": "Busca por hotel o ciudad",
     "clearHotel": "Quitar selección",
@@ -69,6 +69,7 @@
     "errorHotel": "Elige un alojamiento primero",
     "errorDates": "Revisa las fechas de entrada y salida",
     "errorConsent": "Debes aceptar recibir alertas",
-    "errorCreate": "No pudimos crear la alerta"
+    "errorCreate": "No pudimos crear la alerta",
+    "submit": "Recibir alertas"
   }
 }

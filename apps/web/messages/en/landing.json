@@ -44,7 +44,7 @@
   "appPurpose": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available. When you sign in with Google, we use your email address only for account identification and sending vacancy alerts.",
   "appPurposeAriaLabel": "App purpose and data use",
   "quickStart": {
-    "title": "Sold out? We'll tell you the moment a room opens",
+    "title": "Sold out?\nWe'll tell you the moment a room opens",
     "subtitle": "Search a hotel and leave your email. No account needed.",
     "searchPlaceholder": "Search by hotel or city",
     "clearHotel": "Clear selection",
@@ -69,6 +69,7 @@
     "errorHotel": "Pick a property first",
     "errorDates": "Check your check-in and check-out dates",
     "errorConsent": "Please agree to receive alerts",
-    "errorCreate": "We couldn't set up the alert"
+    "errorCreate": "We couldn't set up the alert",
+    "submit": "Get vacancy alerts"
   }
 }
