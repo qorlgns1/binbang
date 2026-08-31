@@ -1,5 +1,8 @@
 # Deployment Guide
 
+> **Status: CURRENT — Source of Truth (배포 절차)**
+> `CLAUDE.md` 규약상 서버/배포 변경 제안 전 반드시 읽는다.
+
 Last verified: 2026-04-17
 Owner: binbang
 

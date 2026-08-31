@@ -1,5 +1,9 @@
 # Product Overview
 
+> **Status: CURRENT (일부 변경 예정)** — Last verified: 2026-08-31
+> ⚠️ "핵심 플로우"의 회원가입/로그인 단계와 기능표의 인증 항목은 이메일 OTP 전환으로 곧 바뀐다.
+> 인프라·수익화·여행 AI 서술은 현행이다.
+
 > 이 문서는 비즈니스 관점에서 binbang이 무엇을 하는지 기술한다.
 > 코드 구조는 `docs/architecture/architecture.md`, 배포는 `docs/deployment/`를 기준으로 한다.
 > 최종 업데이트: 2026-02-27
@@ -49,7 +53,7 @@ Agoda 호텔 검색 후 알림 등록
 사용자 → Agoda 예약 페이지 (클릭아웃)
 ```
 
-자세한 플로우: `docs/binbang/user-flow.md`
+> ⚠️ 위 플로우의 회원가입/로그인 단계는 이메일 OTP 방식으로 전환될 예정이다.
 
 ### 기능 목록
 
@@ -167,7 +171,7 @@ AI가 도구 호출:
 
 | 구성요소 | 역할 |
 |---|---|
-| PostgreSQL | 메인 DB (숙소, 알림, 대화, 여행지 등) |
+| Oracle ADB | 메인 DB (숙소, 알림, 대화, 여행지 등). TypeORM 사용 |
 | Redis | BullMQ 큐, 캐시 |
 | BullMQ Worker | 폴링 / 알림 dispatch / 스냅샷 정리 / 캐시 예열 (Repeat Jobs) |
 | BullMQ Worker | Playwright 스크래핑 (URL 방식 숙소 감지) |

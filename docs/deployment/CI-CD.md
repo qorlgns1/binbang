@@ -1,5 +1,8 @@
 # Deployment
 
+> **Status: CURRENT — Source of Truth (CI/CD 파이프라인)**
+> `CLAUDE.md` 규약상 서버/배포 변경 제안 전 반드시 읽는다.
+
 ## CI/CD 파이프라인
 
 ### 워크플로우 구성

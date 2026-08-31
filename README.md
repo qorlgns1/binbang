@@ -100,13 +100,13 @@ pnpm local:docker up -d --build
 ## 문서
 
 - 문서 인덱스: `docs/README.md`
-- 로컬 개발: `docs/guides/local-development.md`
-- 배포: `docs/guides/deployment.md`
+- 배포(기준 문서): `docs/deployment/DEPLOYMENT.md`
+- 환경 정의 / 환경변수: `docs/deployment/ENVIRONMENTS.md`
+- 장애 대응: `docs/deployment/RUNBOOK.md`
+- CI/CD 파이프라인: `docs/deployment/CI-CD.md`
 - 아키텍처/경계/구조: `docs/architecture/architecture.md`
-- 모노레포 계획: `docs/architecture/monorepo-plan.md`
+- 제품 개요: `docs/PRODUCT.md`
 - 변경 이력: `docs/history/changelog.md`
-- 작업 단위 히스토리 정리: `docs/history/develop-work-units.md`
-- RBAC 로컬 검증: `docs/guides/rbac-local-testing.md`
 
 ---
 

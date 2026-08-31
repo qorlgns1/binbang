@@ -1,36 +1,60 @@
 # Docs Index
 
-## 제품 개요
+> Last verified: 2026-08-31
 
-- **`docs/PRODUCT.md`**: 비즈니스 관점 제품 개요 — 두 앱(빈방/여행AI)이 무엇을 하는지, 기능 상태, 수익화 구조.
 
-## AI 대화용 컨텍스트
+---
 
-- **`docs/AI_CONTEXT.md`**: ChatGPT, Gemini, Grok 등에 붙여넣을 **프로젝트/역할/구조 요약** 한 파일. `architecture.md`, `ai-context-extra.md`, `brand-identity.md` 수정 후 `pnpm update:ai-context` 실행하면 여기에 반영됨.
+## 배포 기준 문서 (Source of Truth)
+
+서버/배포/환경 관련 변경을 제안하기 전에 반드시 먼저 읽는다. (`CLAUDE.md` 규약)
+
+| 문서 | 내용 |
+|---|---|
+| **`deployment/DEPLOYMENT.md`** | 배포 절차, 롤백, 스모크 체크 |
+| **`deployment/ENVIRONMENTS.md`** | 환경 정의(dev/prod), URL, 브랜치, 환경변수 |
+| **`deployment/RUNBOOK.md`** | 장애 등급/트리아지/대응 |
+| **`deployment/CI-CD.md`** | GitHub Actions 파이프라인, 시크릿 |
+
+로컬 개발 환경변수는 `deployment/ENVIRONMENTS.md`와 루트 `.env.example`이 기준이다.
+
+## 제품
+
+- **`PRODUCT.md`** — 비즈니스 관점 제품 개요(빈방 / 여행 AI), 기능 상태, 수익화
+  - ⚠️ 인증 관련 서술은 이메일 OTP 전환으로 변경 예정
 
 ## 구조
 
-- `docs/architecture/`
-  - `architecture.md`: 현재 모노레포 구조/경계/워크스페이스 책임 (단일 기준)
-  - `monorepo-plan.md`: 모노레포 전환 계획 원문
-- `docs/guides/`
-  - `local-development.md`: 로컬 개발/환경변수/명령
-  - `deployment.md`: CI/CD 및 운영 배포 절차
-  - `rbac-local-testing.md`: RBAC 기능 로컬 검증 가이드
-  - `worker-bullmq-runtime-flow.md`: 워커(BullMQ/Playwright) 실행 흐름 상세
-  - `codex-request-playbook.md`: Codex에 릴리즈/PR/커밋정리 작업을 요청하는 템플릿 모음
-  - `google-form-service-operations.md`: 구글폼 기반 서비스 운영 설계서(상품/과금/분쟁/SOP/KPI)
-- `docs/history/`
-  - `changelog.md`: 버전 변경 이력
-  - `develop-work-units.md`: `main..develop` 작업 단위 재구성 기록
-- `docs/backlog/`
-  - `google-form-ops-mvp-backlog.md`: 구글폼 운영형 MVP 기능 백로그(P0/P1/P2)
-  - `improvement-plan.md`: 프로젝트 전반 개선 계획
-  - `throughput-and-analysis.md`: 처리량/분석 대시보드 확장 백로그
+- **`architecture/architecture.md`** — 모노레포 구조/경계/워크스페이스 책임 (단일 기준)
+- `architecture/monorepo-plan.md` — 아키텍처 방향과 전환 기준
+
+## 규칙
+
+- 루트 **`rules.md`** — 원본(영문). 강제 규칙의 기준
+- 루트 `RULES_SUMMARY.md` — 요약본
+- `rules.ko.md` — 한국어 번역본. 원본과 다르면 `rules.md`가 이긴다
+
+## 가이드
+
+- `guides/agoda-affiliat-api-v2.0.md` — Agoda 제휴 API 연동 레퍼런스 (외부 스펙이라 코드로 대체 불가)
+- `guides/seo-strategy.md` — SEO 전략
+
+## 백로그
+
+- `backlog/growth-activation-plan.md` — 유저 활성화 플랜
+  - ⚠️ Week 1 컨시어지 테스트는 실행됐고 결과가 부정적이었다. Week 2 이후 계획은 그대로 진행하지 않는다
+
+## 히스토리 (읽기 전용)
+
+- `history/changelog.md` — 버전 변경 이력
+- `history/branding/` — 브랜드 아이덴티티, 랜딩 카피
+
+---
 
 ## 문서 작성 원칙
 
-- `README.md`에는 입문 정보만 유지
-- 상세 절차/운영 정보는 `docs/guides/`에 유지
-- 구조/경계 문서는 `docs/architecture/`에 유지
-- 이력/기록은 `docs/history/`에 유지
+- **새 문서를 만들기 전에 코드/`.env.example`/git 히스토리로 대체되는지 먼저 확인한다**
+- 모든 문서 최상단에 `Status` + `Last verified` 표기
+- 배포/환경/장애 기준 문서는 `docs/deployment/` — 여기가 유일한 기준. 같은 주제를 다른 폴더에 두지 않는다
+- 완료된 계획은 `history/`로 옮기지 말고 **삭제**한다. 기록은 git이 갖고 있다
+- 결정이 바뀌면 문서 상단에 무엇이 왜 바뀌었는지 적는다
