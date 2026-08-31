@@ -5,7 +5,7 @@ import { type FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { Bell, CheckCircle2, Loader2 } from 'lucide-react';
+import { Bell, CheckCircle2 } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,17 +15,7 @@ import { type HotelSearchResult, HotelSearchInput } from '@/components/hotel-sea
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-type Step = 'search' | 'insight' | 'email' | 'code' | 'done';
-
-interface PropertyInsight {
-  observedDays: number;
-  sampleSize: number;
-  availableCount: number;
-  openRate: number | null;
-  minPriceAmount: number | null;
-  currency: string | null;
-  lastObservedAt: string | null;
-}
+type Step = 'search' | 'email' | 'code' | 'done';
 
 function todayIso(): string {
   const now = new Date();
@@ -49,8 +39,6 @@ export function AlertQuickStart(): React.ReactElement {
   const [hotel, setHotel] = useState<HotelSearchResult | null>(null);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
-  const [insight, setInsight] = useState<PropertyInsight | null>(null);
-  const [insightLoading, setInsightLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [code, setCode] = useState('');
@@ -59,7 +47,7 @@ export function AlertQuickStart(): React.ReactElement {
 
   const today = todayIso();
 
-  async function handleDatesSubmit(e: FormEvent): Promise<void> {
+  function handleDatesSubmit(e: FormEvent): void {
     e.preventDefault();
     setError('');
 
@@ -72,23 +60,7 @@ export function AlertQuickStart(): React.ReactElement {
       return;
     }
 
-    setStep('insight');
-    setInsightLoading(true);
-    try {
-      const res = await fetch(
-        `/api/public/hotel-insight?platform=agoda&platformId=${encodeURIComponent(hotel.hotelId)}`,
-      );
-      if (res.ok) {
-        const data = (await res.json()) as { insight: PropertyInsight | null };
-        setInsight(data.insight);
-      } else {
-        setInsight(null);
-      }
-    } catch {
-      setInsight(null);
-    } finally {
-      setInsightLoading(false);
-    }
+    setStep('email');
   }
 
   async function sendCode(): Promise<void> {
@@ -228,51 +200,6 @@ export function AlertQuickStart(): React.ReactElement {
           </form>
         )}
 
-        {step === 'insight' && (
-          <div className='space-y-4'>
-            <h3 className='text-sm font-medium text-muted-foreground'>{t('insightTitle')}</h3>
-
-            {insightLoading ? (
-              <div className='flex items-center gap-2 py-6 text-muted-foreground'>
-                <Loader2 className='size-4 animate-spin' />
-              </div>
-            ) : insight ? (
-              <dl className='grid grid-cols-2 gap-3 rounded-lg border border-border bg-muted/30 p-4'>
-                <div className='col-span-2 text-xs text-muted-foreground'>
-                  {t('insightObserved', { days: insight.observedDays, samples: insight.sampleSize })}
-                </div>
-                <div>
-                  <dt className='text-xs text-muted-foreground'>{t('insightOpenRate')}</dt>
-                  <dd className='text-xl font-semibold'>
-                    {insight.openRate == null ? '-' : `${Math.round(insight.openRate * 100)}%`}
-                  </dd>
-                </div>
-                <div>
-                  <dt className='text-xs text-muted-foreground'>{t('insightMinPrice')}</dt>
-                  <dd className='text-xl font-semibold'>
-                    {insight.minPriceAmount == null
-                      ? '-'
-                      : `${Math.round(insight.minPriceAmount).toLocaleString()} ${insight.currency ?? ''}`.trim()}
-                  </dd>
-                </div>
-              </dl>
-            ) : (
-              <p className='rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground'>
-                {t('insightEmpty')}
-              </p>
-            )}
-
-            <div className='flex gap-2'>
-              <Button variant='outline' onClick={() => setStep('search')} className='flex-1'>
-                {t('back')}
-              </Button>
-              <Button onClick={() => setStep('email')} className='flex-1' data-testid='qs-to-email'>
-                {t('next')}
-              </Button>
-            </div>
-          </div>
-        )}
-
         {step === 'email' && (
           <form onSubmit={handleEmailSubmit} className='space-y-4'>
             <div className='space-y-1.5'>
@@ -303,7 +230,7 @@ export function AlertQuickStart(): React.ReactElement {
             </div>
 
             <div className='flex gap-2'>
-              <Button type='button' variant='outline' onClick={() => setStep('insight')} className='flex-1'>
+              <Button type='button' variant='outline' onClick={() => setStep('search')} className='flex-1'>
                 {t('back')}
               </Button>
               <Button type='submit' disabled={loading} className='flex-1' data-testid='qs-send-code'>
