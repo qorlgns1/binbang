@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { useMessages, useTranslations } from 'next-intl';
 
 import { CTAButtons } from './CtaButtons';
-import { StatusDashboardSlot } from './StatusDashboardSlot';
 
 /**
  * Renders the landing-page hero section with background imagery, headline, description, CTAs, and status dashboard.
@@ -66,9 +65,6 @@ export function Hero(): React.ReactElement {
         </h2>
         <p className='mt-7 max-w-3xl text-base leading-[26px] text-muted-foreground'>{t('hero.description')}</p>
         <CTAButtons />
-        <div className='mt-16 w-full'>
-          <StatusDashboardSlot />
-        </div>
       </div>
     </section>
   );

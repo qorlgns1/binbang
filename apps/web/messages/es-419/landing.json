@@ -33,16 +33,6 @@
     "f3Desc": "Los registros de latido por minuto mantienen el monitoreo estable y transparente todo el día. El sistema detecta y recupera cualquier fallo automáticamente, para que tu vigilancia no termine.",
     "learnMore": "Saber más"
   },
-  "trust": {
-    "title": "Operación en vivo",
-    "operational": "Operativo",
-    "uptime": "Tiempo activo",
-    "activeMonitors": "Monitores activos",
-    "response": "Respuesta promedio",
-    "emptyLogs": "No hay actividad del sistema en los últimos 5 minutos.",
-    "errorMessage": "No se pudo cargar el estado en vivo. Reintentando en 5 segundos.",
-    "retry": "Reintentar"
-  },
   "footer": {
     "title": "Nosotros manejamos la complejidad.",
     "description": "Tú puedes concentrarte en planear tu próximo viaje.",
@@ -53,83 +43,6 @@
   },
   "appPurpose": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva de alojamiento y envía notificaciones por correo cuando hay habitación disponible. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas de disponibilidad.",
   "appPurposeAriaLabel": "Propósito de la app y uso de datos",
-  "mockLogs": [
-    {
-      "id": 1,
-      "message": "Disponible: Park Hyatt Seoul (Suite Premium)",
-      "location": "Seúl"
-    },
-    {
-      "id": 2,
-      "message": "Disponible: Grand Hyatt Jeju (Deluxe Vista al mar)",
-      "location": "Jeju"
-    },
-    {
-      "id": 3,
-      "message": "Revisión completada: 2.847 objetivos escaneados",
-      "location": "Sistema"
-    },
-    {
-      "id": 4,
-      "message": "Disponible: Shilla Stay Gwanghwamun (Ejecutivo)",
-      "location": "Seúl"
-    },
-    {
-      "id": 5,
-      "message": "Alerta enviada: entregada a 3 usuarios",
-      "location": "Sistema"
-    },
-    {
-      "id": 6,
-      "message": "Disponible: Lotte Hotel Busan (Premier Océano)",
-      "location": "Busan"
-    },
-    {
-      "id": 7,
-      "message": "Disponible: Four Seasons Seoul (Corner King)",
-      "location": "Seúl"
-    },
-    {
-      "id": 8,
-      "message": "Revisión completada: 1.923 objetivos escaneados",
-      "location": "Sistema"
-    },
-    {
-      "id": 9,
-      "message": "Disponible: Maison Glad Jeju (Doble estándar)",
-      "location": "Jeju"
-    },
-    {
-      "id": 10,
-      "message": "Disponible: Ananti Cove (Deluxe Oceanhill)",
-      "location": "Busan"
-    },
-    {
-      "id": 11,
-      "message": "Disponible: Conrad Seoul (Ejecutivo)",
-      "location": "Seúl"
-    },
-    {
-      "id": 12,
-      "message": "Alerta enviada: entregada a 7 usuarios",
-      "location": "Sistema"
-    },
-    {
-      "id": 13,
-      "message": "Disponible: Banyan Tree Club & Spa (Villa con piscina)",
-      "location": "Jeju"
-    },
-    {
-      "id": 14,
-      "message": "Revisión completada: 3.421 objetivos escaneados",
-      "location": "Sistema"
-    },
-    {
-      "id": 15,
-      "message": "Disponible: Seamarq Hotel (Twin vista al mar)",
-      "location": "Gangneung"
-    }
-  ],
   "quickStart": {
     "title": "¿Agotado? Te avisamos apenas se libere una habitación",
     "subtitle": "Busca un hotel y deja tu correo. Sin crear cuenta.",
