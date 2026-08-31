@@ -27,6 +27,14 @@ describe('getRateLimit', (): void => {
     expect(config).toEqual({ limit: 10, windowMs: 60_000 });
   });
 
+  it('/api/auth/email-code는 분당 10회', (): void => {
+    expect(getRateLimit('/api/auth/email-code')).toEqual({ limit: 10, windowMs: 60_000 });
+  });
+
+  it('/api/auth/email-verify는 분당 20회', (): void => {
+    expect(getRateLimit('/api/auth/email-verify')).toEqual({ limit: 20, windowMs: 60_000 });
+  });
+
   it('/api/auth/* 기타 경로는 분당 60회', (): void => {
     expect(getRateLimit('/api/auth/signin')).toEqual({ limit: 60, windowMs: 60_000 });
     expect(getRateLimit('/api/auth/callback/kakao')).toEqual({ limit: 60, windowMs: 60_000 });

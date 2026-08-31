@@ -16,6 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 
+type Step = 'email' | 'code';
+
 function LoginForm(): React.ReactElement {
   const { lang } = useParams<{ lang: string }>();
   const searchParams = useSearchParams();
@@ -23,31 +25,77 @@ function LoginForm(): React.ReactElement {
   const t = useTranslations('auth');
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
+  const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleCredentialsLogin(e: FormEvent) {
-    e.preventDefault();
+  async function sendCode(isResend: boolean): Promise<void> {
     setError('');
+    setNotice('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/credentials-login', {
+      const res = await fetch('/api/auth/email-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, locale: lang }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || t('errors.loginFailed'));
+      if (res.status === 429) {
+        setError(t('errors.rateLimited'));
         return;
       }
 
-      router.push(callbackUrl);
-      router.refresh();
+      if (!res.ok) {
+        setError(t('errors.codeSendFailed'));
+        return;
+      }
+
+      setStep('code');
+      setCode('');
+      if (isResend) setNotice(t('login.resent'));
+    } catch {
+      setError(t('errors.serverError'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSendCode(e: FormEvent): Promise<void> {
+    e.preventDefault();
+    await sendCode(false);
+  }
+
+  async function handleVerify(e: FormEvent): Promise<void> {
+    e.preventDefault();
+    setError('');
+    setNotice('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/email-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      if (res.ok) {
+        router.push(callbackUrl);
+        router.refresh();
+        return;
+      }
+
+      if (res.status === 429) {
+        setError(t('errors.tooManyAttempts'));
+        setStep('email');
+        return;
+      }
+
+      const data = (await res.json().catch(() => null)) as { message?: string } | null;
+      setError(data?.message ?? t('errors.codeInvalid'));
     } catch {
       setError(t('errors.serverError'));
     } finally {
@@ -62,8 +110,10 @@ function LoginForm(): React.ReactElement {
 
         <Card className='h-full border-border/80 bg-card/90 shadow-lg backdrop-blur'>
           <CardHeader className='text-center'>
-            <CardTitle className='text-2xl'>{t('login.title')}</CardTitle>
-            <CardDescription>{t('login.description')}</CardDescription>
+            <CardTitle className='text-2xl'>{step === 'email' ? t('login.title') : t('login.codeTitle')}</CardTitle>
+            <CardDescription>
+              {step === 'email' ? t('login.description') : t('login.codeSentTo', { email })}
+            </CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
             {error && (
@@ -71,54 +121,97 @@ function LoginForm(): React.ReactElement {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {notice && (
+              <Alert>
+                <AlertDescription>{notice}</AlertDescription>
+              </Alert>
+            )}
 
-            <form onSubmit={handleCredentialsLogin} className='space-y-3' data-testid='login-form'>
-              <div className='space-y-1.5'>
-                <Label htmlFor='email'>{t('login.email')}</Label>
-                <Input
-                  id='email'
-                  type='email'
-                  placeholder='name@example.com'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete='email'
-                  className='bg-background/80'
-                  data-testid='login-email-input'
-                />
-              </div>
-              <div className='space-y-1.5'>
-                <Label htmlFor='password'>{t('login.password')}</Label>
-                <Input
-                  id='password'
-                  type='password'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete='current-password'
-                  className='bg-background/80'
-                  data-testid='login-password-input'
-                />
-              </div>
-              <Button
-                type='submit'
-                className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
-                disabled={loading}
-                data-testid='login-submit-button'
-              >
-                {loading ? t('login.submitting') : t('login.submit')}
-              </Button>
-            </form>
+            {step === 'email' ? (
+              <form onSubmit={handleSendCode} className='space-y-3' data-testid='login-form'>
+                <div className='space-y-1.5'>
+                  <Label htmlFor='email'>{t('login.emailLabel')}</Label>
+                  <Input
+                    id='email'
+                    type='email'
+                    placeholder='name@example.com'
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete='email'
+                    className='bg-background/80'
+                    data-testid='login-email-input'
+                  />
+                </div>
+                <Button
+                  type='submit'
+                  className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
+                  disabled={loading}
+                  data-testid='login-send-code-button'
+                >
+                  {loading ? t('login.sending') : t('login.sendCode')}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerify} className='space-y-3' data-testid='login-code-form'>
+                <div className='space-y-1.5'>
+                  <Label htmlFor='code'>{t('login.codeLabel')}</Label>
+                  <Input
+                    id='code'
+                    type='text'
+                    inputMode='numeric'
+                    autoComplete='one-time-code'
+                    pattern='\d{6}'
+                    maxLength={6}
+                    placeholder='000000'
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                    required
+                    // biome-ignore lint/a11y/noAutofocus: 코드 입력은 이 화면의 유일한 목적이다
+                    autoFocus
+                    className='bg-background/80 text-center text-2xl tracking-[0.4em]'
+                    data-testid='login-code-input'
+                  />
+                  <p className='text-xs text-muted-foreground'>{t('login.spamHint')}</p>
+                </div>
+                <Button
+                  type='submit'
+                  className='w-full bg-primary text-primary-foreground hover:bg-primary/90'
+                  disabled={loading || code.length !== 6}
+                  data-testid='login-verify-button'
+                >
+                  {loading ? t('login.verifying') : t('login.verify')}
+                </Button>
 
-            <p className='text-center text-sm text-muted-foreground'>
-              {t('login.noAccount')}{' '}
-              <Link
-                href={buildPublicPath(lang, '/signup')}
-                className='font-medium text-primary underline underline-offset-4 hover:text-primary/80'
-              >
-                {t('login.signup')}
-              </Link>
-            </p>
+                <div className='flex items-center justify-between pt-1'>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='px-0 text-muted-foreground'
+                    onClick={() => {
+                      setStep('email');
+                      setCode('');
+                      setError('');
+                      setNotice('');
+                    }}
+                  >
+                    {t('login.changeEmail')}
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='px-0 text-muted-foreground'
+                    disabled={loading}
+                    onClick={() => void sendCode(true)}
+                    data-testid='login-resend-button'
+                  >
+                    {t('login.resend')}
+                  </Button>
+                </div>
+              </form>
+            )}
 
             <div className='relative flex items-center gap-3'>
               <Separator className='flex-1' />

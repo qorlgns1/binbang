@@ -78,6 +78,9 @@ export function getRateLimit(pathname: string): RateLimitConfig | null {
   // 실패 시에만 카운트하는 것이 이상적이지만, 현재는 모든 요청을 카운트
   if (pathname === '/api/auth/credentials-login') return { limit: 30, windowMs: DEFAULT_WINDOW_MS }; // 1분에 30회 (2초에 1회)
   if (pathname === '/api/auth/signup') return { limit: 10, windowMs: DEFAULT_WINDOW_MS }; // 1분에 10회
+  // 이메일 OTP – 서비스 계층에도 Redis 기반 이메일/IP 한도가 있고, 여기는 그 앞단의 IP 방어다.
+  if (pathname === '/api/auth/email-code') return { limit: 10, windowMs: DEFAULT_WINDOW_MS }; // 1분에 10회
+  if (pathname === '/api/auth/email-verify') return { limit: 20, windowMs: DEFAULT_WINDOW_MS }; // 1분에 20회
   if (pathname.startsWith('/api/auth/')) return { limit: 60, windowMs: DEFAULT_WINDOW_MS };
   if (pathname.startsWith('/api/')) return { limit: 120, windowMs: DEFAULT_WINDOW_MS };
   return null;
