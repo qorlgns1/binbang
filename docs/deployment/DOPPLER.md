@@ -1,6 +1,6 @@
 # Doppler Migration Playbook
 
-> **Status: dev 배포 검증 완료(2026-09-02) — main 배포 및 서버 구식 파일 정리는 아직**
+> **Status: dev 배포 검증 + 서버 구식 파일 정리 완료(2026-09-02) — main 배포는 아직**
 > `CLAUDE.md` 규약상 서버/배포 변경 제안 전 반드시 읽는다. 이 문서가 실제 배포 절차와 다르면 `DEPLOYMENT.md`/`ENVIRONMENTS.md`가 최신 기준이며, 이 문서를 갱신한다.
 
 Last verified: 2026-09-02
@@ -48,17 +48,9 @@ DB 마이그레이션 등 호스트 직접 실행 스크립트(`pnpm db:migrate:
 - [x] `develop` 브랜치 push로 dev 배포 검증 완료 (2026-09-02). `binbang-dev-web-1`에 `DOPPLER_CONFIG`/`DOPPLER_ENVIRONMENT`/`DOPPLER_PROJECT` 메타 키가 실제로 주입됨을 확인, `/api/health` 200. 검증 중 발견한 두 가지 별개 이슈:
   - Doppler와 무관한 기존 버그: `docker/bake-action`의 provenance metadata가 리포 크기에 비례해 커져 `Extract digests` 스텝에서 "Argument list too long"으로 실패 → `.github/workflows/deploy.yml`에 `BUILDX_METADATA_PROVENANCE: min` 추가로 해결(커밋 `777685a`). 최근 배포가 4개월 넘게 없어서 이번에 처음 걸림.
   - `travel.moodybeard.com`/`dev-travel.moodybeard.com` 502 발견 — 원인은 `docker/nginx/*travel*.conf`가 `proxy_pass http://127.0.0.1:<port>`로 되어 있는데 nginx가 별도 Docker 브릿지 네트워크 컨테이너라 호스트 127.0.0.1에 닿지 못하는 사전 존재 버그(`web`용 conf는 컨테이너명+`resolver`를 써서 정상). **사용자 확인: travel은 현재 운영하지 않는 프로젝트라 급하게 고칠 필요 없음** — 나중에 travel을 다시 운영할 때 `dev-binbang.moodybeard.com.conf` 패턴으로 고칠 것.
-- [ ] 검증되면 서버의 구식 파일 정리:
-   ```bash
-   cd ~/workspace/binbang
-   rm -f .env.common .env.production.local .env.development.local \
-         .env.development.backup .env.development.bak.* .env.production.bak.* .env.production.local.bak.*
-   rm -f apps/web/.env.common apps/web/.env.production apps/web/.env.development \
-         apps/worker/.env.common apps/worker/.env.production apps/worker/.env.development \
-         apps/travel/.env.common apps/travel/.env.production apps/travel/.env.development \
-         apps/travel/.env.development.bak.*
-   ```
-   (`.env.production`/`.env.development` 루트 파일은 Doppler 값과 다시 한번 대조 후 삭제 — `pnpm db:migrate:deploy`가 더 이상 이 파일들을 읽지 않는지 확인)
+- [x] 서버 구식 파일 정리 완료 (2026-09-02). 삭제 전 `pnpm with-env`가 쓰는 `dotenv-cli`(v11)가 `-e`로 지정한 파일이 없어도 에러 없이 넘어가는 것을 로컬에서 확인 — `doppler run`이 이미 실제 값을 프로세스 env로 주입하므로 root `.env.production`/`.local`이 없어도 `db:migrate:deploy`는 정상 동작. 삭제한 것: root의 `.env.common`/`.env.production`(+`.local`)/`.env.development`(+`.local`)/`.bak.*`/`.backup`, `apps/{web,worker,travel}/.env.{common,production,development}`(+ travel의 `.bak.*`). 남긴 것: `.env.deploy.<env>`(CI 메타데이터), `.env.example`류(repo 추적 템플릿), `.env.doppler.*.<env>`(매 배포마다 자동 생성). 삭제 후 dev 컨테이너 health/ps 재확인 완료 — 영향 없음.
+- [x] **⚠️ prod 안전망 파일 복원 (2026-09-02, 임시)** — `main` 브랜치는 아직 이 Doppler 변경을 받지 않아서, `main`의 `docker-compose.production.yml`(구버전)은 여전히 `../.env.common`/`../.env.production`/`../apps/{web,worker,travel}/.env.common`을 **필수**로 요구한다(`required: false`가 없음). 이미 떠 있는 prod 컨테이너의 단순 재시작(크래시 복구·호스트 리부팅)은 이 파일이 없어도 괜찮지만(컨테이너 재생성이 아니므로), **main에 push되거나 누군가 수동으로 `docker compose up`을 다시 돌리면** 파일이 없어서 실패한다. 그래서 이 5개 파일만 Doppler(`binbang-web`/`binbang-worker`/`binbang-travel`의 `prd` config)에서 값을 다시 받아 최소한으로 복원해뒀다: `.env.common`, `.env.production`(+ `APP_ENV=production` — Doppler엔 없는 값이라 수동 추가), `apps/web/.env.common`, `apps/worker/.env.common`, `apps/travel/.env.common`.
+  **main이 이 Doppler 변경을 받아 배포되면 이 5개 파일은 다시 지워야 한다** (그때는 `docker-compose.production.yml`이 `.env.doppler.<service>.production`만 요구하므로 더 이상 필요 없음).
 - [ ] `IMAGE_MOONCATCH_DIGEST` (`.env.deploy.production`/`.development`에 있는 미문서화 키)의 용도 확인 — 안 쓰면 배포 스크립트/파일에서 제거
 - [ ] RUNBOOK.md의 `TRAVEL_AFFILIATE_*`/`TRAVEL_RESTORE_AUTO_ENABLED`/`TRAVEL_HISTORY_EDIT_ENABLED` 플래그가 코드에서 실제로 읽히는지 확인 — 읽힌다면 Doppler(`binbang-web` 또는 `binbang-travel`, 코드 확인 후 결정)에 추가해야 롤백 절차가 실제로 동작함
 
