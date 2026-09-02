@@ -83,22 +83,25 @@ rm /tmp/binbang-web-prd.env
 
 ## 5) 로컬 개발 환경
 
-2026-09-02부터 로컬 개발도 Doppler(`dev` config)를 쓰도록 바꿨다. 각 앱의 `dev` 스크립트가 `doppler run --project <해당 project> --config dev --`로 감싸져 있다:
+2026-09-02부터 로컬 개발은 `.env.local`을 전혀 쓰지 않고 전부 Doppler(`dev` config)에서 받는다. root/`apps/{web,worker,travel}`의 `.env.local` 파일은 전부 삭제했다(git엔 원래 안 잡히던 파일들 — `.gitignore`의 `.env.*` 규칙 때문에 `.env.example`만 예외).
 
+**앱별 `dev` 스크립트** — 각각 자기 Doppler project로 감싸져 있다:
 ```jsonc
 // apps/web/package.json
 "dev": "doppler run --project binbang-web --config dev -- next dev --experimental-next-config-strip-types"
 // apps/worker/package.json
-"dev": "pnpm --filter @workspace/db build && doppler run --project binbang-worker --config dev -- dotenv -e .env.local -- tsx watch src/main.ts"
+"dev": "pnpm --filter @workspace/db build && doppler run --project binbang-worker --config dev -- tsx watch src/main.ts"
 // apps/travel/package.json
 "dev": "doppler run --project binbang-travel --config dev -- next dev --port 3300 --experimental-next-config-strip-types"
 ```
 
-**개발자가 해야 하는 것**: `doppler login` 후 팀 admin에게 `binbang-web`/`binbang-worker`/`binbang-travel` project(적어도 `dev` config) 접근 권한을 받으면 끝. `pnpm dev`(루트 `turbo run dev`가 각 앱 디렉터리에서 위 스크립트를 그대로 실행)를 실행하면 각 앱이 자기 project의 Doppler 값을 받아온다.
+**루트 `with-env`** — `scripts/with-env.sh`로 바뀌었다. `APP_ENV`가 안 잡혀 있으면(=로컬) `doppler run --project binbang-web --config dev --`로 감싸고, `APP_ENV`가 잡혀 있으면(=서버 배포, `production`/`development`) 예전처럼 `dotenv -e .env.<env>.local -e .env.<env> --`를 쓴다. **이 분기가 중요하다** — 서버 쪽(`db:migrate:deploy`, `db:seed`, `db:seed:base`)은 `deploy.yml`이 바깥에서 이미 `doppler run --token ...`으로 실제 값을 넣어준 뒤 호출하므로, `with-env`가 여기서 또 Doppler를 부르면 prd 배포인데 하드코딩된 dev config를 덮어쓰려 드는 충돌이 생긴다 — 그래서 `APP_ENV`가 설정된 경우엔 절대 Doppler를 부르지 않도록 만들어뒀다. `build`/`test`/`typecheck`/`ci:check`/`db:migrate`/`db:migrate:generate`/`agoda:*`처럼 `with-env`를 거치는 로컬 명령은 전부 자동으로 Doppler 값을 받는다(개별 스크립트에 `doppler run`을 따로 안 붙여도 됨).
 
-**로컬 전용 값은 그대로 `.env.local`에** — Next.js(web/travel)는 원래 `.env.local`을 자동으로 읽고, worker는 `doppler run` 뒤에 `dotenv -e .env.local`을 남겨뒀다. Doppler 값이 우선이고, Doppler에 없는 키만 `.env.local`에서 채워진다(dotenv-cli는 기본적으로 이미 설정된 process env를 덮어쓰지 않음). 루트 `pnpm dev`(=`pnpm with-env turbo run dev`)의 `with-env`(루트 `.env.local`)는 그대로 남겨뒀다 — 앱별 값과 안 겹치는 전역 로컬 오버라이드가 필요할 때를 위한 것.
+**`local:docker`** — `scripts/local-docker.sh`로 바뀌었다. `docker compose`는 컨테이너에 값을 넣을 때 파일(`env_file:`)만 읽고 실행 중인 셸의 process env를 자동으로 전파하지 않으므로, `doppler secrets download`로 `binbang-web`/`binbang-worker`의 `dev` config를 `.env.doppler.local.web`/`.env.doppler.local.worker`로 내려받은 뒤 compose를 실행한다. `docker-compose.local.yml`의 `env_file:`도 이 파일들을 가리키도록 바꿨다.
 
-**아직 안 한 것**: `.doppler.yaml` 같은 디렉터리 스코프 파일은 안 씀 — project/config를 package.json 스크립트에 직접 명시하는 방식을 택해서(팀원이 각자 `doppler setup`을 안 해도 되므로) 필요 없다. Telegram 알림 관련 5개 키(`AFFILIATE_AUDIT_ALERT_TELEGRAM_*`)는 `dev`/`prd` 둘 다 비어있으니, 로컬에서 그 기능을 테스트하려면 `.env.local`이나 Doppler dev config에 직접 채워야 한다.
+**개발자가 해야 하는 것**: `doppler login` 후 팀 admin에게 `binbang-web`/`binbang-worker`/`binbang-travel` project의 `dev` config 접근 권한을 받으면 끝. 그 외 로컬 셋업 파일은 없다(`.doppler.yaml` 스코프 파일도 안 씀 — project/config가 스크립트에 직접 박혀 있어서 팀원이 `doppler setup`을 따로 안 해도 됨).
+
+**한계**: Telegram 알림 관련 5개 키(`AFFILIATE_AUDIT_ALERT_TELEGRAM_*`)는 `dev`/`prd` 둘 다 비어있으니, 로컬에서 그 기능을 테스트하려면 Doppler `binbang-worker`/`dev` config에 직접 값을 채워야 한다(더 이상 개인 로컬 파일로 대체할 방법이 없다 — 팀 전체가 공유하는 `dev` config에 넣는 것이므로 값을 채울 땐 팀에 공유해도 되는 값인지 먼저 확인할 것).
 
 ## 6) 참고: Doppler CLI 공통 커맨드
 

@@ -23,8 +23,8 @@ services:
     ports:
       - '${WEB_PORT:-3000}:3000'
     env_file:
-      - ../.env.local
-      - ../apps/web/.env.local
+      - path: ../.env.doppler.local.web
+        required: true
     environment:
       NODE_ENV: local
       DOCKER_ENV: 'true'
@@ -43,8 +43,8 @@ services:
     ports:
       - '${WORKER_CONTROL_PORT:-3500}:3500'
     env_file:
-      - ../.env.local
-      - ../apps/worker/.env.local
+      - path: ../.env.doppler.local.worker
+        required: true
     environment:
       NODE_ENV: local
       DOCKER_ENV: 'true'
