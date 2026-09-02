@@ -266,8 +266,13 @@ export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<Verify
   }
 
   const result = await ds.transaction(async (manager) => {
-    // 코드는 1회용이다. 검증 성공 즉시 소비한다.
-    await manager.getRepository(VerificationToken).delete({ identifier });
+    // 코드는 1회용이다. identifier + token 으로 삭제해 소비를 원자적으로 만든다.
+    // 같은 코드로 동시에 두 요청이 들어와도 삭제에 성공한 쪽만 통과한다.
+    // (identifier 만으로 지우고 결과를 보지 않으면 양쪽 다 세션을 받는다)
+    const consumed = await manager.getRepository(VerificationToken).delete({ identifier, token: stored.token });
+    if (consumed.affected !== 1) {
+      return null;
+    }
 
     const userRepo = manager.getRepository(User);
     const existing = await userRepo.findOne({
@@ -310,6 +315,12 @@ export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<Verify
 
     return { userId, sessionToken, expires, isNewUser };
   });
+
+  // 경쟁에서 진 요청. 코드는 이미 다른 요청이 소비했다.
+  if (!result) {
+    logWarn('email_otp_race_lost', {});
+    return { status: 'invalid' };
+  }
 
   await clearVerifyAttempts(email);
   logInfo('email_otp_verified', { isNewUser: result.isNewUser });

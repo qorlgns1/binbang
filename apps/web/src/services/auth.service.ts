@@ -2,6 +2,18 @@ import type { Adapter, AdapterSession, AdapterUser } from 'next-auth/adapters';
 
 import { Account, Plan, Role, Session, User, VerificationToken, getDataSource } from '@workspace/db';
 
+/**
+ * 이메일을 소문자로 정규화한다.
+ *
+ * Oracle varchar2 비교는 대소문자를 구분하므로, 저장과 조회에서 형태가 갈리면
+ * 같은 사람에게 계정이 두 개 생긴다. 소셜 로그인 제공자가 대문자가 섞인 주소를
+ * 주더라도 여기서 한 형태로 맞춘다.
+ */
+function normalizeEmail(email: string | null | undefined): string | null {
+  const trimmed = email?.trim().toLowerCase();
+  return trimmed ? trimmed : null;
+}
+
 // ============================================================================
 // NextAuth Adapter / Callback 용 서비스 함수
 // ============================================================================
@@ -94,7 +106,7 @@ export function createNextAuthAdapter(): Adapter {
 
       const repo = ds.getRepository(User);
       const user = repo.create({
-        email: data.email as string | null,
+        email: normalizeEmail(data.email as string | null),
         emailVerified: (data.emailVerified as Date | null) ?? null,
         name: (data.name as string | null) ?? null,
         image: (data.image as string | null) ?? null,
@@ -121,7 +133,7 @@ export function createNextAuthAdapter(): Adapter {
     async getUserByEmail(email: string) {
       const ds = await getDataSource();
       const user = await ds.getRepository(User).findOne({
-        where: { email },
+        where: { email: normalizeEmail(email) ?? email },
         select: { id: true },
       });
       if (!user) return null;
@@ -141,6 +153,10 @@ export function createNextAuthAdapter(): Adapter {
     async updateUser(data: Record<string, unknown>) {
       const ds = await getDataSource();
       const { id, ...updateData } = data as { id: string } & Record<string, unknown>;
+      // 제공자가 대문자가 섞인 주소를 보내도 저장 형태는 한 가지로 유지한다.
+      if ('email' in updateData) {
+        updateData.email = normalizeEmail(updateData.email as string | null);
+      }
       await ds.getRepository(User).update({ id }, updateData as Partial<User>);
       const user = await getExtendedAdapterUserById(ds, id);
       return requireExtendedAdapterUser(user, 'updateUser');

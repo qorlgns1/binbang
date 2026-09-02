@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { z } from 'zod';
 
+import { areTestEndpointsEnabled } from '@/lib/testEndpointGuard';
 import { forbiddenResponse, handleServiceError, validationErrorResponse } from '@/lib/handleServiceError';
 import { issueEmailOtpForTest } from '@/services/email-otp.service';
 
@@ -35,7 +36,7 @@ function isAllowedE2eEmail(email: string): boolean {
  * 즉 검증 경로는 그대로 검증되고, 발송 경로만 우회한다.
  */
 export async function POST(request: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
+  if (!areTestEndpointsEnabled()) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 

@@ -120,6 +120,8 @@ describe('email-otp.service', (): void => {
     redisMock.expire.mockResolvedValue(1);
     redisMock.ttl.mockResolvedValue(3600);
     redisMock.del.mockResolvedValue(1);
+    // 토큰 소비는 이제 delete 결과(affected)를 확인한다.
+    dbMock.tokenRepo.delete.mockResolvedValue({ affected: 1 });
   });
 
   describe('issueEmailOtp', (): void => {
@@ -246,8 +248,11 @@ describe('email-otp.service', (): void => {
       expect(createdUser.emailVerified).toBeInstanceOf(Date);
       expect(createdUser.planId).toBe('plan-free');
 
-      // 코드는 1회용이다.
-      expect(dbMock.tokenRepo.delete).toHaveBeenCalledWith({ identifier: `email-otp:${NORMALIZED_EMAIL}` });
+      // 코드는 1회용이다. identifier + token 으로 원자적으로 소비한다.
+      expect(dbMock.tokenRepo.delete).toHaveBeenCalledWith({
+        identifier: `email-otp:${NORMALIZED_EMAIL}`,
+        token: expectedTokenHash(CODE),
+      });
       expect(dbMock.sessionRepo.create).toHaveBeenCalledTimes(1);
     });
 
@@ -260,6 +265,28 @@ describe('email-otp.service', (): void => {
       expect(result).toMatchObject({ status: 'verified', userId: 'user-existing', isNewUser: false });
       expect(dbMock.userRepo.create).not.toHaveBeenCalled();
       expect(dbMock.userRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('토큰을 identifier+token 으로 원자적으로 소비한다', async (): Promise<void> => {
+      storeValidToken();
+      dbMock.userRepo.findOne.mockResolvedValue({ id: 'user-1', emailVerified: new Date() });
+
+      await verifyEmailOtp({ email: EMAIL, code: CODE });
+
+      expect(dbMock.tokenRepo.delete).toHaveBeenCalledWith({
+        identifier: `email-otp:${NORMALIZED_EMAIL}`,
+        token: expectedTokenHash(CODE),
+      });
+    });
+
+    it('동시 요청에서 진 쪽은 세션을 받지 못한다', async (): Promise<void> => {
+      storeValidToken();
+      // 다른 요청이 먼저 소비해 삭제된 행이 없다.
+      dbMock.tokenRepo.delete.mockResolvedValue({ affected: 0 });
+
+      await expect(verifyEmailOtp({ email: EMAIL, code: CODE })).resolves.toEqual({ status: 'invalid' });
+      expect(dbMock.sessionRepo.create).not.toHaveBeenCalled();
+      expect(dbMock.userRepo.create).not.toHaveBeenCalled();
     });
 
     it('미검증 계정은 검증 시각을 채운다', async (): Promise<void> => {

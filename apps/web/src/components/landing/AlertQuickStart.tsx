@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from 'react';
 
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { Bell, BellRing, CheckCircle2 } from 'lucide-react';
@@ -34,6 +34,7 @@ function todayIso(): string {
 export function AlertQuickStart(): React.ReactElement {
   const t = useTranslations('landing.quickStart');
   const router = useRouter();
+  const lang = useParams().lang as string;
 
   const [step, setStep] = useState<Step>('search');
   const [hotel, setHotel] = useState<HotelSearchResult | null>(null);
@@ -76,7 +77,7 @@ export function AlertQuickStart(): React.ReactElement {
       const res = await fetch('/api/auth/email-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, locale: lang }),
       });
       if (!res.ok) {
         setError(t('errorCreate'));
@@ -132,7 +133,9 @@ export function AlertQuickStart(): React.ReactElement {
           children: 0,
           rooms: 1,
           currency: 'KRW',
-          locale: 'ko',
+          // 알림 메일 언어는 accommodation.locale 로 결정된다.
+          // 방문한 페이지의 언어를 그대로 넘겨야 이후 알림도 같은 언어로 나간다.
+          locale: lang,
           consentOptIn: true,
         }),
       });

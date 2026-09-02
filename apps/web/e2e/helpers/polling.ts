@@ -1,6 +1,19 @@
 import { expect, type APIResponse, type Page } from '@playwright/test';
 
 /**
+ * 내부 API 호출에 쓸 인증 헤더.
+ *
+ * `authorizeInternalRequest` 는 BINBANG_INTERNAL_API_TOKEN 이 설정돼 있으면
+ * 헤더를 요구한다. 시크릿을 Doppler 로 옮기면서 로컬에서도 토큰이 주입되기
+ * 시작해, 헤더 없이 부르면 401 이 된다.
+ * 토큰이 없는 환경(예전 로컬)에서는 가드가 통과시키므로 빈 헤더로 둔다.
+ */
+function internalAuthHeaders(): Record<string, string> {
+  const token = process.env.BINBANG_INTERNAL_API_TOKEN?.trim();
+  return token ? { 'x-binbang-internal-token': token } : {};
+}
+
+/**
  * 테스트 전용 Agoda mock 응답 시나리오 타입.
  *
  * - `sold_out`: Agoda Search API 결과가 비어 있는 상태(호텔 결과 없음)
@@ -101,7 +114,9 @@ export async function setAgodaMockScenario(page: Page, scenario: AgodaMockScenar
  * @returns vacancy 회귀 검증에 필요한 poll 결과 지표
  */
 export async function pollAccommodationOnceById(page: Page, accommodationId: string): Promise<PollVacancyMetrics> {
-  const response = await page.request.post(`/api/internal/accommodations/${accommodationId}/poll`);
+  const response = await page.request.post(`/api/internal/accommodations/${accommodationId}/poll`, {
+    headers: internalAuthHeaders(),
+  });
   await assertOkResponse(response, 'pollAccommodationOnceById');
 
   const body = (await response.json()) as PollApiEnvelope;
@@ -134,7 +149,9 @@ export async function getNotificationHistory(page: Page, accommodationId: string
  * @returns dispatch 처리 결과 지표
  */
 export async function dispatchNotifications(page: Page): Promise<DispatchMetrics> {
-  const response = await page.request.post('/api/internal/accommodations/notifications/dispatch');
+  const response = await page.request.post('/api/internal/accommodations/notifications/dispatch', {
+    headers: internalAuthHeaders(),
+  });
   await assertOkResponse(response, 'dispatchNotifications');
 
   const body = (await response.json()) as DispatchApiEnvelope;
