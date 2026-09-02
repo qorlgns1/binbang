@@ -65,17 +65,19 @@ docker compose -f docker/docker-compose.production.yml --env-file .env.productio
 
 ### 3) DB 마이그레이션 적용 (필수)
 
-`.env.production`만 사용하는 환경(로컬에서 원격 Oracle 대상 등)에서는:
+서버에서 직접 실행할 때는 Doppler로 감싸 값을 주입합니다.
+`with-env`는 `APP_ENV`가 설정돼 있으면 아무것도 하지 않고 명령을 그대로 넘기므로,
+바깥에서 값을 넣어주지 않으면 DB 접속 정보가 비어 있습니다.
 
 ```bash
-APP_ENV=production pnpm db:migrate:deploy
-APP_ENV=production pnpm db:seed:base
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:seed:base
 ```
 
 develop 환경에서 샘플 데이터가 필요하면 아래를 추가로 실행합니다.
 
 ```bash
-APP_ENV=development pnpm db:seed
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:seed
 ```
 
 배포 워크플로우도 같은 순서로 실행합니다.
@@ -85,7 +87,7 @@ APP_ENV=development pnpm db:seed
 `PublicProperty` / `PublicAvailabilitySnapshot` 테이블은 워커 스케줄 실행 전까지 비어 있을 수 있습니다. 배포 직후 즉시 공개 페이지/사이트맵을 채우려면 아래를 1회 실행하세요.
 
 ```bash
-APP_ENV=production pnpm with-env pnpm --filter @workspace/worker snapshot:public-availability -- --windowDays=30
+doppler run --token "$DOPPLER_TOKEN_WORKER" -- pnpm --filter @workspace/worker snapshot:public-availability -- --windowDays=30
 ```
 
 ## 서버 리소스 스냅샷 (2026-02-15 기준)

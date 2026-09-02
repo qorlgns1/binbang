@@ -110,7 +110,7 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
 
 ## 6) Database Migration Policy
 - Migration tool: TypeORM Migrate (`typeorm migration:run`)
-- **On OCI host**: `APP_ENV=production pnpm db:migrate:deploy` — `with-env`를 통해 `.env.production.local`과 `.env.production`을 로드한다.
+- **On OCI host**: `doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy` — `with-env`는 `APP_ENV`가 설정돼 있으면 명령을 그대로 넘기므로, 값 주입은 바깥의 `doppler run`이 담당한다.
 - Timing: before final `compose up -d`
 - Compatibility: maintain backward-compatible schema for rolling restart windows
 - Prohibited flow: TypeORM `synchronize: true` / 수동 DDL (repo rule)
