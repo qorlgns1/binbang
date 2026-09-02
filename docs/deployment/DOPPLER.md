@@ -103,6 +103,8 @@ rm /tmp/binbang-web-prd.env
 
 **한계**: Telegram 알림 관련 5개 키(`AFFILIATE_AUDIT_ALERT_TELEGRAM_*`)는 `dev`/`prd` 둘 다 비어있으니, 로컬에서 그 기능을 테스트하려면 Doppler `binbang-worker`/`dev` config에 직접 값을 채워야 한다(더 이상 개인 로컬 파일로 대체할 방법이 없다 — 팀 전체가 공유하는 `dev` config에 넣는 것이므로 값을 채울 땐 팀에 공유해도 되는 값인지 먼저 확인할 것).
 
+**로컬 Redis 필요** — `apps/web`(필수)과 `apps/worker`(필수, `packages/worker-shared/src/runtime/settings/env.ts`가 시작 시점에 검증)는 `REDIS_URL`이 반드시 있어야 한다. 서버는 이 값을 compose `environment:`에 하드코딩(`redis://redis-prod:6379` 등)하므로 Doppler엔 원래 없었는데, `.env.local` 폐지 직후 `pnpm dev`가 `REDIS_URL: 값이 비어 있습니다` 에러로 실패하는 걸 실제로 겪었다. `redis://localhost:6379`를 `binbang-web`/`binbang-worker`/`binbang-travel`(travel은 선택 — 없으면 캐싱만 비활성화) 각 `dev` config에 추가해서 해결. **로컬에 Redis가 실제로 떠 있어야 한다** — `pnpm local:docker`로 한 번 띄워두면 계속 재사용 가능(이 리포에도 `binbang-redis-local`이라는 컨테이너가 이미 떠 있었음), 또는 `docker run -d -p 6379:6379 redis:7-alpine` 같은 별도 컨테이너도 무방.
+
 ## 6) 참고: Doppler CLI 공통 커맨드
 
 ```bash
