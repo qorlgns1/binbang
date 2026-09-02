@@ -1,6 +1,6 @@
 # Doppler Migration Playbook
 
-> **Status: DRAFT — project/config/키 이름은 생성됨, 실제 값·서비스 토큰·GitHub secrets 연동은 아직**
+> **Status: dev 배포 검증 완료(2026-09-02) — main 배포 및 서버 구식 파일 정리는 아직**
 > `CLAUDE.md` 규약상 서버/배포 변경 제안 전 반드시 읽는다. 이 문서가 실제 배포 절차와 다르면 `DEPLOYMENT.md`/`ENVIRONMENTS.md`가 최신 기준이며, 이 문서를 갱신한다.
 
 Last verified: 2026-09-02
@@ -45,7 +45,9 @@ DB 마이그레이션 등 호스트 직접 실행 스크립트(`pnpm db:migrate:
 - [x] 각 project × config 조합으로 **read-only 서비스 토큰** 발급 완료 (`dev` config 토큰은 develop 배포용, `prd` config 토큰은 main 배포용). 토큰 값은 생성과 동시에 `gh secret set`으로 파이프해서 세션에 노출되지 않음.
 - [x] GitHub repo의 Environment `main`/`develop`에 `DOPPLER_TOKEN_WEB`/`DOPPLER_TOKEN_WORKER`/`DOPPLER_TOKEN_TRAVEL` secret 등록 완료 (main엔 prd 토큰, develop엔 dev 토큰). 이 작업엔 fine-grained PAT에 Secrets + **Environments** 두 권한이 모두 필요했음(처음엔 Secrets만 있어서 environment secret 쓰기가 403이었음).
 - [x] OCI 호스트에 Doppler CLI 설치 확인 완료 (v3.76.5, 2026-09-02에 미리 설치해둠 — 첫 배포 때 자동 설치 로직이 안 타도 됨)
-- [ ] `develop` 브랜치에 이 변경을 먼저 push해서 dev 배포로 전체 흐름 검증 (컨테이너가 실제로 뜨는지, `/api/health` 200인지)
+- [x] `develop` 브랜치 push로 dev 배포 검증 완료 (2026-09-02). `binbang-dev-web-1`에 `DOPPLER_CONFIG`/`DOPPLER_ENVIRONMENT`/`DOPPLER_PROJECT` 메타 키가 실제로 주입됨을 확인, `/api/health` 200. 검증 중 발견한 두 가지 별개 이슈:
+  - Doppler와 무관한 기존 버그: `docker/bake-action`의 provenance metadata가 리포 크기에 비례해 커져 `Extract digests` 스텝에서 "Argument list too long"으로 실패 → `.github/workflows/deploy.yml`에 `BUILDX_METADATA_PROVENANCE: min` 추가로 해결(커밋 `777685a`). 최근 배포가 4개월 넘게 없어서 이번에 처음 걸림.
+  - `travel.moodybeard.com`/`dev-travel.moodybeard.com` 502 발견 — 원인은 `docker/nginx/*travel*.conf`가 `proxy_pass http://127.0.0.1:<port>`로 되어 있는데 nginx가 별도 Docker 브릿지 네트워크 컨테이너라 호스트 127.0.0.1에 닿지 못하는 사전 존재 버그(`web`용 conf는 컨테이너명+`resolver`를 써서 정상). **사용자 확인: travel은 현재 운영하지 않는 프로젝트라 급하게 고칠 필요 없음** — 나중에 travel을 다시 운영할 때 `dev-binbang.moodybeard.com.conf` 패턴으로 고칠 것.
 - [ ] 검증되면 서버의 구식 파일 정리:
    ```bash
    cd ~/workspace/binbang
@@ -82,8 +84,8 @@ rm /tmp/binbang-web-prd.env
 
 ## 4) main 배포 전 체크리스트
 
-- [ ] §3의 남은 체크박스 완료 (실제 값 입력 / 서비스 토큰 / GitHub secrets)
-- [ ] develop 배포로 최소 1회 성공 검증
+- [x] §3의 남은 체크박스 완료 (실제 값 입력 / 서비스 토큰 / GitHub secrets)
+- [x] develop 배포로 최소 1회 성공 검증 (2026-09-02)
 - [ ] `docker compose ... config`로 두 compose 파일이 `required: true`인 `.env.doppler.*` 파일을 정상적으로 찾는지 확인 (파일이 없으면 컨테이너가 아예 안 뜸 — 의도된 fail-fast)
 - [ ] 롤백 계획: Doppler 다운로드가 실패하면 배포가 검증 전까지는 기존 수동 파일로 되돌릴 수 있도록, 서버 구식 파일 정리는 dev/main 모두 검증된 뒤에만 수행
 
