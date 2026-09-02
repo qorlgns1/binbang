@@ -5,7 +5,7 @@
 # 이 파일들은 .gitignore의 `.env.*` 규칙에 걸려 커밋되지 않는다.
 set -e
 
-doppler secrets download --no-file --format env --project binbang-web --config dev > .env.doppler.local.web
-doppler secrets download --no-file --format env --project binbang-worker --config dev > .env.doppler.local.worker
+doppler secrets download --no-file --format env --project binbang-web --config dev_personal > .env.doppler.local.web
+doppler secrets download --no-file --format env --project binbang-worker --config dev_personal > .env.doppler.local.worker
 
 docker compose -f docker/docker-compose.local.yml "$@"

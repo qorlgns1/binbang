@@ -40,7 +40,7 @@ DB 마이그레이션 등 호스트 직접 실행 스크립트(`pnpm db:migrate:
 
 - [x] Doppler 로그인 (workplace `moodybeard`, 기존 전역 로그인 사용)
 - [x] project 3개 생성: `binbang-web`, `binbang-worker`, `binbang-travel` (`binbang-web`은 이미 존재했음)
-- [x] 각 project의 `dev`/`prd` config에 **키 이름만** 위 인벤토리대로 업로드 완료 (값은 전부 빈 문자열 placeholder — 실제 secret 값은 아직 없음). `stg`/`dev_personal` config는 기본 스캐폴드로 남아있고 사용 안 함.
+- [x] 각 project의 `dev`/`prd` config에 **키 이름만** 위 인벤토리대로 업로드 완료 (값은 전부 빈 문자열 placeholder — 실제 secret 값은 아직 없음). `stg` config는 기본 스캐폴드로 남아있고 사용 안 함. `dev_personal`은 로컬 개발 전용으로 사용한다(§5).
 - [x] 각 project × config에 **실제 값** 입력 완료 — OCI 서버의 `.env.common`/`.env.<env>`/`apps/<app>/.env.common`/`apps/<app>/.env.<env>`를 SSH로 읽어 `doppler secrets upload /dev/stdin`으로 직접 파이프(값이 세션 컨텍스트나 화면에 출력되지 않도록 전 과정 로컬 로그 파일로 리다이렉트 후 즉시 파기, 길이 비교로만 검증). `binbang-worker`의 `AFFILIATE_AUDIT_ALERT_TELEGRAM_*` 5개는 서버에도 값이 없어 비어있음(Telegram 알림 미설정 상태로 추정 — 실제로 쓸 계획이면 별도로 채워야 함).
 - [x] 각 project × config 조합으로 **read-only 서비스 토큰** 발급 완료 (`dev` config 토큰은 develop 배포용, `prd` config 토큰은 main 배포용). 토큰 값은 생성과 동시에 `gh secret set`으로 파이프해서 세션에 노출되지 않음.
 - [x] GitHub repo의 Environment `main`/`develop`에 `DOPPLER_TOKEN_WEB`/`DOPPLER_TOKEN_WORKER`/`DOPPLER_TOKEN_TRAVEL` secret 등록 완료 (main엔 prd 토큰, develop엔 dev 토큰). 이 작업엔 fine-grained PAT에 Secrets + **Environments** 두 권한이 모두 필요했음(처음엔 Secrets만 있어서 environment secret 쓰기가 403이었음).
@@ -85,17 +85,46 @@ rm /tmp/binbang-web-prd.env
 
 2026-09-02부터 로컬 개발은 `.env.local`을 전혀 쓰지 않고 전부 Doppler(`dev` config)에서 받는다. root/`apps/{web,worker,travel}`의 `.env.local` 파일은 전부 삭제했다(git엔 원래 안 잡히던 파일들 — `.gitignore`의 `.env.*` 규칙 때문에 `.env.example`만 예외).
 
-**앱별 `dev` 스크립트** — 각각 자기 Doppler project로 감싸져 있다:
+### 값을 누가 넣는가 (레이어 규칙)
+
+명령 하나에 Doppler 는 **한 번만** 개입한다. 겹치면 안쪽이 이겨서 바깥에서 지정한 값이 조용히 덮어써진다.
+
+| 명령 | 값 주입 주체 | Doppler project |
+|---|---|---|
+| `pnpm dev` / `dev:web` / `dev:travel` / `dev:worker` | **각 앱의 `dev` 스크립트** | 앱별(web/travel/worker) |
+| `pnpm db:*`, `agoda:*`, `tsx scripts/*` | **`with-env`** | `binbang-web` (DB 소유로 지정) |
+| `pnpm lint` / `typecheck` / `test` / `build` / `ci:check` | **없음 — 비밀값 불필요** | — |
+
+루트 `dev:*` 스크립트는 `with-env` 를 거치지 않는다. 앱 스크립트가 이미 자기 project 로
+Doppler 를 실행하므로, 루트에서 한 번 더 감싸면 이중 호출이 되고 바깥 값이 무시된다.
+(실제로 이 이중 구조 때문에 e2e 가 깨진 적이 있다 — playwright 가 넘긴 `NEXTAUTH_URL` 을
+앱 스크립트의 doppler 가 덮어써서 `__Secure-` 쿠키가 발급됐고 `page.request` 가 401 을 받았다.)
+
+검증 명령도 거치지 않는다. `.github/workflows/ci.yml` 이 더미 env 만으로 같은 명령을
+그대로 돌리고 있어, 비밀값이 필요 없다는 것이 CI 로 증명된다.
+
+**앱별 `dev` 스크립트** — 각각 자기 Doppler project 의 로컬 전용 config 로 감싸져 있다:
 ```jsonc
 // apps/web/package.json
-"dev": "doppler run --project binbang-web --config dev -- next dev --experimental-next-config-strip-types"
+"dev": "doppler run --project binbang-web --config dev_personal -- next dev --experimental-next-config-strip-types"
 // apps/worker/package.json
-"dev": "pnpm --filter @workspace/db build && doppler run --project binbang-worker --config dev -- tsx watch src/main.ts"
+"dev": "pnpm --filter @workspace/db build && doppler run --project binbang-worker --config dev_personal -- tsx watch src/main.ts"
 // apps/travel/package.json
-"dev": "doppler run --project binbang-travel --config dev -- next dev --port 3300 --experimental-next-config-strip-types"
+"dev": "doppler run --project binbang-travel --config dev_personal -- next dev --port 3300 --experimental-next-config-strip-types"
 ```
 
-**루트 `with-env`** — `scripts/with-env.sh`로 바뀌었다. `APP_ENV`가 안 잡혀 있으면(=로컬) `doppler run --project binbang-web --config dev --`로 감싸고, `APP_ENV`가 잡혀 있으면(=서버 배포, `production`/`development`) 예전처럼 `dotenv -e .env.<env>.local -e .env.<env> --`를 쓴다. **이 분기가 중요하다** — 서버 쪽(`db:migrate:deploy`, `db:seed`, `db:seed:base`)은 `deploy.yml`이 바깥에서 이미 `doppler run --token ...`으로 실제 값을 넣어준 뒤 호출하므로, `with-env`가 여기서 또 Doppler를 부르면 prd 배포인데 하드코딩된 dev config를 덮어쓰려 드는 충돌이 생긴다 — 그래서 `APP_ENV`가 설정된 경우엔 절대 Doppler를 부르지 않도록 만들어뒀다. `build`/`test`/`typecheck`/`ci:check`/`db:migrate`/`db:migrate:generate`/`agoda:*`처럼 `with-env`를 거치는 로컬 명령은 전부 자동으로 Doppler 값을 받는다(개별 스크립트에 `doppler run`을 따로 안 붙여도 됨).
+**`dev` 가 아니라 `dev_personal` 인 이유** — `dev` config 는 **배포된 dev 서버**(`dev-binbang.moodybeard.com`)가
+쓰는 값이다. 로컬이 그걸 그대로 쓰면 `NEXTAUTH_URL` 이 배포 주소가 되어 로컬 OAuth 콜백과
+세션 쿠키가 어긋난다. 로컬 전용 값은 `dev_personal` 에만 둔다.
+
+**루트 `with-env`** — `scripts/with-env.sh`. `APP_ENV` 가 없으면(=로컬) `binbang-web` 의
+`dev_personal` 로 감싸고, 있으면(=서버 배포) **아무것도 하지 않고 명령을 그대로 넘긴다**.
+서버에서는 `deploy.yml` 이 바깥에서 `doppler run --token ...` 으로 이미 값을 주입한 뒤
+호출하기 때문이다. 그래서 서버에서 수동으로 실행할 때도 반드시 `doppler run` 으로 감싸야 한다:
+
+```bash
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy
+```
 
 **`local:docker`** — `scripts/local-docker.sh`로 바뀌었다. `docker compose`는 컨테이너에 값을 넣을 때 파일(`env_file:`)만 읽고 실행 중인 셸의 process env를 자동으로 전파하지 않으므로, `doppler secrets download`로 `binbang-web`/`binbang-worker`의 `dev` config를 `.env.doppler.local.web`/`.env.doppler.local.worker`로 내려받은 뒤 compose를 실행한다. `docker-compose.local.yml`의 `env_file:`도 이 파일들을 가리키도록 바꿨다.
 
