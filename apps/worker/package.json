@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @workspace/db build && dotenv -e .env -e .env.local -- tsx watch src/main.ts",
+    "dev": "pnpm --filter @workspace/db build && doppler run --project binbang-worker --config dev -- dotenv -e .env.local -- tsx watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit",

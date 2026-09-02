@@ -81,7 +81,26 @@ rm /tmp/binbang-web-prd.env
 - [ ] `docker compose ... config`로 두 compose 파일이 `required: true`인 `.env.doppler.*` 파일을 정상적으로 찾는지 확인 (파일이 없으면 컨테이너가 아예 안 뜸 — 의도된 fail-fast)
 - [ ] 롤백 계획: Doppler 다운로드가 실패하면 배포가 검증 전까지는 기존 수동 파일로 되돌릴 수 있도록, 서버 구식 파일 정리는 dev/main 모두 검증된 뒤에만 수행
 
-## 5) 참고: Doppler CLI 공통 커맨드
+## 5) 로컬 개발 환경
+
+2026-09-02부터 로컬 개발도 Doppler(`dev` config)를 쓰도록 바꿨다. 각 앱의 `dev` 스크립트가 `doppler run --project <해당 project> --config dev --`로 감싸져 있다:
+
+```jsonc
+// apps/web/package.json
+"dev": "doppler run --project binbang-web --config dev -- next dev --experimental-next-config-strip-types"
+// apps/worker/package.json
+"dev": "pnpm --filter @workspace/db build && doppler run --project binbang-worker --config dev -- dotenv -e .env.local -- tsx watch src/main.ts"
+// apps/travel/package.json
+"dev": "doppler run --project binbang-travel --config dev -- next dev --port 3300 --experimental-next-config-strip-types"
+```
+
+**개발자가 해야 하는 것**: `doppler login` 후 팀 admin에게 `binbang-web`/`binbang-worker`/`binbang-travel` project(적어도 `dev` config) 접근 권한을 받으면 끝. `pnpm dev`(루트 `turbo run dev`가 각 앱 디렉터리에서 위 스크립트를 그대로 실행)를 실행하면 각 앱이 자기 project의 Doppler 값을 받아온다.
+
+**로컬 전용 값은 그대로 `.env.local`에** — Next.js(web/travel)는 원래 `.env.local`을 자동으로 읽고, worker는 `doppler run` 뒤에 `dotenv -e .env.local`을 남겨뒀다. Doppler 값이 우선이고, Doppler에 없는 키만 `.env.local`에서 채워진다(dotenv-cli는 기본적으로 이미 설정된 process env를 덮어쓰지 않음). 루트 `pnpm dev`(=`pnpm with-env turbo run dev`)의 `with-env`(루트 `.env.local`)는 그대로 남겨뒀다 — 앱별 값과 안 겹치는 전역 로컬 오버라이드가 필요할 때를 위한 것.
+
+**아직 안 한 것**: `.doppler.yaml` 같은 디렉터리 스코프 파일은 안 씀 — project/config를 package.json 스크립트에 직접 명시하는 방식을 택해서(팀원이 각자 `doppler setup`을 안 해도 되므로) 필요 없다. Telegram 알림 관련 5개 키(`AFFILIATE_AUDIT_ALERT_TELEGRAM_*`)는 `dev`/`prd` 둘 다 비어있으니, 로컬에서 그 기능을 테스트하려면 `.env.local`이나 Doppler dev config에 직접 채워야 한다.
+
+## 6) 참고: Doppler CLI 공통 커맨드
 
 ```bash
 # 서비스 토큰 발급 (read-only, CI용)
