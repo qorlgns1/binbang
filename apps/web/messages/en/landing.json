@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – Vacancy Alert Service | Real-Time Monitoring",
-    "description": "Sold-out accommodation? Binbang is currently in beta and notifies you when a room becomes available.",
-    "twitterDescription": "A vacancy alert service currently running in beta."
+    "description": "Is the place you want sold out? Binbang emails you the moment a room opens. Free to use.",
+    "twitterDescription": "Vacancy alerts for sold-out stays. We email you the moment a room opens."
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "Beta Guide",
+    "pricing": "Pricing",
     "faq": "FAQ",
     "about": "About",
     "login": "Login"
@@ -16,58 +16,56 @@
     "headlineMobile": ["So your rest", "never loses its way,"],
     "subheadline": "Binbang keeps the lighthouse on all night.",
     "subheadlineMobile": ["'Binbang' keeps the lighthouse", "on all night."],
-    "description": "Tired of endless refreshing? Binbang is currently in beta and keeps watch while you sleep to catch the vacancy first.",
-    "cta": "Start Beta",
+    "description": "Tired of refreshing and racing for a booking? Binbang keeps watch while you sleep and waits for a room to open.",
+    "cta": "Set an alert",
     "secondaryCta": "See Features",
-    "statusLabel": "Open Beta"
+    "statusLabel": "Free to use"
   },
   "features": {
-    "f1Title": "Brighter News, First",
-    "f1Subtitle": "Less waiting, more excitement",
-    "f1Desc": "Browser optimization finds open rooms up to 4x faster than conventional checks. Be the first to know and secure your perfect stay ahead of everyone else.",
-    "f2Title": "Clear Through Any Fog",
-    "f2Subtitle": "Unwavering accuracy through every change",
-    "f2Desc": "Dynamic selectors adapt to booking-site UI changes without redeploying code. Even when platforms evolve, Binbang's vision never loses its way.",
-    "f3Title": "An Unfading Lighthouse",
-    "f3Subtitle": "Steadfast protection, even while you sleep",
-    "f3Desc": "Minute-level heartbeat logs keep monitoring stable and transparent, all day. The system detects and recovers from any issues automatically, so your watch never ends.",
-    "learnMore": "Learn more"
-  },
-  "trust": {
-    "title": "Live Operations",
-    "operational": "Operational",
-    "uptime": "Uptime",
-    "activeMonitors": "Active Monitors",
-    "response": "Avg Response",
-    "emptyLogs": "No system activity in the last 5 minutes.",
-    "errorMessage": "Failed to load live status. Retrying in 5 seconds.",
-    "retry": "Retry"
+    "f1Title": "We check every 30 minutes",
+    "f1Desc": "We watch your property and dates around the clock. When a room opens, you get an email.",
+    "f2Title": "It's free",
+    "f2Desc": "Set up to 50 alerts at no cost. We never ask for a payment method.",
+    "f3Title": "Stop anytime",
+    "f3Desc": "One click on the unsubscribe link at the bottom of any alert email."
   },
   "footer": {
     "title": "We handle the complexity.",
     "description": "You can focus on planning your next trip.",
-    "cta": "Start Beta Now",
+    "cta": "Set an alert now",
     "copyright": "© 2026 Binbang. All rights reserved.",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   },
   "appPurpose": "Binbang is a vacancy alert service that monitors accommodation booking sites and sends email notifications when a room becomes available. When you sign in with Google, we use your email address only for account identification and sending vacancy alerts.",
   "appPurposeAriaLabel": "App purpose and data use",
-  "mockLogs": [
-    { "id": 1, "message": "Vacancy found: Park Hyatt Seoul (Premium Suite)", "location": "Seoul" },
-    { "id": 2, "message": "Vacancy found: Grand Hyatt Jeju (Ocean View Deluxe)", "location": "Jeju" },
-    { "id": 3, "message": "Check complete: 2,847 targets scanned", "location": "System" },
-    { "id": 4, "message": "Vacancy found: Shilla Stay Gwanghwamun (Executive)", "location": "Seoul" },
-    { "id": 5, "message": "Alert sent: Delivered to 3 users", "location": "System" },
-    { "id": 6, "message": "Vacancy found: Lotte Hotel Busan (Ocean Premier)", "location": "Busan" },
-    { "id": 7, "message": "Vacancy found: Four Seasons Seoul (Corner King)", "location": "Seoul" },
-    { "id": 8, "message": "Check complete: 1,923 targets scanned", "location": "System" },
-    { "id": 9, "message": "Vacancy found: Maison Glad Jeju (Standard Double)", "location": "Jeju" },
-    { "id": 10, "message": "Vacancy found: Ananti Cove (Oceanhill Deluxe)", "location": "Busan" },
-    { "id": 11, "message": "Vacancy found: Conrad Seoul (Executive)", "location": "Seoul" },
-    { "id": 12, "message": "Alert sent: Delivered to 7 users", "location": "System" },
-    { "id": 13, "message": "Vacancy found: Banyan Tree Club & Spa (Pool Villa)", "location": "Jeju" },
-    { "id": 14, "message": "Check complete: 3,421 targets scanned", "location": "System" },
-    { "id": 15, "message": "Vacancy found: Seamarq Hotel (Ocean View Twin)", "location": "Gangneung" }
-  ]
+  "quickStart": {
+    "title": "Sold out?\nWe'll tell you the moment a room opens",
+    "subtitle": "Search a hotel and leave your email. No account needed.",
+    "searchPlaceholder": "Search by hotel or city",
+    "clearHotel": "Clear selection",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "next": "Next",
+    "back": "Back",
+    "emailTitle": "Where should we reach you?",
+    "emailPlaceholder": "name@example.com",
+    "consent": "I agree to receive email alerts for openings and price drops. You can unsubscribe anytime.",
+    "sendCode": "Send code",
+    "sending": "Sending...",
+    "codeTitle": "Enter the code we emailed you",
+    "codeHint": "We sent a 6-digit code to {email}.",
+    "verify": "Start alert",
+    "verifying": "Setting up...",
+    "resend": "Send a new code",
+    "changeEmail": "Use a different email",
+    "doneTitle": "Your alert is live",
+    "doneBody": "We'll email {email} as soon as a room opens.",
+    "goDashboard": "View my alerts",
+    "errorHotel": "Pick a property first",
+    "errorDates": "Check your check-in and check-out dates",
+    "errorConsent": "Please agree to receive alerts",
+    "errorCreate": "We couldn't set up the alert",
+    "submit": "Get vacancy alerts"
+  }
 }

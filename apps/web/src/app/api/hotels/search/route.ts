@@ -1,16 +1,15 @@
-import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
-import { authOptions } from '@/lib/auth';
 import { searchAgodaHotels } from '@/services/agoda-hotels.service';
 
+/**
+ * 숙소 검색.
+ *
+ * 홈 화면이 로그인 전에 검색을 제공하므로 인증을 요구하지 않는다.
+ * 외부 API가 아니라 우리 DB(`agoda_hotels`)를 조회하며,
+ * 호출량은 미들웨어의 경로 레이트 제한으로 방어한다.
+ */
 export async function GET(request: Request): Promise<Response> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: '로그인이 필요합니다' } }, { status: 401 });
-  }
-
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q')?.trim() ?? '';
 

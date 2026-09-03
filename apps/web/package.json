@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --experimental-next-config-strip-types",
+    "dev": "doppler run --project binbang-web --config dev_personal -- next dev --experimental-next-config-strip-types",
     "build": "next build --experimental-next-config-strip-types",
     "start": "next start --experimental-next-config-strip-types",
     "lint": "biome lint .",
@@ -24,7 +24,6 @@
     "@tanstack/react-query": "^5.94.5",
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
-    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

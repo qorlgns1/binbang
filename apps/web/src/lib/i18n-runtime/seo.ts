@@ -26,7 +26,6 @@ export const PUBLIC_PATHS = [
   '/faq',
   '/about',
   '/login',
-  '/signup',
   '/terms',
   '/privacy',
 ] as const;

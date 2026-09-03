@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – 空房提醒服务 | 实时监控",
-    "description": "心仪的住宿已满房？Binbang 目前处于 Beta 阶段，空房出现时会立即通知您。",
-    "twitterDescription": "目前以 Beta 形式运行的空房提醒服务。"
+    "description": "想住的房间客满了吗？有空房时空房会立即发邮件通知你。完全免费。",
+    "twitterDescription": "住宿空房提醒服务。有空房时立即邮件通知。"
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "Beta 说明",
+    "pricing": "费用说明",
     "faq": "FAQ",
     "about": "关于",
     "login": "登录"
@@ -16,58 +16,56 @@
     "headlineMobile": ["让您的休息", "不迷路，"],
     "subheadline": "Binbang 彻夜为您点亮灯塔。",
     "subheadlineMobile": ["Binbang 彻夜", "为您点亮灯塔。"],
-    "description": "厌倦了无休止的刷新？Binbang 目前处于 Beta 阶段，会在你休息时持续监控空房。",
-    "cta": "开始使用 Beta",
+    "description": "厌倦了不停刷新和抢订吗？空房会在你熟睡时默默守候，等待房间空出来。",
+    "cta": "设置提醒",
     "secondaryCta": "了解功能",
-    "statusLabel": "开放 Beta"
+    "statusLabel": "免费提供"
   },
   "features": {
-    "f1Title": "更快、更早",
-    "f1Subtitle": "少一点等待，多一点期待",
-    "f1Desc": "浏览器优化使空房发现速度比常规检查快最多 4 倍。抢先知晓，在他人之前锁定理想住宿。",
-    "f2Title": "雾中亦清晰",
-    "f2Subtitle": "面对变化依然准确",
-    "f2Desc": "动态选择器无需重新部署即可适应预订网站界面变化。平台如何演变，Binbang 的视线都不会迷路。",
-    "f3Title": "不灭的灯塔",
-    "f3Subtitle": "您入睡时依然守护",
-    "f3Desc": "分钟级心跳日志让监控稳定透明。系统自动发现并恢复问题，守护从不间断。",
-    "learnMore": "了解更多"
-  },
-  "trust": {
-    "title": "实时运行状态",
-    "operational": "运行中",
-    "uptime": "可用率",
-    "activeMonitors": "活跃监控数",
-    "response": "平均响应",
-    "emptyLogs": "最近 5 分钟无系统记录。",
-    "errorMessage": "加载实时状态失败，5 秒后重试。",
-    "retry": "重试"
+    "f1Title": "每 30 分钟检查一次",
+    "f1Desc": "我们持续查看你登记的住宿和日期。一旦有空房，立即发邮件通知你。",
+    "f2Title": "完全免费",
+    "f2Desc": "最多可免费设置 50 个提醒，无需提供支付方式。",
+    "f3Title": "随时可以停止",
+    "f3Desc": "点击提醒邮件底部的退订链接即可。"
   },
   "footer": {
     "title": "复杂的事交给我们。",
     "description": "您只需专注规划下一次旅程。",
-    "cta": "立即开始使用 Beta",
+    "cta": "立即设置提醒",
     "copyright": "© 2026 Binbang. 保留所有权利。",
     "privacy": "隐私政策",
     "terms": "服务条款"
   },
   "appPurpose": "Binbang 是监控住宿预订网站空房并在有空房时通过邮件通知您的服务。使用 Google 登录时，我们仅将您的邮箱用于账户识别和空房提醒发送。",
   "appPurposeAriaLabel": "应用目的与数据使用",
-  "mockLogs": [
-    { "id": 1, "message": "发现空房：首尔柏悦酒店（豪华套房）", "location": "首尔" },
-    { "id": 2, "message": "发现空房：济州君悦酒店（海景豪华房）", "location": "济州" },
-    { "id": 3, "message": "检查完成：已扫描 2,847 个目标", "location": "系统" },
-    { "id": 4, "message": "发现空房：新罗 Stay 光化门（行政房）", "location": "首尔" },
-    { "id": 5, "message": "提醒已发送：已送达 3 位用户", "location": "系统" },
-    { "id": 6, "message": "发现空房：釜山乐天酒店（海景尊享房）", "location": "釜山" },
-    { "id": 7, "message": "发现空房：首尔四季酒店（转角国王房）", "location": "首尔" },
-    { "id": 8, "message": "检查完成：已扫描 1,923 个目标", "location": "系统" },
-    { "id": 9, "message": "发现空房：济州梅森格拉德（标准双床房）", "location": "济州" },
-    { "id": 10, "message": "发现空房：阿南蒂湾（海景豪华房）", "location": "釜山" },
-    { "id": 11, "message": "发现空房：首尔康莱德（行政房）", "location": "首尔" },
-    { "id": 12, "message": "提醒已发送：已送达 7 位用户", "location": "系统" },
-    { "id": 13, "message": "发现空房：悦榕庄俱乐部与水疗（泳池别墅）", "location": "济州" },
-    { "id": 14, "message": "检查完成：已扫描 3,421 个目标", "location": "系统" },
-    { "id": 15, "message": "发现空房：西马克酒店（海景双床房）", "location": "江陵" }
-  ]
+  "quickStart": {
+    "title": "客满了？\n有空房我们第一时间通知你",
+    "subtitle": "搜索酒店并留下邮箱即可，无需注册账号。",
+    "searchPlaceholder": "按酒店或城市搜索",
+    "clearHotel": "取消选择",
+    "checkIn": "入住",
+    "checkOut": "退房",
+    "next": "下一步",
+    "back": "上一步",
+    "emailTitle": "通知发到哪里？",
+    "emailPlaceholder": "name@example.com",
+    "consent": "我同意接收空房和降价的邮件提醒，可随时取消。",
+    "sendCode": "获取验证码",
+    "sending": "发送中...",
+    "codeTitle": "请输入邮件中的验证码",
+    "codeHint": "已向 {email} 发送 6 位验证码。",
+    "verify": "开启提醒",
+    "verifying": "设置中...",
+    "resend": "重新发送验证码",
+    "changeEmail": "使用其他邮箱",
+    "doneTitle": "提醒已开启",
+    "doneBody": "有空房时我们会发邮件到 {email}。",
+    "goDashboard": "查看我的提醒",
+    "errorHotel": "请先选择住宿",
+    "errorDates": "请检查入住和退房日期",
+    "errorConsent": "需要同意接收提醒",
+    "errorCreate": "提醒设置失败",
+    "submit": "获取空房提醒"
+  }
 }

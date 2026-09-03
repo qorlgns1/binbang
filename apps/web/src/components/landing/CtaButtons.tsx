@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -8,12 +7,14 @@ import { ArrowRight, BellRing } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { trackPrimaryCTAClicked, trackSecondaryCTAClicked } from '@/lib/analytics/landingTracker';
-import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { smoothScrollTo } from '@/lib/utils/scroll';
 
 /**
  * Render the primary and secondary call-to-action buttons used on the landing page.
- * The primary button navigates to signup; the secondary button smooth-scrolls to the features section.
+ *
+ * 주 CTA는 상단 검색 폼(#start)으로 스크롤한다. 회원가입을 없앤 뒤로 로그인 화면은
+ * 신규 방문자가 갈 곳이 아니며, 실제 첫 행동은 숙소 검색이다.
+ * 보조 CTA는 기능 섹션으로 스크롤한다.
  */
 export function CTAButtons(): React.ReactElement {
   const t = useTranslations('landing');
@@ -26,18 +27,22 @@ export function CTAButtons(): React.ReactElement {
     smoothScrollTo('features');
   };
 
-  const handlePrimaryCTA = (): void => {
+  const handlePrimaryCTA = (e: React.MouseEvent): void => {
+    e.preventDefault();
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     trackPrimaryCTAClicked(lang, theme);
+    smoothScrollTo('start');
   };
 
   return (
     <div className='mt-10 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center'>
-      <Button asChild size='lg' className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'>
-        <Link href={buildPublicPath(lang, '/signup')} onClick={handlePrimaryCTA}>
-          <BellRing className='mr-2 size-5' />
-          {t('hero.cta')}
-        </Link>
+      <Button
+        size='lg'
+        className='landing-primary-cta bg-primary text-primary-foreground hover:bg-primary/90'
+        onClick={handlePrimaryCTA}
+      >
+        <BellRing className='mr-2 size-5' />
+        {t('hero.cta')}
       </Button>
       <Button
         size='lg'

@@ -43,7 +43,7 @@ binbang/
 │   ├── travel/          # Next.js 여행 앱 (AI planner)
 │   └── worker/          # Worker entrypoint + composition/wiring
 ├── packages/
-│   ├── db/              # Prisma schema/migrations + DB client
+│   ├── db/              # TypeORM DataSource/entities/migrations + DB client
 │   ├── shared/          # Universal shared code (runtime-agnostic)
 │   └── worker-shared/   # Worker-only shared code
 ├── docker/
@@ -74,9 +74,9 @@ binbang/
 
 #### `packages/db` (`@workspace/db`)
 
-- Prisma schema/migrations 단일 소유
+- TypeORM DataSource/entity/migration 단일 소유
 - DB 클라이언트 단일 공개 지점 제공
-- 외부 패키지의 `@prisma/client` 직접 import 금지
+- 외부 패키지에서 별도 DataSource 생성/재수출 금지
 
 #### `packages/shared` (`@workspace/shared`)
 
@@ -101,14 +101,14 @@ deep import는 금지하며, 패키지 `exports`로 노출된 진입점만 사�
 
 | 패키지 | 공개 import 경로 | 비고 |
 | --- | --- | --- |
-| `@workspace/db` | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | Prisma 단일 소유 |
+| `@workspace/db` | `@workspace/db`, `@workspace/db/client`, `@workspace/db/enums` | TypeORM 단일 소유 |
 | `@workspace/shared` | `@workspace/shared`, `@workspace/shared/types`, `@workspace/shared/checkers`, `@workspace/shared/url-parser` | 순수/런타임 중립 |
 | `@workspace/worker-shared` | `@workspace/worker-shared/browser`, `@workspace/worker-shared/jobs`, `@workspace/worker-shared/runtime`, `@workspace/worker-shared/observability` | 워커 전용 |
 
 예시:
 
-- 허용: `import { prisma } from "@workspace/db"`
-- 금지: `import { prisma } from "@workspace/db/src/client"`
+- 허용: `import { getDataSource, User } from "@workspace/db"`
+- 금지: `import { getDataSource } from "@workspace/db/src/data-source"`
 - 허용: `import { createCycleQueue } from "@workspace/worker-shared/runtime"`
 - 금지: `import { createCycleQueue } from "@workspace/worker-shared/src/runtime/queues"`
 
@@ -136,7 +136,7 @@ deep import는 금지하며, 패키지 `exports`로 노출된 진입점만 사�
 | 단계 | 상태 | 현재 반영 내용 | 남은 작업 |
 | --- | --- | --- | --- |
 | 1. Root workspace 기반 | DONE | `pnpm-workspace.yaml`, `turbo.json`, root scripts 정비 | 없음 |
-| 2. DB 소유권 분리 | DONE | Prisma가 `packages/db`에 집중 | 없음 |
+| 2. DB 소유권 분리 | DONE | DB 클라이언트가 `packages/db`에 집중 | 없음 |
 | 3. Shared 경계 분리 | DONE | `packages/shared` + `packages/worker-shared` 분리 완료 | 경계 lint 강화는 지속 |
 | 4. Web workspace 분리 | DONE | `apps/web`, `apps/travel` 독립 빌드/타입체크 파이프라인 구성 | 없음 |
 | 5. Worker 엔트리 단순화 | IN_PROGRESS | `apps/worker` + `packages/worker-shared` 공존 구조 적용 | `apps/worker`의 잔여 로직을 `worker-shared`로 추가 이관 |

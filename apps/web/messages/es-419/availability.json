@@ -72,7 +72,7 @@
     "q2": "¿La disponibilidad y el precio cambian en tiempo real?",
     "a2": "Sí. El inventario y los precios pueden cambiar en cualquier momento, por eso recomendamos usar esta página como referencia y activar alertas.",
     "q3": "¿Configurar alertas es de pago?",
-    "a3": "Puedes empezar en beta de inmediato y, si necesitas verificaciones más rápidas o más alojamientos monitoreados, contactar al equipo."
+    "a3": "Puedes empezar de inmediato. Crea hasta 50 alertas, revisadas cada 30 minutos."
   },
   "region": {
     "metaTitle": "Disponibilidad de Alojamiento {platform} {region} | Binbang",

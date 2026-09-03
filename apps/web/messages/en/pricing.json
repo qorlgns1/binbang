@@ -2,64 +2,64 @@
   "nav": {
     "brand": "Binbang",
     "login": "Log in",
-    "getStarted": "Start beta",
+    "getStarted": "Set an alert",
     "dashboard": "Dashboard"
   },
   "meta": {
-    "title": "Binbang – Beta Guide",
-    "description": "Binbang is currently in beta. Instead of public pricing, see the current scope, how to join, and where to send feedback.",
-    "ogDescription": "Binbang beta guide. See the current scope and how to join."
+    "title": "Binbang – Pricing",
+    "description": "Binbang is free. We charge you nothing and earn a commission when a booking is made through the link in an alert email.",
+    "ogDescription": "Binbang pricing. Free to use, no fees."
   },
   "hero": {
-    "eyebrow": "Open Beta",
-    "heading": "We're refining the beta before we put pricing in front",
-    "subline1": "Binbang is currently running as a small beta.",
-    "subline2": "We're stabilizing the real workflow and alert quality before public billing.",
-    "description": "You can sign up and start the core monitoring flow right away. If you need more coverage, we expand it gradually based on feedback and operational readiness."
+    "eyebrow": "Free",
+    "heading": "Binbang is free",
+    "subline1": "You pay nothing to set up or receive alerts.",
+    "subline2": "We never ask for a payment method.",
+    "description": "We earn a commission from the booking platform when a stay is booked through the link in your alert email. That is why we do not charge you."
   },
   "cards": {
-    "beta": {
-      "title": "Open beta first",
-      "description": "Instead of a price table, we explain the current scope and usage rules first."
+    "free": {
+      "title": "No fees",
+      "description": "Setting up and receiving alerts costs nothing. There are no paid plans and no payment details to enter."
     },
     "coverage": {
-      "title": "What is available now",
-      "description": "We're validating vacancy alerts, base usage limits, and the core monitoring flow before anything else."
+      "title": "What you get",
+      "description": "Up to 50 alerts, and we check your property and dates every 30 minutes."
     },
     "feedback": {
-      "title": "Feedback before packaging",
-      "description": "If you need more capacity or a missing feature, the team reviews it in the context of real usage."
+      "title": "How we are funded",
+      "description": "When a booking happens through the link in an alert email, the booking platform pays us a commission."
     }
   },
   "process": {
-    "title": "How beta access works",
+    "title": "How it works",
     "step1": {
-      "title": "Sign up and start",
-      "description": "Create an account, register the stay you want, and use the service immediately within the current beta scope."
+      "title": "Pick a property and dates",
+      "description": "Search from the home page, choose your dates, and leave your email. No account needed."
     },
     "step2": {
-      "title": "Usage first",
-      "description": "We show registration limits and check cadence before we talk about formal billing."
+      "title": "We check every 30 minutes",
+      "description": "We watch your dates around the clock. When a room opens, you get an email."
     },
     "step3": {
-      "title": "Ask when you need more",
-      "description": "If you need broader monitoring, contact the team and we'll review it based on beta operations."
+      "title": "Book through the link",
+      "description": "Booking via the link in the email keeps us running. You are free to book elsewhere if you prefer."
     }
   },
   "cta": {
-    "title": "Try the beta first and tell us what breaks",
-    "description": "Right now the priority is making the real product loop stable, not promoting plans. You can start right away or contact the team directly.",
-    "primary": "Start beta",
-    "secondary": "Contact the team"
+    "title": "Set your first alert",
+    "description": "Search and set an alert in under a minute. Questions are always welcome.",
+    "primary": "Set an alert",
+    "secondary": "Contact us"
   },
   "faq": {
-    "title": "Frequently asked questions",
-    "q1": "Do I need to pay right now?",
-    "a1": "No. Public pricing and automatic billing are not active yet. The service is currently managed around beta access and usage scope.",
-    "q2": "Can I use the beta immediately?",
-    "a2": "Yes. You can sign up and start within the current scope right away, though some limits may change as we stabilize operations.",
-    "q3": "What if I need more monitoring capacity?",
-    "a3": "Use the contact button on this page or email support. We review expansion requests based on actual use cases."
+    "title": "FAQ",
+    "q1": "Is it really free?",
+    "a1": "Yes. We charge no fees and never ask for a payment method. There are no paid plans.",
+    "q2": "How many alerts can I set?",
+    "a2": "Up to 50. We check every 30 minutes.",
+    "q3": "How do I stop the alerts?",
+    "a3": "Click the unsubscribe link at the bottom of any alert email, or delete the alert from your dashboard."
   },
   "footer": {
     "contact": "Contact: {email}"

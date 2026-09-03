@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![CI](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml/badge.svg)](https://github.com/qorlgns1/binbang/actions/workflows/ci.yml)
 
@@ -19,7 +19,7 @@
 - **Role**: Full-stack 개발 (아키텍처, 웹, 워커, DB 모델링, CI/CD, 운영)
 - **Architecture**:
   - Next.js 운영 웹(`apps/web`), 여행 앱(`apps/travel`), 백그라운드 워커(`apps/worker`) 분리
-  - Prisma 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
+  - DB 소유권을 `packages/db`로 집중하고, shared 경계를 `packages/shared`로 강제
   - monorepo 경계 규칙(`rules.md`, `RULES_SUMMARY.md`) 기반으로 유지보수성 확보
 - **Technical Decisions**:
   - BullMQ(Redis) 기반 잡 큐 + Playwright 브라우저 풀로 스크래핑 성능/안정성 개선
@@ -45,11 +45,13 @@
 
 ## 주요 기능
 
-- **카카오 / 구글 소셜 로그인**
+- **이메일 코드 로그인** – 비밀번호·회원가입 없이 6자리 코드로 시작
+- **카카오 / 구글 소셜 로그인** – 선택 (카카오 연동 시 카카오톡 알림 사용 가능)
 - **멀티 유저 지원** – 각자 자신의 숙소만 관리
 - **숙소 CRUD** – UI로 등록 / 수정 / 삭제
 - **자동 모니터링** – 기본 30분 주기 체크
-- **카카오톡 알림** – 예약 가능 시 즉시 알림
+- **이메일 알림** – 빈방·가격 하락 시 발송 (기본 채널)
+- **카카오톡 알림** – 카카오 연동 사용자 한정
 - **체크 로그** – 모니터링 히스토리 확인
 - **브라우저 풀** – Chromium 인스턴스 재사용으로 성능 최적화
 - **관리자 설정** – Worker / 브라우저 / 체커 설정을 DB 기반 관리자 UI에서 실시간 변경
@@ -67,19 +69,26 @@
 
 ## 빠른 시작
 
+DB는 **외부 Oracle ADB 스키마**를 그대로 사용합니다. 로컬에 DB 컨테이너를 띄우지 않으며,
+로컬 Compose가 관리하는 것은 `redis` / `web` / `worker` 뿐입니다.
+
 ```bash
 pnpm install
+
 cp .env.example .env.local
 cp apps/web/.env.example apps/web/.env.local
 cp apps/worker/.env.example apps/worker/.env.local
 cp apps/travel/.env.example apps/travel/.env.local
+# .env.local 에 ORACLE_* / REDIS_URL / NEXTAUTH_SECRET 등을 채웁니다.
+# 항목 설명은 docs/deployment/ENVIRONMENTS.md 참고
 
-pnpm local:docker up -d db redis
-pnpm db:migrate
+pnpm local:docker up -d redis   # Oracle은 외부 연결, Redis만 로컬로 띄웁니다
+pnpm db:migrate                 # 스키마 반영
+pnpm db:seed:base               # 롤/플랜 등 기준 데이터
 
-pnpm dev:web
-pnpm dev:travel
-pnpm dev:worker
+pnpm dev:web      # http://localhost:3000
+pnpm dev:travel   # http://localhost:3300
+pnpm dev:worker   # 별도 터미널
 ```
 
 ---
@@ -91,22 +100,26 @@ pnpm dev
 pnpm lint
 pnpm test
 pnpm build
+pnpm format          # 코드 포맷 적용
+pnpm ci:check        # lint/typecheck/test/build/format 일괄 검증 (커밋·푸시 전 필수)
 pnpm db:migrate
 pnpm local:docker up -d --build
 ```
+
+`pnpm ci:check`는 `rules.md`가 커밋·푸시 전에 통과를 요구하는 검증입니다.
 
 ---
 
 ## 문서
 
 - 문서 인덱스: `docs/README.md`
-- 로컬 개발: `docs/guides/local-development.md`
-- 배포: `docs/guides/deployment.md`
+- 배포(기준 문서): `docs/deployment/DEPLOYMENT.md`
+- 환경 정의 / 환경변수: `docs/deployment/ENVIRONMENTS.md`
+- 장애 대응: `docs/deployment/RUNBOOK.md`
+- CI/CD 파이프라인: `docs/deployment/CI-CD.md`
 - 아키텍처/경계/구조: `docs/architecture/architecture.md`
-- 모노레포 계획: `docs/architecture/monorepo-plan.md`
+- 제품 개요: `docs/PRODUCT.md`
 - 변경 이력: `docs/history/changelog.md`
-- 작업 단위 히스토리 정리: `docs/history/develop-work-units.md`
-- RBAC 로컬 검증: `docs/guides/rbac-local-testing.md`
 
 ---
 
@@ -122,7 +135,8 @@ pnpm local:docker up -d --build
 - [Playwright](https://playwright.dev/) - 브라우저 자동화
 - [BullMQ](https://docs.bullmq.io/) - Redis 기반 잡 큐
 - [Next.js](https://nextjs.org/) - React 프레임워크
-- [Prisma](https://www.prisma.io/) - ORM
+- [TypeORM](https://typeorm.io/) - ORM
+- [Oracle Autonomous Database](https://www.oracle.com/autonomous-database/) - 데이터베이스
 - [NextAuth.js](https://next-auth.js.org/) - 인증
 
 ---

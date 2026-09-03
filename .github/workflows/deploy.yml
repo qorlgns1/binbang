@@ -59,6 +59,10 @@ jobs:
           NEXT_PUBLIC_NAVER_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }}
           NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          # provenance materials(빌드 컨텍스트 파일 다이제스트 목록)가 리포 크기에 비례해 커져서
+          # 다음 스텝에 METADATA를 env로 넘길 때 "Argument list too long"을 유발했다.
+          # min으로 줄여도 실제 푸시되는 이미지의 attestation에는 영향 없다.
+          BUILDX_METADATA_PROVENANCE: min
 
       - name: Extract digests
         id: digests
@@ -82,11 +86,16 @@ jobs:
     steps:
       - name: Deploy
         uses: appleboy/ssh-action@v1.2.5
+        env:
+          DOPPLER_TOKEN_WEB: ${{ secrets.DOPPLER_TOKEN_WEB }}
+          DOPPLER_TOKEN_WORKER: ${{ secrets.DOPPLER_TOKEN_WORKER }}
+          DOPPLER_TOKEN_TRAVEL: ${{ secrets.DOPPLER_TOKEN_TRAVEL }}
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
           port: ${{ secrets.OCI_PORT }}
+          envs: DOPPLER_TOKEN_WEB,DOPPLER_TOKEN_WORKER,DOPPLER_TOKEN_TRAVEL
           script: |
             set -e
             cd ~/workspace/binbang
@@ -132,6 +141,17 @@ jobs:
             git reset --hard "origin/$BRANCH"
             pnpm install --frozen-lockfile
 
+            # --- Doppler CLI 확인 (없으면 설치) ---
+            if ! command -v doppler >/dev/null 2>&1; then
+              curl -Ls https://cli.doppler.com/install.sh | sudo -E sh
+            fi
+
+            # --- Doppler에서 서비스별 env 파일 생성 (project: binbang-web/worker/travel) ---
+            doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WEB"    > ".env.doppler.web.${APP_ENV}"
+            doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WORKER" > ".env.doppler.worker.${APP_ENV}"
+            doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_TRAVEL" > ".env.doppler.travel.${APP_ENV}"
+            chmod 600 ".env.doppler.web.${APP_ENV}" ".env.doppler.worker.${APP_ENV}" ".env.doppler.travel.${APP_ENV}"
+
             update_env_var() {
               key="$1"
               value="$2"
@@ -159,13 +179,13 @@ jobs:
               docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" pull
             fi
 
-            # --- DB 마이그레이션 ---
-            pnpm db:migrate:deploy
-            pnpm db:seed:base
+            # --- DB 마이그레이션 (ORACLE_* 는 binbang-web Doppler config 기준) ---
+            doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy
+            doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:seed:base
 
             # --- develop 전용: 테스트 데이터 seed ---
             if [ "$APP_ENV" = "development" ]; then
-              pnpm db:seed
+              doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:seed
             fi
 
             # --- 서비스 재시작 ---

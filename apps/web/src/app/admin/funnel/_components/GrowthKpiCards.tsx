@@ -9,7 +9,6 @@ const GROWTH_ITEMS: Array<{
 }> = [
   { key: 'organicVisit', label: '오가닉 유입', alias: 'organic_landing' },
   { key: 'availabilityCtaClick', label: '가용성 CTA 클릭', alias: 'availability_cta' },
-  { key: 'signupCompleted', label: '회원가입 완료', alias: 'signup_completed' },
   { key: 'firstAlertCreated', label: '첫 알림 생성 (고유 사용자)', alias: 'first_alert_created' },
   { key: 'totalAlertsCreated', label: '총 알림 생성 수', alias: 'total_alerts_created' },
   { key: 'alertsPerUser', label: '사용자당 알림 수', alias: 'alerts_per_user', format: 'ratio' },

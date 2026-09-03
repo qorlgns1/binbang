@@ -1,79 +1,17 @@
-import bcrypt from 'bcryptjs';
 import type { Adapter, AdapterSession, AdapterUser } from 'next-auth/adapters';
 
 import { Account, Plan, Role, Session, User, VerificationToken, getDataSource } from '@workspace/db';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface SignupInput {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface CredentialsLoginInput {
-  email: string;
-  password: string;
-}
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string | null;
-}
-
-// ============================================================================
-// Service Functions
-// ============================================================================
-
-export async function createUserWithCredentials(input: SignupInput): Promise<AuthUser> {
-  const hashedPassword = await bcrypt.hash(input.password, 12);
-  const ds = await getDataSource();
-
-  const freePlan = await ds.getRepository(Plan).findOne({ where: { name: 'FREE' } });
-  const userRole = await ds.getRepository(Role).findOne({ where: { name: 'USER' } });
-
-  const repo = ds.getRepository(User);
-  const user = repo.create({
-    email: input.email,
-    password: hashedPassword,
-    name: input.name,
-    emailVerified: new Date(),
-    planId: freePlan?.id ?? null,
-    roles: userRole ? [userRole] : [],
-  });
-  await repo.save(user);
-
-  return {
-    id: user.id,
-    email: user.email ?? '',
-    name: user.name,
-  };
-}
-
-export async function verifyCredentials(input: CredentialsLoginInput): Promise<AuthUser | null> {
-  const ds = await getDataSource();
-  const user = await ds.getRepository(User).findOne({
-    where: { email: input.email },
-    select: { id: true, email: true, name: true, password: true },
-  });
-
-  if (!user || !user.password) {
-    return null;
-  }
-
-  const isValid = await bcrypt.compare(input.password, user.password);
-  if (!isValid) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    email: user.email ?? '',
-    name: user.name,
-  };
+/**
+ * 이메일을 소문자로 정규화한다.
+ *
+ * Oracle varchar2 비교는 대소문자를 구분하므로, 저장과 조회에서 형태가 갈리면
+ * 같은 사람에게 계정이 두 개 생긴다. 소셜 로그인 제공자가 대문자가 섞인 주소를
+ * 주더라도 여기서 한 형태로 맞춘다.
+ */
+function normalizeEmail(email: string | null | undefined): string | null {
+  const trimmed = email?.trim().toLowerCase();
+  return trimmed ? trimmed : null;
 }
 
 // ============================================================================
@@ -168,7 +106,7 @@ export function createNextAuthAdapter(): Adapter {
 
       const repo = ds.getRepository(User);
       const user = repo.create({
-        email: data.email as string | null,
+        email: normalizeEmail(data.email as string | null),
         emailVerified: (data.emailVerified as Date | null) ?? null,
         name: (data.name as string | null) ?? null,
         image: (data.image as string | null) ?? null,
@@ -195,7 +133,7 @@ export function createNextAuthAdapter(): Adapter {
     async getUserByEmail(email: string) {
       const ds = await getDataSource();
       const user = await ds.getRepository(User).findOne({
-        where: { email },
+        where: { email: normalizeEmail(email) ?? email },
         select: { id: true },
       });
       if (!user) return null;
@@ -215,6 +153,10 @@ export function createNextAuthAdapter(): Adapter {
     async updateUser(data: Record<string, unknown>) {
       const ds = await getDataSource();
       const { id, ...updateData } = data as { id: string } & Record<string, unknown>;
+      // 제공자가 대문자가 섞인 주소를 보내도 저장 형태는 한 가지로 유지한다.
+      if ('email' in updateData) {
+        updateData.email = normalizeEmail(updateData.email as string | null);
+      }
       await ds.getRepository(User).update({ id }, updateData as Partial<User>);
       const user = await getExtendedAdapterUserById(ds, id);
       return requireExtendedAdapterUser(user, 'updateUser');
@@ -349,37 +291,4 @@ export async function saveKakaoTokens(
   }
 
   await ds.getRepository(User).update({ id: userId }, updateData);
-}
-
-// ============================================================================
-// 기타 서비스 함수
-// ============================================================================
-
-export async function checkEmailExists(email: string): Promise<boolean> {
-  const ds = await getDataSource();
-  const user = await ds.getRepository(User).findOne({
-    where: { email },
-    select: { id: true },
-  });
-  return user !== null;
-}
-
-export interface CreateSessionResult {
-  sessionToken: string;
-  expires: Date;
-}
-
-export async function createSessionForUser(userId: string): Promise<CreateSessionResult> {
-  const { randomUUID } = await import('node:crypto');
-  const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30일
-
-  const sessionToken = randomUUID();
-  const expires = new Date(Date.now() + SESSION_MAX_AGE_MS);
-
-  const ds = await getDataSource();
-  const repo = ds.getRepository(Session);
-  const session = repo.create({ sessionToken, userId, expires });
-  await repo.save(session);
-
-  return { sessionToken, expires };
 }

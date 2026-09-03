@@ -173,7 +173,7 @@ export const SEED_PLANS = [
 ] as const;
 
 export const SEED_PLAN_QUOTAS = [
-  { planName: 'FREE', key: 'MAX_ACCOMMODATIONS' as const, value: 5 },
+  { planName: 'FREE', key: 'MAX_ACCOMMODATIONS' as const, value: 50 },
   { planName: 'FREE', key: 'CHECK_INTERVAL_MIN' as const, value: 30 },
   { planName: 'PRO', key: 'MAX_ACCOMMODATIONS' as const, value: 20 },
   { planName: 'PRO', key: 'CHECK_INTERVAL_MIN' as const, value: 10 },

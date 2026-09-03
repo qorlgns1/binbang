@@ -1,3 +1,4 @@
+import { areTestEndpointsEnabled } from '@/lib/testEndpointGuard';
 import { NextResponse } from 'next/server';
 
 import { getAgodaMockScenario } from './state';
@@ -27,7 +28,7 @@ const AVAILABLE_FIXTURE = {
 const SOLD_OUT_FIXTURE = { results: [] };
 
 export async function POST(): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
+  if (!areTestEndpointsEnabled()) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 

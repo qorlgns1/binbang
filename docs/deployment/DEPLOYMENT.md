@@ -1,5 +1,8 @@
 # Deployment Guide
 
+> **Status: CURRENT — Source of Truth (배포 절차)**
+> `CLAUDE.md` 규약상 서버/배포 변경 제안 전 반드시 읽는다.
+
 Last verified: 2026-04-17
 Owner: binbang
 
@@ -41,18 +44,19 @@ Based on `.github/workflows/deploy.yml`.
 7. Start/update compose services
 
 ## 4) Env File Structure (Server)
-서버에는 환경별로 두 파일이 존재한다.
+
+> 2026-09-02부터 런타임 시크릿(OAuth, DB, API 키 등)은 **Doppler**가 source of truth다. 과거의 `.env.common` / `.env.<env>` / `apps/<app>/.env.common` / `apps/<app>/.env.<env>` 수동 관리 파일들은 폐지 대상이며, 배포 스크립트가 매 배포마다 Doppler에서 서비스별 파일을 새로 생성한다. 상세 변수 인벤토리와 마이그레이션 배경은 `docs/deployment/DOPPLER.md` 참고.
 
 | 파일 | 역할 | 관리 주체 |
 |---|---|---|
-| `.env.production` | 런타임 설정 (DB URL, secrets, OAuth 등) | 수동 관리 |
-| `.env.production.local` | 서버 로컬 오버라이드 (선택) | 수동 관리 |
-| `.env.deploy.production` | 배포 메타데이터 (IMAGE_TAG, DIGEST, DEPLOY_SHA 등) | CI/CD 자동 기록 |
-| `.env.development` | 개발 환경 런타임 설정 | 수동 관리 |
-| `.env.development.local` | 개발 서버 로컬 오버라이드 (선택) | 수동 관리 |
-| `.env.deploy.development` | 개발 배포 메타데이터 | CI/CD 자동 기록 |
+| `.env.doppler.web.<env>` | web 컨테이너 런타임 secrets (Doppler project `binbang-web`) | 배포 스크립트가 매 배포마다 자동 생성 (gitignore) |
+| `.env.doppler.worker.<env>` | worker 컨테이너 런타임 secrets (Doppler project `binbang-worker`) | 배포 스크립트가 매 배포마다 자동 생성 (gitignore) |
+| `.env.doppler.travel.<env>` | travel 컨테이너 런타임 secrets (Doppler project `binbang-travel`) | 배포 스크립트가 매 배포마다 자동 생성 (gitignore) |
+| `.env.deploy.production` / `.env.deploy.development` | 배포 메타데이터 (IMAGE_TAG, DIGEST, DEPLOY_SHA 등) | CI/CD 자동 기록 (Doppler와 무관) |
 
-Docker Compose는 `--env-file` 나중 파일이 이기므로 `.env.deploy.<env>`를 마지막에 로드해 IMAGE_TAG/DIGEST를 항상 최신으로 유지한다.
+Docker Compose는 각 서비스가 자신의 `.env.doppler.<service>.<env>` 파일 하나만 `env_file`로 로드한다(`docker/docker-compose.production.yml`, `docker/docker-compose.develop.yml`). `APP_ENV`/`NODE_ENV`/서비스 간 내부 URL처럼 시크릿이 아닌 값은 compose의 `environment:` 블록에 직접 명시한다.
+
+DB 마이그레이션 등 호스트에서 직접 실행하는 pnpm 스크립트는 `doppler run --token "$DOPPLER_TOKEN_WEB" -- <command>`로 감싸서 Oracle 접속 정보를 주입한다(`.github/workflows/deploy.yml` 참고).
 
 ## 5) Standard Deploy Procedure
 ### Production (`main`)
@@ -62,16 +66,18 @@ git fetch origin main
 git checkout -B main origin/main
 git reset --hard origin/main
 
+doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WEB"    > .env.doppler.web.production
+doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WORKER" > .env.doppler.worker.production
+doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_TRAVEL" > .env.doppler.travel.production
+
 docker compose -f docker/docker-compose.production.yml \
-  --env-file .env.production \
   --env-file .env.deploy.production \
   pull
 
-APP_ENV=production pnpm db:migrate:deploy
-APP_ENV=production pnpm db:seed:base
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:seed:base
 
 docker compose -f docker/docker-compose.production.yml \
-  --env-file .env.production \
   --env-file .env.deploy.production \
   up -d
 ```
@@ -83,24 +89,28 @@ git fetch origin develop
 git checkout -B develop origin/develop
 git reset --hard origin/develop
 
+doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WEB"    > .env.doppler.web.development
+doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WORKER" > .env.doppler.worker.development
+doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_TRAVEL" > .env.doppler.travel.development
+
 docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
-  --env-file .env.development \
   --env-file .env.deploy.development \
   pull
 
-APP_ENV=development pnpm db:migrate:deploy
-APP_ENV=development pnpm db:seed:base
-APP_ENV=development pnpm with-env pnpm --filter @workspace/db db:seed
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:seed:base
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm --filter @workspace/db db:seed
 
 docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
-  --env-file .env.development \
   --env-file .env.deploy.development \
   up -d
 ```
 
+`$DOPPLER_TOKEN_WEB` / `$DOPPLER_TOKEN_WORKER` / `$DOPPLER_TOKEN_TRAVEL`은 각각 Doppler project `binbang-web` / `binbang-worker` / `binbang-travel`의 해당 config(`prd`/`dev`)에 대한 서비스 토큰이다. CI에서는 GitHub Environment secrets로 주입되고, 수동 배포 시에는 `doppler login` 후 프로젝트/config를 select 하거나 토큰을 셸 환경변수로 export해서 사용한다.
+
 ## 6) Database Migration Policy
 - Migration tool: TypeORM Migrate (`typeorm migration:run`)
-- **On OCI host**: `APP_ENV=production pnpm db:migrate:deploy` — `with-env`를 통해 `.env.production.local`과 `.env.production`을 로드한다.
+- **On OCI host**: `doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy` — `with-env`는 `APP_ENV`가 설정돼 있으면 명령을 그대로 넘기므로, 값 주입은 바깥의 `doppler run`이 담당한다.
 - Timing: before final `compose up -d`
 - Compatibility: maintain backward-compatible schema for rolling restart windows
 - Prohibited flow: TypeORM `synchronize: true` / 수동 DDL (repo rule)
@@ -152,13 +162,12 @@ docker compose -f docker/docker-compose.production.yml \
 ```
 
 ## 9) Secrets and Configuration
-- CI/CD secrets: GitHub Actions Secrets (`DOCKERHUB_*`, `OCI_*`, `RELEASE_TAG_PAT`)
+- Runtime secrets (OAuth, DB, API 키 등): **Doppler** — projects `binbang-web` / `binbang-worker` / `binbang-travel`, configs `dev`/`prd`. 서비스 토큰은 GitHub Environment secrets(`DOPPLER_TOKEN_WEB`/`WORKER`/`TRAVEL`)로 CI에 주입된다. 자세한 변수 인벤토리와 마이그레이션 절차는 `docs/deployment/DOPPLER.md`.
+- CI/CD secrets: GitHub Actions Secrets (`DOCKERHUB_*`, `OCI_*`, `RELEASE_TAG_PAT`, `DOPPLER_TOKEN_WEB`, `DOPPLER_TOKEN_WORKER`, `DOPPLER_TOKEN_TRAVEL`)
 - CI/CD variables: GitHub Actions Variables (`NEXT_PUBLIC_*`)
-- Runtime env files on server:
-  - `.env.production`, `.env.production.local`
-  - `.env.deploy.production` (CI/CD 자동 기록 — IMAGE_TAG, DIGEST, DEPLOY_SHA 등)
-  - `.env.development`, `.env.development.local`
-  - `.env.deploy.development` (CI/CD 자동 기록)
+- Runtime env files on server (배포 시 자동 생성, gitignore):
+  - `.env.doppler.web.<env>`, `.env.doppler.worker.<env>`, `.env.doppler.travel.<env>` — Doppler에서 매 배포마다 새로 생성
+  - `.env.deploy.production` / `.env.deploy.development` (CI/CD 자동 기록 — IMAGE_TAG, DIGEST, DEPLOY_SHA 등; Doppler와 무관)
 - Rule: never store secret values in markdown docs or prompts
 
 ## 10) Observability and Alerts
@@ -172,6 +181,7 @@ docker compose -f docker/docker-compose.production.yml \
 - Service owner/on-call: `KIHOON BAE`
 
 ## 12) Change History
+- 2026-09-02: 런타임 secrets를 Doppler로 이관 (project `binbang-web`/`binbang-worker`/`binbang-travel`). `.env.common`/앱별 수동 env 파일 폐지, 배포 스크립트가 `.env.doppler.<service>.<env>`를 매 배포마다 생성하도록 변경
 - 2026-04-17: PostgreSQL+Prisma → Oracle ADB+TypeORM 마이그레이션 반영 (데이터 저장소 교체, migration 도구 교체, `agoda_hotels*` 공유 스키마 분리)
 - 2026-02-18: env 파일 구조 개선 — `.env.deploy.<env>` 분리, `with-env` 단일화, deploy.yml 통합
 - 2026-02-15: initial structured deployment document created

@@ -44,7 +44,7 @@ describe('admin/funnel components', () => {
     const html = renderToStaticMarkup(
       <ClickKpiCards
         totals={{
-          navSignup: 5,
+          navLogin: 5,
           navRequest: 4,
           navPricing: 3,
           mobileMenuOpen: 2,
@@ -63,7 +63,6 @@ describe('admin/funnel components', () => {
         kpis={{
           organicVisit: 12,
           availabilityCtaClick: 8,
-          signupCompleted: 4,
           firstAlertCreated: 2,
           totalAlertsCreated: 5,
           alertsPerUser: 2.5,
@@ -78,10 +77,8 @@ describe('admin/funnel components', () => {
     const html = renderToStaticMarkup(
       <GrowthConversionMatrix
         conversion={{
-          visitToSignup: 0.333,
-          signupToAlert: 0.5,
           visitToAlert: 0.167,
-          ctaToSignup: 0.5,
+          ctaToAlert: 0.5,
         }}
       />,
     );

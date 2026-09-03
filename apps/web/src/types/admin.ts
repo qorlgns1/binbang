@@ -241,7 +241,7 @@ export interface AdminFunnelResponse {
 }
 
 export interface AdminFunnelClickTotals {
-  navSignup: number;
+  navLogin: number;
   navRequest: number;
   navPricing: number;
   mobileMenuOpen: number;
@@ -336,17 +336,14 @@ export interface AdminAffiliateFunnelResponse {
 export interface AdminFunnelGrowthKpis {
   organicVisit: number;
   availabilityCtaClick: number;
-  signupCompleted: number;
   firstAlertCreated: number;
   totalAlertsCreated: number;
   alertsPerUser: number;
 }
 
 export interface AdminFunnelGrowthConversion {
-  visitToSignup: number;
-  signupToAlert: number;
   visitToAlert: number;
-  ctaToSignup: number;
+  ctaToAlert: number;
 }
 
 export interface AdminFunnelGrowthSeriesItem extends AdminFunnelGrowthKpis {

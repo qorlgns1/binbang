@@ -365,7 +365,7 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
             <div className='flex flex-wrap items-center gap-3 pt-2'>
               <AvailabilityCtaButton
                 lang={locale}
-                href={`${buildPublicPath(lang, '/signup')}?prefill=${encodeURIComponent(
+                href={`${buildPublicPath(lang, '/login')}?prefill=${encodeURIComponent(
                   JSON.stringify({
                     url: data.property.sourceUrl,
                     platform: data.platform,
@@ -575,7 +575,7 @@ export default async function AvailabilityPage({ params }: PageProps): Promise<R
           <div className='mt-4'>
             <AvailabilityCtaButton
               lang={locale}
-              href={`${buildPublicPath(lang, '/signup')}?prefill=${encodeURIComponent(
+              href={`${buildPublicPath(lang, '/login')}?prefill=${encodeURIComponent(
                 JSON.stringify({
                   url: data.property.sourceUrl,
                   platform: data.platform,

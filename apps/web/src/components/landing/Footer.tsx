@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { trackClosingCTAClicked } from '@/lib/analytics/landingTracker';
+import { smoothScrollTo } from '@/lib/utils/scroll';
 import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 
 /**
@@ -14,9 +15,12 @@ export function Footer(): React.ReactElement {
   const t = useTranslations('landing');
   const lang = useParams().lang as string;
 
-  const handleCTAClick = (): void => {
+  // 상단 검색 폼으로 되돌린다. 페이지 끝까지 읽은 사람이 갈 곳은 로그인이 아니라 검색이다.
+  const handleCTAClick = (e: React.MouseEvent): void => {
+    e.preventDefault();
     const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     trackClosingCTAClicked(lang, theme);
+    smoothScrollTo('start');
   };
 
   return (
@@ -25,13 +29,13 @@ export function Footer(): React.ReactElement {
         <div className='mx-auto max-w-3xl'>
           <h2 className='text-3xl font-semibold text-foreground md:text-4xl'>{t('footer.title')}</h2>
           <p className='mx-auto mt-5 max-w-2xl text-lg text-muted-foreground'>{t('footer.description')}</p>
-          <Link
-            href={buildPublicPath(lang, '/signup')}
+          <button
+            type='button'
             className='mt-10 inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
             onClick={handleCTAClick}
           >
             {t('footer.cta')}
-          </Link>
+          </button>
         </div>
       </section>
 

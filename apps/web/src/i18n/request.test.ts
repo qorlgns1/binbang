@@ -17,13 +17,9 @@ describe('getNamespacesForPathname', () => {
     });
   });
 
-  describe('public 라우트 — login/signup도 base 그대로 사용', () => {
+  describe('public 라우트 — login도 base 그대로 사용', () => {
     it('login (/ko/login)', () => {
       expect(getNamespacesForPathname('/ko/login')).toEqual(['common', 'landing', 'pricing', 'auth']);
-    });
-
-    it('signup (/en/signup)', () => {
-      expect(getNamespacesForPathname('/en/signup')).toEqual(['common', 'landing', 'pricing', 'auth']);
     });
   });
 

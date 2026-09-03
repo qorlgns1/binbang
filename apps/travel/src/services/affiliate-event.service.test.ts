@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryFailedError } from '@workspace/db';
 import { createAffiliateEvent } from './affiliate-event.service';
 
-const { mockPrismaCreate, mockUserFindUnique } = vi.hoisted(() => ({
-  mockPrismaCreate: vi.fn(),
+const { mockRepoSave, mockUserFindUnique } = vi.hoisted(() => ({
+  mockRepoSave: vi.fn(),
   mockUserFindUnique: vi.fn(),
 }));
 
@@ -34,7 +34,7 @@ vi.mock('@workspace/db', async (importOriginal) => {
 
   const affiliateEventRepo = createMockRepository();
   affiliateEventRepo.save.mockImplementation(async (entity: Record<string, unknown>) => {
-    const created = await callMock<Record<string, unknown>>(mockPrismaCreate, { data: entity });
+    const created = await callMock<Record<string, unknown>>(mockRepoSave, { data: entity });
     if (created && typeof created === 'object') Object.assign(entity, created);
     return entity;
   });
@@ -64,7 +64,7 @@ describe('affiliate-event.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbMock.getDataSource.mockResolvedValue(dbMock.dataSource);
-    mockPrismaCreate.mockReset();
+    mockRepoSave.mockReset();
     mockUserFindUnique.mockReset();
     mockUserFindUnique.mockResolvedValue(null);
   });
@@ -74,7 +74,7 @@ describe('affiliate-event.service', () => {
   });
 
   it('creates impression event and returns created: true', async () => {
-    mockPrismaCreate.mockResolvedValue({ id: 'evt_1' });
+    mockRepoSave.mockResolvedValue({ id: 'evt_1' });
 
     const result = await createAffiliateEvent({
       conversationId: 'conv_1',
@@ -88,7 +88,7 @@ describe('affiliate-event.service', () => {
 
     expect(result.created).toBe(true);
     expect(result.id).toBe('evt_1');
-    expect(mockPrismaCreate).toHaveBeenCalledWith(
+    expect(mockRepoSave).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           conversationId: 'conv_1',
@@ -104,7 +104,7 @@ describe('affiliate-event.service', () => {
   });
 
   it('creates cta_attempt with reasonCode no_advertiser_for_category', async () => {
-    mockPrismaCreate.mockResolvedValue({ id: 'evt_2' });
+    mockRepoSave.mockResolvedValue({ id: 'evt_2' });
 
     await createAffiliateEvent({
       provider: 'awin_pending:accommodation',
@@ -116,7 +116,7 @@ describe('affiliate-event.service', () => {
       isCtaEnabled: false,
     });
 
-    expect(mockPrismaCreate).toHaveBeenCalledWith(
+    expect(mockRepoSave).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           eventType: 'cta_attempt',
@@ -130,7 +130,7 @@ describe('affiliate-event.service', () => {
   it('uses idempotencyKey for impression (conversationId + productId + local day)', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-02-19T12:00:00.000Z'));
-    mockPrismaCreate.mockResolvedValue({ id: 'evt_3' });
+    mockRepoSave.mockResolvedValue({ id: 'evt_3' });
 
     await createAffiliateEvent({
       conversationId: 'conv_1',
@@ -142,7 +142,7 @@ describe('affiliate-event.service', () => {
       isCtaEnabled: true,
     });
 
-    expect(mockPrismaCreate).toHaveBeenCalledWith(
+    expect(mockRepoSave).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           idempotencyKey: expect.stringMatching(/^impression:conv_1:place_1:\d{4}-\d{2}-\d{2}$/),
@@ -153,7 +153,7 @@ describe('affiliate-event.service', () => {
 
   it('returns deduped: true on unique constraint for impression', async () => {
     const uniqueError = new QueryFailedError('INSERT INTO "AffiliateEvent"', [], { errorNum: 1 } as never);
-    mockPrismaCreate.mockRejectedValueOnce(uniqueError);
+    mockRepoSave.mockRejectedValueOnce(uniqueError);
 
     const result = await createAffiliateEvent({
       conversationId: 'conv_1',

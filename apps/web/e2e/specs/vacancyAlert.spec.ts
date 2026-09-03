@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { buildUniqueCredentials, signUpAndLoginViaApi } from '../helpers/auth';
+import { buildUniqueCredentials, loginViaApi } from '../helpers/auth';
 import { registerAlertViaApi } from '../helpers/accommodation';
 import { getNotificationHistory, pollAccommodationOnceById, setAgodaMockScenario } from '../helpers/polling';
 import { applyAgodaMockGuard, applySniperCoreSuiteGuards } from '../helpers/suite';
@@ -32,7 +32,7 @@ test.describe('vacancy alert e2e', () => {
 
     // 1. 회원가입 / 로그인 (API 직접 호출)
     await test.step('회원가입 / 로그인', async () => {
-      await signUpAndLoginViaApi(page, credentials);
+      await loginViaApi(page, credentials);
     });
 
     // 2. 알림 등록 (API 직접 호출 — 호텔 검색 UI 생략)
@@ -105,10 +105,13 @@ test.describe('vacancy alert e2e', () => {
       const vacancyNotifications = history.filter((item) => item.type === 'vacancy');
       expect(vacancyNotifications).toHaveLength(1);
 
-      // UI에서도 알림 이력 섹션이 보이는지 확인
+      // UI에서도 알림 이력 섹션이 보이는지 확인.
+      // 이 상세 페이지는 dev 서버에서 렌더에 4~5초가 걸려 기본 10초로는 여유가 없다.
+      // 전체 스위트를 돌릴 때 첫 컴파일과 Oracle 커넥션 예열이 겹치면 초과해서
+      // 세션 조회가 늦어지고 (app) 레이아웃이 /login으로 리다이렉트한 적이 있다.
       await page.goto(`/accommodations/${accommodationId}`);
-      await expect(page.getByText('알림 이력')).toBeVisible();
-      await expect(page.getByText('vacancy').first()).toBeVisible();
+      await expect(page.getByText('알림 이력')).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText('vacancy').first()).toBeVisible({ timeout: 30_000 });
     });
   });
 });

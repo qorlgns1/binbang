@@ -113,7 +113,7 @@ export default async function AboutPage({ params }: PageProps): Promise<React.Re
         <h2 className='mb-3 text-2xl font-semibold text-foreground'>{t('cta.title')}</h2>
         <p className='mx-auto mb-8 max-w-xl text-muted-foreground'>{t('cta.description')}</p>
         <Link
-          href={buildPublicPath(lang, '/signup')}
+          href={buildPublicPath(lang, '/login')}
           className='inline-block rounded-full border border-primary/40 bg-card px-7 py-3 font-semibold text-primary transition-colors hover:bg-accent'
         >
           {t('cta.button')}

@@ -92,7 +92,7 @@ export interface PriceHistoryResponse {
   stats: PriceStats | null;
 }
 
-/** Cron processor용 - Prisma select 결과 (Date 사용) */
+/** Cron processor용 - DB 조회 결과 (Date 사용) */
 export interface AccommodationWithUser {
   id: string;
   name: string;

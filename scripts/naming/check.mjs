@@ -94,13 +94,8 @@ for (const filePath of trackedFiles) {
     continue;
   }
 
-  if (filePath.startsWith('packages/db/prisma/migrations/')) continue;
-
   validateFolderSegments(filePath);
   validateServiceSuffix(filePath);
-
-  const baseName = path.basename(filePath);
-  if (!baseName) continue;
 }
 
 if (errors.length > 0) {

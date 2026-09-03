@@ -88,12 +88,6 @@ describe('admin/funnel-growth.service', (): void => {
         sessionId: 'sess_a',
       },
       {
-        id: 'evt_3',
-        eventName: 'signup_completed',
-        occurredAt: new Date('2026-02-13T03:00:00.000Z'),
-        sessionId: 'user_1',
-      },
-      {
         id: 'evt_4',
         eventName: 'first_alert_created',
         occurredAt: new Date('2026-02-13T04:00:00.000Z'),
@@ -135,23 +129,19 @@ describe('admin/funnel-growth.service', (): void => {
     expect(result.kpis).toEqual({
       organicVisit: 2,
       availabilityCtaClick: 2,
-      signupCompleted: 1,
       firstAlertCreated: 2,
       totalAlertsCreated: 3,
       alertsPerUser: 1.5,
     });
     expect(result.conversion).toEqual({
-      visitToSignup: 0.5,
-      signupToAlert: 2,
       visitToAlert: 1,
-      ctaToSignup: 0.5,
+      ctaToAlert: 1,
     });
     expect(result.series).toEqual([
       {
         date: '2026-02-13',
         organicVisit: 1,
         availabilityCtaClick: 1,
-        signupCompleted: 1,
         firstAlertCreated: 1,
         totalAlertsCreated: 2,
         alertsPerUser: 2,
@@ -160,7 +150,6 @@ describe('admin/funnel-growth.service', (): void => {
         date: '2026-02-14',
         organicVisit: 1,
         availabilityCtaClick: 1,
-        signupCompleted: 0,
         firstAlertCreated: 1,
         totalAlertsCreated: 1,
         alertsPerUser: 1,
@@ -231,7 +220,6 @@ describe('admin/funnel-growth.service', (): void => {
         date: '2026-02-14',
         organicVisit: 0,
         availabilityCtaClick: 0,
-        signupCompleted: 0,
         firstAlertCreated: 0,
         totalAlertsCreated: 0,
         alertsPerUser: 0,

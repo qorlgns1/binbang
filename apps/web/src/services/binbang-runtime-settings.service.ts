@@ -1,5 +1,7 @@
 import { In, SystemSettings, getDataSource } from '@workspace/db';
 
+import { areTestEndpointsEnabled } from '@/lib/testEndpointGuard';
+
 const CACHE_TTL_MS = 60_000;
 
 const DEFAULTS = {
@@ -166,6 +168,23 @@ export function clearBinbangRuntimeSettingsCache(): void {
   cachedSettings = null;
 }
 
+/**
+ * e2e 실행 중에는 메일 발송을 강제로 console 로 내린다.
+ *
+ * emailProvider 는 SystemSettings(DB)가 env 보다 우선한다. 그런데 로컬과 배포된
+ * dev 서버가 같은 Oracle 스키마를 공유하므로, e2e 를 돌리려고 이 값을 바꾸면
+ * dev 서버의 메일 발송까지 함께 꺼진다(실제로 한 번 그렇게 멈췄다).
+ *
+ * 또 e2e 계정은 `e2e.*@example.com` 인데 Resend 는 example.com 수신을 거부한다.
+ *
+ * 그래서 공유 설정을 건드리는 대신, test-only 라우트를 여는 것과 같은 플래그로
+ * 발송을 막는다. 이 플래그는 production 에서 항상 꺼져 있다.
+ */
+function forceConsoleEmailForTests(value: BinbangRuntimeSettings): BinbangRuntimeSettings {
+  if (!areTestEndpointsEnabled()) return value;
+  return { ...value, emailProvider: 'console' };
+}
+
 export async function getBinbangRuntimeSettings(force = false): Promise<BinbangRuntimeSettings> {
   if (shouldUseCache() && !force && cachedSettings && Date.now() - cachedSettings.loadedAt < CACHE_TTL_MS) {
     return cachedSettings.value;
@@ -173,7 +192,7 @@ export async function getBinbangRuntimeSettings(force = false): Promise<BinbangR
 
   const envFallback = buildEnvFallback();
   const map = await readDbSettingsMap();
-  const value = applyDbOverrides(envFallback, map);
+  const value = forceConsoleEmailForTests(applyDbOverrides(envFallback, map));
 
   if (shouldUseCache()) {
     cachedSettings = {

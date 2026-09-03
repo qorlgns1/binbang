@@ -10,7 +10,6 @@ const DEFAULT_RANGE: FunnelRangePreset = '30d';
 export interface AdminFunnelGrowthKpis {
   organicVisit: number;
   availabilityCtaClick: number;
-  signupCompleted: number;
   firstAlertCreated: number;
   totalAlertsCreated: number;
   alertsPerUser: number;
@@ -21,10 +20,8 @@ export interface AdminFunnelGrowthSeriesItem extends AdminFunnelGrowthKpis {
 }
 
 export interface AdminFunnelGrowthConversion {
-  visitToSignup: number;
-  signupToAlert: number;
   visitToAlert: number;
-  ctaToSignup: number;
+  ctaToAlert: number;
 }
 
 export interface AdminFunnelGrowthData {
@@ -97,7 +94,6 @@ function emptyGrowthKpis(): AdminFunnelGrowthKpis {
   return {
     organicVisit: 0,
     availabilityCtaClick: 0,
-    signupCompleted: 0,
     firstAlertCreated: 0,
     totalAlertsCreated: 0,
     alertsPerUser: 0,
@@ -111,9 +107,6 @@ function applyGrowthEvent(target: AdminFunnelGrowthKpis, eventName: LandingGrowt
       break;
     case 'availability_cta':
       target.availabilityCtaClick += 1;
-      break;
-    case 'signup_completed':
-      target.signupCompleted += 1;
       break;
     case 'first_alert_created':
       target.firstAlertCreated += 1;
@@ -249,10 +242,8 @@ export async function getAdminFunnelGrowth(input: GetAdminFunnelGrowthInput = {}
   });
 
   const conversion: AdminFunnelGrowthConversion = {
-    visitToSignup: safeRatio(totals.signupCompleted, totals.organicVisit),
-    signupToAlert: safeRatio(totals.firstAlertCreated, totals.signupCompleted),
     visitToAlert: safeRatio(totals.firstAlertCreated, totals.organicVisit),
-    ctaToSignup: safeRatio(totals.signupCompleted, totals.availabilityCtaClick),
+    ctaToAlert: safeRatio(totals.firstAlertCreated, totals.availabilityCtaClick),
   };
 
   return {

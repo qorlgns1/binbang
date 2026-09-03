@@ -1,9 +1,10 @@
+import { areTestEndpointsEnabled } from '@/lib/testEndpointGuard';
 import { NextResponse } from 'next/server';
 
 import { setAgodaMockScenario, type AgodaMockScenario } from '../state';
 
 export async function POST(req: Request): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
+  if (!areTestEndpointsEnabled()) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 

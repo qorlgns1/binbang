@@ -17,14 +17,12 @@ describe('getRateLimit', (): void => {
     expect(config).toEqual({ limit: 20, windowMs: 10_000 });
   });
 
-  it('/api/auth/credentials-login은 분당 30회', (): void => {
-    const config = getRateLimit('/api/auth/credentials-login');
-    expect(config).toEqual({ limit: 30, windowMs: 60_000 });
+  it('/api/auth/email-code는 분당 10회', (): void => {
+    expect(getRateLimit('/api/auth/email-code')).toEqual({ limit: 10, windowMs: 60_000 });
   });
 
-  it('/api/auth/signup은 분당 10회', (): void => {
-    const config = getRateLimit('/api/auth/signup');
-    expect(config).toEqual({ limit: 10, windowMs: 60_000 });
+  it('/api/auth/email-verify는 분당 20회', (): void => {
+    expect(getRateLimit('/api/auth/email-verify')).toEqual({ limit: 20, windowMs: 60_000 });
   });
 
   it('/api/auth/* 기타 경로는 분당 60회', (): void => {

@@ -1,5 +1,8 @@
 # Operations Runbook
 
+> **Status: CURRENT — Source of Truth (장애 대응)**
+> `CLAUDE.md` 규약상 서버/배포 변경 제안 전 반드시 읽는다.
+
 Last verified: 2026-04-17
 Owner: binbang
 
@@ -98,12 +101,13 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
 ```
 
 ### DB migration rerun (host env)
-```bash
-# production
-APP_ENV=production pnpm db:migrate:deploy
 
-# development
-APP_ENV=development pnpm db:migrate:deploy
+값 주입은 바깥의 `doppler run`이 담당한다. `with-env`는 `APP_ENV`가 설정돼 있으면
+명령을 그대로 넘기므로, 감싸지 않으면 DB 접속 정보가 비어 있다.
+
+```bash
+# production / development 모두 해당 환경의 서비스 토큰을 사용한다
+doppler run --token "$DOPPLER_TOKEN_WEB" -- pnpm db:migrate:deploy
 ```
 
 ## 6) Observability Links

@@ -17,7 +17,7 @@
 - `apps/web`: Next.js UI, Server Components, Route Handlers.
 - `apps/travel`: Next.js travel app (AI planner); same layering as `apps/web` (DB only via `apps/travel/src/services/**`).
 - `apps/worker`: worker entrypoints and wiring only.
-- `packages/db`: Prisma schema, migrations, DB client ownership.
+- `packages/db`: TypeORM DataSource, entities, migrations, seed ownership.
 - `packages/shared`: universal pure shared code.
 - `packages/worker-shared`: worker-only shared runtime/jobs/browser/observability code.
 - New top-level directories require explicit approval.
@@ -76,35 +76,36 @@ Rules:
 
 ---
 
-## Prisma / Database Rules (`@workspace/db`)
+## Database / TypeORM Rules (`@workspace/db`)
 
-- Prisma schema/migrations must live only in `packages/db/prisma/**`.
-- Prisma Client must be owned/exported only by `packages/db`.
-- Allowed DB import surface: `import { prisma } from "@workspace/db"`.
-- Forbidden: `@prisma/client` outside `packages/db`, deep imports into `packages/db/**`, Prisma re-export outside db package.
+- The Oracle DataSource, entities, migrations, and seed constants are owned solely by `packages/db`.
+- Runtime schema assets live in `packages/db/src/**`; seed and one-off scripts in `packages/db/scripts/**`.
+- Allowed DB import surface: `import { getDataSource, User } from "@workspace/db"` (or `@workspace/db/client`).
+- Forbidden: deep imports into `packages/db/**`, creating or re-exporting a separate DataSource elsewhere.
 
 Access policy:
 
 - `apps/web` client components: no DB access.
 - `apps/web` server-side code: DB access only via `apps/web/src/services/**`.
-- `apps/travel`: same as `apps/web` — DB access only via `apps/travel/src/services/**`; Route Handlers must not call `prisma.*` directly.
+- `apps/travel`: same as `apps/web` — DB access only via `apps/travel/src/services/**`; Route Handlers must not call `getDataSource()` directly.
 - `apps/worker`: may use DB directly, but should prefer `@workspace/worker-shared/runtime`.
 - `packages/shared`: no DB dependency.
 - `packages/worker-shared`: DB allowed only in `runtime/**`.
 
 Query discipline:
 
-- Route Handlers must never call `prisma.*` directly; delegate DB work to `apps/web/src/services/**` (or `apps/travel/src/services/**` for travel).
-- All queries must use `select`.
+- Route Handlers must never touch the DB directly; delegate to `apps/web/src/services/**` (or `apps/travel/src/services/**` for travel).
+- Queries must name the columns/relations they need — no implicit full loading.
 - No queries inside loops.
 - Multi-step logical operations must use transactions.
 
 Migration discipline:
 
-- `prisma db push` is forbidden.
-- Use `prisma migrate dev` for schema changes.
+- `synchronize: true` is forbidden.
+- Use `pnpm db:migrate` / `db:migrate:deploy` / `db:migrate:generate` for schema changes.
 - Never edit/delete deployed migrations.
-- Manual migration SQL is forbidden by default.
+- Do not reintroduce legacy Prisma/PostgreSQL commands or a `DATABASE_URL` assumption.
+- Manual SQL only inside a TypeORM migration or a one-off data-migration script.
 - Schema/migration changes require explicit approval.
 
 ---
@@ -120,7 +121,7 @@ Single Gate Rule:
 
 Route Handlers (`apps/web/src/app/api/**/route.ts`):
 
-- No direct DB access (`@workspace/db`, Prisma calls, SQL execution).
+- No direct DB access (`@workspace/db`, `getDataSource()`, SQL execution).
 - DB access is allowed only through `services/**`.
 - Must not call DB-touching modules outside `services/**`.
 - Responsibilities: authn/authz, parsing+validation, normalization, service calls, error/status mapping.
@@ -197,7 +198,7 @@ Required exceptions:
 - Next reserved file conventions: `page.tsx`, `layout.tsx`, `route.ts`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`.
 - Test/snapshot folders: `__tests__`, `__snapshots__`.
 - Locale folders may use BCP-47 names (e.g., `zh-CN`).
-- `packages/db/prisma/migrations/**` directory names are immutable and exempt.
+- `packages/db/src/migrations/**` filenames keep their generated `<timestamp>-<Name>.ts` form and are exempt.
 - Tooling contract filenames may retain upstream naming (e.g., `next-auth.d.ts`).
 - `apps/web/src/components/ui/**` may keep kebab-case component filenames for shadcn compatibility.
 - Service-layer files under `apps/web/src/services/**` and `apps/travel/src/services/**` must use kebab-case with `.service` suffix (e.g., `accommodations.service.ts`, `affiliate-funnel.service.ts`).

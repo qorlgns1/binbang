@@ -69,7 +69,7 @@ export async function getUserQuota(userId: string): Promise<UserQuotaResponse | 
 
   const accommodationCount = await ds.getRepository(Accommodation).count({ where: { userId } });
 
-  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
+  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 50;
   const checkIntervalMin = user.plan?.quotas.find((q) => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
 
   return {
@@ -105,7 +105,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
     }),
   ]);
 
-  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 5;
+  const maxAccommodations = user.plan?.quotas.find((q) => q.key === QuotaKey.MAX_ACCOMMODATIONS)?.value ?? 50;
   const checkIntervalMin = user.plan?.quotas.find((q) => q.key === QuotaKey.CHECK_INTERVAL_MIN)?.value ?? 30;
 
   return {

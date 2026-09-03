@@ -7,7 +7,6 @@ const PUBLIC_STATIC_PATHS = new Set([
   '/faq',
   '/about',
   '/login',
-  '/signup',
   '/terms',
   '/privacy',
 ]);

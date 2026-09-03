@@ -43,7 +43,7 @@ export default async function PricingPage({ params }: PageProps): Promise<React.
   const t = await getTranslations({ locale: lang, namespace: 'pricing' });
   const highlightCards = [
     {
-      key: 'beta',
+      key: 'free',
       icon: Sparkles,
     },
     {
@@ -134,7 +134,7 @@ export default async function PricingPage({ params }: PageProps): Promise<React.
               <p className='mx-auto mt-3 max-w-2xl text-sm leading-7 text-muted-foreground'>{t('cta.description')}</p>
               <div className='mt-6 flex flex-col justify-center gap-3 sm:flex-row'>
                 <Button asChild size='lg' className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                  <Link href={buildPublicPath(lang, '/signup')}>
+                  <Link href={buildPublicPath(lang, '/login')}>
                     {t('cta.primary')}
                     <ArrowRight className='ml-2 size-4' />
                   </Link>

@@ -11,7 +11,7 @@
  *
  * FORBIDDEN:
  * - Network I/O (fetch, axios)
- * - Database access (Prisma)
+ * - Database access
  * - Node built-in modules (fs, path)
  * - Browser automation (puppeteer)
  * - Direct process.env access

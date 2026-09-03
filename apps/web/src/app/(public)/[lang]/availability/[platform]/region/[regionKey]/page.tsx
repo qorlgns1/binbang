@@ -295,7 +295,7 @@ export default async function RegionalAvailabilityPage({ params }: PageProps): P
           <h2 className='mb-3 text-2xl font-semibold text-foreground'>{t('region.cta.title')}</h2>
           <p className='mx-auto mb-4 max-w-2xl text-sm text-muted-foreground'>{t('region.cta.description')}</p>
           <Link
-            href={buildPublicPath(lang, '/signup')}
+            href={buildPublicPath(lang, '/login')}
             className='inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90'
           >
             {t('region.cta.button')}

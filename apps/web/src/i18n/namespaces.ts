@@ -2,7 +2,7 @@
  * Namespace slicing — pathname 기반 최소 namespace 결정.
  *
  * public [lang] layout은 클라이언트 라우팅에서 재사용되므로,
- * login/signup에서 사용하는 auth를 base에 포함해 키 노출(fallback)을 방지한다.
+ * login에서 사용하는 auth를 base에 포함해 키 노출(fallback)을 방지한다.
  * PublicHeader가 common/landing/pricing을 무조건 사용하므로,
  * public 라우트의 기본(base)은 common/landing/pricing/auth 이고, 페이지별로 legal 등만 추가한다.
  * app 라우트는 common만 로드한다.
@@ -22,7 +22,7 @@ const LOCALE_PREFIX_REGEX = /^\/(ko|en|ja|zh-CN|es-419)(?:\/([^/]*))?(?:\/.*)?$/
  *
  * @example "/ko/pricing" → "pricing"
  * @example "/en" → ""
- * @example "/ja/signup" → "signup"
+ * @example "/ja/login" → "login"
  * @example "/ja/login/reset" → "login" (첫 세그먼트만)
  * @example "/dashboard" → null (locale prefix 없음)
  */
@@ -56,7 +56,6 @@ export function getNamespacesForPathname(pathname: string): readonly string[] {
     case 'availability':
       return [...PUBLIC_BASE, 'availability'];
     case 'login':
-    case 'signup':
       return PUBLIC_BASE;
     case 'terms':
     case 'privacy':

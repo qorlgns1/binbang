@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Binbang – Alertas de disponibilidad | Monitoreo en tiempo real",
-    "description": "¿Alojamiento agotado? Binbang está en beta y te avisa cuando aparece disponibilidad.",
-    "twitterDescription": "Servicio de alertas de disponibilidad que opera en beta."
+    "description": "¿Está agotado el lugar que quieres? Binbang te escribe apenas se libere una habitación. Gratis.",
+    "twitterDescription": "Alertas de disponibilidad para alojamientos agotados. Te avisamos por correo."
   },
   "nav": {
     "brand": "Binbang",
-    "pricing": "Guía beta",
+    "pricing": "Precios",
     "faq": "FAQ",
     "about": "Acerca de",
     "login": "Iniciar sesión"
@@ -16,58 +16,56 @@
     "headlineMobile": ["Para que tu descanso", "no pierda el rumbo,"],
     "subheadline": "Binbang mantiene el faro encendido toda la noche.",
     "subheadlineMobile": ["Binbang mantiene el faro", "encendido toda la noche."],
-    "description": "¿Cansado de actualizar sin parar? Binbang está en beta y vigila mientras duermes para detectar vacantes antes.",
-    "cta": "Empezar la beta",
+    "description": "¿Cansado de recargar la página y competir por una reserva? Binbang vigila mientras duermes y espera a que se libere una habitación.",
+    "cta": "Crear alerta",
     "secondaryCta": "Ver funciones",
-    "statusLabel": "Beta abierta"
+    "statusLabel": "Gratis"
   },
   "features": {
-    "f1Title": "Noticias más claras, primero",
-    "f1Subtitle": "Menos espera, más emoción",
-    "f1Desc": "La optimización del navegador encuentra habitaciones disponibles hasta 4 veces más rápido que las revisiones habituales. Sé el primero en saberlo y asegura tu estancia ideal antes que los demás.",
-    "f2Title": "Claro a través de cualquier niebla",
-    "f2Subtitle": "Precisión inquebrantable ante cada cambio",
-    "f2Desc": "Los selectores dinámicos se adaptan a los cambios de interfaz de los sitios de reserva sin redesplegar código. Aunque las plataformas evolucionen, la visión de Binbang no pierde el rumbo.",
-    "f3Title": "Un faro que no se apaga",
-    "f3Subtitle": "Protección constante, incluso mientras duermes",
-    "f3Desc": "Los registros de latido por minuto mantienen el monitoreo estable y transparente todo el día. El sistema detecta y recupera cualquier fallo automáticamente, para que tu vigilancia no termine.",
-    "learnMore": "Saber más"
-  },
-  "trust": {
-    "title": "Operación en vivo",
-    "operational": "Operativo",
-    "uptime": "Tiempo activo",
-    "activeMonitors": "Monitores activos",
-    "response": "Respuesta promedio",
-    "emptyLogs": "No hay actividad del sistema en los últimos 5 minutos.",
-    "errorMessage": "No se pudo cargar el estado en vivo. Reintentando en 5 segundos.",
-    "retry": "Reintentar"
+    "f1Title": "Revisamos cada 30 minutos",
+    "f1Desc": "Vigilamos tu alojamiento y tus fechas sin parar. Apenas se libere una habitación, te escribimos.",
+    "f2Title": "Es gratis",
+    "f2Desc": "Crea hasta 50 alertas sin costo. Nunca pedimos un medio de pago.",
+    "f3Title": "Cancela cuando quieras",
+    "f3Desc": "Un clic en el enlace para darte de baja al final de cualquier correo de alerta."
   },
   "footer": {
     "title": "Nosotros manejamos la complejidad.",
     "description": "Tú puedes concentrarte en planear tu próximo viaje.",
-    "cta": "Empezar la beta ahora",
+    "cta": "Crear alerta ahora",
     "copyright": "© 2026 Binbang. Todos los derechos reservados.",
     "privacy": "Política de privacidad",
     "terms": "Términos del servicio"
   },
   "appPurpose": "Binbang es un servicio de alertas de disponibilidad que monitorea sitios de reserva de alojamiento y envía notificaciones por correo cuando hay habitación disponible. Al iniciar sesión con Google usamos tu correo solo para identificar la cuenta y enviar alertas de disponibilidad.",
   "appPurposeAriaLabel": "Propósito de la app y uso de datos",
-  "mockLogs": [
-    { "id": 1, "message": "Disponible: Park Hyatt Seoul (Suite Premium)", "location": "Seúl" },
-    { "id": 2, "message": "Disponible: Grand Hyatt Jeju (Deluxe Vista al mar)", "location": "Jeju" },
-    { "id": 3, "message": "Revisión completada: 2.847 objetivos escaneados", "location": "Sistema" },
-    { "id": 4, "message": "Disponible: Shilla Stay Gwanghwamun (Ejecutivo)", "location": "Seúl" },
-    { "id": 5, "message": "Alerta enviada: entregada a 3 usuarios", "location": "Sistema" },
-    { "id": 6, "message": "Disponible: Lotte Hotel Busan (Premier Océano)", "location": "Busan" },
-    { "id": 7, "message": "Disponible: Four Seasons Seoul (Corner King)", "location": "Seúl" },
-    { "id": 8, "message": "Revisión completada: 1.923 objetivos escaneados", "location": "Sistema" },
-    { "id": 9, "message": "Disponible: Maison Glad Jeju (Doble estándar)", "location": "Jeju" },
-    { "id": 10, "message": "Disponible: Ananti Cove (Deluxe Oceanhill)", "location": "Busan" },
-    { "id": 11, "message": "Disponible: Conrad Seoul (Ejecutivo)", "location": "Seúl" },
-    { "id": 12, "message": "Alerta enviada: entregada a 7 usuarios", "location": "Sistema" },
-    { "id": 13, "message": "Disponible: Banyan Tree Club & Spa (Villa con piscina)", "location": "Jeju" },
-    { "id": 14, "message": "Revisión completada: 3.421 objetivos escaneados", "location": "Sistema" },
-    { "id": 15, "message": "Disponible: Seamarq Hotel (Twin vista al mar)", "location": "Gangneung" }
-  ]
+  "quickStart": {
+    "title": "¿Agotado?\nTe avisamos apenas se libere una habitación",
+    "subtitle": "Busca un hotel y deja tu correo. Sin crear cuenta.",
+    "searchPlaceholder": "Busca por hotel o ciudad",
+    "clearHotel": "Quitar selección",
+    "checkIn": "Entrada",
+    "checkOut": "Salida",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "emailTitle": "¿A dónde te avisamos?",
+    "emailPlaceholder": "name@example.com",
+    "consent": "Acepto recibir alertas por correo de disponibilidad y bajadas de precio. Puedes darte de baja cuando quieras.",
+    "sendCode": "Enviar código",
+    "sending": "Enviando...",
+    "codeTitle": "Ingresa el código que te enviamos",
+    "codeHint": "Enviamos un código de 6 dígitos a {email}.",
+    "verify": "Crear alerta",
+    "verifying": "Creando...",
+    "resend": "Enviar un código nuevo",
+    "changeEmail": "Usar otro correo",
+    "doneTitle": "Tu alerta está activa",
+    "doneBody": "Te escribiremos a {email} apenas se libere una habitación.",
+    "goDashboard": "Ver mis alertas",
+    "errorHotel": "Elige un alojamiento primero",
+    "errorDates": "Revisa las fechas de entrada y salida",
+    "errorConsent": "Debes aceptar recibir alertas",
+    "errorCreate": "No pudimos crear la alerta",
+    "submit": "Recibir alertas"
+  }
 }

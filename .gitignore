@@ -43,8 +43,6 @@ next-env.d.ts
 Thumbs.db
 
 # Prisma
-prisma/*.db
-prisma/*.db-journal
 **generated/
 
 .pnpm-store

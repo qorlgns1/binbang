@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
+import { areTestEndpointsEnabled } from '@/lib/testEndpointGuard';
 import { authOptions } from '@/lib/auth';
 import { forbiddenResponse, handleServiceError, unauthorizedResponse } from '@/lib/handleServiceError';
 import { cleanupE2eUserById } from '@/services/e2e-cleanup.service';
@@ -37,7 +38,7 @@ function isAllowedE2eEmail(email: string | null | undefined): boolean {
  *   - deleted=false: 이미 삭제되었거나 미존재
  */
 export async function DELETE(): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
+  if (!areTestEndpointsEnabled()) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 

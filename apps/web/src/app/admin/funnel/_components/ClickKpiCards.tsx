@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { AdminFunnelClickTotals } from '@/types/admin';
 
 const CLICK_ITEMS: Array<{ key: keyof AdminFunnelClickTotals; label: string; alias: string }> = [
-  { key: 'navSignup', label: '네비 가입 클릭', alias: 'nav_signup' },
+  { key: 'navLogin', label: '네비 로그인 클릭', alias: 'nav_login' },
   { key: 'navRequest', label: '요청 클릭', alias: 'nav_request' },
   { key: 'navPricing', label: '요금제 클릭', alias: 'nav_pricing' },
   { key: 'mobileMenuOpen', label: '모바일 메뉴 오픈', alias: 'mobile_menu_open' },
