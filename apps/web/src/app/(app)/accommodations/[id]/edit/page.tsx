@@ -11,13 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { type HotelSearchResult, HotelSearchInput } from '@/components/hotel-search/HotelSearchInput';
 import { useAccommodation } from '@/hooks/useAccommodation';
 import { useUpdateAccommodation } from '@/hooks/useUpdateAccommodation';
 import { getUserMessage, getValidationFieldErrors } from '@/lib/apiError';
 import { parseAccommodationUrl } from '@/lib/urlParser';
 import type { ParsedAccommodationUrl } from '@/types/url';
 
-type AccommodationFormField = 'url' | 'name' | 'checkIn' | 'checkOut' | 'adults';
+type AccommodationFormField = 'url' | 'platformId' | 'name' | 'checkIn' | 'checkOut' | 'adults';
 
 export default function EditAccommodationPage(): React.ReactElement {
   const t = useTranslations('common');
@@ -28,10 +29,18 @@ export default function EditAccommodationPage(): React.ReactElement {
   const { data, isPending: fetching, error: fetchError } = useAccommodation(id);
   const updateMutation = useUpdateAccommodation();
 
+  const isAgodaFlow = data?.platform === 'AGODA';
+
   const [parsedInfo, setParsedInfo] = useState<ParsedAccommodationUrl | null>(null);
 
-  // 폼 상태
+  // 레거시 URL 기반 폼 상태 (AIRBNB 등 URL 스크래핑 숙소용)
   const [url, setUrl] = useState('');
+  const [originalUrl, setOriginalUrl] = useState('');
+
+  // Agoda 검색 기반 폼 상태
+  const [selectedHotel, setSelectedHotel] = useState<HotelSearchResult | null>(null);
+  const [originalPlatformId, setOriginalPlatformId] = useState('');
+
   const [name, setName] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -42,26 +51,38 @@ export default function EditAccommodationPage(): React.ReactElement {
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-  // 원본 URL (변경 감지용)
-  const [originalUrl, setOriginalUrl] = useState('');
-
   // 데이터 도착 시 폼 초기화 (1회만)
   const [initialized, setInitialized] = useState(false);
   useEffect(() => {
     if (data && !initialized) {
       setName(data.name);
-      setUrl(data.url ?? '');
-      setOriginalUrl(data.url ?? '');
       setCheckIn(data.checkIn.split('T')[0]);
       setCheckOut(data.checkOut.split('T')[0]);
       setAdults(data.adults);
+
+      if (data.platform === 'AGODA' && data.platformId) {
+        setSelectedHotel({
+          hotelId: data.platformId,
+          name: data.name,
+          nameEn: null,
+          city: null,
+          country: null,
+          starRating: null,
+          photoUrl: null,
+        });
+        setOriginalPlatformId(data.platformId);
+      } else {
+        setUrl(data.url ?? '');
+        setOriginalUrl(data.url ?? '');
+      }
+
       setInitialized(true);
     }
   }, [data, initialized]);
 
-  // URL 변경 시 자동 파싱 (URL이 변경된 경우에만)
+  // URL 변경 시 자동 파싱 (레거시 플로우, URL이 변경된 경우에만)
   useEffect(() => {
-    if (!url || url === originalUrl) {
+    if (isAgodaFlow || !url || url === originalUrl) {
       setParsedInfo(null);
       return;
     }
@@ -72,7 +93,7 @@ export default function EditAccommodationPage(): React.ReactElement {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [url, originalUrl]);
+  }, [url, originalUrl, isAgodaFlow]);
 
   useEffect(() => {
     if (!updateMutation.error) {
@@ -86,6 +107,7 @@ export default function EditAccommodationPage(): React.ReactElement {
 
     setFieldErrors({
       url: errors.url,
+      platformId: errors.platformId,
       name: errors.name,
       checkIn: errors.checkIn,
       checkOut: errors.checkOut,
@@ -93,7 +115,7 @@ export default function EditAccommodationPage(): React.ReactElement {
     });
   }, [updateMutation.error]);
 
-  // "파싱된 정보로 채우기" 버튼
+  // "파싱된 정보로 채우기" 버튼 (레거시 플로우)
   function applyParsedInfo() {
     if (!parsedInfo) return;
 
@@ -109,6 +131,35 @@ export default function EditAccommodationPage(): React.ReactElement {
 
     if (checkIn < today) {
       setDateError('체크인 날짜는 오늘 이후여야 합니다');
+      return;
+    }
+
+    if (isAgodaFlow) {
+      if (!selectedHotel) {
+        setFieldErrors((prev) => ({ ...prev, platformId: '호텔을 선택해주세요' }));
+        return;
+      }
+
+      const changedHotel = selectedHotel.hotelId !== originalPlatformId;
+
+      updateMutation.mutate(
+        {
+          id,
+          data: {
+            name: changedHotel ? selectedHotel.name : name,
+            platformId: selectedHotel.hotelId,
+            checkIn,
+            checkOut,
+            adults,
+          },
+        },
+        {
+          onSuccess: () => {
+            router.push(`/accommodations/${id}`);
+            router.refresh();
+          },
+        },
+      );
       return;
     }
 
@@ -178,57 +229,75 @@ export default function EditAccommodationPage(): React.ReactElement {
             }}
             className='space-y-6'
           >
-            {/* URL 입력 */}
-            <div className='space-y-2'>
-              <Label htmlFor='url'>숙소 URL *</Label>
-              <Input
-                type='url'
-                id='url'
-                name='url'
-                required
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
-              />
-              <p className='text-xs text-muted-foreground'>URL을 변경하면 새 URL에서 정보를 자동으로 파싱합니다.</p>
-              {fieldErrors.url && <p className='text-xs text-destructive'>{fieldErrors.url}</p>}
+            {isAgodaFlow ? (
+              /* 호텔 검색 */
+              <div className='space-y-2'>
+                <Label>호텔 *</Label>
+                <HotelSearchInput
+                  onSelect={setSelectedHotel}
+                  selectedHotel={selectedHotel}
+                  onClear={() => setSelectedHotel(null)}
+                  error={fieldErrors.platformId}
+                  placeholder='호텔명, 도시명으로 검색...'
+                  clearLabel='선택 해제'
+                />
+                <p className='text-xs text-muted-foreground'>다른 숙소로 바꾸려면 검색해서 다시 선택하세요.</p>
+              </div>
+            ) : (
+              /* 레거시 URL 입력 */
+              <div className='space-y-2'>
+                <Label htmlFor='url'>숙소 URL *</Label>
+                <Input
+                  type='url'
+                  id='url'
+                  name='url'
+                  required
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder='https://www.airbnb.co.kr/rooms/12345678?check_in=...'
+                />
+                <p className='text-xs text-muted-foreground'>URL을 변경하면 새 URL에서 정보를 자동으로 파싱합니다.</p>
+                {fieldErrors.url && <p className='text-xs text-destructive'>{fieldErrors.url}</p>}
 
-              {/* 파싱 결과 표시 */}
-              {parsedInfo?.platform && (
-                <Alert className='border-info-border bg-info text-info-foreground'>
-                  <div className='flex items-center justify-between gap-4'>
-                    <AlertTitle className='text-sm font-medium text-info-foreground'>
-                      URL에서 정보를 찾았습니다
-                    </AlertTitle>
-                    <Button type='button' size='sm' onClick={applyParsedInfo}>
-                      모두 적용
-                    </Button>
-                  </div>
-                  <AlertDescription className='text-xs text-info-foreground/80 space-y-1 mt-2'>
-                    <p>• 플랫폼: {parsedInfo.platform}</p>
-                    {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
-                    {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
-                    {parsedInfo.checkOut && <p>• 체크아웃: {parsedInfo.checkOut}</p>}
-                    {parsedInfo.adults && <p>• 인원: {parsedInfo.adults}명</p>}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
+                {/* 파싱 결과 표시 */}
+                {parsedInfo?.platform && (
+                  <Alert className='border-info-border bg-info text-info-foreground'>
+                    <div className='flex items-center justify-between gap-4'>
+                      <AlertTitle className='text-sm font-medium text-info-foreground'>
+                        URL에서 정보를 찾았습니다
+                      </AlertTitle>
+                      <Button type='button' size='sm' onClick={applyParsedInfo}>
+                        모두 적용
+                      </Button>
+                    </div>
+                    <AlertDescription className='text-xs text-info-foreground/80 space-y-1 mt-2'>
+                      <p>• 플랫폼: {parsedInfo.platform}</p>
+                      {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
+                      {parsedInfo.checkIn && <p>• 체크인: {parsedInfo.checkIn}</p>}
+                      {parsedInfo.checkOut && <p>• 체크아웃: {parsedInfo.checkOut}</p>}
+                      {parsedInfo.adults && <p>• 인원: {parsedInfo.adults}명</p>}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
 
-            {/* 숙소 이름 */}
-            <div className='space-y-2'>
-              <Label htmlFor='name'>숙소 이름 *</Label>
-              <Input
-                type='text'
-                id='name'
-                name='name'
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder='예: 그린델발트 샬레'
-              />
-              {fieldErrors.name && <p className='text-xs text-destructive'>{fieldErrors.name}</p>}
-            </div>
+            {/* 숙소 이름 (레거시 URL 플로우에서만 직접 수정) */}
+            {!isAgodaFlow && (
+              <div className='space-y-2'>
+                <Label htmlFor='name'>숙소 이름 *</Label>
+                <Input
+                  type='text'
+                  id='name'
+                  name='name'
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder='예: 그린델발트 샬레'
+                />
+                {fieldErrors.name && <p className='text-xs text-destructive'>{fieldErrors.name}</p>}
+              </div>
+            )}
 
             {/* 날짜 선택 */}
             <div className='grid grid-cols-2 gap-4'>

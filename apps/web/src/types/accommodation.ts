@@ -74,6 +74,7 @@ export interface CreateAgodaAlertInput {
 export interface UpdateAccommodationInput {
   name?: string;
   url?: string;
+  platformId?: string;
   checkIn?: string;
   checkOut?: string;
   adults?: number;

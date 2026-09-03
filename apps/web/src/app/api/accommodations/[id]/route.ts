@@ -18,6 +18,7 @@ const updateAccommodationSchema = z
   .object({
     name: z.string().min(1).optional(),
     url: z.string().url().optional(),
+    platformId: z.string().regex(/^\d+$/, '유효한 호텔 ID가 아닙니다').optional(),
     checkIn: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -78,6 +79,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
     const accommodation = await updateAccommodation(id, session.user.id, {
       name: data.name,
       url: data.url,
+      platformId: data.platformId,
       checkIn: data.checkIn ? new Date(data.checkIn) : undefined,
       checkOut: data.checkOut ? new Date(data.checkOut) : undefined,
       adults: data.adults,

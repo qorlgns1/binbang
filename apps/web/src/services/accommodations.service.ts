@@ -42,6 +42,7 @@ export interface CreateAgodaApiAccommodationInput {
 export interface UpdateAccommodationInput {
   name?: string;
   url?: string;
+  platformId?: string;
   checkIn?: Date;
   checkOut?: Date;
   adults?: number;
@@ -250,17 +251,59 @@ export async function updateAccommodation(
   const ds = await getDataSource();
   const repo = ds.getRepository(AccommodationEntity);
 
-  const existing = await repo.findOne({ where: { id, userId }, select: { id: true } });
+  const existing = await repo.findOne({
+    where: { id, userId },
+    select: { id: true, url: true, platformId: true, checkIn: true, checkOut: true, adults: true },
+  });
   if (!existing) return null;
 
   const updateData: Partial<AccommodationEntity> = {};
   if (input.name !== undefined) updateData.name = input.name;
   if (input.url !== undefined) updateData.url = input.url;
+  if (input.platformId !== undefined) {
+    updateData.platformId = input.platformId;
+    updateData.platform = 'AGODA';
+    updateData.url = null;
+  }
   if (input.checkIn !== undefined) updateData.checkIn = input.checkIn;
   if (input.checkOut !== undefined) updateData.checkOut = input.checkOut;
   if (input.adults !== undefined) updateData.adults = input.adults;
   if (input.isActive !== undefined) updateData.isActive = input.isActive;
   if (input.priceDropThreshold !== undefined) updateData.priceDropThreshold = input.priceDropThreshold;
+
+  // 숙소(호텔), 체크인/아웃, URL이 바뀌면 이전 조회 결과(예약 가능 여부/가격)는 새 조건과 무관해진다.
+  // 그대로 두면 다음 폴링 전까지 화면에 옛 상태가 남아 마치 반영이 안 된 것처럼 보인다.
+  const searchConditionChanged =
+    (input.url !== undefined && input.url !== existing.url) ||
+    (input.platformId !== undefined && input.platformId !== existing.platformId) ||
+    (input.checkIn !== undefined && input.checkIn.getTime() !== existing.checkIn.getTime()) ||
+    (input.checkOut !== undefined && input.checkOut.getTime() !== existing.checkOut.getTime()) ||
+    (input.adults !== undefined && input.adults !== existing.adults);
+
+  if (searchConditionChanged) {
+    updateData.lastPolledAt = null;
+    updateData.lastStatus = 'UNKNOWN';
+    updateData.lastCheck = null;
+    updateData.lastPrice = null;
+    updateData.lastPriceAmount = null;
+    updateData.lastPriceCurrency = null;
+  }
+
+  if (input.platformId !== undefined && input.platformId !== existing.platformId) {
+    updateData.platformName = null;
+    updateData.platformImage = null;
+    updateData.platformDescription = null;
+    updateData.addressCountry = null;
+    updateData.addressRegion = null;
+    updateData.addressLocality = null;
+    updateData.postalCode = null;
+    updateData.streetAddress = null;
+    updateData.ratingValue = null;
+    updateData.reviewCount = null;
+    updateData.latitude = null;
+    updateData.longitude = null;
+    updateData.platformMetadata = null;
+  }
 
   await repo.update({ id }, updateData);
   return repo.findOne({ where: { id } });
