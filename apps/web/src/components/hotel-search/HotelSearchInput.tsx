@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import Image from 'next/image';
 
@@ -53,9 +54,11 @@ export function HotelSearchInput({
   const [results, setResults] = useState<HotelSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const search = useCallback(async (q: string): Promise<void> => {
     if (q.length < MIN_QUERY_LENGTH) {
@@ -97,16 +100,37 @@ export function HotelSearchInput({
     };
   }, [query, search]);
 
-  // 외부 클릭 시 드롭다운 닫기
+  // 외부 클릭 시 드롭다운 닫기 (드롭다운은 portal로 컨테이너 밖에 렌더링되므로 함께 확인)
   useEffect(() => {
     function handleClickOutside(e: MouseEvent): void {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setIsOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 드롭다운을 Card 등 조상의 overflow-hidden에 잘리지 않도록 body에 portal하기 위해
+  // 입력창 기준 위치를 뷰포트 좌표로 계산해둔다.
+  useEffect(() => {
+    if (!isOpen || results.length === 0) return;
+
+    function updatePosition(): void {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setDropdownRect({ top: rect.bottom, left: rect.left, width: rect.width });
+    }
+
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen, results.length]);
 
   if (selectedHotel) {
     return (
@@ -168,43 +192,51 @@ export function HotelSearchInput({
         )}
       </div>
 
-      {isOpen && results.length > 0 && (
-        <div className='absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover shadow-md'>
-          <ul className='max-h-64 overflow-y-auto py-1' data-testid='hotel-search-results'>
-            {results.map((hotel) => (
-              <li key={hotel.hotelId}>
-                <button
-                  type='button'
-                  className='flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-muted/60'
-                  data-testid={`hotel-search-result-${hotel.hotelId}`}
-                  onClick={() => {
-                    onSelect(hotel);
-                    setQuery('');
-                    setIsOpen(false);
-                  }}
-                >
-                  {hotel.photoUrl && (
-                    <Image
-                      src={hotel.photoUrl}
-                      alt={hotel.name}
-                      width={40}
-                      height={40}
-                      unoptimized
-                      className='size-10 shrink-0 rounded object-cover'
-                    />
-                  )}
-                  <div className='min-w-0'>
-                    <p className='truncate text-sm font-medium'>{hotel.name}</p>
-                    <p className='truncate text-xs text-muted-foreground'>
-                      {[hotel.city, hotel.country].filter(Boolean).join(', ')}
-                    </p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {isOpen &&
+        results.length > 0 &&
+        dropdownRect &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className='fixed z-50 overflow-hidden rounded-md border border-border bg-popover shadow-md'
+            style={{ top: dropdownRect.top + 4, left: dropdownRect.left, width: dropdownRect.width }}
+          >
+            <ul className='max-h-64 overflow-y-auto py-1' data-testid='hotel-search-results'>
+              {results.map((hotel) => (
+                <li key={hotel.hotelId}>
+                  <button
+                    type='button'
+                    className='flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-muted/60'
+                    data-testid={`hotel-search-result-${hotel.hotelId}`}
+                    onClick={() => {
+                      onSelect(hotel);
+                      setQuery('');
+                      setIsOpen(false);
+                    }}
+                  >
+                    {hotel.photoUrl && (
+                      <Image
+                        src={hotel.photoUrl}
+                        alt={hotel.name}
+                        width={40}
+                        height={40}
+                        unoptimized
+                        className='size-10 shrink-0 rounded object-cover'
+                      />
+                    )}
+                    <div className='min-w-0'>
+                      <p className='truncate text-sm font-medium'>{hotel.name}</p>
+                      <p className='truncate text-xs text-muted-foreground'>
+                        {[hotel.city, hotel.country].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>,
+          document.body,
+        )}
 
       {error && <p className='mt-1 text-xs text-destructive'>{error}</p>}
     </div>
