@@ -203,7 +203,8 @@ jobs:
 
             # --- 배포 후 자가 진단: 새 빌드에서 알림 대기열 저장이 되는지 확인 (트랜잭션 롤백) ---
             # web이 뜰 때까지 최대 150초 재시도한다. 진단이 실패하면 set -e로 배포가 실패 처리된다.
-            SELF_TEST_SCRIPT='const url="http://127.0.0.1:3000/api/internal/self-test/notifications";
+            # standalone 서버는 컨테이너 HOSTNAME에만 바인딩되므로 127.0.0.1이 아닌 hostname으로 호출한다.
+            SELF_TEST_SCRIPT='const url="http://"+require("os").hostname()+":3000/api/internal/self-test/notifications";
             const headers={"x-binbang-internal-token":process.env.BINBANG_INTERNAL_API_TOKEN||""};
             (async()=>{for(let i=0;i<30;i++){try{const r=await fetch(url,{method:"POST",headers});const body=await r.text();
             if(r.ok){console.log("notification self-test:",body);return;}
