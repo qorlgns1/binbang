@@ -4,6 +4,7 @@ import {
   AgodaNotification,
   AgodaPollRun,
   AgodaRoomSnapshot,
+  type EntityManager,
   getDataSource,
 } from '@workspace/db';
 
@@ -203,7 +204,18 @@ async function verifyVacancyCandidates(params: {
 async function enqueueNotifications(params: { accommodationId: string; alertEventIds: number[] }): Promise<number> {
   if (params.alertEventIds.length === 0) return 0;
   const ds = await getDataSource();
-  const repo = ds.getRepository(AgodaNotification);
+  return saveQueuedEmailNotifications(ds, params);
+}
+
+/**
+ * 감지 이벤트에 대한 이메일 알림을 발송 대기열에 넣는다.
+ * 알림 자가 진단(notification-self-test.service)도 같은 저장 경로를 검증하도록 분리해 둔다.
+ */
+export async function saveQueuedEmailNotifications(
+  manager: Pick<EntityManager, 'getRepository'>,
+  params: { accommodationId: string; alertEventIds: number[] },
+): Promise<number> {
+  const repo = manager.getRepository(AgodaNotification);
 
   const entities = params.alertEventIds.map((alertEventId) =>
     repo.create({

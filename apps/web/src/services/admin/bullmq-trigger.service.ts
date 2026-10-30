@@ -3,6 +3,7 @@ const TRIGGERABLE_SCHEDULERS: Readonly<Record<string, string>> = {
   'binbang-poll-due-scheduler': '/api/internal/accommodations/poll-due',
   'binbang-dispatch-scheduler': '/api/internal/accommodations/notifications/dispatch',
   'binbang-snapshot-cleanup-scheduler': '/api/internal/snapshots/cleanup',
+  'binbang-notification-watchdog-scheduler': '/api/internal/accommodations/notifications/watchdog',
 };
 
 /** 즉시 트리거 가능한 스케줄러 ID 집합 — 서비스와 라우트에서 공유 */

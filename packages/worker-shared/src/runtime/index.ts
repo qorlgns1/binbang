@@ -57,6 +57,7 @@ export {
   triggerBinbangPollDue,
   triggerBinbangDispatch,
   triggerBinbangSnapshotCleanup,
+  triggerBinbangNotificationWatchdog,
 } from './binbangCron';
 
 // Heartbeat

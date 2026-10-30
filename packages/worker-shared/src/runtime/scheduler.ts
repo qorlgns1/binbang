@@ -14,6 +14,8 @@ const DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE = '20 */6 * * *';
 const DEFAULT_BINBANG_POLL_DUE_SCHEDULE = '*/30 * * * *';
 const DEFAULT_BINBANG_DISPATCH_SCHEDULE = '*/5 * * * *';
 const DEFAULT_BINBANG_SNAPSHOT_CLEANUP_SCHEDULE = '0 3 * * *';
+// 감시 창(60분)과 같은 간격이어야 이벤트 하나가 한 번만 검사된다. 그래서 설정으로 바꾸지 않는다.
+const BINBANG_NOTIFICATION_WATCHDOG_SCHEDULE = '45 * * * *';
 
 interface SetupRepeatableJobsOptions {
   publicAvailabilitySnapshotSchedule?: string;
@@ -182,6 +184,12 @@ export async function setupRepeatableJobs(
     { pattern: binbangSnapshotCleanupSchedule },
     { name: 'binbang-snapshot-cleanup', data: { triggeredAt: new Date().toISOString() } },
   );
+
+  await queue.upsertJobScheduler(
+    'binbang-notification-watchdog-scheduler',
+    { pattern: BINBANG_NOTIFICATION_WATCHDOG_SCHEDULE },
+    { name: 'binbang-notification-watchdog', data: { triggeredAt: new Date().toISOString() } },
+  );
 }
 
 export async function removeRepeatableJobs(queue: Queue): Promise<void> {
@@ -197,4 +205,5 @@ export async function removeRepeatableJobs(queue: Queue): Promise<void> {
   await queue.removeJobScheduler('binbang-poll-due-scheduler');
   await queue.removeJobScheduler('binbang-dispatch-scheduler');
   await queue.removeJobScheduler('binbang-snapshot-cleanup-scheduler');
+  await queue.removeJobScheduler('binbang-notification-watchdog-scheduler');
 }
