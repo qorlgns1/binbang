@@ -18,7 +18,10 @@ services:
     ports:
       - '3200:3000'
     networks:
-      - shared-network
+      shared-network:
+        # 운영/개발이 같은 네트워크를 쓰므로 서비스 이름(web) 대신 환경별 별칭으로 호출한다.
+        aliases:
+          - web-dev
     env_file:
       - path: ../.env.doppler.web.development
         required: true
@@ -26,14 +29,17 @@ services:
       APP_ENV: development
       NODE_ENV: development
       DOCKER_ENV: 'true'
-      WORKER_INTERNAL_URL: http://worker:3500
+      WORKER_INTERNAL_URL: http://worker-dev:3500
       REDIS_URL: redis://redis-dev:6379
     restart: unless-stopped
 
   worker:
     image: kihoonbae/binbang:worker-develop
     networks:
-      - shared-network
+      shared-network:
+        # 운영/개발이 같은 네트워크를 쓰므로 서비스 이름(worker) 대신 환경별 별칭으로 호출한다.
+        aliases:
+          - worker-dev
     env_file:
       - path: ../.env.doppler.worker.development
         required: true
@@ -41,8 +47,8 @@ services:
       APP_ENV: development
       NODE_ENV: development
       REDIS_URL: redis://redis-dev:6379
-      WEB_INTERNAL_URL: http://web:3000
-      TRAVEL_INTERNAL_URL: http://travel:3000
+      WEB_INTERNAL_URL: http://web-dev:3000
+      TRAVEL_INTERNAL_URL: http://travel-dev:3000
     depends_on:
       redis-dev:
         condition: service_healthy
@@ -53,7 +59,10 @@ services:
     ports:
       - '3301:3000'
     networks:
-      - shared-network
+      shared-network:
+        # 운영/개발이 같은 네트워크를 쓰므로 서비스 이름(travel) 대신 환경별 별칭으로 호출한다.
+        aliases:
+          - travel-dev
     env_file:
       - path: ../.env.doppler.travel.development
         required: true

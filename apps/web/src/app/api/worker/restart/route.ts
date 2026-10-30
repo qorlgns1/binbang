@@ -14,7 +14,7 @@ export async function POST(_request: Request): Promise<Response> {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const workerUrl = process.env.NODE_ENV === 'production' ? 'http://worker:3500' : 'http://localhost:3500';
+    const workerUrl = process.env.WORKER_INTERNAL_URL || 'http://localhost:3500';
 
     let response: Response;
 
