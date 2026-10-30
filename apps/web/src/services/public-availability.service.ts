@@ -217,8 +217,17 @@ function resolveListItemsLimit(value: number | undefined): number {
   return Math.min(rounded, MAX_LIST_ITEMS_LIMIT);
 }
 
+// Next.js는 한글 경로 파라미터를 페이지에는 퍼센트 인코딩된 채로, 메타데이터에는 디코딩해서 넘긴다.
+function decodePathParam(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function normalizeSlug(slug: string): string {
-  return slug.trim().toLowerCase();
+  return decodePathParam(slug).trim().toLowerCase();
 }
 
 function buildSlugLookupCandidates(slug: string): string[] {
@@ -540,7 +549,7 @@ export async function getRegionalAvailabilityData(
   input: GetRegionalAvailabilityDataInput,
 ): Promise<RegionalAvailabilityData | null> {
   const platform = parsePublicPlatformSegment(input.platform);
-  const regionKey = input.regionKey.trim().toLowerCase();
+  const regionKey = decodePathParam(input.regionKey).trim().toLowerCase();
   const limit = resolveListItemsLimit(input.limit);
 
   if (!platform || regionKey.length === 0) return null;
