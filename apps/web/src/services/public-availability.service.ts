@@ -1,5 +1,6 @@
 import {
   In,
+  IsNull,
   Not,
   type Platform,
   type PredictionConfidence,
@@ -216,8 +217,17 @@ function resolveListItemsLimit(value: number | undefined): number {
   return Math.min(rounded, MAX_LIST_ITEMS_LIMIT);
 }
 
+// Next.js는 한글 경로 파라미터를 페이지에는 퍼센트 인코딩된 채로, 메타데이터에는 디코딩해서 넘긴다.
+function decodePathParam(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function normalizeSlug(slug: string): string {
-  return slug.trim().toLowerCase();
+  return decodePathParam(slug).trim().toLowerCase();
 }
 
 function buildSlugLookupCandidates(slug: string): string[] {
@@ -248,7 +258,8 @@ function resolveSitemapItemsOffset(value: number | undefined): number {
 }
 
 type SnapshotRecord = {
-  snapshotDate: Date;
+  // TypeORM은 date 컬럼을 'YYYY-MM-DD' 문자열로 돌려주고, 원시 쿼리는 Date로 돌려준다.
+  snapshotDate: Date | string;
   windowStartAt: Date;
   windowEndAt: Date;
   sampleSize: number;
@@ -266,7 +277,7 @@ function mapSnapshot(snapshot: SnapshotRecord | null | undefined): PublicAvailab
   if (!snapshot) return null;
 
   return {
-    snapshotDate: snapshot.snapshotDate.toISOString(),
+    snapshotDate: new Date(snapshot.snapshotDate).toISOString(),
     windowStartAt: snapshot.windowStartAt.toISOString(),
     windowEndAt: snapshot.windowEndAt.toISOString(),
     sampleSize: snapshot.sampleSize,
@@ -514,9 +525,10 @@ export async function getPublicAvailabilitySitemapItems(
   const ds = await getDataSource();
 
   const properties = await ds.getRepository(PublicProperty).find({
+    // Oracle은 ''를 NULL로 저장하므로 Not('')은 항상 거짓이 된다.
     where: {
       isActive: true,
-      slug: Not(''),
+      slug: Not(IsNull()),
     },
     order: { updatedAt: 'DESC', id: 'DESC' },
     skip: offset,
@@ -533,29 +545,21 @@ export async function getPublicAvailabilitySitemapItems(
   );
 }
 
-export async function getPublicAvailabilitySitemapTotalCount(): Promise<number> {
-  const ds = await getDataSource();
-  return ds.getRepository(PublicProperty).count({
-    where: {
-      isActive: true,
-      slug: Not(''),
-    },
-  });
-}
-
 export async function getRegionalAvailabilityData(
   input: GetRegionalAvailabilityDataInput,
 ): Promise<RegionalAvailabilityData | null> {
   const platform = parsePublicPlatformSegment(input.platform);
-  const regionKey = input.regionKey.trim().toLowerCase();
+  const regionKey = decodePathParam(input.regionKey).trim().toLowerCase();
   const limit = resolveListItemsLimit(input.limit);
 
   if (!platform || regionKey.length === 0) return null;
 
   const ds = await getDataSource();
 
+  // 저장된 cityKey는 한글이 NFD(자모 분리)로 들어가 있어 NFC 요청과 맞지 않는다.
+  const regionKeyCandidates = Array.from(new Set([regionKey.normalize('NFC'), regionKey.normalize('NFD')]));
   const properties = await ds.getRepository(PublicProperty).find({
-    where: { platform, cityKey: regionKey, isActive: true },
+    where: { platform, cityKey: In(regionKeyCandidates), isActive: true },
     order: { lastObservedAt: 'DESC', reviewCount: 'DESC' },
     take: limit,
   });
