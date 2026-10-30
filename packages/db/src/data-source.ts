@@ -64,6 +64,60 @@ if (!oracledb.fetchAsString.includes(oracledb.CLOB)) {
   oracledb.fetchAsString = [...oracledb.fetchAsString, oracledb.CLOB];
 }
 
+// 객체 키는 번들 압축에서도 이름이 유지된다. initialize() 직전에 클래스 이름을 이 키로 되돌린다.
+const ENTITY_CLASSES = {
+  Account,
+  Session,
+  User,
+  VerificationToken,
+  AgodaConsentLog,
+  AgodaAlertEvent,
+  AgodaHotel,
+  AgodaHotelSearch,
+  AgodaNotification,
+  AgodaPollRun,
+  AgodaRoomSnapshot,
+  AffiliateAdvertiser,
+  AffiliateAuditJobState,
+  AffiliateAuditPurgeRun,
+  AffiliateEvent,
+  AffiliatePreferenceAuditLog,
+  ConversationPreference,
+  BillingEvent,
+  ConditionMetEvent,
+  PriceQuote,
+  Subscription,
+  Case,
+  CaseMessage,
+  CaseNotification,
+  CaseStatusLog,
+  FormQuestionMapping,
+  FormSubmission,
+  Accommodation,
+  CheckCycle,
+  CheckLog,
+  HeartbeatHistory,
+  WorkerHeartbeat,
+  PublicAvailabilityPrediction,
+  PublicAvailabilitySnapshot,
+  PublicProperty,
+  AuditLog,
+  Permission,
+  Plan,
+  PlanQuota,
+  Role,
+  PlatformPattern,
+  PlatformSelector,
+  SelectorChangeLog,
+  LandingEvent,
+  SettingsChangeLog,
+  SystemSettings,
+  Destination,
+  TravelConversation,
+  TravelEntity,
+  TravelMessage,
+} as const;
+
 export const AppDataSource = new DataSource({
   type: 'oracle',
   connectString: process.env.ORACLE_CONNECT_STRING,
@@ -74,64 +128,26 @@ export const AppDataSource = new DataSource({
   // oracledb thin mode에서 statement caching이 간헐적 ERR_BUFFER_OUT_OF_BOUNDS를 유발.
   // 캐시 비활성화로 연결 상태 오염을 방지한다.
   extra: { stmtCacheSize: 0 },
-  entities: [
-    Account,
-    Session,
-    User,
-    VerificationToken,
-    AgodaConsentLog,
-    AgodaAlertEvent,
-    AgodaHotel,
-    AgodaHotelSearch,
-    AgodaNotification,
-    AgodaPollRun,
-    AgodaRoomSnapshot,
-    AffiliateAdvertiser,
-    AffiliateAuditJobState,
-    AffiliateAuditPurgeRun,
-    AffiliateEvent,
-    AffiliatePreferenceAuditLog,
-    ConversationPreference,
-    BillingEvent,
-    ConditionMetEvent,
-    PriceQuote,
-    Subscription,
-    Case,
-    CaseMessage,
-    CaseNotification,
-    CaseStatusLog,
-    FormQuestionMapping,
-    FormSubmission,
-    Accommodation,
-    CheckCycle,
-    CheckLog,
-    HeartbeatHistory,
-    WorkerHeartbeat,
-    PublicAvailabilityPrediction,
-    PublicAvailabilitySnapshot,
-    PublicProperty,
-    AuditLog,
-    Permission,
-    Plan,
-    PlanQuota,
-    Role,
-    PlatformPattern,
-    PlatformSelector,
-    SelectorChangeLog,
-    LandingEvent,
-    SettingsChangeLog,
-    SystemSettings,
-    Destination,
-    TravelConversation,
-    TravelEntity,
-    TravelMessage,
-  ],
+  entities: Object.values(ENTITY_CLASSES),
   migrations: [
     InitialOracleSchema1744000000000,
     OracleTextIndexes1744000000001,
     ExpandTravelConversationIdLength1745232000000,
   ],
 });
+
+/**
+ * 번들러가 서버 코드를 압축하면 엔티티 클래스 이름이 'd' 같은 짧은 이름으로 바뀌고 서로 겹친다.
+ * TypeORM은 클래스 이름(targetName)으로 엔티티를 구분하므로, 이름이 겹치면 save()가
+ * "Cyclic dependency" 오류를 낸다. 메타데이터를 만들기 전에 원래 이름으로 되돌린다.
+ */
+function restoreEntityClassNames(): void {
+  for (const [name, entityClass] of Object.entries(ENTITY_CLASSES)) {
+    if (entityClass.name !== name) {
+      Object.defineProperty(entityClass, 'name', { value: name });
+    }
+  }
+}
 
 let dataSourceInitializationPromise: Promise<DataSource> | null = null;
 
@@ -141,6 +157,7 @@ export async function getDataSource(): Promise<DataSource> {
   }
 
   if (!dataSourceInitializationPromise) {
+    restoreEntityClassNames();
     dataSourceInitializationPromise = AppDataSource.initialize().catch((error: unknown) => {
       dataSourceInitializationPromise = null;
       throw error;

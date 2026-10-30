@@ -8,6 +8,7 @@ import {
 } from '@workspace/db';
 
 import { normalizeAgodaSearchResponse } from '@/lib/agoda/normalize';
+import { logError } from '@/lib/logger';
 import { searchAgodaAvailability } from '@/lib/agoda/searchClient';
 import { detectPriceDropEvents, detectVacancyEvents } from '@/services/agoda-detector.service';
 import { getBinbangRuntimeSettings } from '@/services/binbang-runtime-settings.service';
@@ -456,7 +457,13 @@ export async function pollAccommodationOnce(accommodationId: string): Promise<Po
         alertEventIds: alertEventIdsToNotify,
       });
     } catch (err) {
-      console.warn('[agoda-polling] enqueueNotifications 실패, 다음 dispatch 주기에서 재처리됩니다:', err);
+      // 이벤트는 이미 저장돼 다음 polling에서 다시 감지되지 않는다(dedupe/cooldown).
+      // 재처리 경로가 없으므로 경고가 아닌 에러로 남겨 누락을 드러낸다.
+      logError('agoda_notification_enqueue_failed', {
+        accommodationId,
+        alertEventIds: alertEventIdsToNotify,
+        error: err,
+      });
     }
 
     const now = new Date();
