@@ -59,6 +59,15 @@ export async function triggerBinbangDispatch(): Promise<{ dispatched: number }> 
   return { dispatched: typeof sent === 'number' ? sent : 0 };
 }
 
+export async function triggerBinbangNotificationWatchdog(): Promise<{ missed: number; alerted: number }> {
+  const { result } = await callBinbangInternal('/api/internal/accommodations/notifications/watchdog');
+  const payload = result as { missedCount?: unknown; alertedRecipients?: unknown } | undefined;
+  return {
+    missed: typeof payload?.missedCount === 'number' ? payload.missedCount : 0,
+    alerted: typeof payload?.alertedRecipients === 'number' ? payload.alertedRecipients : 0,
+  };
+}
+
 export async function triggerBinbangSnapshotCleanup(): Promise<{ deleted: number }> {
   const { result } = await callBinbangInternal('/api/internal/snapshots/cleanup');
   const deletedPollRuns = (result as { deletedPollRuns?: unknown } | undefined)?.deletedPollRuns;

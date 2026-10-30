@@ -13,6 +13,7 @@ import {
   retryStaleCaseNotifications,
   runAffiliateAuditPurge,
   triggerBinbangDispatch,
+  triggerBinbangNotificationWatchdog,
   triggerBinbangPollDue,
   triggerBinbangSnapshotCleanup,
   triggerTravelCachePrewarm,
@@ -67,6 +68,12 @@ export function createCycleProcessor(checkQueue: Queue, redisConnection: RedisLi
     if (job.name === 'binbang-dispatch') {
       const result = await triggerBinbangDispatch();
       console.log(`[binbang-dispatch] dispatched=${result.dispatched}`);
+      return;
+    }
+
+    if (job.name === 'binbang-notification-watchdog') {
+      const result = await triggerBinbangNotificationWatchdog();
+      console.log(`[binbang-notification-watchdog] missed=${result.missed} alerted=${result.alerted}`);
       return;
     }
 

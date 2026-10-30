@@ -46,6 +46,11 @@ docker compose -p binbang-dev -f docker/docker-compose.develop.yml \
   logs --tail 200 web worker redis
 ```
 
+### 빈방 알림 경로 점검
+- **배포 직후 자가 진단:** `deploy.yml`이 `up -d` 뒤에 web 컨테이너 안에서 `POST /api/internal/self-test/notifications`를 호출한다. 감지 이벤트와 알림 대기열 저장을 트랜잭션 안에서 해 보고 롤백한다. 실패하면 배포가 실패로 표시된다. 수동으로 돌릴 때도 같은 엔드포인트를 내부 토큰(`x-binbang-internal-token`)과 함께 호출한다.
+- **누락 감시:** 워커가 매시 45분에 `POST /api/internal/accommodations/notifications/watchdog`를 호출한다. 30~90분 전에 감지됐는데 `agoda_notifications` 행이 없는 이벤트가 있으면, `ADMIN` 역할 사용자에게 경보 메일을 보낸다. 어드민 BullMQ 화면에서 `binbang-notification-watchdog-scheduler`를 즉시 실행할 수도 있다.
+- 경보를 받으면 운영 web 로그에서 `agoda_notification_enqueue_failed`를 찾는다.
+
 ## 4) Common Failure Scenarios
 ### A) App does not boot
 - Check `.env.<APP_ENV>` completeness (`ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_CONNECT_STRING`, auth vars 등)

@@ -11,7 +11,7 @@ describe('runtime/scheduler', (): void => {
 
     await setupRepeatableJobs(queue as never, '*/30 * * * *');
 
-    expect(upsertJobScheduler).toHaveBeenCalledTimes(12);
+    expect(upsertJobScheduler).toHaveBeenCalledTimes(13);
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       1,
       'cycle-scheduler',
@@ -120,6 +120,12 @@ describe('runtime/scheduler', (): void => {
       { pattern: '0 3 * * *' },
       { name: 'binbang-snapshot-cleanup', data: { triggeredAt: expect.any(String) } },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      13,
+      'binbang-notification-watchdog-scheduler',
+      { pattern: '45 * * * *' },
+      { name: 'binbang-notification-watchdog', data: { triggeredAt: expect.any(String) } },
+    );
   });
 
   it('uses admin-configured public snapshot schedule and window days when provided', async (): Promise<void> => {
@@ -221,6 +227,12 @@ describe('runtime/scheduler', (): void => {
       { pattern: '0 3 * * *' },
       { name: 'binbang-snapshot-cleanup', data: { triggeredAt: expect.any(String) } },
     );
+    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
+      13,
+      'binbang-notification-watchdog-scheduler',
+      { pattern: '45 * * * *' },
+      { name: 'binbang-notification-watchdog', data: { triggeredAt: expect.any(String) } },
+    );
   });
 
   it('removes all repeatable schedulers', async (): Promise<void> => {
@@ -231,7 +243,7 @@ describe('runtime/scheduler', (): void => {
 
     await removeRepeatableJobs(queue as never);
 
-    expect(removeJobScheduler).toHaveBeenCalledTimes(12);
+    expect(removeJobScheduler).toHaveBeenCalledTimes(13);
     expect(removeJobScheduler).toHaveBeenNthCalledWith(1, 'cycle-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(2, 'notification-retry-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(3, 'landing-event-pii-retention-scheduler');
@@ -244,5 +256,6 @@ describe('runtime/scheduler', (): void => {
     expect(removeJobScheduler).toHaveBeenNthCalledWith(10, 'binbang-poll-due-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(11, 'binbang-dispatch-scheduler');
     expect(removeJobScheduler).toHaveBeenNthCalledWith(12, 'binbang-snapshot-cleanup-scheduler');
+    expect(removeJobScheduler).toHaveBeenNthCalledWith(13, 'binbang-notification-watchdog-scheduler');
   });
 });
