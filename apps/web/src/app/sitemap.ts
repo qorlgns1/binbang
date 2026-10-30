@@ -4,18 +4,12 @@ import { SUPPORTED_LOCALES } from '@workspace/shared/i18n';
 
 import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { buildAvailabilityPath, getBaseUrl, PUBLIC_PATHS } from '@/lib/i18n-runtime/seo';
-import {
-  getPublicAvailabilitySitemapItems,
-  getPublicAvailabilitySitemapTotalCount,
-  getRegionalSitemapItems,
-} from '@/services/public-availability.service';
+import { getPublicAvailabilitySitemapItems, getRegionalSitemapItems } from '@/services/public-availability.service';
 
 export const revalidate = 3600;
 
-const PROPERTY_SITEMAP_BATCH_SIZE = 10_000;
-const STATIC_SITEMAP_ID = 0;
-const REGIONS_SITEMAP_ID = 1;
-const PROPERTIES_SITEMAP_START_ID = 2;
+// sitemap 한 파일의 URL 상한(sitemaps.org). 숙소 1곳은 언어 수만큼 URL이 된다.
+const MAX_SITEMAP_URLS = 50_000;
 
 const PRIORITY_AND_FREQ: Record<string, { priority: number; changeFrequency: 'weekly' | 'monthly' | 'yearly' }> = {
   '': { priority: 1.0, changeFrequency: 'weekly' },
@@ -71,15 +65,9 @@ async function buildRegionalSitemapEntries(baseUrl: string): Promise<MetadataRou
   return entries;
 }
 
-async function buildPropertySitemapEntries(baseUrl: string, sitemapId: number): Promise<MetadataRoute.Sitemap> {
-  const propertyPageIndex = sitemapId - PROPERTIES_SITEMAP_START_ID;
-  if (propertyPageIndex < 0) return [];
-
+async function buildPropertySitemapEntries(baseUrl: string): Promise<MetadataRoute.Sitemap> {
   try {
-    const availabilityItems = await getPublicAvailabilitySitemapItems({
-      limit: PROPERTY_SITEMAP_BATCH_SIZE,
-      offset: propertyPageIndex * PROPERTY_SITEMAP_BATCH_SIZE,
-    });
+    const availabilityItems = await getPublicAvailabilitySitemapItems();
 
     const entries: MetadataRoute.Sitemap = [];
 
@@ -102,41 +90,14 @@ async function buildPropertySitemapEntries(baseUrl: string, sitemapId: number): 
   }
 }
 
-export async function generateSitemaps(): Promise<Array<{ id: number }>> {
-  let propertyTotalCount = 0;
-
-  try {
-    propertyTotalCount = await getPublicAvailabilitySitemapTotalCount();
-  } catch (error) {
-    console.error('[sitemap] failed to fetch property sitemap count', error);
-    propertyTotalCount = 0;
-  }
-
-  const propertySitemapCount = Math.ceil(propertyTotalCount / PROPERTY_SITEMAP_BATCH_SIZE);
-
-  return [
-    { id: STATIC_SITEMAP_ID },
-    { id: REGIONS_SITEMAP_ID },
-    ...Array.from({ length: propertySitemapCount }, (_, index) => ({
-      id: PROPERTIES_SITEMAP_START_ID + index,
-    })),
-  ];
-}
-
-export default async function sitemap(props: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
-  const id = Number(await props.id);
-  if (!Number.isInteger(id) || id < STATIC_SITEMAP_ID) {
-    return [];
-  }
+// generateSitemaps로 나누면 /sitemap.xml(robots.txt가 가리키는 주소)이 생기지 않고,
+// 나눌 개수가 DB 없는 빌드 시점에 정해져 숙소 sitemap이 아예 만들어지지 않는다. 그래서 한 파일로 둔다.
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getBaseUrl();
+  const [regionalEntries, propertyEntries] = await Promise.all([
+    buildRegionalSitemapEntries(baseUrl),
+    buildPropertySitemapEntries(baseUrl),
+  ]);
 
-  if (id === STATIC_SITEMAP_ID) {
-    return buildStaticSitemapEntries(baseUrl);
-  }
-
-  if (id === REGIONS_SITEMAP_ID) {
-    return buildRegionalSitemapEntries(baseUrl);
-  }
-
-  return buildPropertySitemapEntries(baseUrl, id);
+  return [...buildStaticSitemapEntries(baseUrl), ...regionalEntries, ...propertyEntries].slice(0, MAX_SITEMAP_URLS);
 }
