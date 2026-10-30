@@ -47,6 +47,8 @@ Owner: binbang
 ```
 
 Docker Compose는 서비스별로 자신의 `.env.doppler.<service>.<APP_ENV>` 하나만 `env_file`로 로드한다. `APP_ENV`/`NODE_ENV`/서비스 간 내부 URL(`WORKER_INTERNAL_URL` 등)처럼 secret이 아닌 값은 compose `environment:` 블록에 하드코딩되어 있으며 Doppler로 관리하지 않는다.
+
+운영과 개발 컨테이너는 같은 `binbang_shared_network`에 붙어 있어서, 서비스 이름(`web`, `worker`, `travel`)으로 호출하면 DNS가 두 환경의 컨테이너를 번갈아 돌려준다. 그래서 서비스 간 내부 URL은 환경별 네트워크 별칭(`web-prod`/`web-dev`, `worker-prod`/`worker-dev`, `travel-prod`/`travel-dev`)만 쓴다. 새 내부 호출을 추가할 때도 서비스 이름을 쓰지 않는다.
 호스트에서 직접 실행하는 pnpm 스크립트(`db:migrate:deploy` 등)는 `doppler run --token "$DOPPLER_TOKEN_WEB" -- <command>`로 감싼다.
 
 ## 5) Env Vars (Names Only)
