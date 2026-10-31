@@ -6,7 +6,8 @@ import { buildPublicPath } from '@/lib/i18n-runtime/publicPath';
 import { buildAvailabilityPath, getBaseUrl, PUBLIC_PATHS } from '@/lib/i18n-runtime/seo';
 import { getPublicAvailabilitySitemapItems, getRegionalSitemapItems } from '@/services/public-availability.service';
 
-export const revalidate = 3600;
+// 빌드 때는 DB가 없어 정적 페이지만 담긴다. 미리 만들어 두면 배포 직후 그 빈약한 버전이 나가므로 요청마다 만든다.
+export const dynamic = 'force-dynamic';
 
 // sitemap 한 파일의 URL 상한(sitemaps.org). 숙소 1곳은 언어 수만큼 URL이 된다.
 const MAX_SITEMAP_URLS = 50_000;
