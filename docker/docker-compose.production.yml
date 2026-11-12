@@ -48,27 +48,9 @@ services:
       APP_ENV: production
       REDIS_URL: redis://redis-prod:6379
       WEB_INTERNAL_URL: http://web-prod:3000
-      TRAVEL_INTERNAL_URL: http://travel-prod:3000
     depends_on:
       redis-prod:
         condition: service_healthy
-    restart: unless-stopped
-
-  travel:
-    image: kihoonbae/binbang:travel-${IMAGE_TAG}@${IMAGE_TRAVEL_DIGEST}
-    ports:
-      - '3300:3000'
-    networks:
-      shared-network:
-        # 운영/개발이 같은 네트워크를 쓰므로 서비스 이름(travel) 대신 환경별 별칭으로 호출한다.
-        aliases:
-          - travel-prod
-    env_file:
-      - path: ../.env.doppler.travel.production
-        required: true
-    environment:
-      APP_ENV: production
-      REDIS_URL: redis://redis-prod:6379
     restart: unless-stopped
 
 

@@ -27,7 +27,6 @@ jobs:
       image_tag: ${{ steps.vars.outputs.image_tag }}
       web_digest: ${{ steps.digests.outputs.web_digest }}
       worker_digest: ${{ steps.digests.outputs.worker_digest }}
-      travel_digest: ${{ steps.digests.outputs.travel_digest }}
     steps:
       - uses: actions/checkout@v6
 
@@ -58,7 +57,6 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           NEXT_PUBLIC_NAVER_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_NAVER_SITE_VERIFICATION }}
           NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
-          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
           # provenance materials(빌드 컨텍스트 파일 다이제스트 목록)를 줄여 metadata 출력을
           # 가볍게 유지한다. (다음 스텝의 "Argument list too long"의 실제 원인은 GH Actions
           # 컨텍스트 반복 포함이었고, 이는 Extract digests에서 파일 기반으로 읽어 해결했다.)
@@ -68,7 +66,7 @@ jobs:
       - name: Extract digests
         id: digests
         # METADATA를 env로 넘기면 buildx가 provenance에 끼워 넣는 GitHub Actions
-        # 컨텍스트(webhook payload)가 타겟(web/worker/travel) 수만큼 반복 포함돼
+        # 컨텍스트(webhook payload)가 타겟(web/worker) 수만큼 반복 포함돼
         # 리눅스 execve의 단일 환경변수 길이 제한(128KiB)을 넘겨 "Argument list
         # too long"을 유발한다. 파일로 떨어뜨려 읽으면 이 제한을 받지 않는다.
         run: |
@@ -77,10 +75,8 @@ jobs:
           BAKE_METADATA_EOF
           web_digest=$(jq -r '.web["containerimage.digest"]' /tmp/bake-metadata.json)
           worker_digest=$(jq -r '.worker["containerimage.digest"]' /tmp/bake-metadata.json)
-          travel_digest=$(jq -r '.travel["containerimage.digest"]' /tmp/bake-metadata.json)
           echo "web_digest=$web_digest" >> "$GITHUB_OUTPUT"
           echo "worker_digest=$worker_digest" >> "$GITHUB_OUTPUT"
-          echo "travel_digest=$travel_digest" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy to OCI
@@ -95,13 +91,12 @@ jobs:
         env:
           DOPPLER_TOKEN_WEB: ${{ secrets.DOPPLER_TOKEN_WEB }}
           DOPPLER_TOKEN_WORKER: ${{ secrets.DOPPLER_TOKEN_WORKER }}
-          DOPPLER_TOKEN_TRAVEL: ${{ secrets.DOPPLER_TOKEN_TRAVEL }}
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
           port: ${{ secrets.OCI_PORT }}
-          envs: DOPPLER_TOKEN_WEB,DOPPLER_TOKEN_WORKER,DOPPLER_TOKEN_TRAVEL
+          envs: DOPPLER_TOKEN_WEB,DOPPLER_TOKEN_WORKER
           script: |
             set -e
             cd ~/workspace/binbang
@@ -152,11 +147,10 @@ jobs:
               curl -Ls https://cli.doppler.com/install.sh | sudo -E sh
             fi
 
-            # --- Doppler에서 서비스별 env 파일 생성 (project: binbang-web/worker/travel) ---
+            # --- Doppler에서 서비스별 env 파일 생성 (project: binbang-web/worker) ---
             doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WEB"    > ".env.doppler.web.${APP_ENV}"
             doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_WORKER" > ".env.doppler.worker.${APP_ENV}"
-            doppler secrets download --no-file --format env --token "$DOPPLER_TOKEN_TRAVEL" > ".env.doppler.travel.${APP_ENV}"
-            chmod 600 ".env.doppler.web.${APP_ENV}" ".env.doppler.worker.${APP_ENV}" ".env.doppler.travel.${APP_ENV}"
+            chmod 600 ".env.doppler.web.${APP_ENV}" ".env.doppler.worker.${APP_ENV}"
 
             update_env_var() {
               key="$1"
@@ -174,7 +168,6 @@ jobs:
             update_env_var IMAGE_TAG              "${{ needs.docker.outputs.image_tag }}"       "$DEPLOY_FILE"
             update_env_var IMAGE_WEB_DIGEST       "${{ needs.docker.outputs.web_digest }}"      "$DEPLOY_FILE"
             update_env_var IMAGE_WORKER_DIGEST    "${{ needs.docker.outputs.worker_digest }}"   "$DEPLOY_FILE"
-            update_env_var IMAGE_TRAVEL_DIGEST    "${{ needs.docker.outputs.travel_digest }}"   "$DEPLOY_FILE"
             update_env_var DEPLOY_SHA             "${{ github.sha }}"                           "$DEPLOY_FILE"
             update_env_var DEPLOYED_AT            "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"            "$DEPLOY_FILE"
 
@@ -196,9 +189,9 @@ jobs:
 
             # --- 서비스 재시작 ---
             if [ "$APP_ENV" = "production" ]; then
-              docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" --env-file .env.deploy.production up -d
+              docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" --env-file .env.deploy.production up -d --remove-orphans
             else
-              docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" up -d
+              docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" up -d --remove-orphans
             fi
 
             # --- 배포 후 자가 진단: 새 빌드에서 알림 대기열 저장이 되는지 확인 (트랜잭션 롤백) ---

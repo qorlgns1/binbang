@@ -16,7 +16,6 @@ import {
   triggerBinbangNotificationWatchdog,
   triggerBinbangPollDue,
   triggerBinbangSnapshotCleanup,
-  triggerTravelCachePrewarm,
   updateHeartbeat,
   type ActiveAccommodation,
   type ActiveCaseLink,
@@ -47,14 +46,6 @@ export function createCycleProcessor(checkQueue: Queue, redisConnection: RedisLi
       });
       console.log(
         `[affiliate-audit-cron-watchdog] missed=${result.missed} source=${result.source} lastRunStartedAt=${result.lastRunStartedAt} elapsedMinutes=${result.elapsedMinutes} thresholdMinutes=${result.thresholdMinutes} alerted=${result.alerted}`,
-      );
-      return;
-    }
-
-    if (job.name === 'travel-cache-prewarm') {
-      const result = await triggerTravelCachePrewarm();
-      console.log(
-        `[travel-cache-prewarm] durationMs=${result.durationMs} places(warmed=${result.places.warmed}, skipped=${result.places.skipped}, failed=${result.places.failed}) weather(warmed=${result.weather.warmed}, skipped=${result.weather.skipped}, failed=${result.weather.failed}) exchange(warmed=${result.exchangeRate.warmed}, skipped=${result.exchangeRate.skipped}, failed=${result.exchangeRate.failed})`,
       );
       return;
     }

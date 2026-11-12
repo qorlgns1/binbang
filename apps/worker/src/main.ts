@@ -19,7 +19,6 @@ import {
   getBinbangCronConfig,
   getPlatformSelectors,
   getSettings,
-  getTravelCachePrewarmConfig,
   invalidateSelectorCache,
   loadPlatformSelectors,
   recordHeartbeatHistory,
@@ -64,14 +63,12 @@ async function main(): Promise<void> {
 
   // 5. Repeatable job 설정
   const affiliateAuditPurgeConfig = getAffiliateAuditPurgeConfig();
-  const travelCachePrewarmConfig = getTravelCachePrewarmConfig();
   const binbangCronConfig = getBinbangCronConfig();
   await setupRepeatableJobs(cycleQueue, config.schedule, {
     publicAvailabilitySnapshotSchedule: settings.worker.publicAvailabilitySnapshotSchedule,
     publicAvailabilityWindowDays: settings.worker.publicAvailabilitySnapshotWindowDays,
     affiliateAuditPurgeSchedule: affiliateAuditPurgeConfig.cronSchedule,
     affiliateAuditCronWatchdogSchedule: affiliateAuditPurgeConfig.cronWatchdogSchedule,
-    travelCachePrewarmSchedule: travelCachePrewarmConfig.cronSchedule,
     binbangPollDueCron: binbangCronConfig.pollDueCron,
     binbangDispatchCron: binbangCronConfig.dispatchCron,
     binbangSnapshotCleanupCron: binbangCronConfig.snapshotCleanupCron,

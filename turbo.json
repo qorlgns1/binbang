@@ -86,23 +86,6 @@
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
     },
 
-    "@workspace/travel#build": {
-      "dependsOn": ["^build"],
-      "passThroughEnv": [
-        "NEXTAUTH_URL",
-        "GOOGLE_GENERATIVE_AI_API_KEY",
-        "GOOGLE_MAPS_API_KEY",
-        "OPENWEATHERMAP_API_KEY",
-        "EXCHANGERATE_API_KEY"
-      ],
-      "outputs": [".next/**", "!.next/cache/**"]
-    },
-
-    "@workspace/travel#typecheck": {
-      "dependsOn": ["@workspace/travel#build", "@workspace/db#build"],
-      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json"]
-    },
-
     "clean": {
       "cache": false
     }

@@ -10,22 +10,18 @@ Owner: binbang
 | Environment | Purpose | Branch/Tag Rule | URL | Deploy Trigger | Notes |
 |---|---|---|---|---|---|
 | dev | integration/test on server | `develop` / `develop` image tag | `https://dev-binbang.moodybeard.com` | GitHub Actions `deploy.yml` on push | Compose project: `binbang-dev`, web -> `:3200` |
-| dev-travel | travel app test on server | `develop` / `develop` image tag | `https://dev-travel.moodybeard.com` | GitHub Actions `deploy.yml` on push | Same compose project: `binbang-dev`, travel -> `:3301` |
 | production | live traffic | `main` / `main` image tag | `https://binbang.moodybeard.com` | GitHub Actions `deploy.yml` on push | web -> `:4000` |
-| production-travel | travel app live | `main` / `main` image tag | `https://travel.moodybeard.com` | GitHub Actions `deploy.yml` on push | travel -> `:3300` |
 
 ## 2) Runtime and Infra Differences
 | Item | dev | production |
 |---|---|---|
 | Compose file | `docker/docker-compose.develop.yml` | `docker/docker-compose.production.yml` |
 | Domain (web) | `dev-binbang.moodybeard.com` | `binbang.moodybeard.com` |
-| Domain (travel) | `dev-travel.moodybeard.com` | `travel.moodybeard.com` |
 | Web upstream port (host) | `3200` | `4000` |
-| Travel upstream port (host) | `3301` | `3300` |
 | Compose project name | `binbang-dev` | default |
 | Redis | `redis:7-alpine` | `redis:7-alpine` |
 | DB | Oracle ADB (`ORACLE_CONNECT_STRING`) | Oracle ADB (`ORACLE_CONNECT_STRING`) |
-| Replica count | 1 web / 1 worker / 1 travel / 1 redis | 1 web / 1 worker / 1 travel / 1 redis |
+| Replica count | 1 web / 1 worker / 1 redis | 1 web / 1 worker / 1 redis |
 
 ## 3) External Integrations by Environment
 | Integration | dev | production | Failure impact |
@@ -42,20 +38,19 @@ Owner: binbang
 ```
 .env.doppler.web.<APP_ENV>       — web 컨테이너용, Doppler project binbang-web에서 매 배포마다 생성 (gitignore)
 .env.doppler.worker.<APP_ENV>    — worker 컨테이너용, Doppler project binbang-worker에서 생성 (gitignore)
-.env.doppler.travel.<APP_ENV>    — travel 컨테이너용, Doppler project binbang-travel에서 생성 (gitignore)
 .env.deploy.<APP_ENV>            — 배포 메타데이터, gitignore (CI/CD 자동 기록, Doppler와 무관)
 ```
 
 Docker Compose는 서비스별로 자신의 `.env.doppler.<service>.<APP_ENV>` 하나만 `env_file`로 로드한다. `APP_ENV`/`NODE_ENV`/서비스 간 내부 URL(`WORKER_INTERNAL_URL` 등)처럼 secret이 아닌 값은 compose `environment:` 블록에 하드코딩되어 있으며 Doppler로 관리하지 않는다.
 
-운영과 개발 컨테이너는 같은 `binbang_shared_network`에 붙어 있어서, 서비스 이름(`web`, `worker`, `travel`)으로 호출하면 DNS가 두 환경의 컨테이너를 번갈아 돌려준다. 그래서 서비스 간 내부 URL은 환경별 네트워크 별칭(`web-prod`/`web-dev`, `worker-prod`/`worker-dev`, `travel-prod`/`travel-dev`)만 쓴다. 새 내부 호출을 추가할 때도 서비스 이름을 쓰지 않는다.
+운영과 개발 컨테이너는 같은 `binbang_shared_network`에 붙어 있어서, 서비스 이름(`web`, `worker`)으로 호출하면 DNS가 두 환경의 컨테이너를 번갈아 돌려준다. 그래서 서비스 간 내부 URL은 환경별 네트워크 별칭(`web-prod`/`web-dev`, `worker-prod`/`worker-dev`)만 쓴다. 새 내부 호출을 추가할 때도 서비스 이름을 쓰지 않는다.
 호스트에서 직접 실행하는 pnpm 스크립트(`db:migrate:deploy` 등)는 `doppler run --token "$DOPPLER_TOKEN_WEB" -- <command>`로 감싼다.
 
 ## 5) Env Vars (Names Only)
 
-> Doppler project 기준으로 재정리. 3개 프로젝트(`binbang-web`/`binbang-worker`/`binbang-travel`) 각각의 `dev`/`prd` config에 아래 "Common core"가 **중복 저장**되고, 프로젝트별 전용 값이 추가된다 (앱별 별도 project 구조를 선택했기 때문 — 공통값 변경 시 3곳 모두 업데이트 필요).
+> Doppler project 기준으로 재정리. 2개 프로젝트(`binbang-web`/`binbang-worker`) 각각의 `dev`/`prd` config에 아래 "Common core"가 **중복 저장**되고, 프로젝트별 전용 값이 추가된다 (앱별 별도 project 구조를 선택했기 때문 — 공통값 변경 시 2곳 모두 업데이트 필요).
 
-### Common core (3개 project 모두에 중복 보관)
+### Common core (2개 project 모두에 중복 보관)
 - `ORACLE_USER`
 - `ORACLE_PASSWORD`
 - `ORACLE_CONNECT_STRING`
@@ -90,27 +85,11 @@ Docker Compose는 서비스별로 자신의 `.env.doppler.<service>.<APP_ENV>` �
 - `RESEND_API_KEY` (web과 값 중복)
 - `EMAIL_FROM` (web과 값 중복)
 - `WORKER_CONTROL_PORT`
-- `TRAVEL_CACHE_PREWARM_CRON`, `TRAVEL_CACHE_PREWARM_TIMEOUT_MS`
-- `TRAVEL_INTERNAL_CRON_TOKEN` (travel과 값 중복)
-
-### `binbang-travel` project 전용
-- `GOOGLE_GENERATIVE_AI_API_KEY` — Gemini API (chat)
-- `GOOGLE_MAPS_API_KEY` — server-side Maps (Places etc.)
-- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — client-side map display
-- `OPENWEATHERMAP_API_KEY` — weather tool
-- `EXCHANGERATE_API_KEY` — exchange rate tool
-- `CONTEXT_WINDOW_SIZE` — AI 대화 컨텍스트 윈도우
-- `AWIN_API_TOKEN` (web과 값 중복)
-- `TRAVEL_INTERNAL_CRON_TOKEN` (worker와 값 중복)
-- `NEXTAUTH_URL`
-- `NEXT_PUBLIC_WEB_URL` (dev only)
-- `SENTRY_*` / `NEXT_PUBLIC_SENTRY_*` — web과 동일 항목 세트
 
 ### Deploy/runtime metadata (`.env.deploy.<APP_ENV>` — CI/CD 자동 기록, Doppler와 무관)
 - `IMAGE_TAG`
 - `IMAGE_WEB_DIGEST`
 - `IMAGE_WORKER_DIGEST`
-- `IMAGE_TRAVEL_DIGEST`
 - `DEPLOY_SHA`
 - `DEPLOYED_AT`
 - ⚠️ `IMAGE_MOONCATCH_DIGEST` — 서버 파일에 존재하나 어떤 문서/compose에도 대응 서비스가 없음. 사용처 확인 후 삭제 또는 문서화 필요.
@@ -119,8 +98,6 @@ Docker Compose는 서비스별로 자신의 `.env.doppler.<service>.<APP_ENV>` �
 아래는 과거 버전 문서에 이름만 남아 있고, 서버의 어떤 env 파일에서도 실제로 발견되지 않았다. 코드 기본값에 의존 중인지, 다른 방식(하드코딩/DB 설정 등)으로 관리되는지 확인 후 Doppler 이관 여부를 결정해야 한다.
 - `HEARTBEAT_INTERVAL_MS`, `HEARTBEAT_MISSED_THRESHOLD`, `HEARTBEAT_CHECK_INTERVAL_MS`
 - `MAX_PROCESSING_TIME_MS`, `WORKER_HEALTHY_THRESHOLD_MS`, `WORKER_DEGRADED_THRESHOLD_MS`
-- `TRAVEL_GUEST_DAILY_LIMIT`, `TRAVEL_GUEST_PER_CONVERSATION_LIMIT`
-- `TRAVEL_AFFILIATE_TRACKING_ENABLED`, `TRAVEL_AFFILIATE_CTA_ENABLED`, `TRAVEL_RESTORE_AUTO_ENABLED`, `TRAVEL_HISTORY_EDIT_ENABLED` (RUNBOOK.md §9 롤백 절차가 참조하는 플래그 — 실제로 주입되지 않으면 롤백 절차가 동작하지 않음)
 
 ## 6) Access and Guardrails
 - Deployment entrypoint: GitHub Actions `deploy.yml`
@@ -131,13 +108,11 @@ Docker Compose는 서비스별로 자신의 `.env.doppler.<service>.<APP_ENV>` �
 ## 7) Validation Checklist Per Environment
 ### dev
 - [ ] `https://dev-binbang.moodybeard.com/api/health` returns `200`
-- [ ] `https://dev-travel.moodybeard.com` loads travel app
 - [ ] `docker compose -p binbang-dev -f docker/docker-compose.develop.yml --env-file .env.development --env-file .env.deploy.development ps`
 - [ ] Basic login and accommodation list flow works
 
 ### production
 - [ ] `https://binbang.moodybeard.com/api/health` returns `200`
-- [ ] `https://travel.moodybeard.com` loads travel app
 - [ ] `docker compose -f docker/docker-compose.production.yml --env-file .env.production --env-file .env.deploy.production ps`
 - [ ] Admin heartbeat check (`/api/health/heartbeat`) is healthy
 - [ ] Recent logs show no recurring startup errors

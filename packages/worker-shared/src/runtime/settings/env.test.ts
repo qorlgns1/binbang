@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getBinbangCronConfig, getEnv, getEnvNumber, getTravelCachePrewarmConfig, validateWorkerEnv } from './env';
+import { getBinbangCronConfig, getEnv, getEnvNumber, validateWorkerEnv } from './env';
 
 const ORIGINAL_ENV = process.env;
 const REQUIRED_WORKER_ENV = {
@@ -55,15 +55,6 @@ describe('validateWorkerEnv', (): void => {
   it('throws when REDIS_URL uses an invalid scheme', (): void => {
     setRequiredWorkerEnv({ REDIS_URL: 'http://localhost:6379' });
     expect((): void => validateWorkerEnv()).toThrowError(/REDIS_URL/);
-  });
-});
-
-describe('getTravelCachePrewarmConfig', (): void => {
-  it('throws when TRAVEL_INTERNAL_URL is invalid', (): void => {
-    process.env.TRAVEL_INTERNAL_URL = 'redis://localhost:3300';
-    expect((): ReturnType<typeof getTravelCachePrewarmConfig> => getTravelCachePrewarmConfig()).toThrowError(
-      /TRAVEL_INTERNAL_URL/,
-    );
   });
 });
 
