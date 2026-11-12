@@ -3,15 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { removeRepeatableJobs, setupRepeatableJobs } from './scheduler';
 
 describe('runtime/scheduler', (): void => {
-  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup/affiliate/cache-prewarm/binbang schedulers', async (): Promise<void> => {
+  it('registers cycle/notification/retention/public snapshot/case-expiration/travel cleanup/affiliate/binbang schedulers', async (): Promise<void> => {
     const upsertJobScheduler = vi.fn().mockResolvedValue(undefined);
+    const removeJobScheduler = vi.fn().mockResolvedValue(undefined);
     const queue = {
       upsertJobScheduler,
+      removeJobScheduler,
     };
 
     await setupRepeatableJobs(queue as never, '*/30 * * * *');
 
-    expect(upsertJobScheduler).toHaveBeenCalledTimes(13);
+    expect(upsertJobScheduler).toHaveBeenCalledTimes(12);
+    // 내려간 travel 캐시 예열 스케줄러는 Redis에 남지 않도록 기동 때 지운다.
+    expect(removeJobScheduler).toHaveBeenCalledExactlyOnceWith('travel-cache-prewarm-scheduler');
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       1,
       'cycle-scheduler',
@@ -93,35 +97,24 @@ describe('runtime/scheduler', (): void => {
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       9,
-      'travel-cache-prewarm-scheduler',
-      { pattern: '20 */6 * * *' },
-      {
-        name: 'travel-cache-prewarm',
-        data: {
-          triggeredAt: expect.any(String),
-        },
-      },
-    );
-    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      10,
       'binbang-poll-due-scheduler',
       { pattern: '*/30 * * * *' },
       { name: 'binbang-poll-due', data: { triggeredAt: expect.any(String) } },
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      11,
+      10,
       'binbang-dispatch-scheduler',
       { pattern: '*/5 * * * *' },
       { name: 'binbang-dispatch', data: { triggeredAt: expect.any(String) } },
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      12,
+      11,
       'binbang-snapshot-cleanup-scheduler',
       { pattern: '0 3 * * *' },
       { name: 'binbang-snapshot-cleanup', data: { triggeredAt: expect.any(String) } },
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      13,
+      12,
       'binbang-notification-watchdog-scheduler',
       { pattern: '45 * * * *' },
       { name: 'binbang-notification-watchdog', data: { triggeredAt: expect.any(String) } },
@@ -130,8 +123,10 @@ describe('runtime/scheduler', (): void => {
 
   it('uses admin-configured public snapshot schedule and window days when provided', async (): Promise<void> => {
     const upsertJobScheduler = vi.fn().mockResolvedValue(undefined);
+    const removeJobScheduler = vi.fn().mockResolvedValue(undefined);
     const queue = {
       upsertJobScheduler,
+      removeJobScheduler,
     };
 
     await setupRepeatableJobs(queue as never, '*/15 * * * *', {
@@ -139,7 +134,6 @@ describe('runtime/scheduler', (): void => {
       publicAvailabilityWindowDays: 14,
       affiliateAuditPurgeSchedule: '9 4 * * *',
       affiliateAuditCronWatchdogSchedule: '*/10 * * * *',
-      travelCachePrewarmSchedule: '35 */4 * * *',
     });
 
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
@@ -200,35 +194,24 @@ describe('runtime/scheduler', (): void => {
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
       9,
-      'travel-cache-prewarm-scheduler',
-      { pattern: '35 */4 * * *' },
-      {
-        name: 'travel-cache-prewarm',
-        data: {
-          triggeredAt: expect.any(String),
-        },
-      },
-    );
-    expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      10,
       'binbang-poll-due-scheduler',
       { pattern: '*/30 * * * *' },
       { name: 'binbang-poll-due', data: { triggeredAt: expect.any(String) } },
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      11,
+      10,
       'binbang-dispatch-scheduler',
       { pattern: '*/5 * * * *' },
       { name: 'binbang-dispatch', data: { triggeredAt: expect.any(String) } },
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      12,
+      11,
       'binbang-snapshot-cleanup-scheduler',
       { pattern: '0 3 * * *' },
       { name: 'binbang-snapshot-cleanup', data: { triggeredAt: expect.any(String) } },
     );
     expect(upsertJobScheduler).toHaveBeenNthCalledWith(
-      13,
+      12,
       'binbang-notification-watchdog-scheduler',
       { pattern: '45 * * * *' },
       { name: 'binbang-notification-watchdog', data: { triggeredAt: expect.any(String) } },

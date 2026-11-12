@@ -10,19 +10,19 @@ const DEFAULT_PUBLIC_AVAILABILITY_WINDOW_DAYS = 7;
 const DEFAULT_CASE_EXPIRATION_SCHEDULE = '37 0 * * *';
 const DEFAULT_AFFILIATE_AUDIT_PURGE_SCHEDULE = '10 3 * * *';
 const DEFAULT_AFFILIATE_AUDIT_CRON_WATCHDOG_SCHEDULE = '*/15 * * * *';
-const DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE = '20 */6 * * *';
 const DEFAULT_BINBANG_POLL_DUE_SCHEDULE = '*/30 * * * *';
 const DEFAULT_BINBANG_DISPATCH_SCHEDULE = '*/5 * * * *';
 const DEFAULT_BINBANG_SNAPSHOT_CLEANUP_SCHEDULE = '0 3 * * *';
 // 감시 창(60분)과 같은 간격이어야 이벤트 하나가 한 번만 검사된다. 그래서 설정으로 바꾸지 않는다.
 const BINBANG_NOTIFICATION_WATCHDOG_SCHEDULE = '45 * * * *';
 
+const RETIRED_TRAVEL_CACHE_PREWARM_SCHEDULER = 'travel-cache-prewarm-scheduler';
+
 interface SetupRepeatableJobsOptions {
   publicAvailabilitySnapshotSchedule?: string;
   publicAvailabilityWindowDays?: number;
   affiliateAuditPurgeSchedule?: string;
   affiliateAuditCronWatchdogSchedule?: string;
-  travelCachePrewarmSchedule?: string;
   binbangPollDueCron?: string;
   binbangDispatchCron?: string;
   binbangSnapshotCleanupCron?: string;
@@ -64,10 +64,6 @@ export async function setupRepeatableJobs(
   const affiliateAuditCronWatchdogSchedule = resolveSchedule(
     options.affiliateAuditCronWatchdogSchedule,
     DEFAULT_AFFILIATE_AUDIT_CRON_WATCHDOG_SCHEDULE,
-  );
-  const travelCachePrewarmSchedule = resolveSchedule(
-    options.travelCachePrewarmSchedule,
-    DEFAULT_TRAVEL_CACHE_PREWARM_SCHEDULE,
   );
   const binbangPollDueSchedule = resolveSchedule(options.binbangPollDueCron, DEFAULT_BINBANG_POLL_DUE_SCHEDULE);
   const binbangDispatchSchedule = resolveSchedule(options.binbangDispatchCron, DEFAULT_BINBANG_DISPATCH_SCHEDULE);
@@ -156,16 +152,9 @@ export async function setupRepeatableJobs(
     },
   );
 
-  await queue.upsertJobScheduler(
-    'travel-cache-prewarm-scheduler',
-    { pattern: travelCachePrewarmSchedule },
-    {
-      name: 'travel-cache-prewarm',
-      data: {
-        triggeredAt: new Date().toISOString(),
-      },
-    },
-  );
+  // travel 앱은 내렸지만 Redis에는 예전 스케줄러가 남아 있다. 지우지 않으면 처리기가 모르는
+  // 이름의 job이 계속 쌓여 모니터링 사이클로 잘못 실행되므로, 기동할 때마다 지운다.
+  await queue.removeJobScheduler(RETIRED_TRAVEL_CACHE_PREWARM_SCHEDULER);
 
   await queue.upsertJobScheduler(
     'binbang-poll-due-scheduler',
@@ -201,7 +190,7 @@ export async function removeRepeatableJobs(queue: Queue): Promise<void> {
   await queue.removeJobScheduler('travel-guest-cleanup-scheduler');
   await queue.removeJobScheduler('affiliate-audit-purge-scheduler');
   await queue.removeJobScheduler('affiliate-audit-cron-watchdog-scheduler');
-  await queue.removeJobScheduler('travel-cache-prewarm-scheduler');
+  await queue.removeJobScheduler(RETIRED_TRAVEL_CACHE_PREWARM_SCHEDULER);
   await queue.removeJobScheduler('binbang-poll-due-scheduler');
   await queue.removeJobScheduler('binbang-dispatch-scheduler');
   await queue.removeJobScheduler('binbang-snapshot-cleanup-scheduler');

@@ -35,7 +35,6 @@ RELEASE_TAG_PAT       # 태그 생성용 GitHub PAT
 NEXT_PUBLIC_GA_MEASUREMENT_ID         # Google Analytics 측정 ID
 NEXT_PUBLIC_NAVER_SITE_VERIFICATION   # 네이버 사이트 인증
 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION  # 구글 사이트 인증
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY       # travel 빌드용 공개 Maps 키
 ```
 
 ## 운영 배포 (OCI + Docker Compose)

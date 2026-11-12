@@ -156,13 +156,6 @@ export interface AffiliateAuditPurgeConfig {
   telegram: AffiliateAuditTelegramConfig;
 }
 
-export interface TravelCachePrewarmConfig {
-  internalUrl: string;
-  cronSchedule: string;
-  timeoutMs: number;
-  cronToken: string | null;
-}
-
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);
@@ -218,15 +211,6 @@ export function getAffiliateAuditPurgeConfig(): AffiliateAuditPurgeConfig {
       criticalThreadId: readOptionalEnv(process.env.AFFILIATE_AUDIT_ALERT_TELEGRAM_CRITICAL_THREAD_ID),
       warningThreadId: readOptionalEnv(process.env.AFFILIATE_AUDIT_ALERT_TELEGRAM_WARNING_THREAD_ID),
     },
-  };
-}
-
-export function getTravelCachePrewarmConfig(): TravelCachePrewarmConfig {
-  return {
-    internalUrl: getValidatedUrlEnv('TRAVEL_INTERNAL_URL', 'http://localhost:3300', HTTP_PROTOCOLS),
-    cronSchedule: process.env.TRAVEL_CACHE_PREWARM_CRON?.trim() || '20 */6 * * *',
-    timeoutMs: parsePositiveInt(process.env.TRAVEL_CACHE_PREWARM_TIMEOUT_MS, 120000),
-    cronToken: readOptionalEnv(process.env.TRAVEL_INTERNAL_CRON_TOKEN),
   };
 }
 
